@@ -48,6 +48,13 @@
                 "locLocationGroupByList": {
                   "locationContainedInGroup": [
                     {
+                      "locLinearLocation": {
+                        "gmlLineString": {
+                          "locGmlLineString": {
+                            "posList": "51.04 -2.83 51.05 -2.82"
+                          }
+                        }
+                      },
                       "locSingleRoadLinearLocation": {
                         "linearWithinLinearElement": [
                           {
@@ -106,6 +113,11 @@
               },
               "locationReference": {
                 "locLinearLocation": {
+                  "gmlLineString": {
+                    "locGmlLineString": {
+                      "posList": "52.77 -2.11 52.78 -2.10"
+                    }
+                  },
                   "supplementaryPositionalDescription": {
                     "locationDescription": "M5 southbound between J14 and J13"
                   }

@@ -50,6 +50,11 @@
     color: white;
 }
 
+.flood-map-marker-incident .flood-map-marker-inner {
+    background: #2563eb;
+    color: white;
+}
+
 /* Map legend/key */
 .flood-map-legend-icon {
     display: inline-flex;

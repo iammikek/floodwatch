@@ -235,6 +235,7 @@
                                 center: @js($mapCenter),
                                 stations: @js($riverLevels),
                                 floods: @js($floods),
+                                incidents: @js($incidents),
                                 hasUser: @js($hasUserLocation),
                                 map: null,
                                 userIcon() {
@@ -294,6 +295,21 @@
                                         weight: 2
                                     };
                                 },
+                                incidentIcon(i) {
+                                    return L.divIcon({
+                                        className: 'flood-map-marker flood-map-marker-incident',
+                                        html: '<span class=\'flood-map-marker-inner\' title=\'Road incident\'>🛣</span>',
+                                        iconSize: [26, 26],
+                                        iconAnchor: [13, 13]
+                                    });
+                                },
+                                incidentPopup(i) {
+                                    let html = '<b>' + (i.road || 'Road') + '</b>';
+                                    if (i.status) html += '<br>' + i.status;
+                                    if (i.incidentType) html += '<br>' + i.incidentType;
+                                    if (i.delayTime) html += '<br><small>' + i.delayTime + '</small>';
+                                    return html;
+                                },
                                 init() {
                                     if (!this.center) return;
                                     this.$nextTick(() => {
@@ -336,6 +352,13 @@
                                                         .bindPopup(this.floodPopup(f));
                                                 }
                                             });
+                                            (this.incidents || []).forEach(i => {
+                                                if (i.lat != null && i.long != null) {
+                                                    L.marker([i.lat, i.long], { icon: this.incidentIcon(i) })
+                                                        .addTo(this.map)
+                                                        .bindPopup(this.incidentPopup(i));
+                                                }
+                                            });
                                             this.map.invalidateSize();
                                         });
                                     });
@@ -367,6 +390,7 @@
                                 <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon">⚙</span> Pumping station</span>
                                 <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon">🛡</span> Barrier</span>
                                 <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon">〰</span> Drain</span>
+                                <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon flood-map-marker-incident">🛣</span> Road incident</span>
                                 <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon flood-map-legend-flood">⚠</span> Flood warning</span>
                                 <span class="flex items-center gap-1.5"><span class="flood-map-legend-polygon" style="display:inline-block;width:12px;height:12px;background:#f59e0b;opacity:0.4;border:1px solid #f59e0b;border-radius:2px"></span> Flood area</span>
                                 <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon flood-map-legend-elevated">●</span> Elevated</span>

@@ -75,6 +75,23 @@ test('toArray returns correct structure', function () {
     ]);
 });
 
+test('fromArray and toArray include lat and long when present', function () {
+    $data = [
+        'road' => 'A361',
+        'status' => 'closed',
+        'incidentType' => 'flooding',
+        'delayTime' => '30 mins',
+        'lat' => 51.04,
+        'long' => -2.83,
+    ];
+
+    $incident = RoadIncident::fromArray($data);
+    $arr = $incident->toArray();
+
+    expect($arr['lat'])->toBe(51.04);
+    expect($arr['long'])->toBe(-2.83);
+});
+
 test('round trip fromArray toArray preserves data', function () {
     $data = [
         'road' => 'M5',

@@ -136,21 +136,107 @@ class NationalHighwaysService
      * Extract flat incident data from a sitRoadOrCarriagewayOrLaneManagement record.
      *
      * @param  array<string, mixed>  $sit
-     * @return array{road: string, status: string, incidentType: string, delayTime: string}
+     * @return array{road: string, status: string, incidentType: string, delayTime: string, lat?: float, long?: float}
      */
     private function extractIncidentFromDatexRecord(array $sit): array
     {
-        $road = $this->extractRoadName($sit['locationReference'] ?? []);
+        $locationRef = $sit['locationReference'] ?? [];
+        $road = $this->extractRoadName($locationRef);
         $status = $sit['validity']['validityStatus'] ?? '';
         $incidentType = $this->extractIncidentType($sit);
         $delayTime = $this->extractComment($sit['generalPublicComment'] ?? []);
+        $coords = $this->extractCoordinates($locationRef) ?? $this->fallbackCoordinatesForRoad($road);
 
-        return [
+        $flat = [
             'road' => is_string($road) ? $road : '',
             'status' => is_string($status) ? $status : '',
             'incidentType' => is_string($incidentType) ? $incidentType : '',
             'delayTime' => is_string($delayTime) ? $delayTime : '',
         ];
+        if ($coords !== null) {
+            $flat['lat'] = $coords[0];
+            $flat['long'] = $coords[1];
+        }
+
+        return $flat;
+    }
+
+    /**
+     * Extract a representative point (lat, long) from locationReference for map display.
+     * Uses pointCoordinates when available, otherwise midpoint of posList.
+     *
+     * @param  array<string, mixed>  $locationRef
+     * @return array{0: float, 1: float}|null
+     */
+    private function extractCoordinates(array $locationRef): ?array
+    {
+        $point = $locationRef['locPointLocation']['pointByCoordinates']['pointCoordinates'] ?? null;
+        if (is_array($point) && isset($point['latitude'], $point['longitude'])) {
+            return [(float) $point['latitude'], (float) $point['longitude']];
+        }
+
+        $posList = $locationRef['locLinearLocation']['gmlLineString']['locGmlLineString']['posList'] ?? null;
+        if (is_string($posList) && $posList !== '') {
+            return $this->posListToPoint($posList);
+        }
+
+        $groups = $locationRef['locLocationGroupByList']['locationContainedInGroup'] ?? [];
+        foreach ((array) $groups as $group) {
+            if (! is_array($group)) {
+                continue;
+            }
+            $posList = $group['locLinearLocation']['gmlLineString']['locGmlLineString']['posList'] ?? null;
+            if (is_string($posList) && $posList !== '') {
+                return $this->posListToPoint($posList);
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Parse GML posList "lat long lat long ..." to first point [lat, long].
+     *
+     * @return array{0: float, 1: float}|null
+     */
+    private function posListToPoint(string $posList): ?array
+    {
+        $parts = preg_split('/\s+/', trim($posList), -1, PREG_SPLIT_NO_EMPTY);
+        if ($parts === false || count($parts) < 2) {
+            return null;
+        }
+        $coords = array_map('floatval', $parts);
+
+        return [$coords[0], $coords[1]];
+    }
+
+    /**
+     * Fallback coordinates when API does not return geometry. Uses config for known South West roads.
+     *
+     * @return array{0: float, 1: float}|null
+     */
+    private function fallbackCoordinatesForRoad(string $road): ?array
+    {
+        $baseRoad = $this->extractBaseRoad($road);
+        if ($baseRoad === '') {
+            return null;
+        }
+        $lookup = config('flood-watch.incident_road_coordinates', []);
+        $coords = $lookup[$baseRoad] ?? null;
+        if (is_array($coords) && count($coords) >= 2) {
+            return [(float) $coords[0], (float) $coords[1]];
+        }
+
+        return null;
+    }
+
+    private function extractBaseRoad(string $roadOrKeyRoute): string
+    {
+        if (preg_match('/^([AM]\d+[A-Z]?)/', trim($roadOrKeyRoute), $m)) {
+            return $m[1];
+        }
+
+        return '';
     }
 
     /**

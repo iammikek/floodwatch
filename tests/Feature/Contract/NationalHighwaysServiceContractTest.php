@@ -34,10 +34,18 @@ class NationalHighwaysServiceContractTest extends TestCase
         $this->assertSame('closed', $result[0]['status']);
         $this->assertSame('flooding', $result[0]['incidentType']);
         $this->assertSame('A361 closed due to flooding - 30 minutes delay', $result[0]['delayTime']);
+        $this->assertArrayHasKey('lat', $result[0]);
+        $this->assertArrayHasKey('long', $result[0]);
+        $this->assertEqualsWithDelta(51.04, $result[0]['lat'], 0.01);
+        $this->assertEqualsWithDelta(-2.83, $result[0]['long'], 0.01);
 
         $this->assertSame('M5', $result[1]['road']);
         $this->assertSame('active', $result[1]['status']);
         $this->assertSame('laneClosures', $result[1]['incidentType']);
         $this->assertSame('15 mins delay', $result[1]['delayTime']);
+        $this->assertArrayHasKey('lat', $result[1]);
+        $this->assertArrayHasKey('long', $result[1]);
+        $this->assertEqualsWithDelta(52.77, $result[1]['lat'], 0.01);
+        $this->assertEqualsWithDelta(-2.11, $result[1]['long'], 0.01);
     }
 }

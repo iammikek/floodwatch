@@ -221,6 +221,27 @@ return [
         'A30', 'A303', 'A361', 'A372', 'A38', 'M4', 'M5',
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Fallback Coordinates for Road Incidents (Map Display)
+    |--------------------------------------------------------------------------
+    |
+    | When the National Highways API does not return geometry (posList), use
+    | these approximate center points for South West roads so incidents still
+    | appear on the map. Format: road => [lat, long].
+    |
+    */
+
+    'incident_road_coordinates' => [
+        'A361' => [51.04, -2.83],
+        'A372' => [51.07, -2.90],
+        'A30' => [50.72, -3.53],
+        'A303' => [51.02, -2.44],
+        'A38' => [50.72, -3.53],
+        'M5' => [51.45, -2.58],
+        'M4' => [51.45, -2.58],
+    ],
+
     'correlation' => [
         'somerset' => [
             'flood_area_road_pairs' => [
