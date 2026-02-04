@@ -38,6 +38,10 @@ class NationalHighwaysServiceContractTest extends TestCase
         $this->assertArrayHasKey('long', $result[0]);
         $this->assertEqualsWithDelta(51.04, $result[0]['lat'], 0.01);
         $this->assertEqualsWithDelta(-2.83, $result[0]['long'], 0.01);
+        $this->assertSame('2025-03-14T08:00:00.0000000+00:00', $result[0]['startTime']);
+        $this->assertSame('2025-03-15T06:00:00.0000000+00:00', $result[0]['endTime']);
+        $this->assertSame('roadClosed', $result[0]['managementType']);
+        $this->assertTrue($result[0]['isFloodRelated'] ?? false);
 
         $this->assertSame('M5', $result[1]['road']);
         $this->assertSame('active', $result[1]['status']);
@@ -47,5 +51,9 @@ class NationalHighwaysServiceContractTest extends TestCase
         $this->assertArrayHasKey('long', $result[1]);
         $this->assertEqualsWithDelta(52.77, $result[1]['lat'], 0.01);
         $this->assertEqualsWithDelta(-2.11, $result[1]['long'], 0.01);
+        $this->assertSame('2025-03-21T06:01:57.0000000+00:00', $result[1]['startTime']);
+        $this->assertSame('2025-03-21T06:16:57.0000000+00:00', $result[1]['endTime']);
+        $this->assertSame('M5 southbound between J14 and J13', $result[1]['locationDescription']);
+        $this->assertSame('laneClosures', $result[1]['managementType']);
     }
 }

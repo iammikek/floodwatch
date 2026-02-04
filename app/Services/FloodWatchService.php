@@ -303,9 +303,11 @@ class FloodWatchService
                 $args['long'] ?? null,
                 $args['radius_km'] ?? null
             ),
-            'GetHighwaysIncidents' => $this->filterIncidentsByRegion(
-                $this->highwaysService->getIncidents(),
-                $context['region'] ?? null
+            'GetHighwaysIncidents' => $this->sortIncidentsByPriority(
+                $this->filterIncidentsByRegion(
+                    $this->highwaysService->getIncidents(),
+                    $context['region'] ?? null
+                )
             ),
             'GetFloodForecast' => $this->forecastService->getForecast(),
             'GetRiverLevels' => $this->riverLevelService->getLevels(
@@ -491,6 +493,32 @@ class FloodWatchService
         }
 
         return $messages;
+    }
+
+    /**
+     * Sort incidents by priority: flood-related first, then roadClosed before laneClosures.
+     *
+     * @param  array<int, array<string, mixed>>  $incidents
+     * @return array<int, array<string, mixed>>
+     */
+    private function sortIncidentsByPriority(array $incidents): array
+    {
+        usort($incidents, function (array $a, array $b): int {
+            $aFlood = (bool) ($a['isFloodRelated'] ?? false);
+            $bFlood = (bool) ($b['isFloodRelated'] ?? false);
+            if ($aFlood !== $bFlood) {
+                return $aFlood ? -1 : 1;
+            }
+            $aClosed = ($a['managementType'] ?? '') === 'roadClosed';
+            $bClosed = ($b['managementType'] ?? '') === 'roadClosed';
+            if ($aClosed !== $bClosed) {
+                return $aClosed ? -1 : 1;
+            }
+
+            return 0;
+        });
+
+        return array_values($incidents);
     }
 
     /**

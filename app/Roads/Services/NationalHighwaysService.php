@@ -136,7 +136,7 @@ class NationalHighwaysService
      * Extract flat incident data from a sitRoadOrCarriagewayOrLaneManagement record.
      *
      * @param  array<string, mixed>  $sit
-     * @return array{road: string, status: string, incidentType: string, delayTime: string, lat?: float, long?: float}
+     * @return array{road: string, status: string, incidentType: string, delayTime: string, lat?: float, long?: float, startTime?: string, endTime?: string, locationDescription?: string, managementType?: string, isFloodRelated?: bool}
      */
     private function extractIncidentFromDatexRecord(array $sit): array
     {
@@ -146,6 +146,14 @@ class NationalHighwaysService
         $incidentType = $this->extractIncidentType($sit);
         $delayTime = $this->extractComment($sit['generalPublicComment'] ?? []);
         $coords = $this->extractCoordinates($locationRef) ?? $this->fallbackCoordinatesForRoad($road);
+
+        $validitySpec = $sit['validity']['validityTimeSpecification'] ?? [];
+        $startTime = $validitySpec['overallStartTime'] ?? null;
+        $endTime = $validitySpec['overallEndTime'] ?? null;
+
+        $locationDescription = $this->extractLocationDescription($locationRef);
+        $managementType = $sit['roadOrCarriagewayOrLaneManagementType']['value'] ?? null;
+        $isFloodRelated = $this->isFloodRelatedIncident($sit, $incidentType);
 
         $flat = [
             'road' => is_string($road) ? $road : '',
@@ -157,8 +165,72 @@ class NationalHighwaysService
             $flat['lat'] = $coords[0];
             $flat['long'] = $coords[1];
         }
+        if (is_string($startTime) && $startTime !== '') {
+            $flat['startTime'] = $startTime;
+        }
+        if (is_string($endTime) && $endTime !== '') {
+            $flat['endTime'] = $endTime;
+        }
+        if (is_string($locationDescription) && $locationDescription !== '') {
+            $flat['locationDescription'] = $locationDescription;
+        }
+        if (is_string($managementType) && $managementType !== '') {
+            $flat['managementType'] = $managementType;
+        }
+        if ($isFloodRelated) {
+            $flat['isFloodRelated'] = true;
+        }
 
         return $flat;
+    }
+
+    /**
+     * @param  array<string, mixed>  $locationRef
+     */
+    private function extractLocationDescription(array $locationRef): string
+    {
+        $linearLoc = $locationRef['locLinearLocation'] ?? [];
+        $desc = $linearLoc['supplementaryPositionalDescription']['locationDescription'] ?? null;
+        if (is_string($desc) && $desc !== '') {
+            return $desc;
+        }
+
+        $groups = $locationRef['locLocationGroupByList']['locationContainedInGroup'] ?? [];
+        foreach ((array) $groups as $group) {
+            if (! is_array($group)) {
+                continue;
+            }
+            $linearLoc = $group['locLinearLocation'] ?? [];
+            $desc = $linearLoc['supplementaryPositionalDescription']['locationDescription'] ?? null;
+            if (is_string($desc) && $desc !== '') {
+                return $desc;
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * @param  array<string, mixed>  $sit
+     */
+    private function isFloodRelatedIncident(array $sit, string $incidentType): bool
+    {
+        if (str_contains(strtolower($incidentType), 'flooding')) {
+            return true;
+        }
+
+        $detailed = $sit['cause']['detailedCauseType'] ?? [];
+        if (is_array($detailed)) {
+            $envType = $detailed['environmentalObstructionType'] ?? null;
+            if (is_string($envType) && strtolower($envType) === 'flooding') {
+                return true;
+            }
+            if (is_array($envType) && isset($envType[0]) && strtolower((string) $envType[0]) === 'flooding') {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

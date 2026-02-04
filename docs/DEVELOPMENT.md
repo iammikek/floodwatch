@@ -20,6 +20,9 @@ Backlog, milestones, and future work for the Flood Watch project.
 | Priority | Item | Notes |
 |----------|------|-------|
 | High | Parallelize pre-fetch | Use `Concurrency::run()` for forecast, weather, river levels to reduce latency |
+| High | National Rail integration | LDB API, Rail Status section, GetRailDisruption tool – see `docs/DATA_SOURCES.md` |
+| Medium | Road data relevance | Filter by flood-relevance, cascading prompt – see `docs/ROAD_DATA_STRATEGY.md` |
+| Medium | Expand predictive rules | Curry Moor, Salt Moor, Thorney, Devon cut-off areas – see `docs/ROAD_DATA_STRATEGY.md` |
 | Medium | Queue-based async | Move `FloodWatchService::chat()` to a job for high-traffic scenarios; poll for results |
 | Medium | Polygon limit tuning | Adjust `flood-watch.environment_agency.max_polygons_per_request` based on real usage |
 | Low | Additional regions | Extend beyond South West if needed |
@@ -42,3 +45,6 @@ Backlog, milestones, and future work for the Flood Watch project.
 - Architecture: `docs/ARCHITECTURE.md`
 - Case study: `CASE_STUDY.md`
 - AI agents: `AGENTS.md`
+- Next steps: `docs/NEXT_STEPS.md`
+- Road data strategy: `docs/ROAD_DATA_STRATEGY.md`
+- Other data sources: `docs/DATA_SOURCES.md`

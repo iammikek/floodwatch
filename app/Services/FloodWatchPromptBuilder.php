@@ -73,7 +73,7 @@ class FloodWatchPromptBuilder
                 'type' => 'function',
                 'function' => [
                     'name' => 'GetHighwaysIncidents',
-                    'description' => 'Fetch road and lane closure incidents from National Highways for South West routes (M5, A38, A30, A303, A361, A372, etc.). Returns status, delay time, and incident type.',
+                    'description' => 'Fetch road and lane closure incidents from National Highways for South West routes (M5, A38, A30, A303, A361, A372, etc.). Returns road, status, incidentType, delayTime, startTime, endTime, locationDescription (e.g. "M5 southbound between J14 and J13"), managementType (roadClosed or laneClosures), and isFloodRelated. Flooding-related incidents are prioritised.',
                     'parameters' => [
                         'type' => 'object',
                         'properties' => (object) [],
