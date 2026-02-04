@@ -1,5 +1,5 @@
 <div
-    class="min-h-screen bg-slate-50 dark:bg-slate-900 p-6"
+    class="min-h-screen bg-slate-50 dark:bg-slate-900 p-4 sm:p-6 pb-safe"
     x-data="{
         init() {
             const storedLoc = localStorage.getItem('flood-watch-location');
@@ -41,7 +41,7 @@
     }"
     x-init="init()"
 >
-    <div class="max-w-2xl mx-auto">
+    <div class="max-w-2xl mx-auto w-full">
         <h1 class="text-2xl font-semibold text-slate-900 dark:text-white mb-6">
             Flood Watch
         </h1>
@@ -49,36 +49,43 @@
             Enter your location and we'll use AI to collate flood warnings, river levels, road incidents and forecasts into a single summary. We cross-reference Environment Agency flood data with National Highways road status so you can see how flooding affects travel in Bristol, Somerset, Devon and Cornwall.
         </p>
 
-        <div class="flex flex-wrap gap-3 mb-6">
+        <div class="flex flex-nowrap sm:flex-wrap gap-2 sm:gap-3 mb-6 overflow-x-auto pb-1 -mx-1 scrollbar-hide">
             @php
                 $hasResults = !$loading && $assistantResponse;
                 $floodStatus = $hasResults ? (count($floods) > 0 ? count($floods) . ' ' . Str::plural('warning', count($floods)) : 'No alerts') : null;
                 $roadStatus = $hasResults ? (count($incidents) > 0 ? count($incidents) . ' ' . Str::plural('incident', count($incidents)) : 'Clear') : null;
                 $forecastStatus = $hasResults ? (!empty($forecast['england_forecast']) ? 'Available' : '—') : null;
                 $weatherStatus = $hasResults ? (count($weather) > 0 ? count($weather) . ' days' : '—') : null;
+                $riverStatus = $hasResults ? (count($riverLevels) > 0 ? count($riverLevels) . ' stations' : '—') : null;
             @endphp
-            <a href="#flood-risk" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors {{ $hasResults ? 'cursor-pointer' : 'pointer-events-none cursor-default' }}">
+            <a href="#flood-risk" class="inline-flex items-center gap-1.5 px-3 py-2 sm:py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-900/50 transition-colors shrink-0 {{ $hasResults ? 'cursor-pointer' : 'pointer-events-none cursor-default' }}">
                 Flood Risk
                 @if($floodStatus)
                     <span class="opacity-90">· {{ $floodStatus }}</span>
                 @endif
             </a>
-            <a href="#road-status" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors {{ $hasResults ? 'cursor-pointer' : 'pointer-events-none cursor-default' }}">
+            <a href="#road-status" class="inline-flex items-center gap-1.5 px-3 py-2 sm:py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors shrink-0 {{ $hasResults ? 'cursor-pointer' : 'pointer-events-none cursor-default' }}">
                 Road Status
                 @if($roadStatus)
                     <span class="opacity-90">· {{ $roadStatus }}</span>
                 @endif
             </a>
-            <a href="#forecast" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-colors {{ $hasResults ? 'cursor-pointer' : 'pointer-events-none cursor-default' }}">
+            <a href="#forecast" class="inline-flex items-center gap-1.5 px-3 py-2 sm:py-1 rounded-full text-sm font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-colors shrink-0 {{ $hasResults ? 'cursor-pointer' : 'pointer-events-none cursor-default' }}">
                 5-Day Forecast
                 @if($forecastStatus)
                     <span class="opacity-90">· {{ $forecastStatus }}</span>
                 @endif
             </a>
-            <a href="#weather" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-400 hover:bg-sky-200 dark:hover:bg-sky-900/50 transition-colors {{ $hasResults ? 'cursor-pointer' : 'pointer-events-none cursor-default' }}">
+            <a href="#weather" class="inline-flex items-center gap-1.5 px-3 py-2 sm:py-1 rounded-full text-sm font-medium bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-400 hover:bg-sky-200 dark:hover:bg-sky-900/50 transition-colors shrink-0 {{ $hasResults ? 'cursor-pointer' : 'pointer-events-none cursor-default' }}">
                 Weather
                 @if($weatherStatus)
                     <span class="opacity-90">· {{ $weatherStatus }}</span>
+                @endif
+            </a>
+            <a href="#map-section" class="inline-flex items-center gap-1.5 px-3 py-2 sm:py-1 rounded-full text-sm font-medium bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors shrink-0 {{ $hasResults ? 'cursor-pointer' : 'pointer-events-none cursor-default' }}">
+                Map
+                @if($riverStatus)
+                    <span class="opacity-90">· {{ $riverStatus }}</span>
                 @endif
             </a>
         </div>
@@ -87,20 +94,20 @@
             <label for="location" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                 Your location
             </label>
-            <div class="flex gap-2">
+            <div class="flex flex-col sm:flex-row gap-2">
                 <input
                     type="text"
                     id="location"
                     wire:model="location"
                     placeholder="e.g. Langport, TA10 0, Bristol"
-                    class="block flex-1 rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    class="block flex-1 min-h-[44px] rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base sm:text-sm"
                 />
                 <button
                     type="button"
                     wire:click="search"
                     wire:loading.attr="disabled"
                     @if($retryAfterTimestamp && !$this->canRetry()) disabled @endif
-                    class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    class="min-h-[44px] inline-flex items-center justify-center gap-2 px-5 py-3 sm:py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <span wire:loading.remove wire:target="search">Check status</span>
                     <span wire:loading wire:target="search" class="inline-flex items-center gap-2">
@@ -152,12 +159,35 @@
         @endif
 
         @if (!$loading && $assistantResponse)
-            <div class="space-y-6 scroll-smooth" id="results">
-                @if ($lastChecked)
-                    <p class="text-sm text-slate-500 dark:text-slate-400">
-                        Last checked: {{ \Carbon\Carbon::parse($lastChecked)->format('j M Y, g:i a') }}
-                    </p>
-                @endif
+            <div
+                class="space-y-6 scroll-smooth"
+                id="results"
+                @if (!$error) wire:poll.5m="search" @endif
+            >
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    @if ($lastChecked)
+                        <p class="text-sm text-slate-500 dark:text-slate-400">
+                            Last checked: {{ \Carbon\Carbon::parse($lastChecked)->format('j M Y, g:i a') }}
+                            <span class="text-slate-400 dark:text-slate-500">· Auto-refresh every 5 min</span>
+                        </p>
+                    @endif
+                    <button
+                        type="button"
+                        wire:click="search"
+                        wire:loading.attr="disabled"
+                        @if($retryAfterTimestamp && !$this->canRetry()) disabled @endif
+                        class="min-h-[44px] min-w-[44px] inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
+                    >
+                        <span wire:loading.remove wire:target="search">↻ Refresh</span>
+                        <span wire:loading wire:target="search" class="inline-flex items-center gap-2">
+                            <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Refreshing...
+                        </span>
+                    </button>
+                </div>
 
                 @if ($mapCenter)
                     <div id="map-section" class="rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
@@ -264,7 +294,22 @@
                             }"
                             x-init="init()"
                         >
-                            <div id="flood-map" class="h-64 w-full bg-slate-100 dark:bg-slate-800"></div>
+                            <div id="flood-map" class="h-72 sm:h-80 md:h-96 w-full bg-slate-100 dark:bg-slate-800"></div>
+                            @if (count($incidents) > 0)
+                                <div class="px-3 py-2 bg-blue-50/50 dark:bg-blue-900/10 border-t border-slate-200 dark:border-slate-700">
+                                    <p class="text-xs font-medium text-blue-800 dark:text-blue-300 mb-1.5">Road incidents on map area</p>
+                                    <div class="flex flex-wrap gap-2">
+                                        @foreach ($incidents as $incident)
+                                            <span class="inline-flex items-center gap-1 px-2 py-1 rounded text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
+                                                <span class="font-medium">{{ $incident['road'] ?? 'Road' }}</span>
+                                                @if (!empty($incident['status']))
+                                                    <span>· {{ $incident['status'] }}</span>
+                                                @endif
+                                            </span>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
                             <div class="flex flex-wrap gap-x-4 gap-y-2 px-3 py-2 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-400">
                                 @if ($hasUserLocation)
                                     <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon flood-map-legend-user">📍</span> Your location</span>
@@ -345,9 +390,9 @@
                 <div id="weather">
                     <h2 class="text-lg font-medium text-slate-900 dark:text-white mb-3">5-day weather forecast</h2>
                     @if (count($weather) > 0)
-                        <div class="flex flex-nowrap gap-3 overflow-x-auto">
+                        <div class="flex flex-nowrap gap-3 overflow-x-auto pb-2 -mx-1 scrollbar-hide">
                             @foreach ($weather as $day)
-                                <div class="flex-1 min-w-[7rem] p-4 rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 text-center">
+                                <div class="flex-1 min-w-[6.5rem] sm:min-w-[7rem] p-4 rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 text-center shrink-0">
                                     <p class="text-sm font-medium text-slate-600 dark:text-slate-400">
                                         {{ \Carbon\Carbon::parse($day['date'])->format('D j M') }}
                                     </p>
