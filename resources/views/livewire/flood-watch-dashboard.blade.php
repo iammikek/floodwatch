@@ -2,9 +2,16 @@
     class="min-h-screen bg-slate-50 dark:bg-slate-900 p-6"
     x-data="{
         init() {
-            const stored = localStorage.getItem('flood-watch-location');
-            if (stored) {
-                $wire.set('location', stored);
+            const storedLoc = localStorage.getItem('flood-watch-location');
+            if (storedLoc) {
+                $wire.set('location', storedLoc);
+            }
+            const storedResults = localStorage.getItem('flood-watch-results');
+            if (storedResults) {
+                try {
+                    const data = JSON.parse(storedResults);
+                    $wire.restoreFromStorage(data);
+                } catch (e) {}
             }
             Livewire.on('search-completed', () => {
                 const loc = $wire.location;
@@ -12,15 +19,19 @@
                     localStorage.setItem('flood-watch-location', loc);
                 }
                 try {
+                    const floods = ($wire.floods || []).map(f => {
+                        const { polygon, ...rest } = f;
+                        return rest;
+                    });
                     const results = {
                         assistantResponse: $wire.assistantResponse,
-                        floods: $wire.floods,
-                        incidents: $wire.incidents,
-                        forecast: $wire.forecast,
-                        weather: $wire.weather,
-                        riverLevels: $wire.riverLevels,
+                        floods: floods,
+                        incidents: $wire.incidents || [],
+                        forecast: $wire.forecast || [],
+                        weather: $wire.weather || [],
+                        riverLevels: $wire.riverLevels || [],
                         mapCenter: $wire.mapCenter,
-                        hasUserLocation: $wire.hasUserLocation,
+                        hasUserLocation: $wire.hasUserLocation || false,
                         lastChecked: $wire.lastChecked
                     };
                     localStorage.setItem('flood-watch-results', JSON.stringify(results));
@@ -35,7 +46,7 @@
             Flood Watch
         </h1>
         <p class="text-slate-600 dark:text-slate-400 mb-6">
-            South West flood and road status. Ask the assistant to check current conditions for Bristol, Somerset, Devon or Cornwall.
+            Enter your location and we'll use AI to collate flood warnings, river levels, road incidents and forecasts into a single summary. We cross-reference Environment Agency flood data with National Highways road status so you can see how flooding affects travel in Bristol, Somerset, Devon and Cornwall.
         </p>
 
         <div class="flex flex-wrap gap-3 mb-6">
@@ -74,7 +85,7 @@
 
         <div class="mb-6">
             <label for="location" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                Location or postcode (optional)
+                Your location
             </label>
             <div class="flex gap-2">
                 <input
@@ -134,9 +145,9 @@
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                <p class="text-slate-600 dark:text-slate-400 text-sm" wire:stream.replace="searchStatus">
-                    Starting...
-                </p>
+                <div class="text-slate-600 dark:text-slate-400 text-sm space-y-1" wire:stream.replace="searchStatus">
+                    Connecting...
+                </div>
             </div>
         @endif
 
@@ -384,7 +395,7 @@
                 </div>
             </div>
         @elseif (!$loading && !$error)
-            <p class="text-slate-500 dark:text-slate-400 text-sm">Enter a location or postcode, or click "Check status" to get flood and road data for the South West.</p>
+            <p class="text-slate-500 dark:text-slate-400 text-sm">Enter your location (postcode or place name) and click "Check status" to get a personalised flood and road summary.</p>
         @endif
 
         <footer class="mt-12 pt-6 border-t border-slate-200 dark:border-slate-700">

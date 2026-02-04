@@ -24,6 +24,7 @@
         <env name="BROADCAST_CONNECTION" value="null"/>
         <env name="CACHE_STORE" value="array"/>
         <env name="FLOOD_WATCH_CACHE_STORE" value="flood-watch-array"/>
+        <env name="FLOOD_WATCH_TRENDS_ENABLED" value="false"/>
         <env name="DB_DATABASE" value="testing"/>
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>

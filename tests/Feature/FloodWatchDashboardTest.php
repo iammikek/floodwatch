@@ -30,7 +30,7 @@ class FloodWatchDashboardTest extends TestCase
     public function test_flood_watch_dashboard_has_location_input(): void
     {
         Livewire::test('flood-watch-dashboard')
-            ->assertSee('Location or postcode', false)
+            ->assertSee('Your location', false)
             ->assertSet('location', '');
     }
 
@@ -215,7 +215,7 @@ class FloodWatchDashboardTest extends TestCase
     {
         Livewire::test('flood-watch-dashboard')
             ->set('loading', true)
-            ->assertSee('Starting')
+            ->assertSee('Connecting')
             ->assertSee('animate-spin');
     }
 

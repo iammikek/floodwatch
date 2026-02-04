@@ -85,6 +85,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Trends (Redis)
+    |--------------------------------------------------------------------------
+    |
+    | Store search results in Redis for trend analysis. Set to false to disable.
+    | Retention days: how long to keep trend records.
+    |
+    */
+
+    'trends_enabled' => env('FLOOD_WATCH_TRENDS_ENABLED', true),
+    'trends_retention_days' => (int) env('FLOOD_WATCH_TRENDS_RETENTION_DAYS', 30),
+    'trends_key' => env('FLOOD_WATCH_TRENDS_KEY', 'flood-watch:trends'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Region-Specific Prompts
     |--------------------------------------------------------------------------
     |

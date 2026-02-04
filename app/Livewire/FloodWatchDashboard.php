@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Services\FloodWatchService;
+use App\Services\FloodWatchTrendService;
 use App\Services\LocationResolver;
 use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Layout;
@@ -56,16 +57,23 @@ class FloodWatchDashboard extends Component
         }
     }
 
-    public function search(FloodWatchService $assistant, LocationResolver $locationResolver): void
+    public function search(FloodWatchService $assistant, LocationResolver $locationResolver, FloodWatchTrendService $trendService): void
     {
         $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'hasUserLocation', 'lastChecked', 'error', 'retryAfterTimestamp']);
         $this->loading = true;
 
         $locationTrimmed = trim($this->location);
+        $statusMessages = [];
+
+        $streamStatus = function (string $message) use (&$statusMessages): void {
+            $statusMessages[] = $message;
+            $content = implode('<br>', $statusMessages);
+            $this->stream(to: 'searchStatus', content: $content, replace: true);
+        };
 
         $validation = null;
         if ($locationTrimmed !== '') {
-            $this->stream(to: 'searchStatus', content: 'Looking up location...', replace: true);
+            $streamStatus('Looking up location...');
             $validation = $locationResolver->resolve($locationTrimmed);
             if (! $validation['valid']) {
                 $this->error = $validation['error'] ?? 'Invalid location.';
@@ -88,7 +96,7 @@ class FloodWatchDashboard extends Component
         $region = $validation['region'] ?? null;
 
         try {
-            $onProgress = fn (string $status) => $this->stream(to: 'searchStatus', content: $status, replace: true);
+            $onProgress = fn (string $status) => $streamStatus($status);
             $result = $assistant->chat($message, [], $cacheKey, $userLat, $userLong, $region, $onProgress);
             $this->assistantResponse = $result['response'];
             $this->floods = $this->enrichFloodsWithDistance(
@@ -105,6 +113,16 @@ class FloodWatchDashboard extends Component
             $this->mapCenter = ['lat' => $lat, 'long' => $long];
             $this->hasUserLocation = $userLat !== null && $userLong !== null;
             $this->lastChecked = $result['lastChecked'] ?? null;
+
+            $trendService->record(
+                $locationTrimmed !== '' ? $locationTrimmed : null,
+                $userLat,
+                $userLong,
+                $region,
+                count($this->floods),
+                count($this->incidents),
+                $this->lastChecked
+            );
 
             $this->dispatch('search-completed');
         } catch (\Throwable $e) {
@@ -256,6 +274,25 @@ class FloodWatchDashboard extends Component
         }
 
         return "Check flood and road status for {$label}{$coords} in the South West.";
+    }
+
+    /**
+     * Restore component state from client-side storage (e.g. localStorage).
+     * Called by the frontend when cached results exist.
+     *
+     * @param  array{assistantResponse?: string, floods?: array, incidents?: array, forecast?: array, weather?: array, riverLevels?: array, mapCenter?: array, hasUserLocation?: bool, lastChecked?: string}  $data
+     */
+    public function restoreFromStorage(array $data): void
+    {
+        $this->assistantResponse = is_string($data['assistantResponse'] ?? null) ? $data['assistantResponse'] : null;
+        $this->floods = is_array($data['floods'] ?? null) ? $data['floods'] : [];
+        $this->incidents = is_array($data['incidents'] ?? null) ? $data['incidents'] : [];
+        $this->forecast = is_array($data['forecast'] ?? null) ? $data['forecast'] : [];
+        $this->weather = is_array($data['weather'] ?? null) ? $data['weather'] : [];
+        $this->riverLevels = is_array($data['riverLevels'] ?? null) ? $data['riverLevels'] : [];
+        $this->mapCenter = is_array($data['mapCenter'] ?? null) ? $data['mapCenter'] : null;
+        $this->hasUserLocation = (bool) ($data['hasUserLocation'] ?? false);
+        $this->lastChecked = is_string($data['lastChecked'] ?? null) ? $data['lastChecked'] : null;
     }
 
     public function render()
