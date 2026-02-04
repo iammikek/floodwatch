@@ -17,6 +17,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | LLM Token Limits
+    |--------------------------------------------------------------------------
+    |
+    | Limits applied to tool results before sending to the LLM to avoid
+    | exceeding context length (128k tokens). Reduce these if you hit limits.
+    |
+    */
+
+    'llm_max_floods' => (int) env('FLOOD_WATCH_LLM_MAX_FLOODS', 25),
+    'llm_max_incidents' => (int) env('FLOOD_WATCH_LLM_MAX_INCIDENTS', 25),
+    'llm_max_river_levels' => (int) env('FLOOD_WATCH_LLM_MAX_RIVER_LEVELS', 15),
+    'llm_max_forecast_chars' => (int) env('FLOOD_WATCH_LLM_MAX_FORECAST_CHARS', 3000),
+    'llm_max_flood_message_chars' => (int) env('FLOOD_WATCH_LLM_MAX_FLOOD_MESSAGE_CHARS', 300),
+
+    /*
+    |--------------------------------------------------------------------------
     | Default Coordinates (Langport, South West)
     |--------------------------------------------------------------------------
     */

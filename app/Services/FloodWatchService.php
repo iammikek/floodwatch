@@ -314,8 +314,8 @@ class FloodWatchService
     }
 
     /**
-     * Prepare tool result for LLM consumption by stripping large/unnecessary data (e.g. GeoJSON polygons).
-     * Reduces token usage and avoids "Request too large" rate limit errors.
+     * Prepare tool result for LLM consumption by stripping large/unnecessary data and applying limits.
+     * Reduces token usage and avoids context length exceeded errors (128k tokens).
      */
     private function prepareToolResultForLlm(string $toolName, array|string $result): array|string
     {
@@ -324,10 +324,50 @@ class FloodWatchService
         }
 
         if ($toolName === 'GetFloodData') {
-            return array_map(
-                fn (array $flood) => FloodWarning::fromArray($flood)->withoutPolygon()->toArray(),
-                $result
-            );
+            $max = config('flood-watch.llm_max_floods', 25);
+            $maxMsg = config('flood-watch.llm_max_flood_message_chars', 300);
+            $floods = array_slice($result, 0, $max);
+            $out = [];
+            foreach ($floods as $flood) {
+                $arr = FloodWarning::fromArray($flood)->withoutPolygon()->toArray();
+                if (isset($arr['message']) && strlen($arr['message']) > $maxMsg) {
+                    $arr['message'] = substr($arr['message'], 0, $maxMsg).'…';
+                }
+                $out[] = $arr;
+            }
+
+            return $out;
+        }
+
+        if ($toolName === 'GetHighwaysIncidents') {
+            $max = config('flood-watch.llm_max_incidents', 25);
+
+            return array_slice($result, 0, $max);
+        }
+
+        if ($toolName === 'GetRiverLevels') {
+            $max = config('flood-watch.llm_max_river_levels', 15);
+
+            return array_slice($result, 0, $max);
+        }
+
+        if ($toolName === 'GetFloodForecast') {
+            $maxChars = config('flood-watch.llm_max_forecast_chars', 3000);
+            if (isset($result['england_forecast']) && strlen($result['england_forecast']) > $maxChars) {
+                $result['england_forecast'] = substr($result['england_forecast'], 0, $maxChars).'…';
+            }
+
+            return $result;
+        }
+
+        if ($toolName === 'GetCorrelationSummary') {
+            $max = config('flood-watch.llm_max_floods', 25);
+            $result['severe_floods'] = array_slice($result['severe_floods'] ?? [], 0, $max);
+            $result['flood_warnings'] = array_slice($result['flood_warnings'] ?? [], 0, $max);
+            $result['road_incidents'] = array_slice($result['road_incidents'] ?? [], 0, config('flood-watch.llm_max_incidents', 25));
+            $result['cross_references'] = array_slice($result['cross_references'] ?? [], 0, 20);
+
+            return $result;
         }
 
         return $result;

@@ -66,6 +66,12 @@ app/
 - **Circuit breaker**: Wired into all external API services (Environment Agency, Flood Forecast, River Level, National Highways, Weather). After N consecutive failures, the circuit opens and requests return empty until cooldown expires. Config: `flood-watch.circuit_breaker` (enabled, failure_threshold, cooldown_seconds). Set `FLOOD_WATCH_CIRCUIT_BREAKER_ENABLED=false` to disable.
 - **Cache**: `flood-watch.cache_key_prefix` ensures distinct keys across services
 
+### LLM Token Limits
+
+- Tool results are truncated before sending to the LLM to avoid exceeding context length (128k tokens).
+- Config: `flood-watch.llm_max_floods` (25), `llm_max_incidents` (25), `llm_max_river_levels` (15), `llm_max_forecast_chars` (3000), `llm_max_flood_message_chars` (300).
+- Reduce these via env vars (`FLOOD_WATCH_LLM_MAX_*`) if you still hit limits.
+
 ### Logging
 
 - **LogMasker**: Redacts user content, tool arguments, API responses before debug logs
