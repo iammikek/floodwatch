@@ -30,7 +30,7 @@ class PostcodeValidatorTest extends TestCase
         $this->assertStringContainsString('Invalid postcode format', $result['error']);
     }
 
-    public function test_valid_somerset_levels_postcode_passes(): void
+    public function test_valid_south_west_postcode_passes(): void
     {
         Http::fake([
             'api.postcodes.io/*' => Http::response([
@@ -59,7 +59,7 @@ class PostcodeValidatorTest extends TestCase
 
         $this->assertTrue($result['valid']);
         $this->assertFalse($result['in_area']);
-        $this->assertStringContainsString('outside the Somerset Levels', $result['error']);
+        $this->assertStringContainsString('outside the South West', $result['error']);
     }
 
     public function test_normalizes_postcode(): void

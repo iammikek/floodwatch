@@ -4,7 +4,7 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Default Coordinates (Langport, Somerset Levels)
+    | Default Coordinates (Langport, South West)
     |--------------------------------------------------------------------------
     */
 
@@ -32,6 +32,17 @@ return [
     'flood_forecast' => [
         'base_url' => env('FLOOD_FORECAST_URL', 'https://api.ffc-environment-agency.fgs.metoffice.gov.uk'),
         'timeout' => (int) env('FLOOD_FORECAST_TIMEOUT', 25),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Weather (Open-Meteo - free, no API key)
+    |--------------------------------------------------------------------------
+    */
+
+    'weather' => [
+        'base_url' => env('WEATHER_API_URL', 'https://api.open-meteo.com/v1'),
+        'timeout' => (int) env('WEATHER_API_TIMEOUT', 10),
     ],
 
     /*
@@ -72,14 +83,32 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Muchelney Rule (Prompt-Only)
+    | Region-Specific Prompts
     |--------------------------------------------------------------------------
     |
-    | The Muchelney rule is implemented via the system prompt: when River Parrett
-    | levels are rising, the LLM proactively warns about Muchelney access. No
-    | code-level threshold is required; the LLM correlates flood data with
-    | road status from the tools.
+    | Geographic guidance injected into the system prompt based on the user's
+    | postcode. Each region maps postcode areas (BS, BA, TA, etc.) to tailored
+    | flood/road correlation logic.
     |
     */
+
+    'regions' => [
+        'somerset' => [
+            'areas' => ['BA', 'TA'],
+            'prompt' => "**Somerset Levels focus**: Muchelney is prone to being cut off. If River Parrett levels are rising, warn about Muchelney access even if the Highways API has not updated (predictive warning). Cross-reference North Moor or King's Sedgemoor flood warnings with GetHighwaysIncidents for the A361 at East Lyng. Key routes: A361, A372, M5 J23–J25.",
+        ],
+        'bristol' => [
+            'areas' => ['BS'],
+            'prompt' => '**Bristol focus**: Key routes M5, M4, A38. Avonmouth and Severn estuary coastal flood risk. Cross-reference flood warnings with M5 and M4 junction incidents.',
+        ],
+        'devon' => [
+            'areas' => ['EX', 'TQ', 'PL'],
+            'prompt' => '**Devon focus**: Key routes A38, A30, A303, M5. Exeter (River Exe), Torbay, Plymouth (River Tamar, coastal) flood risk. Cross-reference flood warnings with A38 and A30 incidents.',
+        ],
+        'cornwall' => [
+            'areas' => ['TR'],
+            'prompt' => '**Cornwall focus**: Key routes A30, A38. Coastal and river flood risk, especially west Cornwall. Cross-reference flood warnings with A30 incidents.',
+        ],
+    ],
 
 ];

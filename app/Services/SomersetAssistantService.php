@@ -7,12 +7,12 @@ use OpenAI\Laravel\Facades\OpenAI;
 
 class SomersetAssistantService
 {
-    private const SYSTEM_PROMPT = <<<'PROMPT'
-You are the Somerset Emergency Assistant for the Somerset Levels (Sedgemoor and South Somerset). Your role is to correlate Environment Agency flood data with National Highways road status to provide a Single Source of Truth for flood and road viability.
+    private const BASE_PROMPT = <<<'PROMPT'
+You are the South West Emergency Assistant for Bristol, Somerset, Devon and Cornwall. Your role is to correlate Environment Agency flood data with National Highways road status to provide a Single Source of Truth for flood and road viability across the region.
 
-**Data Correlation**: If GetFloodData shows a warning for North Moor or King's Sedgemoor, immediately cross-reference GetHighwaysIncidents for the A361 at East Lyng.
+**Data Correlation**: Cross-reference flood warnings with road incidents. Apply region-specific logic (see below) for the user's area.
 
-**Contextual Awareness**: Muchelney is prone to being cut off. If River Parrett levels are rising, warn users about access to Muchelney even if the Highways API has not updated (predictive warning).
+**River and sea levels**: Use GetRiverLevels to fetch real-time water levels from monitoring stations (same data as check-for-flooding.service.gov.uk). Correlate rising levels with flood warnings and road status.
 
 **Predictive**: Use GetFloodForecast to include the 5-day flood risk outlook. Combine current flood warnings with the forecast trend (day1–day5) to give users forward-looking advice.
 
@@ -28,7 +28,9 @@ PROMPT;
     public function __construct(
         protected EnvironmentAgencyFloodService $floodService,
         protected NationalHighwaysService $highwaysService,
-        protected FloodForecastService $forecastService
+        protected FloodForecastService $forecastService,
+        protected WeatherService $weatherService,
+        protected RiverLevelService $riverLevelService
     ) {}
 
     /**
@@ -36,15 +38,16 @@ PROMPT;
      * Results are cached to avoid hammering the APIs. Use $cacheKey to scope the cache (e.g. postcode).
      *
      * @param  array<int, array{role: string, content: string}>  $conversation  Previous messages (optional)
-     * @return array{response: string, floods: array, incidents: array, forecast: array, lastChecked: string}
+     * @return array{response: string, floods: array, incidents: array, forecast: array, weather: array, lastChecked: string}
      */
-    public function chat(string $userMessage, array $conversation = [], ?string $cacheKey = null): array
+    public function chat(string $userMessage, array $conversation = [], ?string $cacheKey = null, ?float $userLat = null, ?float $userLong = null, ?string $region = null): array
     {
         $emptyResult = fn (string $response, ?string $lastChecked = null): array => [
             'response' => $response,
             'floods' => [],
             'incidents' => [],
             'forecast' => [],
+            'weather' => [],
             'lastChecked' => $lastChecked ?? now()->toIso8601String(),
         ];
 
@@ -63,8 +66,11 @@ PROMPT;
         }
 
         $forecast = $this->forecastService->getForecast();
+        $lat = $userLat ?? config('flood-watch.default_lat');
+        $long = $userLong ?? config('flood-watch.default_long');
+        $weather = $this->weatherService->getForecast($lat, $long);
 
-        $messages = $this->buildMessages($userMessage, $conversation);
+        $messages = $this->buildMessages($userMessage, $conversation, $region);
         $tools = $this->getToolDefinitions();
         $maxIterations = 8;
         $iteration = 0;
@@ -93,6 +99,7 @@ PROMPT;
                     'floods' => $floods,
                     'incidents' => $incidents,
                     'forecast' => $forecast,
+                    'weather' => $weather,
                 ]);
             }
 
@@ -102,6 +109,7 @@ PROMPT;
                     'floods' => $floods,
                     'incidents' => $incidents,
                     'forecast' => $forecast,
+                    'weather' => $weather,
                 ]);
             }
 
@@ -135,6 +143,20 @@ PROMPT;
         return $emptyResult('The assistant reached the maximum number of tool calls. Please try again.', now()->toIso8601String());
     }
 
+    private function buildSystemPrompt(?string $region): string
+    {
+        $prompt = self::BASE_PROMPT;
+
+        if ($region !== null && $region !== '') {
+            $regionConfig = config("flood-watch.regions.{$region}");
+            if (is_array($regionConfig) && ! empty($regionConfig['prompt'])) {
+                $prompt .= "\n\n**Region-specific guidance (user's location):**\n".$regionConfig['prompt'];
+            }
+        }
+
+        return $prompt;
+    }
+
     private function cacheKey(string $userMessage, ?string $cacheKey): string
     {
         if ($cacheKey !== null && $cacheKey !== '') {
@@ -145,8 +167,8 @@ PROMPT;
     }
 
     /**
-     * @param  array{response: string, floods: array, incidents: array, forecast: array}  $result
-     * @return array{response: string, floods: array, incidents: array, forecast: array, lastChecked: string}
+     * @param  array{response: string, floods: array, incidents: array, forecast: array, weather: array}  $result
+     * @return array{response: string, floods: array, incidents: array, forecast: array, weather: array, lastChecked: string}
      */
     private function storeAndReturn(string $cacheKey, array $result): array
     {
@@ -192,10 +214,12 @@ PROMPT;
      * @param  array<int, array{role: string, content: string}>  $conversation
      * @return array<int, array{role: string, content: string|null, tool_calls?: array}>
      */
-    private function buildMessages(string $userMessage, array $conversation): array
+    private function buildMessages(string $userMessage, array $conversation, ?string $region = null): array
     {
+        $systemPrompt = $this->buildSystemPrompt($region);
+
         $messages = [
-            ['role' => 'system', 'content' => self::SYSTEM_PROMPT],
+            ['role' => 'system', 'content' => $systemPrompt],
         ];
 
         foreach ($conversation as $msg) {
@@ -220,7 +244,7 @@ PROMPT;
                 'type' => 'function',
                 'function' => [
                     'name' => 'GetFloodData',
-                    'description' => 'Fetch current flood warnings from the Environment Agency for the Somerset Levels (River Parrett, River Tone, Langport, Muchelney, Burrowbridge). Use default coordinates (Langport 51.0358, -2.8318) unless the user specifies a postcode or location.',
+                    'description' => 'Fetch current flood warnings from the Environment Agency for the South West (Bristol, Somerset, Devon, Cornwall). Use the coordinates provided in the user message when a postcode is given; otherwise use default (Langport 51.0358, -2.8318).',
                     'parameters' => [
                         'type' => 'object',
                         'properties' => [
@@ -244,7 +268,7 @@ PROMPT;
                 'type' => 'function',
                 'function' => [
                     'name' => 'GetHighwaysIncidents',
-                    'description' => 'Fetch road and lane closure incidents from National Highways for Somerset Levels routes: A361, A372, M5 J23–J25. Returns status, delay time, and incident type.',
+                    'description' => 'Fetch road and lane closure incidents from National Highways for South West routes (M5, A38, A30, A303, A361, A372, etc.). Returns status, delay time, and incident type.',
                     'parameters' => [
                         'type' => 'object',
                         'properties' => (object) [],
@@ -255,10 +279,34 @@ PROMPT;
                 'type' => 'function',
                 'function' => [
                     'name' => 'GetFloodForecast',
-                    'description' => 'Fetch the latest 5-day flood risk forecast from the Flood Forecasting Centre. Returns England-wide outlook, risk trend (day1–day5), and source summaries (river, coastal, ground) including Somerset Levels.',
+                    'description' => 'Fetch the latest 5-day flood risk forecast from the Flood Forecasting Centre. Returns England-wide outlook, risk trend (day1–day5), and source summaries (river, coastal, ground) relevant to the South West.',
                     'parameters' => [
                         'type' => 'object',
                         'properties' => (object) [],
+                    ],
+                ],
+            ],
+            [
+                'type' => 'function',
+                'function' => [
+                    'name' => 'GetRiverLevels',
+                    'description' => 'Fetch real-time river and sea levels from Environment Agency monitoring stations. Same data source as check-for-flooding.service.gov.uk/river-and-sea-levels. Use coordinates from the user message when a postcode is given; otherwise use default (Langport 51.0358, -2.8318). Returns station name, river, town, current level and unit, and reading time.',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'lat' => [
+                                'type' => 'number',
+                                'description' => 'Latitude (default: 51.0358 for Langport)',
+                            ],
+                            'long' => [
+                                'type' => 'number',
+                                'description' => 'Longitude (default: -2.8318 for Langport)',
+                            ],
+                            'radius_km' => [
+                                'type' => 'integer',
+                                'description' => 'Search radius in km (default: 15)',
+                            ],
+                        ],
                     ],
                 ],
             ],
@@ -277,6 +325,11 @@ PROMPT;
             ),
             'GetHighwaysIncidents' => $this->highwaysService->getIncidents(),
             'GetFloodForecast' => $this->forecastService->getForecast(),
+            'GetRiverLevels' => $this->riverLevelService->getLevels(
+                $args['lat'] ?? null,
+                $args['long'] ?? null,
+                $args['radius_km'] ?? null
+            ),
             default => ['error' => "Unknown tool: {$name}"],
         };
     }

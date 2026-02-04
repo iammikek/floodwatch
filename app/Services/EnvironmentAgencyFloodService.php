@@ -40,6 +40,9 @@ class EnvironmentAgencyFloodService
             'severityLevel' => $item['severityLevel'] ?? 0,
             'message' => $item['message'] ?? '',
             'floodAreaID' => $item['floodAreaID'] ?? '',
+            'timeRaised' => $item['timeRaised'] ?? null,
+            'timeMessageChanged' => $item['timeMessageChanged'] ?? null,
+            'timeSeverityChanged' => $item['timeSeverityChanged'] ?? null,
         ], $items);
     }
 }

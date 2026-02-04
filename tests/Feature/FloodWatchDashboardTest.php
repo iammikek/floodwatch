@@ -103,7 +103,9 @@ class FloodWatchDashboardTest extends TestCase
             ->assertSet('floods', [])
             ->assertSet('incidents', [])
             ->assertSee('No active flood warnings')
-            ->assertSee('Roads are clear');
+            ->assertSee('Roads are clear')
+            ->assertSee('No alerts')
+            ->assertSee('Clear');
     }
 
     public function test_search_displays_flood_and_road_sections_separately(): void
@@ -312,7 +314,7 @@ class FloodWatchDashboardTest extends TestCase
         Livewire::test('flood-watch-dashboard')
             ->set('postcode', 'SW1A 1AA')
             ->call('search')
-            ->assertSet('error', 'This postcode is outside the Somerset Levels. Flood Watch currently covers Sedgemoor and South Somerset only.')
+            ->assertSet('error', 'This postcode is outside the South West. Flood Watch covers Bristol, Somerset, Devon and Cornwall.')
             ->assertSet('assistantResponse', null);
     }
 }

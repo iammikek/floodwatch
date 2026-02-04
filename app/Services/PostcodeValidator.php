@@ -17,16 +17,12 @@ class PostcodeValidator
     private const OUTCODE_ONLY_REGEX = '/^([A-Z]{1,2}[0-9][0-9A-Z]?)(?:\s+[0-9][A-Z]{0,2})?$/i';
 
     /**
-     * Outcode prefixes that fall within the Somerset Levels (Sedgemoor, South Somerset).
+     * Postcode area codes for the South West (Bristol, Somerset, Devon, Cornwall).
      */
-    private const SOMERSET_LEVELS_PREFIXES = [
-        'TA3', 'TA4', 'TA5', 'TA6', 'TA7', 'TA8', 'TA9', 'TA10', 'TA11',
-        'BA3', 'BA4', 'BA5', 'BA6', 'BA7', 'BA8', 'BA9',
-        'BS26', 'BS27', 'BS28',
-    ];
+    private const SOUTH_WEST_AREAS = ['BS', 'BA', 'TA', 'EX', 'TQ', 'PL', 'TR'];
 
     /**
-     * Validate and optionally geocode a UK postcode for the Somerset Levels.
+     * Validate and optionally geocode a UK postcode for the South West.
      *
      * @return array{valid: bool, in_area: bool, error?: string, lat?: float, long?: float, outcode?: string}
      */
@@ -51,13 +47,13 @@ class PostcodeValidator
         }
 
         $outcode = $this->extractOutcode($normalized);
-        $inArea = $this->isInSomersetLevels($outcode);
+        $inArea = $this->isInSouthWest($outcode);
 
         if (! $inArea) {
             return [
                 'valid' => true,
                 'in_area' => false,
-                'error' => 'This postcode is outside the Somerset Levels. Flood Watch currently covers Sedgemoor and South Somerset only.',
+                'error' => 'This postcode is outside the South West. Flood Watch covers Bristol, Somerset, Devon and Cornwall.',
                 'outcode' => $outcode,
             ];
         }
@@ -66,6 +62,7 @@ class PostcodeValidator
             'valid' => true,
             'in_area' => true,
             'outcode' => $outcode,
+            'region' => $this->getRegionFromOutcode($outcode),
         ];
 
         if ($geocode) {
@@ -94,11 +91,36 @@ class PostcodeValidator
         return (bool) preg_match(self::OUTCODE_ONLY_REGEX, $postcode);
     }
 
+    public function isInSouthWest(string $outcode): bool
+    {
+        $area = $this->extractAreaCode($outcode);
+
+        return in_array($area, self::SOUTH_WEST_AREAS, true);
+    }
+
+    /**
+     * @deprecated Use isInSouthWest instead
+     */
     public function isInSomersetLevels(string $outcode): bool
     {
-        $prefix = $this->outcodePrefix($outcode);
+        return $this->isInSouthWest($outcode);
+    }
 
-        return in_array($prefix, self::SOMERSET_LEVELS_PREFIXES, true);
+    /**
+     * Get the sub-region key from a postcode outcode (somerset, bristol, devon, cornwall).
+     */
+    public function getRegionFromOutcode(string $outcode): ?string
+    {
+        $area = $this->extractAreaCode($outcode);
+        $regions = config('flood-watch.regions', []);
+
+        foreach ($regions as $regionKey => $config) {
+            if (in_array($area, $config['areas'] ?? [], true)) {
+                return $regionKey;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -155,5 +177,16 @@ class PostcodeValidator
         }
 
         return $outcode;
+    }
+
+    private function extractAreaCode(string $outcode): string
+    {
+        $outcode = strtoupper($outcode);
+
+        if (preg_match('/^([A-Z]{1,2})/', $outcode, $m)) {
+            return $m[1];
+        }
+
+        return '';
     }
 }

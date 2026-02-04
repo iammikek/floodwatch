@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Http;
 class NationalHighwaysService
 {
     /**
-     * Get road and lane closure incidents for Somerset Levels routes (A361, A372, M5 J23–J25).
+     * Get road and lane closure incidents for South West routes (M5, A38, A30, A303, A361, A372, etc.).
      *
      * @return array<int, array{road?: string, status?: string, incidentType?: string, delayTime?: string}>
      */

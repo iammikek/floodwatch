@@ -22,13 +22,15 @@ class FloodWatchDashboard extends Component
 
     public array $forecast = [];
 
+    public array $weather = [];
+
     public ?string $lastChecked = null;
 
     public ?string $error = null;
 
     public function search(SomersetAssistantService $assistant, PostcodeValidator $postcodeValidator): void
     {
-        $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'lastChecked', 'error']);
+        $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'lastChecked', 'error']);
         $this->loading = true;
 
         $postcodeTrimmed = trim($this->postcode);
@@ -43,7 +45,7 @@ class FloodWatchDashboard extends Component
                 return;
             }
             if (! $validation['in_area']) {
-                $this->error = $validation['error'] ?? 'This postcode is outside the Somerset Levels.';
+                $this->error = $validation['error'] ?? 'This postcode is outside the South West.';
                 $this->loading = false;
 
                 return;
@@ -52,13 +54,17 @@ class FloodWatchDashboard extends Component
 
         $message = $this->buildMessage($postcodeTrimmed, $validation);
         $cacheKey = $postcodeTrimmed !== '' ? $postcodeTrimmed : null;
+        $userLat = $validation['lat'] ?? null;
+        $userLong = $validation['long'] ?? null;
+        $region = $validation['region'] ?? null;
 
         try {
-            $result = $assistant->chat($message, [], $cacheKey);
+            $result = $assistant->chat($message, [], $cacheKey, $userLat, $userLong, $region);
             $this->assistantResponse = $result['response'];
             $this->floods = $result['floods'];
             $this->incidents = $result['incidents'];
             $this->forecast = $result['forecast'] ?? [];
+            $this->weather = $result['weather'] ?? [];
             $this->lastChecked = $result['lastChecked'] ?? null;
         } catch (\Throwable $e) {
             report($e);
@@ -76,7 +82,7 @@ class FloodWatchDashboard extends Component
     private function buildMessage(string $postcode, ?array $validation): string
     {
         if ($postcode === '') {
-            return 'Check flood and road status for the Somerset Levels.';
+            return 'Check flood and road status for the South West (Bristol, Somerset, Devon, Cornwall).';
         }
 
         $normalized = app(PostcodeValidator::class)->normalize($postcode);
@@ -85,7 +91,7 @@ class FloodWatchDashboard extends Component
             $coords = sprintf(' (lat: %.4f, long: %.4f)', $validation['lat'], $validation['long']);
         }
 
-        return "Check flood and road status for postcode {$normalized}{$coords} in the Somerset Levels.";
+        return "Check flood and road status for postcode {$normalized}{$coords} in the South West.";
     }
 
     public function render()
