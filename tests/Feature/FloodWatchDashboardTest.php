@@ -217,6 +217,11 @@ class FloodWatchDashboardTest extends TestCase
         Config::set('flood-watch.national_highways.base_url', 'https://api.example.com');
 
         Http::fake(function ($request) {
+            if (str_contains($request->url(), 'postcodes.io')) {
+                return Http::response([
+                    'result' => ['latitude' => 51.0358, 'longitude' => -2.8318],
+                ], 200);
+            }
             if (str_contains($request->url(), 'environment.data.gov.uk')) {
                 return Http::response(['items' => []], 200);
             }
@@ -281,5 +286,23 @@ class FloodWatchDashboardTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('animate-spin', false);
         $response->assertSee('wire:loading', false);
+    }
+
+    public function test_search_rejects_invalid_postcode(): void
+    {
+        Livewire::test('flood-watch-dashboard')
+            ->set('postcode', 'INVALID')
+            ->call('search')
+            ->assertSet('error', 'Invalid postcode format. Use a valid UK postcode (e.g. TA10 0DP).')
+            ->assertSet('assistantResponse', null);
+    }
+
+    public function test_search_rejects_out_of_area_postcode(): void
+    {
+        Livewire::test('flood-watch-dashboard')
+            ->set('postcode', 'SW1A 1AA')
+            ->call('search')
+            ->assertSet('error', 'This postcode is outside the Somerset Levels. Flood Watch currently covers Sedgemoor and South Somerset only.')
+            ->assertSet('assistantResponse', null);
     }
 }

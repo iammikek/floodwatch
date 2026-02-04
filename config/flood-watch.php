@@ -59,4 +59,16 @@ return [
 
     'cache_store' => env('FLOOD_WATCH_CACHE_STORE', 'flood-watch'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Muchelney Rule (Prompt-Only)
+    |--------------------------------------------------------------------------
+    |
+    | The Muchelney rule is implemented via the system prompt: when River Parrett
+    | levels are rising, the LLM proactively warns about Muchelney access. No
+    | code-level threshold is required; the LLM correlates flood data with
+    | road status from the tools.
+    |
+    */
+
 ];

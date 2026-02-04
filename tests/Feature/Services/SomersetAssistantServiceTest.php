@@ -288,4 +288,76 @@ class SomersetAssistantServiceTest extends TestCase
         $this->assertCount(1, $result['incidents']);
         $this->assertSame('A361', $result['incidents'][0]['road']);
     }
+
+    public function test_identical_queries_hit_cache(): void
+    {
+        Config::set('openai.api_key', 'test-key');
+        Config::set('flood-watch.cache_store', 'flood-watch-array');
+        Config::set('flood-watch.national_highways.api_key', 'test-key');
+        Config::set('flood-watch.national_highways.base_url', 'https://api.example.com');
+
+        Http::fake(function ($request) {
+            if (str_contains($request->url(), 'environment.data.gov.uk')) {
+                return Http::response(['items' => []], 200);
+            }
+            if (str_contains($request->url(), 'api.example.com')) {
+                return Http::response(['closure' => ['closure' => []]], 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
+        $toolCallResponse = CreateResponse::fake([
+            'choices' => [
+                [
+                    'index' => 0,
+                    'message' => [
+                        'role' => 'assistant',
+                        'content' => null,
+                        'tool_calls' => [
+                            [
+                                'id' => 'call_1',
+                                'type' => 'function',
+                                'function' => ['name' => 'GetFloodData', 'arguments' => '{}'],
+                            ],
+                            [
+                                'id' => 'call_2',
+                                'type' => 'function',
+                                'function' => ['name' => 'GetHighwaysIncidents', 'arguments' => '{}'],
+                            ],
+                        ],
+                    ],
+                    'logprobs' => null,
+                    'finish_reason' => 'tool_calls',
+                ],
+            ],
+        ]);
+
+        $finalResponse = CreateResponse::fake([
+            'choices' => [
+                [
+                    'index' => 0,
+                    'message' => [
+                        'role' => 'assistant',
+                        'content' => 'Cached response.',
+                        'tool_calls' => [],
+                    ],
+                    'logprobs' => null,
+                    'finish_reason' => 'stop',
+                ],
+            ],
+        ]);
+
+        OpenAI::fake([$toolCallResponse, $finalResponse]);
+
+        $service = app(SomersetAssistantService::class);
+
+        $first = $service->chat('Check status', [], 'TA10 0');
+        $this->assertSame('Cached response.', $first['response']);
+
+        OpenAI::fake();
+
+        $second = $service->chat('Check status', [], 'TA10 0');
+        $this->assertSame('Cached response.', $second['response']);
+    }
 }

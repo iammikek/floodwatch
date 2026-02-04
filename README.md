@@ -29,18 +29,9 @@ The system prompt instructs the AI to think like a Somerset local coordinator:
 - **Contextual Awareness**: Muchelney is prone to being cut off. If River Parrett levels are rising, warn users about access to Muchelney even if the Highways API has not updated (predictive warning).
 - **Prioritization**: Prioritize "Danger to Life" alerts, then road closures, then general flood alerts.
 
-## Technical: Laravel 12 Concurrency
+## Technical: LLM Tool Calling
 
-To prevent the LLM from waiting for two API calls sequentially, use the Laravel 12 Concurrency Facade to fire both requests in parallel:
-
-```php
-use Illuminate\Support\Facades\Concurrency;
-
-[$floodData, $roadData] = Concurrency::run([
-    fn () => $floodService->getLevels('Somerset'),
-    fn () => $highwaysService->getIncidents('South West'),
-]);
-```
+The Somerset Assistant uses **OpenAI tool calling** (openai-php/laravel). The LLM receives two tools—`GetFloodData` (Environment Agency) and `GetHighwaysIncidents` (National Highways)—and decides when to call them. The LLM orchestrates the API calls and synthesizes a correlated response. No Concurrency facade is used; the LLM drives the flow.
 
 ## Summary Table for Stakeholders
 
@@ -58,12 +49,12 @@ The POC should feel like a cohesive tool, not a disjointed chat interface.
 - **Structured Output**: 100% of LLM responses must follow a consistent Markdown format, including a "Current Status" header and an "Action Steps" bulleted list.
 - **Graceful Degradation**: If the Environment Agency API is down, the AI must explicitly state it cannot access real-time data and provide general safety links instead of making up hypothetical risks.
 - **Asynchronous Handling**: The UI must remain responsive. Success is defined by the Livewire component displaying a "Searching real-time records..." state without blocking the main browser thread.
-- **Token Efficiency**: The system should successfully implement a caching layer where identical postcode queries within a 15-minute window do not trigger a new LLM prompt, reducing API overhead.
+- **Token Efficiency**: Redis caching (15-minute TTL) ensures identical postcode queries return cached results without a new LLM prompt. Falls back to array cache when Redis is unavailable.
 
 ## Geospatial & Data Requirements
 
 - **Geospatial Relevance**: The agent must correctly filter the Environment Agency API results to only include warnings within a 10km radius centre, as defined by a postcode.
-- **Postcode Validation**: The system must gracefully handle invalid or non-Somerset Levels postcodes, with the LLM politely informing the user that the POC is currently restricted to properties within the Somerset Levels.
+- **Postcode Validation**: `PostcodeValidator` validates UK postcode format and restricts to Somerset Levels (TA3–TA11, BA3–BA9, BS26–BS28). Invalid or out-of-area postcodes show an error before the LLM is called. Optional geocoding via postcodes.io provides lat/long for the LLM's GetFloodData tool.
 - **Severity Mapping**: The AI must accurately translate EA severity levels (1–4) into human-readable advice (e.g., Level 1 "Severe Flood Warning" must trigger advice to "Protect life and evacuate if instructed").
 
 ## Testing Strategy
@@ -89,11 +80,12 @@ The POC should feel like a cohesive tool, not a disjointed chat interface.
 
 ## Tech Stack
 
-- **Laravel 12.x** – PHP 8.2+, `Illuminate\Support\Facades\Concurrency` for parallel API calls
-- **Laravel Sail** – Docker development environment
-- **Livewire 4** – Real-time UI with `wire:stream`
+- **Laravel 12.x** – PHP 8.2+
+- **Laravel Sail** – Docker development environment (includes Redis)
+- **Livewire 4** – Real-time UI
 - **Laravel Boost** – AI-assisted development (MCP, guidelines)
-- **LLM integration** – Laravel AI SDK / openai-php for in-app AI
+- **LLM integration** – openai-php/laravel for OpenAI tool calling
+- **Redis** – Caching for flood/road data (15-min TTL)
 - **TDD** – PHPUnit + Pest, fully test-driven
 
 ## Requirements
@@ -147,12 +139,12 @@ Workflow file: `.github/workflows/tests.yml`
 
 Data use requires attribution. See [agents.md](agents.md) for AI assistant context.
 
-## Next Steps for Build
+## Configuration
 
-1. **Update coordinates**: Set tool default location to Langport (51.0358, -2.8318).
-2. **National Highways API key**: Register at the [National Highways Developer Portal](https://developer.data.nationalhighways.co.uk/) and add the key to `.env`.
-3. **Livewire UI**: Add a "Road Status" badge next to the "Flood Risk" badge in the chat interface.
-4. **GitHub Actions**: Add `.github/workflows/tests.yml` to build the frontend and run the Pest test suite on push/PR.
+- **Default coordinates**: Langport (51.0358, -2.8318) in `config/flood-watch.php`
+- **OpenAI API key**: Add `OPENAI_API_KEY` to `.env`
+- **National Highways API key**: Register at the [National Highways Developer Portal](https://developer.data.nationalhighways.co.uk/) and add `NATIONAL_HIGHWAYS_API_KEY` to `.env`
+- **Redis**: Use `REDIS_HOST=redis` with Sail; `flood-watch-array` cache store for tests
 
 ## License
 
