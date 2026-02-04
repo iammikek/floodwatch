@@ -98,11 +98,15 @@ class HealthController extends Controller
         }
 
         $baseUrl = rtrim(config('flood-watch.national_highways.base_url'), '/');
-        $url = "{$baseUrl}/road-lane-closures/v2/planned";
+        $closuresPath = ltrim(config('flood-watch.national_highways.closures_path', 'closures'), '/');
+        $url = "{$baseUrl}/{$closuresPath}?closureType=planned";
 
         try {
             $response = Http::timeout(self::HEALTH_TIMEOUT)
-                ->withHeaders(['Ocp-Apim-Subscription-Key' => $apiKey])
+                ->withHeaders([
+                    'Ocp-Apim-Subscription-Key' => $apiKey,
+                    'X-Response-MediaType' => 'application/json',
+                ])
                 ->get($url);
 
             return [

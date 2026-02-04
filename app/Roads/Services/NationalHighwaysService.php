@@ -47,18 +47,39 @@ class NationalHighwaysService
     private function fetchIncidents(string $apiKey): array
     {
         $baseUrl = rtrim(config('flood-watch.national_highways.base_url'), '/');
+        $closuresPath = ltrim(config('flood-watch.national_highways.closures_path', 'closures'), '/');
         $timeout = config('flood-watch.national_highways.timeout');
-
-        $url = "{$baseUrl}/road-lane-closures/v2/planned";
-
         $retryTimes = config('flood-watch.national_highways.retry_times', 3);
         $retrySleep = config('flood-watch.national_highways.retry_sleep_ms', 100);
+        $headers = [
+            'Ocp-Apim-Subscription-Key' => $apiKey,
+            'X-Response-MediaType' => 'application/json',
+        ];
+
+        $incidents = [];
+
+        $planned = $this->fetchClosures($baseUrl, $closuresPath, 'planned', $timeout, $retryTimes, $retrySleep, $headers);
+        $incidents = array_merge($incidents, $this->parseDatexPayload($planned));
+
+        if (config('flood-watch.national_highways.fetch_unplanned', true)) {
+            $unplanned = $this->fetchClosures($baseUrl, $closuresPath, 'unplanned', $timeout, $retryTimes, $retrySleep, $headers);
+            $incidents = array_merge($incidents, $this->parseDatexPayload($unplanned));
+        }
+
+        return $incidents;
+    }
+
+    /**
+     * @param  array<string, string>  $headers
+     * @return array<string, mixed>
+     */
+    private function fetchClosures(string $baseUrl, string $path, string $closureType, int $timeout, int $retryTimes, int $retrySleep, array $headers): array
+    {
+        $url = "{$baseUrl}/{$path}?closureType={$closureType}";
 
         $response = Http::timeout($timeout)
             ->retry($retryTimes, $retrySleep, null, false)
-            ->withHeaders([
-                'Ocp-Apim-Subscription-Key' => $apiKey,
-            ])
+            ->withHeaders($headers)
             ->get($url);
 
         if ($response->status() === 404) {
@@ -69,27 +90,208 @@ class NationalHighwaysService
             $response->throw();
         }
 
-        return $this->parseIncidents($response->json());
+        return $response->json() ?? [];
     }
 
     /**
+     * Parse DATEX II v3.4 D2Payload structure.
+     *
      * @param  array<string, mixed>  $data
      * @return array<int, array{road?: string, status?: string, incidentType?: string, delayTime?: string}>
      */
-    private function parseIncidents(array $data): array
+    private function parseDatexPayload(array $data): array
     {
         $incidents = [];
 
-        $closures = $data['closure']['closure'] ?? $data['closures'] ?? $data['items'] ?? [];
+        $payload = $data['D2Payload'] ?? $data;
+        $situations = $payload['situation'] ?? [];
 
-        foreach ((array) $closures as $closure) {
-            if (! is_array($closure)) {
+        foreach ((array) $situations as $situation) {
+            if (! is_array($situation)) {
                 continue;
             }
 
-            $incidents[] = RoadIncident::fromArray($closure)->toArray();
+            $records = $situation['situationRecord'] ?? [];
+            foreach ((array) $records as $record) {
+                if (! is_array($record)) {
+                    continue;
+                }
+
+                $sit = $record['sitRoadOrCarriagewayOrLaneManagement'] ?? null;
+                if (! is_array($sit)) {
+                    continue;
+                }
+
+                $flat = $this->extractIncidentFromDatexRecord($sit);
+                if ($flat['road'] !== '' || $flat['status'] !== '' || $flat['incidentType'] !== '') {
+                    $incidents[] = RoadIncident::fromArray($flat)->toArray();
+                }
+            }
         }
 
         return $incidents;
+    }
+
+    /**
+     * Extract flat incident data from a sitRoadOrCarriagewayOrLaneManagement record.
+     *
+     * @param  array<string, mixed>  $sit
+     * @return array{road: string, status: string, incidentType: string, delayTime: string}
+     */
+    private function extractIncidentFromDatexRecord(array $sit): array
+    {
+        $road = $this->extractRoadName($sit['locationReference'] ?? []);
+        $status = $sit['validity']['validityStatus'] ?? '';
+        $incidentType = $this->extractIncidentType($sit);
+        $delayTime = $this->extractComment($sit['generalPublicComment'] ?? []);
+
+        return [
+            'road' => is_string($road) ? $road : '',
+            'status' => is_string($status) ? $status : '',
+            'incidentType' => is_string($incidentType) ? $incidentType : '',
+            'delayTime' => is_string($delayTime) ? $delayTime : '',
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $locationRef
+     */
+    private function extractRoadName(array $locationRef): string
+    {
+        $road = $this->extractRoadFromLinearElements($locationRef['locLocationGroupByList']['locationContainedInGroup'] ?? []);
+        if ($road !== '') {
+            return $road;
+        }
+
+        $road = $this->extractRoadFromSingleLocation($locationRef['locLinearLocation'] ?? [], $locationRef['locSingleRoadLinearLocation'] ?? []);
+        if ($road !== '') {
+            return $road;
+        }
+
+        return $this->extractRoadFromPointLocation($locationRef['locPointLocation'] ?? []);
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $groups
+     */
+    private function extractRoadFromLinearElements(array $groups): string
+    {
+        foreach ($groups as $group) {
+            if (! is_array($group)) {
+                continue;
+            }
+            $road = $this->extractRoadFromLinearElement($group['locSingleRoadLinearLocation'] ?? []);
+            if ($road !== '') {
+                return $road;
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * @param  array<string, mixed>  $linearLoc
+     * @param  array<string, mixed>  $singleRoad
+     */
+    private function extractRoadFromSingleLocation(array $linearLoc, array $singleRoad): string
+    {
+        $road = $this->extractRoadFromLinearElement($singleRoad);
+        if ($road !== '') {
+            return $road;
+        }
+
+        $desc = $linearLoc['supplementaryPositionalDescription']['locationDescription'] ?? '';
+        if (is_string($desc) && $desc !== '') {
+            if (preg_match('/\b([AM]\d+[A-Z]?)\b/', $desc, $m)) {
+                return $m[1];
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * @param  array<string, mixed>  $pointLoc
+     */
+    private function extractRoadFromPointLocation(array $pointLoc): string
+    {
+        $elements = $pointLoc['pointAlongLinearElement'] ?? [];
+        foreach ((array) $elements as $el) {
+            if (! is_array($el)) {
+                continue;
+            }
+            $byCode = $el['linearElement']['locLinearElementByCode'] ?? [];
+            $road = $byCode['roadName'] ?? '';
+            if (is_string($road) && $road !== '') {
+                return $road;
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * @param  array<string, mixed>  $singleRoad
+     */
+    private function extractRoadFromLinearElement(array $singleRoad): string
+    {
+        $within = $singleRoad['linearWithinLinearElement'] ?? [];
+        foreach ((array) $within as $w) {
+            if (! is_array($w)) {
+                continue;
+            }
+            $el = $w['linearElement']['locLinearElementByCode'] ?? [];
+            $road = $el['roadName'] ?? '';
+            if (is_string($road) && $road !== '') {
+                return $road;
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * @param  array<string, mixed>  $sit
+     */
+    private function extractIncidentType(array $sit): string
+    {
+        $detailed = $sit['cause']['detailedCauseType'] ?? [];
+        if (is_array($detailed)) {
+            foreach (['environmentalObstructionType', 'vehicleObstructionType', 'roadMaintenanceType'] as $key) {
+                $val = $detailed[$key] ?? null;
+                if (is_string($val) && $val !== '') {
+                    return $val;
+                }
+                if (is_array($val) && isset($val[0])) {
+                    return is_string($val[0]) ? $val[0] : '';
+                }
+            }
+            $mgmt = $detailed['roadOrCarriagewayOrLaneManagementType']['value'] ?? null;
+            if (is_string($mgmt) && $mgmt !== '') {
+                return $mgmt;
+            }
+        }
+
+        $cause = $sit['cause']['causeType'] ?? '';
+        if (is_string($cause) && $cause !== '') {
+            return $cause;
+        }
+
+        $type = $sit['roadOrCarriagewayOrLaneManagementType']['value'] ?? '';
+        if (is_string($type) && $type !== '') {
+            return $type;
+        }
+
+        return '';
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $comments
+     */
+    private function extractComment(array $comments): string
+    {
+        $first = $comments[0]['comment'] ?? null;
+
+        return is_string($first) ? $first : '';
     }
 }

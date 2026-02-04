@@ -45,7 +45,7 @@ class FloodWatchDashboardTest extends TestCase
                 return Http::response(['items' => []], 200);
             }
             if (str_contains($request->url(), 'api.example.com')) {
-                return Http::response(['closure' => ['closure' => []]], 200);
+                return Http::response(['D2Payload' => ['situation' => []]], 200);
             }
             if (str_contains($request->url(), 'fgs.metoffice.gov.uk')) {
                 return Http::response(['statement' => []], 200);
@@ -132,13 +132,26 @@ class FloodWatchDashboardTest extends TestCase
             }
             if (str_contains($request->url(), 'api.example.com')) {
                 return Http::response([
-                    'closure' => [
-                        'closure' => [
+                    'D2Payload' => [
+                        'situation' => [
                             [
-                                'road' => 'A361',
-                                'status' => 'closed',
-                                'incidentType' => 'flooding',
-                                'delayTime' => '30 minutes',
+                                'situationRecord' => [
+                                    [
+                                        'sitRoadOrCarriagewayOrLaneManagement' => [
+                                            'validity' => ['validityStatus' => 'closed'],
+                                            'cause' => ['causeType' => 'environmentalObstruction', 'detailedCauseType' => ['environmentalObstructionType' => 'flooding']],
+                                            'generalPublicComment' => [['comment' => '30 minutes delay']],
+                                            'roadOrCarriagewayOrLaneManagementType' => ['value' => 'roadClosed'],
+                                            'locationReference' => [
+                                                'locSingleRoadLinearLocation' => [
+                                                    'linearWithinLinearElement' => [
+                                                        ['linearElement' => ['locLinearElementByCode' => ['roadName' => 'A361']]],
+                                                    ],
+                                                ],
+                                            ],
+                                        ],
+                                    ],
+                                ],
                             ],
                         ],
                     ],
@@ -241,7 +254,7 @@ class FloodWatchDashboardTest extends TestCase
                 return Http::response(['items' => []], 200);
             }
             if (str_contains($request->url(), 'api.example.com')) {
-                return Http::response(['closure' => ['closure' => []]], 200);
+                return Http::response(['D2Payload' => ['situation' => []]], 200);
             }
             if (str_contains($request->url(), 'fgs.metoffice.gov.uk')) {
                 return Http::response(['statement' => []], 200);
@@ -412,7 +425,7 @@ class FloodWatchDashboardTest extends TestCase
                 ], 200);
             }
             if (str_contains($request->url(), 'api.example.com')) {
-                return Http::response(['closure' => ['closure' => []]], 200);
+                return Http::response(['D2Payload' => ['situation' => []]], 200);
             }
             if (str_contains($request->url(), 'fgs.metoffice.gov.uk')) {
                 return Http::response(['statement' => []], 200);

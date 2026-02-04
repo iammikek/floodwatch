@@ -79,18 +79,19 @@ User Request → Livewire Dashboard → Flood Watch Service → OpenAI (with too
 
 ### 2. National Highways API (DATEX II)
 
-**Endpoint**: `https://api.data.nationalhighways.co.uk/road-lane-closures/v2/planned`
+**Endpoint**: `GET https://api.data.nationalhighways.co.uk/roads/v2.0/closures?closureType=planned|unplanned` (DATEX II v3.4)
 
 **Method**: GET (requires API key)
 
 **Headers**:
 - `Ocp-Apim-Subscription-Key` – API key from the National Highways Developer Portal
+- `X-Response-MediaType: application/json` – request JSON (default is XML)
 
-**Response**: DATEX II–style JSON with closure and incident data. We parse:
-- `road` / `roadName` / `location`
-- `status` / `closureStatus`
-- `incidentType` / `type`
-- `delayTime` / `delay`
+**Response**: DATEX II v3.4 D2Payload with `situation[]` and `situationRecord[]`. We extract:
+- `road` from `locationReference.locLinearElementByCode.roadName` (or `locationDescription` fallback)
+- `status` from `validity.validityStatus` (active, planned, suspended)
+- `incidentType` from `cause.detailedCauseType` (e.g. environmentalObstructionType: flooding) or `roadOrCarriagewayOrLaneManagementType.value`
+- `delayTime` from `generalPublicComment[0].comment`
 
 **Coverage**: Somerset Levels routes – A361, A372, M5 J23–J25.
 

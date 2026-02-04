@@ -25,15 +25,30 @@ class NationalHighwaysServiceTest extends TestCase
     {
         Config::set('flood-watch.national_highways.api_key', 'test-key');
         Config::set('flood-watch.national_highways.base_url', 'https://api.example.com');
+        Config::set('flood-watch.national_highways.fetch_unplanned', false);
 
         Http::fake([
             '*api.example.com*' => Http::response([
-                'closure' => [
-                    'closure' => [
+                'D2Payload' => [
+                    'situation' => [
                         [
-                            'road' => 'A361',
-                            'status' => 'closed',
-                            'incidentType' => 'flooding',
+                            'situationRecord' => [
+                                [
+                                    'sitRoadOrCarriagewayOrLaneManagement' => [
+                                        'validity' => ['validityStatus' => 'closed'],
+                                        'cause' => ['causeType' => 'environmentalObstruction', 'detailedCauseType' => ['environmentalObstructionType' => 'flooding']],
+                                        'generalPublicComment' => [['comment' => 'A361 closed']],
+                                        'roadOrCarriagewayOrLaneManagementType' => ['value' => 'roadClosed'],
+                                        'locationReference' => [
+                                            'locSingleRoadLinearLocation' => [
+                                                'linearWithinLinearElement' => [
+                                                    ['linearElement' => ['locLinearElementByCode' => ['roadName' => 'A361']]],
+                                                ],
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
                         ],
                     ],
                 ],

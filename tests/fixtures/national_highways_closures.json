@@ -1,21 +1,132 @@
 {
-  "closure": {
-    "closure": [
+  "D2Payload": {
+    "version": "2025-03-04",
+    "modelBaseVersion": "3",
+    "lang": "en",
+    "feedDescription": "Road and Lane Closures",
+    "feedType": "SituationPublication",
+    "publicationTime": "2025-03-21T06:15:56.0000000+00:00",
+    "publicationCreator": {
+      "country": "gb",
+      "nationalIdentifier": "NationalHighways"
+    },
+    "situation": [
       {
-        "road": "A361",
-        "roadName": "A361",
-        "status": "closed",
-        "closureStatus": "closed",
-        "incidentType": "flooding",
-        "type": "flooding",
-        "delayTime": "30 minutes",
-        "delay": "30 minutes"
+        "idG": "384696",
+        "situationVersionTime": "2025-03-21T05:41:43.0000000+00:00",
+        "headerInformation": {
+          "confidentiality": "noRestriction",
+          "informationStatus": "real"
+        },
+        "situationRecord": [
+          {
+            "sitRoadOrCarriagewayOrLaneManagement": {
+              "idG": "1-1742368657-0985c698-d765-4085-b9c7-4c4d28205328",
+              "versionG": "1",
+              "validity": {
+                "validityStatus": "closed",
+                "validityTimeSpecification": {
+                  "overallStartTime": "2025-03-14T08:00:00.0000000+00:00",
+                  "overallEndTime": "2025-03-15T06:00:00.0000000+00:00"
+                }
+              },
+              "cause": {
+                "causeType": "environmentalObstruction",
+                "detailedCauseType": {
+                  "environmentalObstructionType": "flooding"
+                }
+              },
+              "generalPublicComment": [
+                {
+                  "comment": "A361 closed due to flooding - 30 minutes delay"
+                }
+              ],
+              "roadOrCarriagewayOrLaneManagementType": {
+                "value": "roadClosed"
+              },
+              "locationReference": {
+                "locLocationGroupByList": {
+                  "locationContainedInGroup": [
+                    {
+                      "locSingleRoadLinearLocation": {
+                        "linearWithinLinearElement": [
+                          {
+                            "linearElement": {
+                              "locLinearElementByCode": {
+                                "roadName": "A361",
+                                "linearElementReferenceModel": "The Network Model",
+                                "linearElementIdentifier": "{33332A8E-2026-4D6D-9B3E-5421B4A85121}"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
       },
       {
-        "roadName": "M5",
-        "closureStatus": "partial",
-        "type": "lane closure",
-        "delay": "15 mins"
+        "idG": "signs/M5-S6216",
+        "situationVersionTime": "2025-03-21T06:03:57.0000000+00:00",
+        "headerInformation": {
+          "confidentiality": "noRestriction",
+          "informationStatus": "real"
+        },
+        "situationRecord": [
+          {
+            "sitRoadOrCarriagewayOrLaneManagement": {
+              "idG": "7-1742580170-ee8afbb2-efad-4380-954e-a2ec6e9021b2-close",
+              "versionG": "1",
+              "validity": {
+                "validityStatus": "active",
+                "validityTimeSpecification": {
+                  "overallStartTime": "2025-03-21T06:01:57.0000000+00:00",
+                  "overallEndTime": "2025-03-21T06:16:57.0000000+00:00"
+                }
+              },
+              "cause": {
+                "causeType": "roadOrCarriagewayOrLaneManagement",
+                "detailedCauseType": {
+                  "roadOrCarriagewayOrLaneManagementType": {
+                    "value": "laneClosures"
+                  }
+                }
+              },
+              "generalPublicComment": [
+                {
+                  "comment": "15 mins delay"
+                }
+              ],
+              "roadOrCarriagewayOrLaneManagementType": {
+                "value": "laneClosures"
+              },
+              "locationReference": {
+                "locLinearLocation": {
+                  "supplementaryPositionalDescription": {
+                    "locationDescription": "M5 southbound between J14 and J13"
+                  }
+                },
+                "locSingleRoadLinearLocation": {
+                  "linearWithinLinearElement": [
+                    {
+                      "linearElement": {
+                        "locLinearElementByCode": {
+                          "roadName": "M5",
+                          "linearElementReferenceModel": "The Network Model",
+                          "linearElementIdentifier": "{68CEE502-B1B4-41ED-9823-0F1356C93FF0}"
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
       }
     ]
   }

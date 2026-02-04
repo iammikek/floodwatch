@@ -91,11 +91,13 @@ return [
     */
 
     'national_highways' => [
-        'base_url' => env('NATIONAL_HIGHWAYS_URL', 'https://api.data.nationalhighways.co.uk'),
+        'base_url' => env('NATIONAL_HIGHWAYS_URL', 'https://api.data.nationalhighways.co.uk/roads/v2.0'),
         'api_key' => env('NATIONAL_HIGHWAYS_API_KEY'),
         'timeout' => (int) env('NATIONAL_HIGHWAYS_TIMEOUT', 25),
         'retry_times' => (int) env('FLOOD_WATCH_NH_RETRY_TIMES', 3),
         'retry_sleep_ms' => (int) env('FLOOD_WATCH_NH_RETRY_SLEEP_MS', 100),
+        'closures_path' => env('NATIONAL_HIGHWAYS_CLOSURES_PATH', 'closures'),
+        'fetch_unplanned' => env('NATIONAL_HIGHWAYS_FETCH_UNPLANNED', true),
     ],
 
     /*

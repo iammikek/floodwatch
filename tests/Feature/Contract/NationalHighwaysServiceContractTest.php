@@ -17,6 +17,7 @@ class NationalHighwaysServiceContractTest extends TestCase
     {
         Config::set('flood-watch.national_highways.api_key', 'test-key');
         Config::set('flood-watch.national_highways.base_url', 'https://api.example.com');
+        Config::set('flood-watch.national_highways.fetch_unplanned', false);
 
         $fixture = file_get_contents(__DIR__.'/../../fixtures/national_highways_closures.json');
 
@@ -32,11 +33,11 @@ class NationalHighwaysServiceContractTest extends TestCase
         $this->assertSame('A361', $result[0]['road']);
         $this->assertSame('closed', $result[0]['status']);
         $this->assertSame('flooding', $result[0]['incidentType']);
-        $this->assertSame('30 minutes', $result[0]['delayTime']);
+        $this->assertSame('A361 closed due to flooding - 30 minutes delay', $result[0]['delayTime']);
 
         $this->assertSame('M5', $result[1]['road']);
-        $this->assertSame('partial', $result[1]['status']);
-        $this->assertSame('lane closure', $result[1]['incidentType']);
-        $this->assertSame('15 mins', $result[1]['delayTime']);
+        $this->assertSame('active', $result[1]['status']);
+        $this->assertSame('laneClosures', $result[1]['incidentType']);
+        $this->assertSame('15 mins delay', $result[1]['delayTime']);
     }
 }
