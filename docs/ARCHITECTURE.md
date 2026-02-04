@@ -33,8 +33,8 @@ app/
 ## Data Flow
 
 1. **User input** → LocationResolver (postcode/place) → coordinates + region
-2. **FloodWatchService.chat()** fetches in parallel: forecast, weather, river levels
-3. **LLM** receives system prompt + tools; calls GetFloodData, GetHighwaysIncidents, GetCorrelationSummary, etc.
+2. **FloodWatchService.chat()** pre-fetches sequentially: forecast, weather, river levels (could parallelize with `Concurrency::run()` – see `docs/DEVELOPMENT.md`)
+3. **LLM** receives system prompt + tools; calls GetFloodData, GetHighwaysIncidents, GetCorrelationSummary, etc. Tool calls are LLM-driven; when the LLM invokes multiple tools in one turn, they execute as the client processes the response
 4. **RiskCorrelationService** applies deterministic rules (flood↔road pairs, predictive warnings)
 5. **Response** synthesized by LLM, cached, returned with floods/incidents/forecast
 
@@ -102,7 +102,7 @@ The main `chat()` flow is synchronous. For high traffic, consider:
 ### Scaling Notes
 
 - **Redis**: Use for cache and trends in production (`flood-watch.cache_store`, `flood-watch.trends_enabled`)
-- **Concurrency**: FloodWatchService fetches forecast, weather, river levels sequentially before LLM; could parallelize with `Concurrency::run()` if needed
+- **Concurrency**: Pre-fetch (forecast, weather, river levels) runs sequentially before the LLM. Tool calls (GetFloodData, GetHighwaysIncidents) are LLM-driven; the LLM may invoke multiple tools in one turn. Parallelizing pre-fetch with `Concurrency::run()` is on the backlog (`docs/DEVELOPMENT.md`).
 - **Polygon limit**: `flood-watch.environment_agency.max_polygons_per_request` caps polygon fetches per request
 
 ## AI Development
@@ -120,3 +120,4 @@ The main `chat()` flow is synchronous. For high traffic, consider:
 | Correlation rules | `RiskCorrelationService` + config |
 | Prompts | `FloodWatchPromptBuilder` + `resources/prompts/` |
 | Cache warm | `flood-watch:warm-cache` command |
+| Development plan | `docs/DEVELOPMENT.md` |

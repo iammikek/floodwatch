@@ -4,11 +4,13 @@ Quick reference for AI agents working on this project.
 
 ## Project Context
 
-**Flood Watch** - Somerset Levels Safety Agent. Correlates Environment Agency flood data with National Highways v2.0 (DATEX II) road status. Single Source of Truth for flood + road viability.
+**Flood Watch** – South West Safety Agent (Bristol, Somerset, Devon, Cornwall). Correlates Environment Agency flood data with National Highways v2.0 (DATEX II) road status. Single Source of Truth for flood + road viability.
 
-**Tech Stack**: Laravel 12.x, PHP 8.2+, Concurrency facade, Laravel Sail (Docker), Livewire 4, PHPUnit + Pest, fully TDD, Laravel Boost, LLM integration (openai-php/laravel or similar).
+**Tech Stack**: Laravel 12.x, PHP 8.2+, Laravel Sail (Docker), Livewire 4, PHPUnit + Pest, fully TDD, Laravel Boost, LLM integration (openai-php/laravel).
 
-## Somerset Levels Logic
+**Scope**: Region-specific prompts for Somerset (BA, TA), Bristol (BS), Devon (EX, TQ, PL), Cornwall (TR). See `config/flood-watch.regions`.
+
+## Somerset Levels Logic (Somerset region)
 
 **Default coordinates**: Langport (51.0358, -2.8318)
 
@@ -18,7 +20,7 @@ Quick reference for AI agents working on this project.
 
 **Muchelney rule**: If Langport flood level exceeds threshold → proactively check Muchelney road status (predictive warning).
 
-**Concurrency**: Use `Concurrency::run([fn () => $floodService->...(), fn () => $highwaysService->...()])` to fetch both APIs in parallel.
+**Concurrency**: Pre-fetch (forecast, weather, river levels) runs sequentially before the LLM. Tool calls (GetFloodData, GetHighwaysIncidents) are LLM-driven; the LLM may invoke multiple tools in one turn. See `docs/ARCHITECTURE.md` for details.
 
 **System prompt (Somerset Emergency Assistant)**: Data Correlation (North Moor/King's Sedgemoor → cross-reference A361 East Lyng). Contextual Awareness (Muchelney cut-off risk; predictive warnings when Parrett rising). Prioritization: Danger to Life → road closures → general flood alerts.
 
@@ -52,9 +54,20 @@ Primary dev environment. All commands run via Sail. Use `./vendor/bin/sail` or c
 
 ```
 app/
-├── Http/Controllers/
-├── Models/
-├── Services/          # If used
+├── Flood/             # Flood domain
+│   ├── DTOs/FloodWarning
+│   ├── Enums/SeverityLevel
+│   └── Services/EnvironmentAgencyFloodService, FloodForecastService, RiverLevelService
+├── Roads/             # Roads domain
+│   ├── DTOs/RoadIncident
+│   └── Services/NationalHighwaysService
+├── Services/          # Orchestration
+│   ├── FloodWatchService, FloodWatchPromptBuilder, RiskCorrelationService
+│   ├── LocationResolver, PostcodeValidator, WeatherService
+├── DTOs/RiskAssessment
+├── Enums/Region
+├── ValueObjects/Postcode
+├── Livewire/FloodWatchDashboard
 routes/
 ├── web.php
 ├── api.php

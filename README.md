@@ -101,6 +101,8 @@ sail test           # Run tests
 sail artisan ...    # Artisan commands
 ```
 
+Development plan (backlog, milestones): `docs/DEVELOPMENT.md`
+
 ## Build Pipeline
 
 GitHub Actions runs a test pipeline on push/PR. The pipeline:
