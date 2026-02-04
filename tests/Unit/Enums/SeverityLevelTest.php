@@ -3,10 +3,10 @@
 use App\Enums\SeverityLevel;
 
 test('fromApiValue maps integer to correct enum case', function () {
-    expect(SeverityLevel::fromApiValue(1))->toBe(SeverityLevel::Severe);
-    expect(SeverityLevel::fromApiValue(2))->toBe(SeverityLevel::Warning);
-    expect(SeverityLevel::fromApiValue(3))->toBe(SeverityLevel::Alert);
-    expect(SeverityLevel::fromApiValue(4))->toBe(SeverityLevel::Inactive);
+    expect(SeverityLevel::fromApiValue(1))->toBe(SeverityLevel::Severe)
+        ->and(SeverityLevel::fromApiValue(2))->toBe(SeverityLevel::Warning)
+        ->and(SeverityLevel::fromApiValue(3))->toBe(SeverityLevel::Alert)
+        ->and(SeverityLevel::fromApiValue(4))->toBe(SeverityLevel::Inactive);
 });
 
 test('fromApiValue handles null and empty as Inactive', function () {
@@ -19,8 +19,8 @@ test('fromApiValue handles invalid values as Inactive', function () {
 });
 
 test('label returns human readable string', function () {
-    expect(SeverityLevel::Severe->label())->toBe('Severe Flood Warning');
-    expect(SeverityLevel::Warning->label())->toBe('Flood Warning');
-    expect(SeverityLevel::Alert->label())->toBe('Flood Alert');
-    expect(SeverityLevel::Inactive->label())->toBe('Inactive');
+    expect(SeverityLevel::Severe->label())->toBe('Severe Flood Warning')
+        ->and(SeverityLevel::Warning->label())->toBe('Flood Warning')
+        ->and(SeverityLevel::Alert->label())->toBe('Flood Alert')
+        ->and(SeverityLevel::Inactive->label())->toBe('Inactive');
 });
