@@ -1,0 +1,24 @@
+{
+  "items": [
+    {
+      "floodAreaID": "123WAC",
+      "description": "North Moor and Curry Moor",
+      "severity": "Flood Warning",
+      "severityLevel": 2,
+      "message": "River levels are rising. Flooding is expected.",
+      "timeRaised": "2026-02-04T08:00:00Z",
+      "timeMessageChanged": "2026-02-04T10:30:00Z",
+      "timeSeverityChanged": "2026-02-04T08:00:00Z"
+    },
+    {
+      "floodAreaID": "456XYZ",
+      "description": "River Parrett at Langport",
+      "severity": "Severe Flood Warning",
+      "severityLevel": 1,
+      "message": "Danger to life. Immediate action required.",
+      "timeRaised": "2026-02-04T06:00:00Z",
+      "timeMessageChanged": null,
+      "timeSeverityChanged": null
+    }
+  ]
+}

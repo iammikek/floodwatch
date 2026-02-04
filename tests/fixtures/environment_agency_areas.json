@@ -1,0 +1,15 @@
+{
+  "items": [
+    {
+      "notation": "123WAC",
+      "fwdCode": "123WAC",
+      "lat": 51.04,
+      "long": -2.82
+    },
+    {
+      "notation": "456XYZ",
+      "lat": 51.035,
+      "long": -2.831
+    }
+  ]
+}

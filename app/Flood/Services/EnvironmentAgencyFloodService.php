@@ -3,12 +3,31 @@
 namespace App\Flood\Services;
 
 use App\Flood\DTOs\FloodWarning;
+use App\Support\CircuitBreaker;
+use App\Support\CircuitOpenException;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
 class EnvironmentAgencyFloodService
 {
+    public function __construct(
+        protected ?CircuitBreaker $circuitBreaker = null
+    ) {
+        $this->circuitBreaker ??= new CircuitBreaker('environment_agency');
+    }
+
+    private function http(string $url, int $timeout): \Illuminate\Http\Client\Response
+    {
+        $retryTimes = config('flood-watch.environment_agency.retry_times', 3);
+        $retrySleep = config('flood-watch.environment_agency.retry_sleep_ms', 100);
+
+        return Http::timeout($timeout)
+            ->retry($retryTimes, $retrySleep, null, false)
+            ->get($url);
+    }
+
     /**
      * @return array<int, array<string, mixed>>
      */
@@ -16,6 +35,27 @@ class EnvironmentAgencyFloodService
         ?float $lat = null,
         ?float $long = null,
         ?int $radiusKm = null
+    ): array {
+        try {
+            return $this->circuitBreaker->execute(function () use ($lat, $long, $radiusKm) {
+                return $this->fetchFloods($lat, $long, $radiusKm);
+            });
+        } catch (CircuitOpenException) {
+            return [];
+        } catch (ConnectionException|RequestException $e) {
+            report($e);
+
+            return [];
+        }
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function fetchFloods(
+        ?float $lat,
+        ?float $long,
+        ?int $radiusKm
     ): array {
         $lat ??= config('flood-watch.default_lat');
         $long ??= config('flood-watch.default_long');
@@ -25,16 +65,9 @@ class EnvironmentAgencyFloodService
         $timeout = config('flood-watch.environment_agency.timeout');
         $url = "{$baseUrl}/id/floods?lat={$lat}&long={$long}&dist={$radiusKm}";
 
-        try {
-            $response = Http::timeout($timeout)->get($url);
-        } catch (ConnectionException $e) {
-            report($e);
-
-            return [];
-        }
-
+        $response = $this->http($url, $timeout);
         if (! $response->successful()) {
-            return [];
+            $response->throw();
         }
 
         $data = $response->json();
@@ -78,14 +111,9 @@ class EnvironmentAgencyFloodService
     {
         $url = "{$baseUrl}/id/floodAreas?lat={$lat}&long={$long}&dist={$radiusKm}&_limit=200";
 
-        try {
-            $response = Http::timeout($timeout)->get($url);
-        } catch (ConnectionException $e) {
-            return [];
-        }
-
+        $response = $this->http($url, $timeout);
         if (! $response->successful()) {
-            return [];
+            $response->throw();
         }
 
         $data = $response->json();
@@ -120,7 +148,8 @@ class EnvironmentAgencyFloodService
     {
         $maxPolygons = config('flood-watch.environment_agency.max_polygons_per_request', 10);
         $cacheHours = config('flood-watch.environment_agency.polygon_cache_hours', 168);
-        $cacheKeyPrefix = 'flood-area-polygon:';
+        $prefix = config('flood-watch.cache_key_prefix', 'flood-watch');
+        $cacheKeyPrefix = "{$prefix}:polygon:";
 
         $areaIds = [];
         foreach ($items as $item) {
@@ -149,25 +178,21 @@ class EnvironmentAgencyFloodService
             return $result;
         }
 
-        try {
-            $responses = Http::timeout($timeout)->pool(function ($pool) use ($baseUrl, $toFetch) {
-                foreach ($toFetch as $areaId) {
-                    $pool->as($areaId)->get("{$baseUrl}/id/floodAreas/{$areaId}/polygon");
-                }
-            });
-
-            foreach ($responses as $areaId => $response) {
-                if ($response instanceof \Throwable || ! $response->successful()) {
-                    continue;
-                }
-                $geojson = $response->json();
-                if (is_array($geojson) && isset($geojson['type'], $geojson['features'])) {
-                    $result[$areaId] = $geojson;
-                    Cache::put("{$cacheKeyPrefix}{$areaId}", $geojson, $cacheHours * 3600);
-                }
+        $responses = Http::timeout($timeout)->pool(function ($pool) use ($baseUrl, $toFetch) {
+            foreach ($toFetch as $areaId) {
+                $pool->as($areaId)->get("{$baseUrl}/id/floodAreas/{$areaId}/polygon");
             }
-        } catch (\Throwable $e) {
-            report($e);
+        });
+
+        foreach ($responses as $areaId => $response) {
+            if ($response instanceof \Throwable || ! $response->successful()) {
+                continue;
+            }
+            $geojson = $response->json();
+            if (is_array($geojson) && isset($geojson['type'], $geojson['features'])) {
+                $result[$areaId] = $geojson;
+                Cache::put("{$cacheKeyPrefix}{$areaId}", $geojson, $cacheHours * 3600);
+            }
         }
 
         return $result;

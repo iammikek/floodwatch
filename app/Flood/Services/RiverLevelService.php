@@ -2,6 +2,10 @@
 
 namespace App\Flood\Services;
 
+use App\Support\CircuitBreaker;
+use App\Support\CircuitOpenException;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 
 /**
@@ -11,6 +15,12 @@ use Illuminate\Support\Facades\Http;
 class RiverLevelService
 {
     private const MAX_STATIONS = 15;
+
+    public function __construct(
+        protected ?CircuitBreaker $circuitBreaker = null
+    ) {
+        $this->circuitBreaker ??= new CircuitBreaker('environment_agency');
+    }
 
     /**
      * Fetch latest river and sea levels for monitoring stations near the given coordinates.
@@ -22,22 +32,32 @@ class RiverLevelService
         ?float $long = null,
         ?int $radiusKm = null
     ): array {
-        $lat ??= config('flood-watch.default_lat');
-        $long ??= config('flood-watch.default_long');
-        $radiusKm ??= config('flood-watch.default_radius_km');
+        try {
+            return $this->circuitBreaker->execute(function () use ($lat, $long, $radiusKm) {
+                $lat ??= config('flood-watch.default_lat');
+                $long ??= config('flood-watch.default_long');
+                $radiusKm ??= config('flood-watch.default_radius_km');
 
-        $baseUrl = config('flood-watch.environment_agency.base_url');
-        $timeout = config('flood-watch.environment_agency.timeout');
+                $baseUrl = config('flood-watch.environment_agency.base_url');
+                $timeout = config('flood-watch.environment_agency.timeout');
 
-        $stations = $this->fetchStations($baseUrl, $timeout, $lat, $long, $radiusKm);
-        if (empty($stations)) {
+                $stations = $this->fetchStations($baseUrl, $timeout, $lat, $long, $radiusKm);
+                if (empty($stations)) {
+                    return [];
+                }
+
+                $stations = array_slice($stations, 0, self::MAX_STATIONS);
+                $readings = $this->fetchReadings($baseUrl, $timeout, $stations);
+
+                return $this->mergeStationsWithReadings($stations, $readings);
+            });
+        } catch (CircuitOpenException) {
+            return [];
+        } catch (ConnectionException|RequestException $e) {
+            report($e);
+
             return [];
         }
-
-        $stations = array_slice($stations, 0, self::MAX_STATIONS);
-        $readings = $this->fetchReadings($baseUrl, $timeout, $stations);
-
-        return $this->mergeStationsWithReadings($stations, $readings);
     }
 
     /**
@@ -47,16 +67,12 @@ class RiverLevelService
     {
         $url = "{$baseUrl}/id/stations?lat={$lat}&long={$long}&dist={$radiusKm}&_view=full";
 
-        try {
-            $response = Http::timeout($timeout)->get($url);
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
-            report($e);
+        $retryTimes = config('flood-watch.environment_agency.retry_times', 3);
+        $retrySleep = config('flood-watch.environment_agency.retry_sleep_ms', 100);
 
-            return [];
-        }
-
+        $response = Http::timeout($timeout)->retry($retryTimes, $retrySleep, null, false)->get($url);
         if (! $response->successful()) {
-            return [];
+            $response->throw();
         }
 
         $data = $response->json();
@@ -134,17 +150,11 @@ class RiverLevelService
             $requests[$notation] = "{$baseUrl}/id/stations/{$notation}/readings?latest&_sorted";
         }
 
-        try {
-            $responses = Http::timeout($timeout)->pool(function ($pool) use ($requests) {
-                foreach ($requests as $notation => $url) {
-                    $pool->as($notation)->get($url);
-                }
-            });
-        } catch (\Throwable $e) {
-            report($e);
-
-            return [];
-        }
+        $responses = Http::timeout($timeout)->pool(function ($pool) use ($requests) {
+            foreach ($requests as $notation => $url) {
+                $pool->as($notation)->get($url);
+            }
+        });
 
         $readings = [];
         foreach ($responses as $notation => $response) {

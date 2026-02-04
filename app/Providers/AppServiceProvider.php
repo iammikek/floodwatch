@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\FloodWatchPromptBuilder;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -11,7 +12,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(FloodWatchPromptBuilder::class, function () {
+            return new FloodWatchPromptBuilder(
+                config('flood-watch.prompt_version', 'v1')
+            );
+        });
     }
 
     /**

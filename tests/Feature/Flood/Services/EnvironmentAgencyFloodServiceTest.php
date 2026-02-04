@@ -21,6 +21,7 @@ class EnvironmentAgencyFloodServiceTest extends TestCase
                     ],
                 ],
             ], 200),
+            '*/flood-monitoring/id/floodAreas*' => Http::response(['items' => []], 200),
         ]);
 
         $service = new EnvironmentAgencyFloodService;
@@ -39,6 +40,7 @@ class EnvironmentAgencyFloodServiceTest extends TestCase
             '*/flood-monitoring/id/floods*' => Http::response([
                 'items' => [],
             ], 200),
+            '*/flood-monitoring/id/floodAreas*' => Http::response(['items' => []], 200),
         ]);
 
         $service = new EnvironmentAgencyFloodService;

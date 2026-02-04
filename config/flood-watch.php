@@ -4,6 +4,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Prompt Version
+    |--------------------------------------------------------------------------
+    |
+    | Version of the system prompt to load from resources/prompts/{version}/.
+    | Bump this when making breaking prompt changes; snapshot tests will fail
+    | until updated.
+    |
+    */
+
+    'prompt_version' => env('FLOOD_WATCH_PROMPT_VERSION', 'v1'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Default Coordinates (Langport, South West)
     |--------------------------------------------------------------------------
     */
@@ -23,6 +36,8 @@ return [
         'timeout' => (int) env('ENVIRONMENT_AGENCY_TIMEOUT', 25),
         'polygon_cache_hours' => (int) env('FLOOD_WATCH_POLYGON_CACHE_HOURS', 168),
         'max_polygons_per_request' => (int) env('FLOOD_WATCH_MAX_POLYGONS', 10),
+        'retry_times' => (int) env('FLOOD_WATCH_EA_RETRY_TIMES', 3),
+        'retry_sleep_ms' => (int) env('FLOOD_WATCH_EA_RETRY_SLEEP_MS', 100),
     ],
 
     /*
@@ -34,6 +49,8 @@ return [
     'flood_forecast' => [
         'base_url' => env('FLOOD_FORECAST_URL', 'https://api.ffc-environment-agency.fgs.metoffice.gov.uk'),
         'timeout' => (int) env('FLOOD_FORECAST_TIMEOUT', 25),
+        'retry_times' => (int) env('FLOOD_WATCH_FORECAST_RETRY_TIMES', 3),
+        'retry_sleep_ms' => (int) env('FLOOD_WATCH_FORECAST_RETRY_SLEEP_MS', 100),
     ],
 
     /*
@@ -45,6 +62,8 @@ return [
     'weather' => [
         'base_url' => env('WEATHER_API_URL', 'https://api.open-meteo.com/v1'),
         'timeout' => (int) env('WEATHER_API_TIMEOUT', 10),
+        'retry_times' => (int) env('FLOOD_WATCH_WEATHER_RETRY_TIMES', 3),
+        'retry_sleep_ms' => (int) env('FLOOD_WATCH_WEATHER_RETRY_SLEEP_MS', 100),
     ],
 
     /*
@@ -57,6 +76,8 @@ return [
         'base_url' => env('NATIONAL_HIGHWAYS_URL', 'https://api.data.nationalhighways.co.uk'),
         'api_key' => env('NATIONAL_HIGHWAYS_API_KEY'),
         'timeout' => (int) env('NATIONAL_HIGHWAYS_TIMEOUT', 25),
+        'retry_times' => (int) env('FLOOD_WATCH_NH_RETRY_TIMES', 3),
+        'retry_sleep_ms' => (int) env('FLOOD_WATCH_NH_RETRY_SLEEP_MS', 100),
     ],
 
     /*
@@ -82,6 +103,34 @@ return [
     */
 
     'cache_store' => env('FLOOD_WATCH_CACHE_STORE', 'flood-watch'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Cache Key Prefix
+    |--------------------------------------------------------------------------
+    |
+    | Prefix for all flood-watch cache keys. Ensures distinct keys across
+    | services (flood data, polygons, circuit breaker, etc.).
+    |
+    */
+
+    'cache_key_prefix' => env('FLOOD_WATCH_CACHE_PREFIX', 'flood-watch'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Circuit Breaker
+    |--------------------------------------------------------------------------
+    |
+    | After this many consecutive failures, the circuit opens and requests
+    | are skipped for cooldown_seconds. Set to 0 to disable.
+    |
+    */
+
+    'circuit_breaker' => [
+        'failure_threshold' => (int) env('FLOOD_WATCH_CIRCUIT_FAILURE_THRESHOLD', 5),
+        'cooldown_seconds' => (int) env('FLOOD_WATCH_CIRCUIT_COOLDOWN', 60),
+        'enabled' => env('FLOOD_WATCH_CIRCUIT_BREAKER_ENABLED', true),
+    ],
 
     /*
     |--------------------------------------------------------------------------

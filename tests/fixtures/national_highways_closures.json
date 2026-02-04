@@ -1,0 +1,22 @@
+{
+  "closure": {
+    "closure": [
+      {
+        "road": "A361",
+        "roadName": "A361",
+        "status": "closed",
+        "closureStatus": "closed",
+        "incidentType": "flooding",
+        "type": "flooding",
+        "delayTime": "30 minutes",
+        "delay": "30 minutes"
+      },
+      {
+        "roadName": "M5",
+        "closureStatus": "partial",
+        "type": "lane closure",
+        "delay": "15 mins"
+      }
+    ]
+  }
+}

@@ -41,6 +41,9 @@ class FloodWatchServiceTest extends TestCase
             if (str_contains($request->url(), 'fgs.metoffice.gov.uk')) {
                 return Http::response(['statement' => []], 200);
             }
+            if (str_contains($request->url(), 'open-meteo.com')) {
+                return Http::response(['daily' => ['time' => [], 'weathercode' => [], 'temperature_2m_max' => [], 'temperature_2m_min' => [], 'precipitation_sum' => []]], 200);
+            }
 
             return Http::response(null, 404);
         });
@@ -136,6 +139,9 @@ class FloodWatchServiceTest extends TestCase
                 if (str_contains($request->url(), '/id/stations')) {
                     return Http::response(['items' => []], 200);
                 }
+                if (str_contains($request->url(), '/id/floodAreas')) {
+                    return Http::response(['items' => []], 200);
+                }
                 if (str_contains($request->url(), '/id/floods')) {
                     $this->assertStringContainsString('lat=52.1', $request->url());
                     $this->assertStringContainsString('long=-1.2', $request->url());
@@ -149,6 +155,9 @@ class FloodWatchServiceTest extends TestCase
             }
             if (str_contains($request->url(), 'fgs.metoffice.gov.uk')) {
                 return Http::response(['statement' => []], 200);
+            }
+            if (str_contains($request->url(), 'open-meteo.com')) {
+                return Http::response(['daily' => ['time' => [], 'weathercode' => [], 'temperature_2m_max' => [], 'temperature_2m_min' => [], 'precipitation_sum' => []]], 200);
             }
 
             return Http::response(null, 404);
@@ -221,6 +230,9 @@ class FloodWatchServiceTest extends TestCase
                 if (str_contains($request->url(), '/id/stations')) {
                     return Http::response(['items' => []], 200);
                 }
+                if (str_contains($request->url(), '/id/floodAreas')) {
+                    return Http::response(['items' => []], 200);
+                }
                 if (str_contains($request->url(), '/id/floods')) {
                     return Http::response([
                         'items' => [
@@ -250,6 +262,9 @@ class FloodWatchServiceTest extends TestCase
             }
             if (str_contains($request->url(), 'fgs.metoffice.gov.uk')) {
                 return Http::response(['statement' => []], 200);
+            }
+            if (str_contains($request->url(), 'open-meteo.com')) {
+                return Http::response(['daily' => ['time' => [], 'weathercode' => [], 'temperature_2m_max' => [], 'temperature_2m_min' => [], 'precipitation_sum' => []]], 200);
             }
 
             return Http::response(null, 404);
@@ -326,6 +341,9 @@ class FloodWatchServiceTest extends TestCase
             }
             if (str_contains($request->url(), 'fgs.metoffice.gov.uk')) {
                 return Http::response(['statement' => []], 200);
+            }
+            if (str_contains($request->url(), 'open-meteo.com')) {
+                return Http::response(['daily' => ['time' => [], 'weathercode' => [], 'temperature_2m_max' => [], 'temperature_2m_min' => [], 'precipitation_sum' => []]], 200);
             }
 
             return Http::response(null, 404);
@@ -408,6 +426,9 @@ class FloodWatchServiceTest extends TestCase
                         'sources' => [['river' => 'River flood risk is LOW.']],
                     ],
                 ], 200);
+            }
+            if (str_contains($request->url(), 'open-meteo.com')) {
+                return Http::response(['daily' => ['time' => [], 'weathercode' => [], 'temperature_2m_max' => [], 'temperature_2m_min' => [], 'precipitation_sum' => []]], 200);
             }
 
             return Http::response(null, 404);

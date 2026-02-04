@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Services\FloodWatchService;
 use App\Services\FloodWatchTrendService;
 use App\Services\LocationResolver;
+use App\Support\LogMasker;
 use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -205,7 +206,7 @@ class FloodWatchDashboard extends Component
             try {
                 $body = (string) $response->getBody();
                 if ($body !== '') {
-                    $context['response_body'] = $body;
+                    $context['response_body'] = LogMasker::maskResponseBody($body);
                 }
             } catch (\Throwable) {
                 // Stream may already be consumed

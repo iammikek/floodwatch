@@ -2,10 +2,20 @@
 
 namespace App\Services;
 
+use App\Support\CircuitBreaker;
+use App\Support\CircuitOpenException;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
 
 class WeatherService
 {
+    public function __construct(
+        protected ?CircuitBreaker $circuitBreaker = null
+    ) {
+        $this->circuitBreaker ??= new CircuitBreaker('weather');
+    }
+
     private const WMO_ICONS = [
         0 => '☀️',
         1 => '🌤️',
@@ -44,20 +54,32 @@ class WeatherService
      */
     public function getForecast(float $lat, float $long): array
     {
-        $baseUrl = config('flood-watch.weather.base_url', 'https://api.open-meteo.com/v1');
-        $timeout = config('flood-watch.weather.timeout', 10);
-        $url = "{$baseUrl}/forecast?latitude={$lat}&longitude={$long}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=Europe/London&forecast_days=5";
-
         try {
-            $response = Http::timeout($timeout)->get($url);
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            return $this->circuitBreaker->execute(fn () => $this->fetchForecast($lat, $long));
+        } catch (CircuitOpenException) {
+            return [];
+        } catch (ConnectionException|RequestException $e) {
             report($e);
 
             return [];
         }
+    }
 
+    /**
+     * @return array<int, array{date: string, icon: string, temp_max: float, temp_min: float, precipitation: float, description: string}>
+     */
+    private function fetchForecast(float $lat, float $long): array
+    {
+        $baseUrl = config('flood-watch.weather.base_url', 'https://api.open-meteo.com/v1');
+        $timeout = config('flood-watch.weather.timeout', 10);
+        $url = "{$baseUrl}/forecast?latitude={$lat}&longitude={$long}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=Europe/London&forecast_days=5";
+
+        $retryTimes = config('flood-watch.weather.retry_times', 3);
+        $retrySleep = config('flood-watch.weather.retry_sleep_ms', 100);
+
+        $response = Http::timeout($timeout)->retry($retryTimes, $retrySleep, null, false)->get($url);
         if (! $response->successful()) {
-            return [];
+            $response->throw();
         }
 
         $data = $response->json();
