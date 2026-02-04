@@ -12,7 +12,13 @@
 /.vscode
 /.zed
 /.codex
-/.cursor
+# .cursor: ignore user-specific files, track LLM skills and rules
+/.cursor/*
+!/.cursor/skills/
+!/.cursor/skills/**
+!/.cursor/rules/
+!/.cursor/rules/**
+!/.cursor/mcp.json
 /.junie
 /.opencode
 /boost.json
