@@ -44,8 +44,9 @@ Primary dev environment. All commands run via Sail. Use `./vendor/bin/sail` or c
 ## Laravel AI / LLM
 
 - **Laravel Boost** (dev, required): MCP server, AI guidelines, and documentation API for Cursor. Config: `.cursor/mcp.json`. Enable in Cursor: Command Palette → "MCP: Open Settings" → toggle `laravel-boost` on.
-- **LLM integration** (app): `openai-php/laravel` for OpenAI API. Add `OPENAI_API_KEY` to `.env`.
-- **Testing LLM code**: Use `OpenAI::fake()` (or equivalent) in tests; never call real APIs in tests
+- **LLM integration** (app): `openai-php/laravel` for OpenAI API. Add `OPENAI_API_KEY` to `.env`. Optional: `OPENAI_MODEL` (default: gpt-4o-mini).
+- **Somerset Assistant**: `App\Services\SomersetAssistantService` uses OpenAI chat completions with tool calling. Tools: GetFloodData, GetHighwaysIncidents. System prompt enforces Somerset Levels logic.
+- **Testing LLM code**: Use `OpenAI\Laravel\Facades\OpenAI::fake()` with `CreateResponse::fake()` in tests; never call real APIs in tests.
 
 ## Project Structure
 
@@ -143,7 +144,7 @@ This project has domain-specific skills available. You MUST activate the relevan
 
 ## Frontend Bundling
 
-- If the user doesn't see a frontend change reflected in the UI, it could mean they need to run `npm run build`, `npm run dev`, or `composer run dev`. Ask them.
+- If the user doesn't see a frontend change reflected in the UI, it could mean they need to run `yarn build`, `yarn dev`, or `composer run dev`. Ask them.
 
 ## Documentation Files
 
@@ -281,7 +282,7 @@ protected function isAccessible(User $user, ?string $path = null): bool
 
 ## Vite Error
 
-- If you receive an "Illuminate\Foundation\ViteException: Unable to locate file in Vite manifest" error, you can run `npm run build` or ask the user to run `npm run dev` or `composer run dev`.
+- If you receive an "Illuminate\Foundation\ViteException: Unable to locate file in Vite manifest" error, you can run `yarn build` or ask the user to run `yarn dev` or `composer run dev`.
 
 === laravel/v12 rules ===
 

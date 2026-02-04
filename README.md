@@ -106,6 +106,7 @@ The POC should feel like a cohesive tool, not a disjointed chat interface.
 ```bash
 # Install dependencies
 composer install
+yarn install
 
 # Start Sail
 ./vendor/bin/sail up -d
@@ -133,7 +134,7 @@ sail artisan ...    # Artisan commands
 GitHub Actions runs a test pipeline on push/PR. The pipeline:
 
 - Triggers on push and pull requests to the default branch
-- Builds the frontend (e.g. `npm ci && npm run build`) and fails if the build fails
+- Builds the frontend (e.g. `yarn install && yarn build`) and fails if the build fails
 - Runs the full Pest test suite
 - Fails the build if any step fails
 
