@@ -61,7 +61,7 @@ class FloodWatchDashboard extends Component
         try {
             $result = $assistant->chat($message, [], $cacheKey, $userLat, $userLong, $region);
             $this->assistantResponse = $result['response'];
-            $this->floods = $result['floods'];
+            $this->floods = collect($result['floods'])->sortByDesc(fn (array $f) => $f['timeMessageChanged'] ?? $f['timeRaised'] ?? '')->values()->all();
             $this->incidents = $result['incidents'];
             $this->forecast = $result['forecast'] ?? [];
             $this->weather = $result['weather'] ?? [];

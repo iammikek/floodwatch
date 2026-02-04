@@ -116,14 +116,10 @@
                                     @endif
                                     @if (!empty($flood['message']))
                                         <div x-data="{ open: false }" class="mt-2">
-                                            <button type="button" @click="open = !open" class="flex items-center gap-2 cursor-pointer text-sm text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300">
-                                                <span x-show="!open" x-transition>Show full message</span>
-                                                <span x-show="open" x-cloak x-transition>Hide message</span>
-                                                <span class="shrink-0 transition-transform duration-200" :class="open && 'rotate-180'" aria-hidden="true">
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                                    </svg>
-                                                </span>
+                                            <button type="button" @click="open = !open" class="flex items-center gap-2 cursor-pointer text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300" aria-label="Toggle full message">
+                                                <svg class="w-4 h-4 transition-transform duration-200" :class="open && 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                                </svg>
                                             </button>
                                             <p x-show="open" x-cloak x-transition class="mt-2 text-sm text-slate-600 dark:text-slate-400 whitespace-pre-wrap break-words">{{ $flood['message'] }}</p>
                                         </div>
