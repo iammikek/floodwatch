@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use OpenAI\Laravel\Facades\OpenAI;
 
 class FloodWatchService
@@ -38,9 +39,10 @@ PROMPT;
      * Results are cached to avoid hammering the APIs. Use $cacheKey to scope the cache (e.g. postcode).
      *
      * @param  array<int, array{role: string, content: string}>  $conversation  Previous messages (optional)
+     * @param  callable(string): void|null  $onProgress  Optional callback for progress updates (e.g. for streaming to UI)
      * @return array{response: string, floods: array, incidents: array, forecast: array, weather: array, lastChecked: string}
      */
-    public function chat(string $userMessage, array $conversation = [], ?string $cacheKey = null, ?float $userLat = null, ?float $userLong = null, ?string $region = null): array
+    public function chat(string $userMessage, array $conversation = [], ?string $cacheKey = null, ?float $userLat = null, ?float $userLong = null, ?string $region = null, ?callable $onProgress = null): array
     {
         $emptyResult = fn (string $response, ?string $lastChecked = null): array => [
             'response' => $response,
@@ -66,12 +68,22 @@ PROMPT;
             }
         }
 
+        $report = static function (string $status) use ($onProgress): void {
+            $onProgress !== null && $onProgress($status);
+        };
+
+        $report('Fetching 5-day flood forecast...');
         $forecast = $this->forecastService->getForecast();
         $lat = $userLat ?? config('flood-watch.default_lat');
         $long = $userLong ?? config('flood-watch.default_long');
+
+        $report('Getting weather forecast...');
         $weather = $this->weatherService->getForecast($lat, $long);
+
+        $report('Fetching river levels...');
         $riverLevels = $this->riverLevelService->getLevels($lat, $long);
 
+        $report('Calling AI assistant...');
         $messages = $this->buildMessages($userMessage, $conversation, $region);
         $tools = $this->getToolDefinitions();
         $maxIterations = 8;
@@ -80,12 +92,28 @@ PROMPT;
         $incidents = [];
 
         while ($iteration < $maxIterations) {
-            $response = OpenAI::chat()->create([
+            if ($iteration > 0) {
+                $report('Analyzing with AI...');
+            }
+
+            $payload = [
                 'model' => config('openai.model', 'gpt-4o-mini'),
                 'messages' => $messages,
                 'tools' => $tools,
                 'tool_choice' => 'auto',
+            ];
+            $payloadJson = json_encode($payload);
+            $payloadBytes = strlen($payloadJson);
+            $estimatedTokens = (int) ceil($payloadBytes / 4);
+            Log::info('FloodWatch OpenAI payload', [
+                'size_bytes' => $payloadBytes,
+                'estimated_tokens' => $estimatedTokens,
+                'message_count' => count($messages),
+                'iteration' => $iteration + 1,
             ]);
+            Log::debug('FloodWatch OpenAI payload content', ['payload' => $payload]);
+
+            $response = OpenAI::chat()->create($payload);
 
             $choice = $response->choices[0] ?? null;
             if (! $choice) {
@@ -96,6 +124,8 @@ PROMPT;
             $finishReason = $choice->finishReason ?? '';
 
             if ($finishReason === 'stop' || $finishReason === 'end_turn') {
+                $report('Preparing your summary...');
+
                 return $this->storeAndReturn($key, [
                     'response' => trim($message->content ?? 'No response generated.'),
                     'floods' => $floods,
@@ -107,6 +137,8 @@ PROMPT;
             }
 
             if (empty($message->toolCalls)) {
+                $report('Preparing your summary...');
+
                 return $this->storeAndReturn($key, [
                     'response' => trim($message->content ?? 'No response generated.'),
                     'floods' => $floods,
@@ -124,20 +156,38 @@ PROMPT;
             ];
 
             foreach ($message->toolCalls as $toolCall) {
-                $result = $this->executeTool($toolCall->function->name, $toolCall->function->arguments);
-                if ($toolCall->function->name === 'GetFloodData' && is_array($result)) {
+                $toolName = $toolCall->function->name;
+                $report(match ($toolName) {
+                    'GetFloodData' => 'Fetching flood warnings...',
+                    'GetHighwaysIncidents' => 'Checking road status...',
+                    'GetFloodForecast' => 'Getting flood forecast...',
+                    'GetRiverLevels' => 'Fetching river levels...',
+                    default => 'Loading data...',
+                });
+                $result = $this->executeTool($toolName, $toolCall->function->arguments);
+                if ($toolName === 'GetFloodData' && is_array($result)) {
                     $floods = $result;
                 }
-                if ($toolCall->function->name === 'GetHighwaysIncidents' && is_array($result)) {
+                if ($toolName === 'GetHighwaysIncidents' && is_array($result)) {
                     $incidents = $result;
                 }
-                if ($toolCall->function->name === 'GetFloodForecast' && is_array($result) && ! isset($result['error'])) {
+                if ($toolName === 'GetFloodForecast' && is_array($result) && ! isset($result['error'])) {
                     $forecast = $result;
                 }
+
+                $contentForLlm = $this->prepareToolResultForLlm($toolName, $result);
+                $content = is_string($contentForLlm) ? $contentForLlm : json_encode($contentForLlm);
+                $contentBytes = strlen($content);
+                Log::info('FloodWatch tool result for LLM', [
+                    'tool' => $toolName,
+                    'size_bytes' => $contentBytes,
+                    'estimated_tokens' => (int) ceil($contentBytes / 4),
+                ]);
+                Log::debug('FloodWatch tool result content', ['tool' => $toolName, 'content' => $content]);
                 $messages[] = [
                     'role' => 'tool',
                     'tool_call_id' => $toolCall->id,
-                    'content' => is_string($result) ? $result : json_encode($result),
+                    'content' => $content,
                 ];
             }
 
@@ -336,5 +386,26 @@ PROMPT;
             ),
             default => ['error' => "Unknown tool: {$name}"],
         };
+    }
+
+    /**
+     * Prepare tool result for LLM consumption by stripping large/unnecessary data (e.g. GeoJSON polygons).
+     * Reduces token usage and avoids "Request too large" rate limit errors.
+     */
+    private function prepareToolResultForLlm(string $toolName, array|string $result): array|string
+    {
+        if (is_string($result)) {
+            return $result;
+        }
+
+        if ($toolName === 'GetFloodData') {
+            return array_map(function (array $flood) {
+                unset($flood['polygon']);
+
+                return $flood;
+            }, $result);
+        }
+
+        return $result;
     }
 }

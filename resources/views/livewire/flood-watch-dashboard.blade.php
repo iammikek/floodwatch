@@ -88,6 +88,7 @@
                     type="button"
                     wire:click="search"
                     wire:loading.attr="disabled"
+                    @if($retryAfterTimestamp && !$this->canRetry()) disabled @endif
                     class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <span wire:loading.remove wire:target="search">Check status</span>
@@ -103,30 +104,39 @@
         </div>
 
         @if ($error)
-            <div class="mb-6 p-4 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 text-sm">
-                {{ $error }}
+            <div
+                class="mb-6 p-4 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 text-sm"
+                @if($retryAfterTimestamp) wire:poll.1s="checkRetry" @endif
+                x-data="{
+                    retryAfter: @js($retryAfterTimestamp),
+                    secondsLeft: 0,
+                    init() {
+                        if (this.retryAfter) {
+                            const update = () => {
+                                this.secondsLeft = Math.max(0, this.retryAfter - Math.floor(Date.now() / 1000));
+                            };
+                            update();
+                            setInterval(update, 1000);
+                        }
+                    }
+                }"
+                x-init="init()"
+            >
+                <span>{{ $error }}</span>
+                <span x-show="retryAfter && secondsLeft > 0" x-cloak x-transition> — Retry in <span x-text="secondsLeft"></span> seconds.</span>
+                <span x-show="retryAfter && secondsLeft === 0" x-cloak x-transition> — You can retry now.</span>
             </div>
         @endif
 
         @if ($loading)
-            <div
-                class="flex items-center gap-3 p-4 rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700"
-                x-data="{
-                    steps: [
-                        'Fetching flood data...',
-                        'Checking road status...',
-                        'Getting river levels...',
-                        'Analyzing with AI...'
-                    ],
-                    current: 0
-                }"
-                x-init="setInterval(() => { current = (current + 1) % steps.length; }, 2500)"
-            >
+            <div class="flex items-center gap-3 p-4 rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700">
                 <svg class="animate-spin h-6 w-6 text-blue-600 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                <p class="text-slate-600 dark:text-slate-400 text-sm" x-text="steps[current]"></p>
+                <p class="text-slate-600 dark:text-slate-400 text-sm" wire:stream.replace="searchStatus">
+                    Starting...
+                </p>
             </div>
         @endif
 
@@ -195,6 +205,16 @@
                                     if (f.message) html += '<br><small>' + f.message.replace(/<[^>]*>/g, '').substring(0, 150) + (f.message.length > 150 ? '…' : '') + '</small>';
                                     return html;
                                 },
+                                floodPolygonStyle(f) {
+                                    const level = f.severityLevel || 0;
+                                    const isSevere = level === 1;
+                                    return {
+                                        color: isSevere ? '#dc2626' : '#f59e0b',
+                                        fillColor: isSevere ? '#dc2626' : '#f59e0b',
+                                        fillOpacity: 0.25,
+                                        weight: 2
+                                    };
+                                },
                                 init() {
                                     if (!this.center) return;
                                     this.$nextTick(() => {
@@ -213,6 +233,15 @@
                                                 .bindPopup(this.stationPopup(s));
                                         });
                                         this.floods.forEach(f => {
+                                            if (f.polygon && f.polygon.features) {
+                                                const style = this.floodPolygonStyle(f);
+                                                L.geoJSON(f.polygon, {
+                                                    style: () => style,
+                                                    onEachFeature: (feature, layer) => {
+                                                        layer.bindPopup(this.floodPopup(f));
+                                                    }
+                                                }).addTo(this.map);
+                                            }
                                             if (f.lat != null && f.long != null) {
                                                 L.marker([f.lat, f.long], { icon: this.floodIcon(f) })
                                                     .addTo(this.map)
@@ -234,6 +263,7 @@
                                 <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon">🛡</span> Barrier</span>
                                 <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon">〰</span> Drain</span>
                                 <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon flood-map-legend-flood">⚠</span> Flood warning</span>
+                                <span class="flex items-center gap-1.5"><span class="flood-map-legend-polygon" style="display:inline-block;width:12px;height:12px;background:#f59e0b;opacity:0.4;border:1px solid #f59e0b;border-radius:2px"></span> Flood area</span>
                                 <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon flood-map-legend-elevated">●</span> Elevated</span>
                                 <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon flood-map-legend-expected">●</span> Expected</span>
                                 <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon flood-map-legend-low">●</span> Low</span>

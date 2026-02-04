@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
 class EnvironmentAgencyFloodService
@@ -34,12 +35,13 @@ class EnvironmentAgencyFloodService
         $data = $response->json();
         $items = $data['items'] ?? [];
         $areaCentroids = $this->fetchFloodAreaCentroids($baseUrl, $timeout, $lat, $long, $radiusKm);
+        $polygons = $this->fetchFloodAreaPolygons($baseUrl, $timeout, $items);
 
-        return array_map(function (array $item) use ($areaCentroids) {
+        return array_map(function (array $item) use ($areaCentroids, $polygons) {
             $areaId = $item['floodAreaID'] ?? '';
             $centroid = $areaCentroids[$areaId] ?? null;
 
-            return [
+            $flood = [
                 'description' => $item['description'] ?? '',
                 'severity' => $item['severity'] ?? '',
                 'severityLevel' => $item['severityLevel'] ?? 0,
@@ -51,6 +53,12 @@ class EnvironmentAgencyFloodService
                 'lat' => $centroid['lat'] ?? null,
                 'long' => $centroid['long'] ?? null,
             ];
+
+            if (isset($polygons[$areaId])) {
+                $flood['polygon'] = $polygons[$areaId];
+            }
+
+            return $flood;
         }, $items);
     }
 
@@ -93,5 +101,68 @@ class EnvironmentAgencyFloodService
         }
 
         return $centroids;
+    }
+
+    /**
+     * Fetch flood area polygon GeoJSON for map display. Uses cache and parallel requests.
+     *
+     * @param  array<int, array<string, mixed>>  $items
+     * @return array<string, array<string, mixed>>
+     */
+    private function fetchFloodAreaPolygons(string $baseUrl, int $timeout, array $items): array
+    {
+        $maxPolygons = config('flood-watch.environment_agency.max_polygons_per_request', 10);
+        $cacheHours = config('flood-watch.environment_agency.polygon_cache_hours', 168);
+        $cacheKeyPrefix = 'flood-area-polygon:';
+
+        $areaIds = [];
+        foreach ($items as $item) {
+            $id = $item['floodAreaID'] ?? '';
+            if ($id !== '' && ! in_array($id, $areaIds, true)) {
+                $areaIds[] = $id;
+                if (count($areaIds) >= $maxPolygons) {
+                    break;
+                }
+            }
+        }
+
+        $result = [];
+        $toFetch = [];
+
+        foreach ($areaIds as $areaId) {
+            $cached = Cache::get("{$cacheKeyPrefix}{$areaId}");
+            if ($cached !== null) {
+                $result[$areaId] = $cached;
+            } else {
+                $toFetch[] = $areaId;
+            }
+        }
+
+        if (empty($toFetch)) {
+            return $result;
+        }
+
+        try {
+            $responses = Http::timeout($timeout)->pool(function ($pool) use ($baseUrl, $toFetch) {
+                foreach ($toFetch as $areaId) {
+                    $pool->as($areaId)->get("{$baseUrl}/id/floodAreas/{$areaId}/polygon");
+                }
+            });
+
+            foreach ($responses as $areaId => $response) {
+                if ($response instanceof \Throwable || ! $response->successful()) {
+                    continue;
+                }
+                $geojson = $response->json();
+                if (is_array($geojson) && isset($geojson['type'], $geojson['features'])) {
+                    $result[$areaId] = $geojson;
+                    Cache::put("{$cacheKeyPrefix}{$areaId}", $geojson, $cacheHours * 3600);
+                }
+            }
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
+        return $result;
     }
 }

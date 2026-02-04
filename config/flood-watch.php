@@ -21,6 +21,8 @@ return [
     'environment_agency' => [
         'base_url' => env('ENVIRONMENT_AGENCY_URL', 'https://environment.data.gov.uk/flood-monitoring'),
         'timeout' => (int) env('ENVIRONMENT_AGENCY_TIMEOUT', 25),
+        'polygon_cache_hours' => (int) env('FLOOD_WATCH_POLYGON_CACHE_HOURS', 168),
+        'max_polygons_per_request' => (int) env('FLOOD_WATCH_MAX_POLYGONS', 10),
     ],
 
     /*

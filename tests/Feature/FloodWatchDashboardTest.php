@@ -215,7 +215,7 @@ class FloodWatchDashboardTest extends TestCase
     {
         Livewire::test('flood-watch-dashboard')
             ->set('loading', true)
-            ->assertSee('Fetching flood data')
+            ->assertSee('Starting')
             ->assertSee('animate-spin');
     }
 
@@ -274,9 +274,12 @@ class FloodWatchDashboardTest extends TestCase
 
         OpenAI::fake([new \RuntimeException('OpenAI API rate limit exceeded')]);
 
-        Livewire::test('flood-watch-dashboard')
+        $component = Livewire::test('flood-watch-dashboard')
             ->call('search')
-            ->assertSet('error', 'OpenAI API rate limit exceeded');
+            ->assertSet('error', 'AI service rate limit exceeded. Please wait a minute and try again.');
+
+        $this->assertNotNull($component->get('retryAfterTimestamp'));
+        $this->assertGreaterThan(time(), $component->get('retryAfterTimestamp'));
     }
 
     public function test_search_displays_generic_error_when_assistant_throws_and_debug_off(): void
@@ -286,9 +289,11 @@ class FloodWatchDashboardTest extends TestCase
 
         OpenAI::fake([new \RuntimeException('OpenAI API rate limit exceeded')]);
 
-        Livewire::test('flood-watch-dashboard')
+        $component = Livewire::test('flood-watch-dashboard')
             ->call('search')
-            ->assertSet('error', 'Unable to get a response. Please try again.');
+            ->assertSet('error', 'AI service rate limit exceeded. Please wait a minute and try again.');
+
+        $this->assertNotNull($component->get('retryAfterTimestamp'));
     }
 
     public function test_search_displays_friendly_message_for_timeout_error(): void
@@ -300,9 +305,11 @@ class FloodWatchDashboardTest extends TestCase
             new \RuntimeException('cURL error 28: Operation timed out after 30005 milliseconds with 0 bytes received'),
         ]);
 
-        Livewire::test('flood-watch-dashboard')
+        $component = Livewire::test('flood-watch-dashboard')
             ->call('search')
             ->assertSet('error', 'The request took too long. The AI service may be busy. Please try again in a moment.');
+
+        $this->assertNull($component->get('retryAfterTimestamp'));
     }
 
     public function test_check_status_button_has_spinner_markup(): void
@@ -353,6 +360,20 @@ class FloodWatchDashboardTest extends TestCase
                 ], 200);
             }
             if (str_contains($request->url(), 'environment.data.gov.uk')) {
+                if (str_contains($request->url(), '/polygon')) {
+                    return Http::response([
+                        'type' => 'FeatureCollection',
+                        'features' => [
+                            [
+                                'type' => 'Feature',
+                                'geometry' => [
+                                    'type' => 'Polygon',
+                                    'coordinates' => [[[-2.83, 51.04], [-2.82, 51.04], [-2.82, 51.05], [-2.83, 51.05], [-2.83, 51.04]]],
+                                ],
+                            ],
+                        ],
+                    ], 200);
+                }
                 if (str_contains($request->url(), '/id/floodAreas')) {
                     return Http::response([
                         'items' => [
@@ -448,5 +469,7 @@ class FloodWatchDashboardTest extends TestCase
         $this->assertNotNull($floods[0]['distanceKm']);
         $this->assertNotNull($floods[1]['distanceKm']);
         $this->assertLessThanOrEqual($floods[1]['distanceKm'], $floods[0]['distanceKm']);
+        $this->assertArrayHasKey('polygon', $floods[0]);
+        $this->assertSame('FeatureCollection', $floods[0]['polygon']['type'] ?? null);
     }
 }

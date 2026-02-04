@@ -75,6 +75,14 @@ class LocationResolver
                 ->withHeaders(['User-Agent' => config('app.name').'/1.0'])
                 ->get($url, $params);
 
+            if ($response->tooManyRequests()) {
+                return [
+                    'valid' => false,
+                    'in_area' => false,
+                    'error' => 'Location lookup rate limit exceeded. Please wait a minute and try again.',
+                ];
+            }
+
             if (! $response->successful()) {
                 return [
                     'valid' => false,

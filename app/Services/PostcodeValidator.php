@@ -67,7 +67,14 @@ class PostcodeValidator
 
         if ($geocode) {
             $coords = $this->geocode($normalized);
-            if ($coords !== null) {
+            if ($coords !== null && isset($coords['error'])) {
+                return [
+                    'valid' => false,
+                    'in_area' => false,
+                    'error' => $coords['error'],
+                ];
+            }
+            if ($coords !== null && isset($coords['lat'], $coords['long'])) {
                 $result['lat'] = $coords['lat'];
                 $result['long'] = $coords['long'];
             }
@@ -126,7 +133,7 @@ class PostcodeValidator
     /**
      * Geocode postcode via postcodes.io (free, no API key).
      *
-     * @return array{lat: float, long: float}|null
+     * @return array{lat: float, long: float}|array{error: string}|null
      */
     public function geocode(string $postcode): ?array
     {
@@ -135,6 +142,10 @@ class PostcodeValidator
 
         try {
             $response = Http::timeout(5)->get($url);
+
+            if ($response->tooManyRequests()) {
+                return ['error' => 'Postcode lookup rate limit exceeded. Please wait a minute and try again.'];
+            }
 
             if (! $response->successful()) {
                 return null;

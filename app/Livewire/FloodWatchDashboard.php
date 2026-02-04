@@ -4,8 +4,12 @@ namespace App\Livewire;
 
 use App\Services\FloodWatchService;
 use App\Services\LocationResolver;
+use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use OpenAI\Exceptions\ErrorException;
+use OpenAI\Exceptions\RateLimitException;
+use Psr\Http\Message\ResponseInterface;
 
 #[Layout('layouts.app')]
 class FloodWatchDashboard extends Component
@@ -34,15 +38,34 @@ class FloodWatchDashboard extends Component
 
     public ?string $error = null;
 
+    public ?int $retryAfterTimestamp = null;
+
+    public function canRetry(): bool
+    {
+        if ($this->retryAfterTimestamp === null) {
+            return true;
+        }
+
+        return time() >= $this->retryAfterTimestamp;
+    }
+
+    public function checkRetry(): void
+    {
+        if ($this->canRetry() && $this->retryAfterTimestamp !== null) {
+            $this->retryAfterTimestamp = null;
+        }
+    }
+
     public function search(FloodWatchService $assistant, LocationResolver $locationResolver): void
     {
-        $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'hasUserLocation', 'lastChecked', 'error']);
+        $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'hasUserLocation', 'lastChecked', 'error', 'retryAfterTimestamp']);
         $this->loading = true;
 
         $locationTrimmed = trim($this->location);
 
         $validation = null;
         if ($locationTrimmed !== '') {
+            $this->stream(to: 'searchStatus', content: 'Looking up location...', replace: true);
             $validation = $locationResolver->resolve($locationTrimmed);
             if (! $validation['valid']) {
                 $this->error = $validation['error'] ?? 'Invalid location.';
@@ -65,7 +88,8 @@ class FloodWatchDashboard extends Component
         $region = $validation['region'] ?? null;
 
         try {
-            $result = $assistant->chat($message, [], $cacheKey, $userLat, $userLong, $region);
+            $onProgress = fn (string $status) => $this->stream(to: 'searchStatus', content: $status, replace: true);
+            $result = $assistant->chat($message, [], $cacheKey, $userLat, $userLong, $region, $onProgress);
             $this->assistantResponse = $result['response'];
             $this->floods = $this->enrichFloodsWithDistance(
                 $result['floods'],
@@ -85,6 +109,10 @@ class FloodWatchDashboard extends Component
             $this->dispatch('search-completed');
         } catch (\Throwable $e) {
             report($e);
+            if ($this->isAiRateLimitError($e)) {
+                $this->logOpenAiRateLimit($e);
+                $this->retryAfterTimestamp = now()->addSeconds(60)->timestamp;
+            }
             $this->error = $this->formatErrorMessage($e);
         } finally {
             $this->loading = false;
@@ -137,9 +165,68 @@ class FloodWatchDashboard extends Component
         return $earthRadiusKm * $c;
     }
 
+    private function logOpenAiRateLimit(\Throwable $e): void
+    {
+        $response = null;
+        if ($e instanceof RateLimitException) {
+            $response = $e->response;
+        }
+        if ($e instanceof ErrorException) {
+            $response = $e->response;
+        }
+
+        $context = [
+            'exception' => $e::class,
+            'message' => $e->getMessage(),
+        ];
+
+        if ($response instanceof ResponseInterface) {
+            $context['rate_limit'] = $this->extractRateLimitHeaders($response);
+            $context['retry_after'] = $response->getHeaderLine('Retry-After');
+            $context['status_code'] = $response->getStatusCode();
+            try {
+                $body = (string) $response->getBody();
+                if ($body !== '') {
+                    $context['response_body'] = $body;
+                }
+            } catch (\Throwable) {
+                // Stream may already be consumed
+            }
+        }
+
+        Log::warning('OpenAI rate limit exceeded', $context);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function extractRateLimitHeaders(ResponseInterface $response): array
+    {
+        $headers = [
+            'x-ratelimit-limit-requests' => $response->getHeaderLine('x-ratelimit-limit-requests'),
+            'x-ratelimit-remaining-requests' => $response->getHeaderLine('x-ratelimit-remaining-requests'),
+            'x-ratelimit-reset-requests' => $response->getHeaderLine('x-ratelimit-reset-requests'),
+            'x-ratelimit-limit-tokens' => $response->getHeaderLine('x-ratelimit-limit-tokens'),
+            'x-ratelimit-remaining-tokens' => $response->getHeaderLine('x-ratelimit-remaining-tokens'),
+            'x-ratelimit-reset-tokens' => $response->getHeaderLine('x-ratelimit-reset-tokens'),
+        ];
+
+        return array_filter($headers, fn (string $v) => $v !== '');
+    }
+
+    private function isAiRateLimitError(\Throwable $e): bool
+    {
+        $message = strtolower($e->getMessage());
+
+        return str_contains($message, 'rate limit') || str_contains($message, '429');
+    }
+
     private function formatErrorMessage(\Throwable $e): string
     {
         $message = $e->getMessage();
+        if (str_contains(strtolower($message), 'rate limit') || str_contains(strtolower($message), '429')) {
+            return 'AI service rate limit exceeded. Please wait a minute and try again.';
+        }
         if (str_contains($message, 'timed out') || str_contains($message, 'cURL error 28') || str_contains($message, 'Operation timed out')) {
             return 'The request took too long. The AI service may be busy. Please try again in a moment.';
         }

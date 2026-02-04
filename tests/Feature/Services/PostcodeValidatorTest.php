@@ -86,4 +86,30 @@ class PostcodeValidatorTest extends TestCase
 
         $this->assertNull($validator->geocode('TA10 0DP'));
     }
+
+    public function test_geocode_returns_error_on_rate_limit(): void
+    {
+        Http::fake(['api.postcodes.io/*' => Http::response(['error' => 'Too many requests'], 429)]);
+
+        $validator = app(PostcodeValidator::class);
+
+        $result = $validator->geocode('TA10 0DP');
+
+        $this->assertIsArray($result);
+        $this->assertArrayHasKey('error', $result);
+        $this->assertStringContainsString('rate limit', $result['error']);
+    }
+
+    public function test_validate_returns_error_when_geocode_rate_limited(): void
+    {
+        Http::fake(['api.postcodes.io/*' => Http::response(['error' => 'Too many requests'], 429)]);
+
+        $validator = app(PostcodeValidator::class);
+
+        $result = $validator->validate('TA10 0DP', geocode: true);
+
+        $this->assertFalse($result['valid']);
+        $this->assertFalse($result['in_area']);
+        $this->assertStringContainsString('rate limit', $result['error']);
+    }
 }

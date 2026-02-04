@@ -66,4 +66,54 @@ class EnvironmentAgencyFloodServiceTest extends TestCase
         $this->assertIsArray($result);
         $this->assertEmpty($result);
     }
+
+    public function test_includes_polygon_geojson_when_flood_area_has_polygon_endpoint(): void
+    {
+        Http::fake(function ($request) {
+            if (str_contains($request->url(), '/polygon')) {
+                return Http::response([
+                    'type' => 'FeatureCollection',
+                    'features' => [
+                        [
+                            'type' => 'Feature',
+                            'geometry' => [
+                                'type' => 'Polygon',
+                                'coordinates' => [[[-2.83, 51.04], [-2.82, 51.04], [-2.82, 51.05], [-2.83, 51.05], [-2.83, 51.04]]],
+                            ],
+                        ],
+                    ],
+                ], 200);
+            }
+            if (str_contains($request->url(), '/id/floodAreas') && ! str_contains($request->url(), '/polygon')) {
+                return Http::response([
+                    'items' => [
+                        ['notation' => '123WAC', 'lat' => 51.04, 'long' => -2.82],
+                    ],
+                ], 200);
+            }
+            if (str_contains($request->url(), '/id/floods')) {
+                return Http::response([
+                    'items' => [
+                        [
+                            'description' => 'Test Flood Area',
+                            'severity' => 'Flood Warning',
+                            'severityLevel' => 2,
+                            'floodAreaID' => '123WAC',
+                            'message' => 'Flooding expected.',
+                        ],
+                    ],
+                ], 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
+        $service = new EnvironmentAgencyFloodService;
+        $result = $service->getFloods();
+
+        $this->assertCount(1, $result);
+        $this->assertArrayHasKey('polygon', $result[0]);
+        $this->assertSame('FeatureCollection', $result[0]['polygon']['type']);
+        $this->assertArrayHasKey('features', $result[0]['polygon']);
+    }
 }
