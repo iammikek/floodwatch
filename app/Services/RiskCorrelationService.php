@@ -32,7 +32,10 @@ final class RiskCorrelationService
         }
 
         $crossReferences = $this->computeCrossReferences($floods, $incidents, $region);
-        $predictiveWarnings = $this->computePredictiveWarnings($riverLevels, $region);
+        $predictiveWarnings = array_merge(
+            $this->computeRiverPredictiveWarnings($riverLevels, $region),
+            $this->computeFloodPredictiveWarnings($floods, $region)
+        );
         $keyRoutes = $this->getKeyRoutes($region);
 
         return new RiskAssessment(
@@ -83,15 +86,15 @@ final class RiskCorrelationService
      * @param  array<int, array{station?: string, river?: string, levelStatus?: string}>  $riverLevels
      * @return array<int, array{type: string, message: string, reason: string}>
      */
-    private function computePredictiveWarnings(array $riverLevels, ?string $region): array
+    private function computeRiverPredictiveWarnings(array $riverLevels, ?string $region): array
     {
         $rules = $this->getPredictiveRules($region);
-        if (empty($rules)) {
-            return [];
-        }
-
         $warnings = [];
+
         foreach ($rules as $rule) {
+            if (isset($rule['flood_pattern'])) {
+                continue;
+            }
             $riverPattern = strtolower((string) ($rule['river_pattern'] ?? ''));
             $triggerLevel = $rule['trigger_level'] ?? 'elevated';
             $message = $rule['warning'] ?? '';
@@ -104,6 +107,40 @@ final class RiskCorrelationService
                         'type' => 'predictive',
                         'message' => $message,
                         'reason' => "River {$river} level is {$status}",
+                    ];
+                    break;
+                }
+            }
+        }
+
+        return $warnings;
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $floods
+     * @return array<int, array{type: string, message: string, reason: string}>
+     */
+    private function computeFloodPredictiveWarnings(array $floods, ?string $region): array
+    {
+        $rules = $this->getPredictiveRules($region);
+        $warnings = [];
+
+        foreach ($rules as $rule) {
+            $floodPattern = strtolower((string) ($rule['flood_pattern'] ?? ''));
+            if ($floodPattern === '') {
+                continue;
+            }
+            $triggerSeverityMax = (int) ($rule['trigger_severity_max'] ?? 4);
+            $message = $rule['warning'] ?? '';
+
+            foreach ($floods as $flood) {
+                $description = strtolower((string) ($flood['description'] ?? ''));
+                $severityLevel = (int) ($flood['severityLevel'] ?? 4);
+                if (str_contains($description, $floodPattern) && $severityLevel <= $triggerSeverityMax) {
+                    $warnings[] = [
+                        'type' => 'predictive',
+                        'message' => $message,
+                        'reason' => "Flood warning for {$description} (severity {$severityLevel})",
                     ];
                     break;
                 }

@@ -198,6 +198,11 @@ return [
                     'trigger_level' => 'elevated',
                     'warning' => 'Muchelney may be cut off when River Parrett is elevated. Check route before travelling.',
                 ],
+                [
+                    'flood_pattern' => 'langport',
+                    'trigger_severity_max' => 2,
+                    'warning' => 'Muchelney may be cut off when Langport has flood warnings. Check route before travelling.',
+                ],
             ],
             'key_routes' => ['A361', 'A372', 'M5 J23', 'M5 J24', 'M5 J25'],
         ],

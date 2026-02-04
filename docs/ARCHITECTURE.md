@@ -49,7 +49,7 @@ app/
 ### Region Logic
 
 - **Config**: `config/flood-watch.regions` – prompt snippets per region
-- **Correlation**: `config/flood-watch.correlation` – flood_area_road_pairs, predictive_rules, key_routes
+- **Correlation**: `config/flood-watch.correlation` – flood_area_road_pairs, predictive_rules (river_pattern + flood_pattern), key_routes. Muchelney rule: triggers when River Parrett is elevated or when Langport has flood warnings; region defaults to somerset for default Langport coordinates.
 
 ### External APIs
 

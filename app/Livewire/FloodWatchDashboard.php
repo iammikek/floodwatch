@@ -94,7 +94,7 @@ class FloodWatchDashboard extends Component
         $cacheKey = $locationTrimmed !== '' ? $locationTrimmed : null;
         $userLat = $validation['lat'] ?? null;
         $userLong = $validation['long'] ?? null;
-        $region = $validation['region'] ?? null;
+        $region = $validation['region'] ?? ($validation === null ? 'somerset' : null);
 
         try {
             $onProgress = fn (string $status) => $streamStatus($status);

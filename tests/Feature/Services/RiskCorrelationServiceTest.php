@@ -78,6 +78,26 @@ class RiskCorrelationServiceTest extends TestCase
         $this->assertStringContainsString('Muchelney', $assessment->predictiveWarnings[0]['message']);
     }
 
+    public function test_correlate_adds_predictive_warning_when_langport_flood_warning(): void
+    {
+        $service = app(RiskCorrelationService::class);
+
+        $floods = [
+            [
+                'description' => 'River Parrett at Langport',
+                'severity' => 'Flood Warning',
+                'severityLevel' => 2,
+                'message' => 'Flooding expected.',
+                'floodAreaID' => '1',
+            ],
+        ];
+
+        $assessment = $service->correlate($floods, [], [], 'somerset');
+
+        $muchelneyWarnings = array_filter($assessment->predictiveWarnings, fn ($w) => str_contains($w['message'], 'Muchelney'));
+        $this->assertNotEmpty($muchelneyWarnings, 'Expected Muchelney predictive warning when Langport has flood warning');
+    }
+
     public function test_correlate_returns_key_routes_for_region(): void
     {
         $service = app(RiskCorrelationService::class);
