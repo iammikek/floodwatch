@@ -48,9 +48,9 @@ PROMPT;
             return $emptyResult('Flood Watch is not configured with an OpenAI API key. Please add OPENAI_API_KEY to your environment.');
         }
 
-        $store = config('flood-watch.cache_store', 'flood-watch');
+        $store = $this->resolveCacheStore();
         $key = $this->cacheKey($userMessage, $cacheKey);
-        $cached = Cache::store($store)->get($key);
+        $cached = $this->cacheGet($store, $key);
         if ($cached !== null) {
             return $cached;
         }
@@ -136,12 +136,40 @@ PROMPT;
      */
     private function storeAndReturn(string $cacheKey, array $result): array
     {
-        $store = config('flood-watch.cache_store', 'flood-watch');
+        $store = $this->resolveCacheStore();
         $ttl = config('flood-watch.cache_ttl_minutes', 15) * 60;
         $result['lastChecked'] = now()->toIso8601String();
-        Cache::store($store)->put($cacheKey, $result, $ttl);
+        $this->cachePut($store, $cacheKey, $result, $ttl);
 
         return $result;
+    }
+
+    private function resolveCacheStore(): string
+    {
+        $configured = config('flood-watch.cache_store', 'flood-watch');
+        if ($configured === 'flood-watch-array') {
+            return 'flood-watch-array';
+        }
+
+        return $configured;
+    }
+
+    private function cacheGet(string $store, string $key): ?array
+    {
+        try {
+            return Cache::store($store)->get($key);
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    private function cachePut(string $store, string $key, array $value, int $ttl): void
+    {
+        try {
+            Cache::store($store)->put($key, $value, $ttl);
+        } catch (\Throwable) {
+            // Silently skip cache write on Redis failure
+        }
     }
 
     /**
