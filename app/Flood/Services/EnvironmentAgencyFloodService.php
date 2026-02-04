@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Services;
+namespace App\Flood\Services;
 
-use App\DTOs\FloodWarning;
+use App\Flood\DTOs\FloodWarning;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;

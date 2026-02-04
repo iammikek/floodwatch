@@ -1,8 +1,8 @@
 <?php
 
-namespace App\Services;
+namespace App\Roads\Services;
 
-use App\DTOs\RoadIncident;
+use App\Roads\DTOs\RoadIncident;
 use Illuminate\Support\Facades\Http;
 
 class NationalHighwaysService

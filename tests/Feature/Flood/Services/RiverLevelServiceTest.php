@@ -1,8 +1,8 @@
 <?php
 
-namespace Tests\Feature\Services;
+namespace Tests\Feature\Flood\Services;
 
-use App\Services\RiverLevelService;
+use App\Flood\Services\RiverLevelService;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 

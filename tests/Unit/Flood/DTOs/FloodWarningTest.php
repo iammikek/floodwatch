@@ -1,7 +1,7 @@
 <?php
 
-use App\DTOs\FloodWarning;
-use App\Enums\SeverityLevel;
+use App\Flood\DTOs\FloodWarning;
+use App\Flood\Enums\SeverityLevel;
 
 test('fromArray creates FloodWarning from api response', function () {
     $data = [

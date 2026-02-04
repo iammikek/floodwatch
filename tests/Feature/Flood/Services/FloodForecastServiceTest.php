@@ -1,8 +1,8 @@
 <?php
 
-namespace Tests\Feature\Services;
+namespace Tests\Feature\Flood\Services;
 
-use App\Services\FloodForecastService;
+use App\Flood\Services\FloodForecastService;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;

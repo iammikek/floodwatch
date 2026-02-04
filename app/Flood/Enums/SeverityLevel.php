@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Enums;
+namespace App\Flood\Enums;
 
 /**
  * Environment Agency flood severity levels.

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Flood\Services;
 
 use Illuminate\Support\Facades\Http;
 

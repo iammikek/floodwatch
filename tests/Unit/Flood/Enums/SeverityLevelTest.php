@@ -1,6 +1,6 @@
 <?php
 
-use App\Enums\SeverityLevel;
+use App\Flood\Enums\SeverityLevel;
 
 test('fromApiValue maps integer to correct enum case', function () {
     expect(SeverityLevel::fromApiValue(1))->toBe(SeverityLevel::Severe)

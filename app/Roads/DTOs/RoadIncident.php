@@ -1,6 +1,6 @@
 <?php
 
-namespace App\DTOs;
+namespace App\Roads\DTOs;
 
 final readonly class RoadIncident
 {

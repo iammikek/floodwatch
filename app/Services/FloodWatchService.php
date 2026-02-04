@@ -2,7 +2,11 @@
 
 namespace App\Services;
 
-use App\DTOs\FloodWarning;
+use App\Flood\DTOs\FloodWarning;
+use App\Flood\Services\EnvironmentAgencyFloodService;
+use App\Flood\Services\FloodForecastService;
+use App\Flood\Services\RiverLevelService;
+use App\Roads\Services\NationalHighwaysService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use OpenAI\Laravel\Facades\OpenAI;
@@ -32,7 +36,8 @@ PROMPT;
         protected NationalHighwaysService $highwaysService,
         protected FloodForecastService $forecastService,
         protected WeatherService $weatherService,
-        protected RiverLevelService $riverLevelService
+        protected RiverLevelService $riverLevelService,
+        protected RiskCorrelationService $correlationService
     ) {}
 
     /**
@@ -163,9 +168,16 @@ PROMPT;
                     'GetHighwaysIncidents' => 'Checking road status...',
                     'GetFloodForecast' => 'Getting flood forecast...',
                     'GetRiverLevels' => 'Fetching river levels...',
+                    'GetCorrelationSummary' => 'Correlating flood and road data...',
                     default => 'Loading data...',
                 });
-                $result = $this->executeTool($toolName, $toolCall->function->arguments);
+                $context = [
+                    'floods' => $floods,
+                    'incidents' => $incidents,
+                    'riverLevels' => $riverLevels,
+                    'region' => $region,
+                ];
+                $result = $this->executeTool($toolName, $toolCall->function->arguments, $context);
                 if ($toolName === 'GetFloodData' && is_array($result)) {
                     $floods = $result;
                 }
@@ -365,12 +377,37 @@ PROMPT;
                     ],
                 ],
             ],
+            [
+                'type' => 'function',
+                'function' => [
+                    'name' => 'GetCorrelationSummary',
+                    'description' => 'Get a deterministic correlation of flood warnings with road incidents and river levels. Call this after fetching flood and road data to receive cross-references (e.g. North Moor flood ↔ A361), predictive warnings (e.g. Muchelney cut-off risk when Parrett elevated), and key routes to monitor. Use this to inform your summary.',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => (object) [],
+                    ],
+                ],
+            ],
         ];
     }
 
-    private function executeTool(string $name, string $argumentsJson): array|string
+    /**
+     * @param  array{floods?: array, incidents?: array, riverLevels?: array, region?: string|null}  $context
+     */
+    private function executeTool(string $name, string $argumentsJson, array $context = []): array|string
     {
         $args = json_decode($argumentsJson, true) ?? [];
+
+        if ($name === 'GetCorrelationSummary') {
+            $assessment = $this->correlationService->correlate(
+                $context['floods'] ?? [],
+                $context['incidents'] ?? [],
+                $context['riverLevels'] ?? [],
+                $context['region'] ?? null
+            );
+
+            return $assessment->toArray();
+        }
 
         return match ($name) {
             'GetFloodData' => $this->floodService->getFloods(

@@ -127,4 +127,40 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Correlation Rules
+    |--------------------------------------------------------------------------
+    |
+    | Deterministic rules for cross-referencing flood warnings with road
+    | incidents. Used by RiskCorrelationService for testable, auditable logic.
+    |
+    */
+
+    'correlation' => [
+        'somerset' => [
+            'flood_area_road_pairs' => [
+                ['North Moor', 'A361'],
+                ['Sedgemoor', 'A361'],
+            ],
+            'predictive_rules' => [
+                [
+                    'river_pattern' => 'parrett',
+                    'trigger_level' => 'elevated',
+                    'warning' => 'Muchelney may be cut off when River Parrett is elevated. Check route before travelling.',
+                ],
+            ],
+            'key_routes' => ['A361', 'A372', 'M5 J23', 'M5 J24', 'M5 J25'],
+        ],
+        'bristol' => [
+            'key_routes' => ['M5', 'M4', 'A38'],
+        ],
+        'devon' => [
+            'key_routes' => ['A38', 'A30', 'A303', 'M5'],
+        ],
+        'cornwall' => [
+            'key_routes' => ['A30', 'A38'],
+        ],
+    ],
+
 ];

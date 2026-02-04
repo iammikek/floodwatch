@@ -1,8 +1,8 @@
 <?php
 
-namespace Tests\Feature\Services;
+namespace Tests\Feature\Roads\Services;
 
-use App\Services\NationalHighwaysService;
+use App\Roads\Services\NationalHighwaysService;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;

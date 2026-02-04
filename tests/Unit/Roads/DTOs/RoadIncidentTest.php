@@ -1,6 +1,6 @@
 <?php
 
-use App\DTOs\RoadIncident;
+use App\Roads\DTOs\RoadIncident;
 
 test('fromArray creates RoadIncident from standard keys', function () {
     $data = [

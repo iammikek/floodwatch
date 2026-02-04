@@ -1,8 +1,8 @@
 <?php
 
-namespace App\DTOs;
+namespace App\Flood\DTOs;
 
-use App\Enums\SeverityLevel;
+use App\Flood\Enums\SeverityLevel;
 use Carbon\CarbonImmutable;
 
 final readonly class FloodWarning
