@@ -206,6 +206,21 @@ return [
     |
     */
 
+    /*
+    |--------------------------------------------------------------------------
+    | Incident Road Filter (County Limits)
+    |--------------------------------------------------------------------------
+    |
+    | Road incidents are filtered to only show M4, M5 and A roads within the
+    | South West. When the user's region is known, only that region's key_routes
+    | are shown. When unknown, this union of all South West roads is used.
+    |
+    */
+
+    'incident_allowed_roads' => [
+        'A30', 'A303', 'A361', 'A372', 'A38', 'M4', 'M5',
+    ],
+
     'correlation' => [
         'somerset' => [
             'flood_area_road_pairs' => [

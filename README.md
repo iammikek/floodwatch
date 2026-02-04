@@ -18,7 +18,7 @@ The assistant covers the South West with **region-specific prompts** that tailor
 | Tool                 | Data Source                    | Description                                                                 |
 |----------------------|--------------------------------|-----------------------------------------------------------------------------|
 | **GetFloodData**     | Environment Agency             | Flood warnings and alerts by location                                      |
-| **GetHighwaysIncidents** | National Highways v2.0 (DATEX II) | Road and lane closures (M5, A38, A30, A303, A361, A372, etc.)           |
+| **GetHighwaysIncidents** | National Highways v2.0 (DATEX II v3.4) | Planned and unplanned road/lane closures (M5, A38, A30, A303, A361, A372, etc.) |
 | **GetFloodForecast** | Flood Guidance Statement (FGS) | 5-day flood risk outlook                                                    |
 | **GetRiverLevels**   | Environment Agency             | Real-time river and sea levels (same data as [check-for-flooding.service.gov.uk](https://check-for-flooding.service.gov.uk/river-and-sea-levels)) |
 
@@ -52,6 +52,11 @@ The assistant uses **OpenAI tool calling** (openai-php/laravel). The LLM receive
 - **Dashboard**: Flood warnings (expandable full message, times), 5-day flood outlook, 5-day weather forecast with icons, road status, LLM summary.
 - **Caching**: Redis (configurable TTL); falls back to array cache when Redis unavailable.
 - **Graceful Degradation**: API timeouts and errors return empty data; the assistant states what it cannot access.
+
+## AI Development
+
+- **Laravel Boost** – MCP server, guidelines, documentation search
+- **Cursor skills** – `.cursor/skills/` (livewire-development, pest-testing, tailwindcss-development) and `.cursor/rules/` tracked in version control
 
 ## Tech Stack
 
@@ -113,7 +118,7 @@ Workflow file: `.github/workflows/tests.yml`
 | Environment Agency     | [Real-Time flood-monitoring API](https://environment.data.gov.uk/flood-monitoring/doc/reference) | Flood warnings, river/sea levels |
 | Check for flooding     | Same EA API as above                               | [river-and-sea-levels](https://check-for-flooding.service.gov.uk/river-and-sea-levels) |
 | Flood Guidance Statement | FGS API (Met Office / EA)                        | 5-day flood risk forecast    |
-| National Highways      | [DATEX II v2.0](https://developer.data.nationalhighways.co.uk/) | Road and lane closures       |
+| National Highways      | [Road and Lane Closures v2.0](https://developer.data.nationalhighways.co.uk/) (DATEX II v3.4) | Planned and unplanned road/lane closures |
 | Open-Meteo             | Free weather API                                   | 5-day weather forecast       |
 | postcodes.io           | Free geocoding                                     | Postcode → lat/long          |
 
@@ -122,6 +127,7 @@ Workflow file: `.github/workflows/tests.yml`
 Data use requires attribution. The dashboard displays a footer with:
 
 - **Environment Agency** – Flood and river level data from the [Real-Time data API](https://environment.data.gov.uk/flood-monitoring/doc/reference) (Open Government Licence)
+- **National Highways** – Road and lane closure data (DATEX II v3.4, [Developer Portal](https://developer.data.nationalhighways.co.uk/))
 - **Open-Meteo** – Weather data under [CC-BY 4.0](https://open-meteo.com/en/licence)
 - **postcodes.io** – Geocoding (contains OS, Royal Mail, ONS data © Crown copyright)
 
@@ -130,7 +136,7 @@ Data use requires attribution. The dashboard displays a footer with:
 - **Default coordinates**: Langport (51.0358, -2.8318) in `config/flood-watch.php`
 - **Region prompts**: `config/flood-watch.php` → `regions`
 - **OpenAI API key**: Add `OPENAI_API_KEY` to `.env`
-- **National Highways API key**: Register at the [National Highways Developer Portal](https://developer.data.nationalhighways.co.uk/) and add `NATIONAL_HIGHWAYS_API_KEY` to `.env`
+- **National Highways API key**: Register at the [National Highways Developer Portal](https://developer.data.nationalhighways.co.uk/) and add `NATIONAL_HIGHWAYS_API_KEY` to `.env`. API v2.0: `GET /roads/v2.0/closures?closureType=planned|unplanned`
 - **Redis**: Use `REDIS_HOST=redis` with Sail; `flood-watch-array` cache store for tests
 
 ## License

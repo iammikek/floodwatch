@@ -303,7 +303,10 @@ class FloodWatchService
                 $args['long'] ?? null,
                 $args['radius_km'] ?? null
             ),
-            'GetHighwaysIncidents' => $this->highwaysService->getIncidents(),
+            'GetHighwaysIncidents' => $this->filterIncidentsByRegion(
+                $this->highwaysService->getIncidents(),
+                $context['region'] ?? null
+            ),
             'GetFloodForecast' => $this->forecastService->getForecast(),
             'GetRiverLevels' => $this->riverLevelService->getLevels(
                 $args['lat'] ?? null,
@@ -488,5 +491,70 @@ class FloodWatchService
         }
 
         return $messages;
+    }
+
+    /**
+     * Filter incidents to only those on roads within the region's county limits (M4, M5, A roads in the South West).
+     *
+     * @param  array<int, array{road?: string, status?: string, incidentType?: string, delayTime?: string}>  $incidents
+     * @return array<int, array{road?: string, status?: string, incidentType?: string, delayTime?: string}>
+     */
+    private function filterIncidentsByRegion(array $incidents, ?string $region): array
+    {
+        $allowed = $this->getAllowedRoadsForRegion($region);
+        if (empty($allowed)) {
+            return $incidents;
+        }
+
+        return array_values(array_filter($incidents, function (array $incident) use ($allowed): bool {
+            $road = trim((string) ($incident['road'] ?? ''));
+            if ($road === '') {
+                return false;
+            }
+            $baseRoad = $this->extractBaseRoad($road);
+
+            return in_array($baseRoad, $allowed, true);
+        }));
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function getAllowedRoadsForRegion(?string $region): array
+    {
+        if ($region !== null && $region !== '') {
+            $keyRoutes = config("flood-watch.correlation.{$region}.key_routes", []);
+            if (! empty($keyRoutes)) {
+                return array_values(array_unique($this->extractBaseRoads($keyRoutes)));
+            }
+        }
+
+        return config('flood-watch.incident_allowed_roads', []);
+    }
+
+    /**
+     * @param  array<int, string>  $keyRoutes
+     * @return array<int, string>
+     */
+    private function extractBaseRoads(array $keyRoutes): array
+    {
+        $roads = [];
+        foreach ($keyRoutes as $route) {
+            $base = $this->extractBaseRoad($route);
+            if ($base !== '') {
+                $roads[] = $base;
+            }
+        }
+
+        return array_values(array_unique($roads));
+    }
+
+    private function extractBaseRoad(string $roadOrKeyRoute): string
+    {
+        if (preg_match('/^([AM]\d+[A-Z]?)/', trim($roadOrKeyRoute), $m)) {
+            return $m[1];
+        }
+
+        return '';
     }
 }

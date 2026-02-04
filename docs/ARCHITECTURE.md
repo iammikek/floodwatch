@@ -60,6 +60,10 @@ app/
 | Flood Forecast | `flood-watch.flood_forecast` | - |
 | Weather | `flood-watch.weather` | - |
 
+**National Highways (v2.0)**: `GET https://api.data.nationalhighways.co.uk/roads/v2.0/closures?closureType=planned|unplanned`. DATEX II v3.4 D2Payload with `situation[]` → `situationRecord[]` → `sitRoadOrCarriagewayOrLaneManagement`. Fetches both planned and unplanned closures (config: `fetch_unplanned`). Headers: `Ocp-Apim-Subscription-Key`, `X-Response-MediaType: application/json`.
+
+**Incident filtering (county limits)**: Road incidents are filtered to only M4, M5 and A roads within the South West. When the user's region is known (from postcode), only that region's `key_routes` from `correlation.{region}` are shown. When unknown, `flood-watch.incident_allowed_roads` (A30, A303, A361, A372, A38, M4, M5) is used. Incidents on roads outside this list (e.g. A120, M6) are excluded from the dashboard and LLM context.
+
 ### Resilience
 
 - **Retry**: All HTTP calls use `retry(times, sleepMs, null, false)` – configurable per service
@@ -69,7 +73,7 @@ app/
 ### LLM Token Limits
 
 - Tool results are truncated before sending to the LLM to avoid exceeding context length (128k tokens).
-- Config: `flood-watch.llm_max_floods` (25), `llm_max_incidents` (25), `llm_max_river_levels` (15), `llm_max_forecast_chars` (3000), `llm_max_flood_message_chars` (300).
+- Config: `flood-watch.llm_max_floods` (12), `llm_max_incidents` (12), `llm_max_river_levels` (8), `llm_max_forecast_chars` (1200), `llm_max_flood_message_chars` (150).
 - Reduce these via env vars (`FLOOD_WATCH_LLM_MAX_*`) if you still hit limits.
 
 ### Logging
@@ -100,6 +104,12 @@ The main `chat()` flow is synchronous. For high traffic, consider:
 - **Redis**: Use for cache and trends in production (`flood-watch.cache_store`, `flood-watch.trends_enabled`)
 - **Concurrency**: FloodWatchService fetches forecast, weather, river levels sequentially before LLM; could parallelize with `Concurrency::run()` if needed
 - **Polygon limit**: `flood-watch.environment_agency.max_polygons_per_request` caps polygon fetches per request
+
+## AI Development
+
+- **Laravel Boost**: MCP server, guidelines, `search-docs` for version-specific Laravel/Pest/Tailwind docs
+- **Cursor skills**: `.cursor/skills/` (livewire-development, pest-testing, tailwindcss-development) and `.cursor/rules/` (laravel-boost.mdc) tracked in version control
+- **MCP config**: `.cursor/mcp.json` for Laravel Boost
 
 ## Key Files
 

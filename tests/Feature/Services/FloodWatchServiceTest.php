@@ -492,4 +492,113 @@ class FloodWatchServiceTest extends TestCase
         $this->assertStringContainsString('very low', $result['forecast']['england_forecast']);
         $this->assertSame('2026-02-04T10:30:00Z', $result['forecast']['issued_at']);
     }
+
+    public function test_filters_incidents_to_south_west_roads_only(): void
+    {
+        Config::set('openai.api_key', 'test-key');
+        Config::set('flood-watch.national_highways.api_key', 'test-key');
+        Config::set('flood-watch.national_highways.base_url', 'https://api.example.com');
+        Config::set('flood-watch.national_highways.fetch_unplanned', false);
+
+        Http::fake(function ($request) {
+            if (str_contains($request->url(), 'environment.data.gov.uk')) {
+                return Http::response(['items' => []], 200);
+            }
+            if (str_contains($request->url(), 'api.example.com')) {
+                return Http::response([
+                    'D2Payload' => [
+                        'situation' => [
+                            [
+                                'situationRecord' => [
+                                    [
+                                        'sitRoadOrCarriagewayOrLaneManagement' => [
+                                            'validity' => ['validityStatus' => 'closed'],
+                                            'cause' => ['causeType' => 'environmentalObstruction'],
+                                            'generalPublicComment' => [['comment' => 'A361 closed']],
+                                            'roadOrCarriagewayOrLaneManagementType' => ['value' => 'roadClosed'],
+                                            'locationReference' => [
+                                                'locSingleRoadLinearLocation' => [
+                                                    'linearWithinLinearElement' => [
+                                                        ['linearElement' => ['locLinearElementByCode' => ['roadName' => 'A361']]],
+                                                    ],
+                                                ],
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                            [
+                                'situationRecord' => [
+                                    [
+                                        'sitRoadOrCarriagewayOrLaneManagement' => [
+                                            'validity' => ['validityStatus' => 'active'],
+                                            'cause' => ['causeType' => 'roadMaintenance'],
+                                            'generalPublicComment' => [['comment' => 'A120 works']],
+                                            'roadOrCarriagewayOrLaneManagementType' => ['value' => 'laneClosures'],
+                                            'locationReference' => [
+                                                'locSingleRoadLinearLocation' => [
+                                                    'linearWithinLinearElement' => [
+                                                        ['linearElement' => ['locLinearElementByCode' => ['roadName' => 'A120']]],
+                                                    ],
+                                                ],
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ], 200);
+            }
+            if (str_contains($request->url(), 'fgs.metoffice.gov.uk')) {
+                return Http::response(['statement' => []], 200);
+            }
+            if (str_contains($request->url(), 'open-meteo.com')) {
+                return Http::response(['daily' => ['time' => [], 'weathercode' => [], 'temperature_2m_max' => [], 'temperature_2m_min' => [], 'precipitation_sum' => []]], 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
+        $toolCallResponse = CreateResponse::fake([
+            'choices' => [
+                [
+                    'index' => 0,
+                    'message' => [
+                        'role' => 'assistant',
+                        'content' => null,
+                        'tool_calls' => [
+                            ['id' => 'call_1', 'type' => 'function', 'function' => ['name' => 'GetFloodData', 'arguments' => '{}']],
+                            ['id' => 'call_2', 'type' => 'function', 'function' => ['name' => 'GetHighwaysIncidents', 'arguments' => '{}']],
+                        ],
+                    ],
+                    'logprobs' => null,
+                    'finish_reason' => 'tool_calls',
+                ],
+            ],
+        ]);
+
+        $finalResponse = CreateResponse::fake([
+            'choices' => [
+                [
+                    'index' => 0,
+                    'message' => [
+                        'role' => 'assistant',
+                        'content' => 'Road status for South West.',
+                        'tool_calls' => [],
+                    ],
+                    'logprobs' => null,
+                    'finish_reason' => 'stop',
+                ],
+            ],
+        ]);
+
+        OpenAI::fake([$toolCallResponse, $finalResponse]);
+
+        $service = app(FloodWatchService::class);
+        $result = $service->chat('Check status');
+
+        $this->assertCount(1, $result['incidents']);
+        $this->assertSame('A361', $result['incidents'][0]['road']);
+    }
 }
