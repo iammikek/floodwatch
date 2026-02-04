@@ -115,16 +115,17 @@
                                         </p>
                                     @endif
                                     @if (!empty($flood['message']))
-                                        <div x-data="{ open: false }" class="mt-2 overflow-visible">
-                                            <button type="button" @click="open = !open" class="w-full text-left flex items-start gap-2 cursor-pointer text-sm text-slate-600 dark:text-slate-400 overflow-visible">
-                                                <span x-show="!open" x-transition class="flex-1 min-w-0 text-left break-words">{{ Str::limit($flood['message'], 200) }}</span>
-                                                <span x-show="open" x-cloak x-transition class="flex-1 min-w-0 text-left whitespace-pre-wrap break-words">{{ $flood['message'] }}</span>
-                                                <span class="shrink-0 text-amber-600 dark:text-amber-400 transition-transform duration-200" :class="open && 'rotate-180'" aria-hidden="true">
+                                        <div x-data="{ open: false }" class="mt-2">
+                                            <button type="button" @click="open = !open" class="flex items-center gap-2 cursor-pointer text-sm text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300">
+                                                <span x-show="!open" x-transition>Show full message</span>
+                                                <span x-show="open" x-cloak x-transition>Hide message</span>
+                                                <span class="shrink-0 transition-transform duration-200" :class="open && 'rotate-180'" aria-hidden="true">
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                                                     </svg>
                                                 </span>
                                             </button>
+                                            <p x-show="open" x-cloak x-transition class="mt-2 text-sm text-slate-600 dark:text-slate-400 whitespace-pre-wrap break-words">{{ $flood['message'] }}</p>
                                         </div>
                                     @endif
                                 </li>
@@ -209,5 +210,16 @@
         @elseif (!$loading && !$error)
             <p class="text-slate-500 dark:text-slate-400 text-sm">Click "Check status" to get current flood and road data for the South West.</p>
         @endif
+
+        <footer class="mt-12 pt-6 border-t border-slate-200 dark:border-slate-700">
+            <p class="text-xs text-slate-500 dark:text-slate-400">
+                An <a href="https://automica.io" target="_blank" rel="noopener" class="underline hover:text-slate-600 dark:hover:text-slate-300">automica labs</a> project.
+                Data: Environment Agency flood and river level data from the
+                <a href="https://environment.data.gov.uk/flood-monitoring/doc/reference" target="_blank" rel="noopener" class="underline hover:text-slate-600 dark:hover:text-slate-300">Real-Time data API</a>
+                (Open Government Licence).
+                Weather from <a href="https://open-meteo.com/" target="_blank" rel="noopener" class="underline hover:text-slate-600 dark:hover:text-slate-300">Open-Meteo</a> (CC-BY 4.0).
+                Geocoding by <a href="https://postcodes.io" target="_blank" rel="noopener" class="underline hover:text-slate-600 dark:hover:text-slate-300">postcodes.io</a>.
+            </p>
+        </footer>
     </div>
 </div>
