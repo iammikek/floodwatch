@@ -15,7 +15,7 @@ Flood Watch is a **Single Source of Truth** for flood and road viability in the 
 ### Architecture
 
 ```
-User Request → Livewire Dashboard → Somerset Assistant Service → OpenAI (with tools)
+User Request → Livewire Dashboard → Flood Watch Service → OpenAI (with tools)
                                         ↓
                               Cache (Redis) check
                                         ↓
@@ -29,7 +29,7 @@ User Request → Livewire Dashboard → Somerset Assistant Service → OpenAI (w
 ### User Flow
 
 1. **User enters postcode** (optional) and clicks **Check status**
-2. **Somerset Assistant Service** receives the request (e.g. "Check flood and road status for postcode TA10 0 in the Somerset Levels")
+2. **Flood Watch Service** receives the request (e.g. "Check flood and road status for postcode TA10 0 in the South West")
 3. **Cache check**: If the same query was made within the last 15 minutes, cached results are returned immediately (no API calls)
 4. **Cache miss**: The LLM (OpenAI GPT) is invoked with two tools:
    - **GetFloodData** – fetches flood warnings from the Environment Agency
@@ -45,7 +45,7 @@ User Request → Livewire Dashboard → Somerset Assistant Service → OpenAI (w
 | Component | Purpose |
 |-----------|---------|
 | `FloodWatchDashboard` (Livewire) | UI: postcode input, Check status button, loading spinner, results display |
-| `SomersetAssistantService` | Orchestrates LLM chat with tool calling; caches results and returns floods, incidents, and summary |
+| `FloodWatchService` | Orchestrates LLM chat with tool calling; caches results and returns floods, incidents, and summary |
 | `EnvironmentAgencyFloodService` | Fetches flood warnings from the EA API |
 | `NationalHighwaysService` | Fetches road and lane closures from the NH API |
 
@@ -162,7 +162,7 @@ The LLM is instructed to:
 
 | Environment Variable | Purpose |
 |---------------------|---------|
-| `OPENAI_API_KEY` | Required for the Somerset Assistant LLM |
+| `OPENAI_API_KEY` | Required for the Flood Watch LLM |
 | `NATIONAL_HIGHWAYS_API_KEY` | Required for road incident data (optional; no key returns empty incidents) |
 
 ---
@@ -176,4 +176,4 @@ The LLM is instructed to:
 
 ## Summary
 
-Flood Watch is an **on-demand** system: it does not poll APIs in the background. When a user clicks "Check status", the Somerset Assistant uses LLM tool calling to fetch flood and road data from the Environment Agency and National Highways APIs, then synthesises a correlated summary. Results are cached in Redis for 15 minutes to reduce API load and improve response times for repeat queries.
+Flood Watch is an **on-demand** system: it does not poll APIs in the background. When a user clicks "Check status", the Flood Watch Service uses LLM tool calling to fetch flood and road data from the Environment Agency and National Highways APIs, then synthesises a correlated summary. Results are cached in Redis for 15 minutes to reduce API load and improve response times for repeat queries.

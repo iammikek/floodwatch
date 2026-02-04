@@ -45,7 +45,7 @@ Primary dev environment. All commands run via Sail. Use `./vendor/bin/sail` or c
 
 - **Laravel Boost** (dev, required): MCP server, AI guidelines, and documentation API for Cursor. Config: `.cursor/mcp.json`. Enable in Cursor: Command Palette → "MCP: Open Settings" → toggle `laravel-boost` on.
 - **LLM integration** (app): `openai-php/laravel` for OpenAI API. Add `OPENAI_API_KEY` to `.env`. Optional: `OPENAI_MODEL` (default: gpt-4o-mini).
-- **Somerset Assistant**: `App\Services\SomersetAssistantService` uses OpenAI chat completions with tool calling. Tools: GetFloodData, GetHighwaysIncidents. System prompt enforces Somerset Levels logic.
+- **Flood Watch Assistant**: `App\Services\FloodWatchService` uses OpenAI chat completions with tool calling. Tools: GetFloodData, GetHighwaysIncidents, GetFloodForecast, GetRiverLevels. System prompt enforces South West region logic.
 - **Testing LLM code**: Use `OpenAI\Laravel\Facades\OpenAI::fake()` with `CreateResponse::fake()` in tests; never call real APIs in tests.
 
 ## Project Structure

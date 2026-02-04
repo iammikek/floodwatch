@@ -41,11 +41,11 @@ class RiverLevelService
     }
 
     /**
-     * @return array<int, array{notation: string, label: string, riverName: string, town: string}>
+     * @return array<int, array{notation: string, label: string, riverName: string, town: string, lat: float, long: float, stationType: string, typicalRangeLow?: float, typicalRangeHigh?: float}>
      */
     private function fetchStations(string $baseUrl, int $timeout, float $lat, float $long, int $radiusKm): array
     {
-        $url = "{$baseUrl}/id/stations?lat={$lat}&long={$long}&dist={$radiusKm}";
+        $url = "{$baseUrl}/id/stations?lat={$lat}&long={$long}&dist={$radiusKm}&_view=full";
 
         try {
             $response = Http::timeout($timeout)->get($url);
@@ -68,11 +68,27 @@ class RiverLevelService
             if (empty($notation)) {
                 continue;
             }
+            $itemLat = $item['lat'] ?? null;
+            $itemLong = $item['long'] ?? null;
+            if ($itemLat === null || $itemLong === null) {
+                continue;
+            }
+            $label = $item['label'] ?? '';
+            $stationType = $this->detectStationType($label, $item['type'] ?? []);
+            $stageScale = $item['stageScale'] ?? [];
+            $typicalLow = isset($stageScale['typicalRangeLow']) ? (float) $stageScale['typicalRangeLow'] : null;
+            $typicalHigh = isset($stageScale['typicalRangeHigh']) ? (float) $stageScale['typicalRangeHigh'] : null;
+
             $result[] = [
                 'notation' => (string) $notation,
-                'label' => $item['label'] ?? '',
+                'label' => $label,
                 'riverName' => $item['riverName'] ?? '',
                 'town' => $item['town'] ?? '',
+                'lat' => (float) $itemLat,
+                'long' => (float) $itemLong,
+                'stationType' => $stationType,
+                'typicalRangeLow' => $typicalLow,
+                'typicalRangeHigh' => $typicalHigh,
             ];
         }
 
@@ -80,7 +96,34 @@ class RiverLevelService
     }
 
     /**
-     * @param  array<int, array{notation: string, label: string, riverName: string, town: string}>  $stations
+     * @param  array<int, string>  $apiTypes
+     */
+    private function detectStationType(string $label, array $apiTypes): string
+    {
+        $labelLower = strtolower($label);
+        if (str_contains($labelLower, 'pumping station')) {
+            return 'pumping_station';
+        }
+        if (str_contains($labelLower, 'barrier') || str_contains($labelLower, 'saltmoor')) {
+            return 'barrier';
+        }
+        if (str_contains($labelLower, 'drain')) {
+            return 'drain';
+        }
+        foreach ($apiTypes as $t) {
+            if (str_contains((string) $t, 'Coastal')) {
+                return 'coastal';
+            }
+            if (str_contains((string) $t, 'Groundwater')) {
+                return 'groundwater';
+            }
+        }
+
+        return 'river_gauge';
+    }
+
+    /**
+     * @param  array<int, array{notation: string, label: string, riverName: string, town: string, lat: float, long: float}>  $stations
      * @return array<string, array{value: float, unitName: string, dateTime: string}>
      */
     private function fetchReadings(string $baseUrl, int $timeout, array $stations): array
@@ -141,9 +184,9 @@ class RiverLevelService
     }
 
     /**
-     * @param  array<int, array{notation: string, label: string, riverName: string, town: string}>  $stations
+     * @param  array<int, array{notation: string, label: string, riverName: string, town: string, lat: float, long: float, stationType: string, typicalRangeLow?: float|null, typicalRangeHigh?: float|null}>  $stations
      * @param  array<string, array{value: float, unitName: string, dateTime: string}>  $readings
-     * @return array<int, array{station: string, river: string, town: string, value: float, unit: string, unitName: string, dateTime: string}>
+     * @return array<int, array{station: string, river: string, town: string, value: float, unit: string, unitName: string, dateTime: string, lat: float, long: float, stationType: string, levelStatus: string, typicalRangeLow?: float, typicalRangeHigh?: float}>
      */
     private function mergeStationsWithReadings(array $stations, array $readings): array
     {
@@ -157,17 +200,48 @@ class RiverLevelService
                 continue;
             }
 
-            $result[] = [
+            $value = $reading['value'];
+            $typicalLow = $station['typicalRangeLow'] ?? null;
+            $typicalHigh = $station['typicalRangeHigh'] ?? null;
+            $levelStatus = $this->computeLevelStatus($value, $typicalLow, $typicalHigh);
+
+            $item = [
                 'station' => $station['label'],
                 'river' => $station['riverName'],
                 'town' => $station['town'],
-                'value' => $reading['value'],
+                'value' => $value,
                 'unit' => $reading['unitName'],
                 'unitName' => $reading['unitName'],
                 'dateTime' => $reading['dateTime'],
+                'lat' => $station['lat'],
+                'long' => $station['long'],
+                'stationType' => $station['stationType'],
+                'levelStatus' => $levelStatus,
             ];
+            if ($typicalLow !== null) {
+                $item['typicalRangeLow'] = $typicalLow;
+            }
+            if ($typicalHigh !== null) {
+                $item['typicalRangeHigh'] = $typicalHigh;
+            }
+            $result[] = $item;
         }
 
         return $result;
+    }
+
+    private function computeLevelStatus(float $value, ?float $typicalLow, ?float $typicalHigh): string
+    {
+        if ($typicalLow === null || $typicalHigh === null) {
+            return 'unknown';
+        }
+        if ($value > $typicalHigh) {
+            return 'elevated';
+        }
+        if ($value < $typicalLow) {
+            return 'low';
+        }
+
+        return 'expected';
     }
 }

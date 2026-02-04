@@ -1,4 +1,35 @@
-<div class="min-h-screen bg-slate-50 dark:bg-slate-900 p-6">
+<div
+    class="min-h-screen bg-slate-50 dark:bg-slate-900 p-6"
+    x-data="{
+        init() {
+            const stored = localStorage.getItem('flood-watch-location');
+            if (stored) {
+                $wire.set('location', stored);
+            }
+            Livewire.on('search-completed', () => {
+                const loc = $wire.location;
+                if (loc) {
+                    localStorage.setItem('flood-watch-location', loc);
+                }
+                try {
+                    const results = {
+                        assistantResponse: $wire.assistantResponse,
+                        floods: $wire.floods,
+                        incidents: $wire.incidents,
+                        forecast: $wire.forecast,
+                        weather: $wire.weather,
+                        riverLevels: $wire.riverLevels,
+                        mapCenter: $wire.mapCenter,
+                        hasUserLocation: $wire.hasUserLocation,
+                        lastChecked: $wire.lastChecked
+                    };
+                    localStorage.setItem('flood-watch-results', JSON.stringify(results));
+                } catch (e) {}
+            });
+        }
+    }"
+    x-init="init()"
+>
     <div class="max-w-2xl mx-auto">
         <h1 class="text-2xl font-semibold text-slate-900 dark:text-white mb-6">
             Flood Watch
@@ -42,15 +73,15 @@
         </div>
 
         <div class="mb-6">
-            <label for="postcode" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                Postcode (optional)
+            <label for="location" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                Location or postcode (optional)
             </label>
             <div class="flex gap-2">
                 <input
                     type="text"
-                    id="postcode"
-                    wire:model="postcode"
-                    placeholder="e.g. TA10 0"
+                    id="location"
+                    wire:model="location"
+                    placeholder="e.g. Langport, TA10 0, Bristol"
                     class="block flex-1 rounded-lg border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 />
                 <button
@@ -78,12 +109,24 @@
         @endif
 
         @if ($loading)
-            <div class="flex items-center gap-3 p-4 rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700">
-                <svg class="animate-spin h-6 w-6 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+            <div
+                class="flex items-center gap-3 p-4 rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700"
+                x-data="{
+                    steps: [
+                        'Fetching flood data...',
+                        'Checking road status...',
+                        'Getting river levels...',
+                        'Analyzing with AI...'
+                    ],
+                    current: 0
+                }"
+                x-init="setInterval(() => { current = (current + 1) % steps.length; }, 2500)"
+            >
+                <svg class="animate-spin h-6 w-6 text-blue-600 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                <p class="text-slate-600 dark:text-slate-400 text-sm">Searching real-time records...</p>
+                <p class="text-slate-600 dark:text-slate-400 text-sm" x-text="steps[current]"></p>
             </div>
         @endif
 
@@ -95,6 +138,110 @@
                     </p>
                 @endif
 
+                @if ($mapCenter)
+                    <div id="map-section" class="rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
+                        <div
+                            class="flex flex-col"
+                            x-data="{
+                                center: @js($mapCenter),
+                                stations: @js($riverLevels),
+                                floods: @js($floods),
+                                hasUser: @js($hasUserLocation),
+                                map: null,
+                                userIcon() {
+                                    return L.divIcon({
+                                        className: 'flood-map-marker flood-map-marker-user',
+                                        html: '<span class=\'flood-map-marker-inner\' title=\'Your location\'>📍</span>',
+                                        iconSize: [28, 28],
+                                        iconAnchor: [14, 14]
+                                    });
+                                },
+                                stationIcon(s) {
+                                    const status = s.levelStatus || 'unknown';
+                                    const type = s.stationType || 'river_gauge';
+                                    const statusClass = status === 'elevated' ? 'elevated' : status === 'low' ? 'low' : 'expected';
+                                    const icon = type === 'pumping_station' ? '⚙' : type === 'barrier' ? '🛡' : type === 'drain' ? '〰' : '💧';
+                                    const levelLabel = status === 'elevated' ? 'Elevated' : status === 'expected' ? 'Expected' : status === 'low' ? 'Low' : '';
+                                    return L.divIcon({
+                                        className: 'flood-map-marker flood-map-marker-station ' + statusClass,
+                                        html: '<span class=\'flood-map-marker-inner\' title=\'' + (levelLabel ? levelLabel + ' level' : '') + '\'>' + icon + '</span>',
+                                        iconSize: [26, 26],
+                                        iconAnchor: [13, 13]
+                                    });
+                                },
+                                stationPopup(s) {
+                                    let html = '<b>' + (s.station || '') + '</b><br>' + (s.river || '') + '<br>' + s.value + ' ' + (s.unit || 'm');
+                                    if (s.levelStatus === 'elevated') html += '<br><span style=\'color:#b91c1c;font-weight:600\'>↑ Elevated</span>';
+                                    else if (s.levelStatus === 'expected') html += '<br><span style=\'color:#1d4ed8\'>→ Expected</span>';
+                                    else if (s.levelStatus === 'low') html += '<br><span style=\'color:#64748b\'>↓ Low</span>';
+                                    if (s.typicalRangeLow != null && s.typicalRangeHigh != null) {
+                                        html += '<br><small>Typical: ' + s.typicalRangeLow + '–' + s.typicalRangeHigh + ' ' + (s.unit || 'm') + '</small>';
+                                    }
+                                    return html;
+                                },
+                                floodIcon(f) {
+                                    const level = f.severityLevel || 0;
+                                    const isSevere = level === 1;
+                                    return L.divIcon({
+                                        className: 'flood-map-marker flood-map-marker-flood' + (isSevere ? ' severe' : ''),
+                                        html: '<span class=\'flood-map-marker-inner\' title=\'Flood warning\'>' + (isSevere ? '🚨' : '⚠') + '</span>',
+                                        iconSize: [26, 26],
+                                        iconAnchor: [13, 13]
+                                    });
+                                },
+                                floodPopup(f) {
+                                    let html = '<b>' + (f.description || 'Flood area') + '</b><br><span style=\'color:#b91c1c;font-weight:600\'>' + (f.severity || '') + '</span>';
+                                    if (f.distanceKm != null) html += '<br><small>' + f.distanceKm + ' km from your location</small>';
+                                    if (f.message) html += '<br><small>' + f.message.replace(/<[^>]*>/g, '').substring(0, 150) + (f.message.length > 150 ? '…' : '') + '</small>';
+                                    return html;
+                                },
+                                init() {
+                                    if (!this.center) return;
+                                    this.$nextTick(() => {
+                                        this.map = L.map('flood-map').setView([this.center.lat, this.center.long], 11);
+                                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                            attribution: '&copy; <a href=&quot;https://www.openstreetmap.org/copyright&quot;>OpenStreetMap</a>'
+                                        }).addTo(this.map);
+                                        if (this.hasUser) {
+                                            L.marker([this.center.lat, this.center.long], { icon: this.userIcon() })
+                                                .addTo(this.map)
+                                                .bindPopup('<b>Your location</b>');
+                                        }
+                                        this.stations.forEach(s => {
+                                            L.marker([s.lat, s.long], { icon: this.stationIcon(s) })
+                                                .addTo(this.map)
+                                                .bindPopup(this.stationPopup(s));
+                                        });
+                                        this.floods.forEach(f => {
+                                            if (f.lat != null && f.long != null) {
+                                                L.marker([f.lat, f.long], { icon: this.floodIcon(f) })
+                                                    .addTo(this.map)
+                                                    .bindPopup(this.floodPopup(f));
+                                            }
+                                        });
+                                    });
+                                }
+                            }"
+                            x-init="init()"
+                        >
+                            <div id="flood-map" class="h-64 w-full bg-slate-100 dark:bg-slate-800"></div>
+                            <div class="flex flex-wrap gap-x-4 gap-y-2 px-3 py-2 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-400">
+                                @if ($hasUserLocation)
+                                    <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon flood-map-legend-user">📍</span> Your location</span>
+                                @endif
+                                <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon">💧</span> River gauge</span>
+                                <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon">⚙</span> Pumping station</span>
+                                <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon">🛡</span> Barrier</span>
+                                <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon">〰</span> Drain</span>
+                                <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon flood-map-legend-flood">⚠</span> Flood warning</span>
+                                <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon flood-map-legend-elevated">●</span> Elevated</span>
+                                <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon flood-map-legend-expected">●</span> Expected</span>
+                                <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon flood-map-legend-low">●</span> Low</span>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
                 <div id="flood-risk">
                     <h2 class="text-lg font-medium text-slate-900 dark:text-white mb-3">Flood warnings</h2>
                     @if (count($floods) > 0)
@@ -103,6 +250,9 @@
                                 <li class="p-4 rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 text-left overflow-visible">
                                     <p class="font-medium text-slate-900 dark:text-white">{{ $flood['description'] ?? 'Flood area' }}</p>
                                     <p class="text-sm text-amber-600 dark:text-amber-400 mt-1">{{ $flood['severity'] ?? '' }}</p>
+                                    @if (!empty($flood['distanceKm']) && $hasUserLocation)
+                                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">{{ $flood['distanceKm'] }} km from your location</p>
+                                    @endif
                                     @if (!empty($flood['timeRaised']) || !empty($flood['timeMessageChanged']))
                                         <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
                                             @if (!empty($flood['timeRaised']))
@@ -204,7 +354,7 @@
                 </div>
             </div>
         @elseif (!$loading && !$error)
-            <p class="text-slate-500 dark:text-slate-400 text-sm">Click "Check status" to get current flood and road data for the South West.</p>
+            <p class="text-slate-500 dark:text-slate-400 text-sm">Enter a location or postcode, or click "Check status" to get flood and road data for the South West.</p>
         @endif
 
         <footer class="mt-12 pt-6 border-t border-slate-200 dark:border-slate-700">
@@ -214,7 +364,7 @@
                 <a href="https://environment.data.gov.uk/flood-monitoring/doc/reference" target="_blank" rel="noopener" class="underline hover:text-slate-600 dark:hover:text-slate-300">Real-Time data API</a>
                 (Open Government Licence).
                 Weather from <a href="https://open-meteo.com/" target="_blank" rel="noopener" class="underline hover:text-slate-600 dark:hover:text-slate-300">Open-Meteo</a> (CC-BY 4.0).
-                Geocoding by <a href="https://postcodes.io" target="_blank" rel="noopener" class="underline hover:text-slate-600 dark:hover:text-slate-300">postcodes.io</a>.
+                Geocoding by <a href="https://postcodes.io" target="_blank" rel="noopener" class="underline hover:text-slate-600 dark:hover:text-slate-300">postcodes.io</a> and <a href="https://nominatim.openstreetmap.org" target="_blank" rel="noopener" class="underline hover:text-slate-600 dark:hover:text-slate-300">OpenStreetMap Nominatim</a>.
             </p>
         </footer>
     </div>
