@@ -24,11 +24,17 @@ class NationalHighwaysService
 
         $url = "{$baseUrl}/road-lane-closures/v2/planned";
 
-        $response = Http::timeout($timeout)
-            ->withHeaders([
-                'Ocp-Apim-Subscription-Key' => $apiKey,
-            ])
-            ->get($url);
+        try {
+            $response = Http::timeout($timeout)
+                ->withHeaders([
+                    'Ocp-Apim-Subscription-Key' => $apiKey,
+                ])
+                ->get($url);
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            report($e);
+
+            return [];
+        }
 
         if (! $response->successful()) {
             return [];

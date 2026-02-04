@@ -20,13 +20,15 @@ class FloodWatchDashboard extends Component
 
     public array $incidents = [];
 
+    public array $forecast = [];
+
     public ?string $lastChecked = null;
 
     public ?string $error = null;
 
     public function search(SomersetAssistantService $assistant, PostcodeValidator $postcodeValidator): void
     {
-        $this->reset(['assistantResponse', 'floods', 'incidents', 'lastChecked', 'error']);
+        $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'lastChecked', 'error']);
         $this->loading = true;
 
         $postcodeTrimmed = trim($this->postcode);
@@ -56,6 +58,7 @@ class FloodWatchDashboard extends Component
             $this->assistantResponse = $result['response'];
             $this->floods = $result['floods'];
             $this->incidents = $result['incidents'];
+            $this->forecast = $result['forecast'] ?? [];
             $this->lastChecked = $result['lastChecked'] ?? null;
         } catch (\Throwable $e) {
             report($e);

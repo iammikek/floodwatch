@@ -14,6 +14,9 @@
             <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
                 Road Status
             </span>
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
+                5-Day Forecast
+            </span>
         </div>
 
         <div class="mb-6">
@@ -84,6 +87,23 @@
                                 </li>
                             @endforeach
                         </ul>
+                    </div>
+                @endif
+
+                @if (count($forecast) > 0 && !empty($forecast['england_forecast']))
+                    <div>
+                        <h2 class="text-lg font-medium text-slate-900 dark:text-white mb-3">5-day flood outlook</h2>
+                        <div class="p-4 rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700">
+                            <p class="text-slate-600 dark:text-slate-400">{{ $forecast['england_forecast'] }}</p>
+                            @if (!empty($forecast['flood_risk_trend']))
+                                <p class="text-sm text-slate-500 dark:text-slate-500 mt-2">
+                                    Trend: @foreach ($forecast['flood_risk_trend'] as $day => $trend){{ ucfirst($day) }}: {{ $trend }}@if (!$loop->last) → @endif @endforeach
+                                </p>
+                            @endif
+                            @if (!empty($forecast['issued_at']))
+                                <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">Issued: {{ \Carbon\Carbon::parse($forecast['issued_at'])->format('j M Y, g:i') }}</p>
+                            @endif
+                        </div>
                     </div>
                 @endif
 

@@ -20,7 +20,18 @@ return [
 
     'environment_agency' => [
         'base_url' => env('ENVIRONMENT_AGENCY_URL', 'https://environment.data.gov.uk/flood-monitoring'),
-        'timeout' => (int) env('ENVIRONMENT_AGENCY_TIMEOUT', 10),
+        'timeout' => (int) env('ENVIRONMENT_AGENCY_TIMEOUT', 25),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Flood Guidance Statement (5-day forecast)
+    |--------------------------------------------------------------------------
+    */
+
+    'flood_forecast' => [
+        'base_url' => env('FLOOD_FORECAST_URL', 'https://api.ffc-environment-agency.fgs.metoffice.gov.uk'),
+        'timeout' => (int) env('FLOOD_FORECAST_TIMEOUT', 25),
     ],
 
     /*
@@ -32,7 +43,7 @@ return [
     'national_highways' => [
         'base_url' => env('NATIONAL_HIGHWAYS_URL', 'https://api.data.nationalhighways.co.uk'),
         'api_key' => env('NATIONAL_HIGHWAYS_API_KEY'),
-        'timeout' => (int) env('NATIONAL_HIGHWAYS_TIMEOUT', 10),
+        'timeout' => (int) env('NATIONAL_HIGHWAYS_TIMEOUT', 25),
     ],
 
     /*
@@ -40,12 +51,12 @@ return [
     | Cache
     |--------------------------------------------------------------------------
     |
-    | Cache TTL in minutes for flood and road data. Identical queries within
-    | this window return cached results without hitting the APIs.
+    | Cache TTL in minutes for flood and road data. Set to 0 to disable caching.
+    | Identical queries within this window return cached results without hitting the APIs.
     |
     */
 
-    'cache_ttl_minutes' => (int) env('FLOOD_WATCH_CACHE_TTL_MINUTES', 15),
+    'cache_ttl_minutes' => (int) env('FLOOD_WATCH_CACHE_TTL_MINUTES', 0),
 
     /*
     |--------------------------------------------------------------------------

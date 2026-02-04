@@ -19,11 +19,12 @@ class FloodWatchDashboardTest extends TestCase
         $response->assertSeeLivewire('flood-watch-dashboard');
     }
 
-    public function test_flood_watch_dashboard_displays_flood_risk_and_road_status_badges(): void
+    public function test_flood_watch_dashboard_displays_flood_risk_road_status_and_forecast_badges(): void
     {
         Livewire::test('flood-watch-dashboard')
             ->assertSee('Flood Risk')
-            ->assertSee('Road Status');
+            ->assertSee('Road Status')
+            ->assertSee('5-Day Forecast');
     }
 
     public function test_flood_watch_dashboard_has_postcode_input(): void
@@ -45,6 +46,9 @@ class FloodWatchDashboardTest extends TestCase
             }
             if (str_contains($request->url(), 'api.example.com')) {
                 return Http::response(['closure' => ['closure' => []]], 200);
+            }
+            if (str_contains($request->url(), 'fgs.metoffice.gov.uk')) {
+                return Http::response(['statement' => []], 200);
             }
 
             return Http::response(null, 404);
@@ -134,6 +138,9 @@ class FloodWatchDashboardTest extends TestCase
                         ],
                     ],
                 ], 200);
+            }
+            if (str_contains($request->url(), 'fgs.metoffice.gov.uk')) {
+                return Http::response(['statement' => []], 200);
             }
 
             return Http::response(null, 404);
@@ -227,6 +234,9 @@ class FloodWatchDashboardTest extends TestCase
             }
             if (str_contains($request->url(), 'api.example.com')) {
                 return Http::response(['closure' => ['closure' => []]], 200);
+            }
+            if (str_contains($request->url(), 'fgs.metoffice.gov.uk')) {
+                return Http::response(['statement' => []], 200);
             }
 
             return Http::response(null, 404);

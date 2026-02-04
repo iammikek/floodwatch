@@ -22,6 +22,7 @@ class SomersetAssistantServiceTest extends TestCase
         $this->assertStringContainsString('OPENAI_API_KEY', $result['response']);
         $this->assertSame([], $result['floods']);
         $this->assertSame([], $result['incidents']);
+        $this->assertSame([], $result['forecast']);
     }
 
     public function test_chat_returns_final_response_after_tool_calls(): void
@@ -36,6 +37,9 @@ class SomersetAssistantServiceTest extends TestCase
             }
             if (str_contains($request->url(), 'api.example.com')) {
                 return Http::response(['closure' => ['closure' => []]], 200);
+            }
+            if (str_contains($request->url(), 'fgs.metoffice.gov.uk')) {
+                return Http::response(['statement' => []], 200);
             }
 
             return Http::response(null, 404);
@@ -138,6 +142,9 @@ class SomersetAssistantServiceTest extends TestCase
             if (str_contains($request->url(), 'api.example.com')) {
                 return Http::response(['closure' => ['closure' => []]], 200);
             }
+            if (str_contains($request->url(), 'fgs.metoffice.gov.uk')) {
+                return Http::response(['statement' => []], 200);
+            }
 
             return Http::response(null, 404);
         });
@@ -231,6 +238,9 @@ class SomersetAssistantServiceTest extends TestCase
                     ],
                 ], 200);
             }
+            if (str_contains($request->url(), 'fgs.metoffice.gov.uk')) {
+                return Http::response(['statement' => []], 200);
+            }
 
             return Http::response(null, 404);
         });
@@ -293,6 +303,7 @@ class SomersetAssistantServiceTest extends TestCase
     {
         Config::set('openai.api_key', 'test-key');
         Config::set('flood-watch.cache_store', 'flood-watch-array');
+        Config::set('flood-watch.cache_ttl_minutes', 15);
         Config::set('flood-watch.national_highways.api_key', 'test-key');
         Config::set('flood-watch.national_highways.base_url', 'https://api.example.com');
 
@@ -302,6 +313,9 @@ class SomersetAssistantServiceTest extends TestCase
             }
             if (str_contains($request->url(), 'api.example.com')) {
                 return Http::response(['closure' => ['closure' => []]], 200);
+            }
+            if (str_contains($request->url(), 'fgs.metoffice.gov.uk')) {
+                return Http::response(['statement' => []], 200);
             }
 
             return Http::response(null, 404);
@@ -359,5 +373,78 @@ class SomersetAssistantServiceTest extends TestCase
 
         $second = $service->chat('Check status', [], 'TA10 0');
         $this->assertSame('Cached response.', $second['response']);
+    }
+
+    public function test_get_flood_forecast_tool_returns_forecast_data(): void
+    {
+        Config::set('openai.api_key', 'test-key');
+        Config::set('flood-watch.national_highways.api_key', 'test-key');
+        Config::set('flood-watch.national_highways.base_url', 'https://api.example.com');
+        Config::set('flood-watch.flood_forecast.base_url', 'https://fgs.example.com');
+
+        Http::fake(function ($request) {
+            if (str_contains($request->url(), 'environment.data.gov.uk')) {
+                return Http::response(['items' => []], 200);
+            }
+            if (str_contains($request->url(), 'api.example.com')) {
+                return Http::response(['closure' => ['closure' => []]], 200);
+            }
+            if (str_contains($request->url(), 'fgs.example.com')) {
+                return Http::response([
+                    'statement' => [
+                        'issued_at' => '2026-02-04T10:30:00Z',
+                        'public_forecast' => ['england_forecast' => 'Flood risk is very low for the next 5 days.'],
+                        'flood_risk_trend' => ['day1' => 'stable', 'day2' => 'stable'],
+                        'sources' => [['river' => 'River flood risk is LOW.']],
+                    ],
+                ], 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
+        $toolCallResponse = CreateResponse::fake([
+            'choices' => [
+                [
+                    'index' => 0,
+                    'message' => [
+                        'role' => 'assistant',
+                        'content' => null,
+                        'tool_calls' => [
+                            ['id' => 'call_1', 'type' => 'function', 'function' => ['name' => 'GetFloodData', 'arguments' => '{}']],
+                            ['id' => 'call_2', 'type' => 'function', 'function' => ['name' => 'GetHighwaysIncidents', 'arguments' => '{}']],
+                            ['id' => 'call_3', 'type' => 'function', 'function' => ['name' => 'GetFloodForecast', 'arguments' => '{}']],
+                        ],
+                    ],
+                    'logprobs' => null,
+                    'finish_reason' => 'tool_calls',
+                ],
+            ],
+        ]);
+
+        $finalResponse = CreateResponse::fake([
+            'choices' => [
+                [
+                    'index' => 0,
+                    'message' => [
+                        'role' => 'assistant',
+                        'content' => 'Including 5-day outlook.',
+                        'tool_calls' => [],
+                    ],
+                    'logprobs' => null,
+                    'finish_reason' => 'stop',
+                ],
+            ],
+        ]);
+
+        OpenAI::fake([$toolCallResponse, $finalResponse]);
+
+        $service = app(SomersetAssistantService::class);
+        $result = $service->chat('What is the flood forecast?');
+
+        $this->assertSame('Including 5-day outlook.', $result['response']);
+        $this->assertNotEmpty($result['forecast']);
+        $this->assertStringContainsString('very low', $result['forecast']['england_forecast']);
+        $this->assertSame('2026-02-04T10:30:00Z', $result['forecast']['issued_at']);
     }
 }

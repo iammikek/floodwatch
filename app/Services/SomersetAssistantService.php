@@ -14,6 +14,8 @@ You are the Somerset Emergency Assistant for the Somerset Levels (Sedgemoor and 
 
 **Contextual Awareness**: Muchelney is prone to being cut off. If River Parrett levels are rising, warn users about access to Muchelney even if the Highways API has not updated (predictive warning).
 
+**Predictive**: Use GetFloodForecast to include the 5-day flood risk outlook. Combine current flood warnings with the forecast trend (day1–day5) to give users forward-looking advice.
+
 **Prioritization**: Prioritize "Danger to Life" alerts, then road closures, then general flood alerts.
 
 **Output Format**: Always structure responses with:
@@ -25,7 +27,8 @@ PROMPT;
 
     public function __construct(
         protected EnvironmentAgencyFloodService $floodService,
-        protected NationalHighwaysService $highwaysService
+        protected NationalHighwaysService $highwaysService,
+        protected FloodForecastService $forecastService
     ) {}
 
     /**
@@ -33,7 +36,7 @@ PROMPT;
      * Results are cached to avoid hammering the APIs. Use $cacheKey to scope the cache (e.g. postcode).
      *
      * @param  array<int, array{role: string, content: string}>  $conversation  Previous messages (optional)
-     * @return array{response: string, floods: array, incidents: array, lastChecked: string}
+     * @return array{response: string, floods: array, incidents: array, forecast: array, lastChecked: string}
      */
     public function chat(string $userMessage, array $conversation = [], ?string $cacheKey = null): array
     {
@@ -41,6 +44,7 @@ PROMPT;
             'response' => $response,
             'floods' => [],
             'incidents' => [],
+            'forecast' => [],
             'lastChecked' => $lastChecked ?? now()->toIso8601String(),
         ];
 
@@ -50,14 +54,19 @@ PROMPT;
 
         $store = $this->resolveCacheStore();
         $key = $this->cacheKey($userMessage, $cacheKey);
-        $cached = $this->cacheGet($store, $key);
-        if ($cached !== null) {
-            return $cached;
+        $cacheEnabled = config('flood-watch.cache_ttl_minutes', 15) > 0;
+        if ($cacheEnabled) {
+            $cached = $this->cacheGet($store, $key);
+            if ($cached !== null) {
+                return $cached;
+            }
         }
+
+        $forecast = $this->forecastService->getForecast();
 
         $messages = $this->buildMessages($userMessage, $conversation);
         $tools = $this->getToolDefinitions();
-        $maxIterations = 5;
+        $maxIterations = 8;
         $iteration = 0;
         $floods = [];
         $incidents = [];
@@ -83,6 +92,7 @@ PROMPT;
                     'response' => trim($message->content ?? 'No response generated.'),
                     'floods' => $floods,
                     'incidents' => $incidents,
+                    'forecast' => $forecast,
                 ]);
             }
 
@@ -91,6 +101,7 @@ PROMPT;
                     'response' => trim($message->content ?? 'No response generated.'),
                     'floods' => $floods,
                     'incidents' => $incidents,
+                    'forecast' => $forecast,
                 ]);
             }
 
@@ -107,6 +118,9 @@ PROMPT;
                 }
                 if ($toolCall->function->name === 'GetHighwaysIncidents' && is_array($result)) {
                     $incidents = $result;
+                }
+                if ($toolCall->function->name === 'GetFloodForecast' && is_array($result) && ! isset($result['error'])) {
+                    $forecast = $result;
                 }
                 $messages[] = [
                     'role' => 'tool',
@@ -131,15 +145,17 @@ PROMPT;
     }
 
     /**
-     * @param  array{response: string, floods: array, incidents: array}  $result
-     * @return array{response: string, floods: array, incidents: array, lastChecked: string}
+     * @param  array{response: string, floods: array, incidents: array, forecast: array}  $result
+     * @return array{response: string, floods: array, incidents: array, forecast: array, lastChecked: string}
      */
     private function storeAndReturn(string $cacheKey, array $result): array
     {
-        $store = $this->resolveCacheStore();
-        $ttl = config('flood-watch.cache_ttl_minutes', 15) * 60;
         $result['lastChecked'] = now()->toIso8601String();
-        $this->cachePut($store, $cacheKey, $result, $ttl);
+        $ttl = config('flood-watch.cache_ttl_minutes', 15) * 60;
+        if ($ttl > 0) {
+            $store = $this->resolveCacheStore();
+            $this->cachePut($store, $cacheKey, $result, $ttl);
+        }
 
         return $result;
     }
@@ -235,6 +251,17 @@ PROMPT;
                     ],
                 ],
             ],
+            [
+                'type' => 'function',
+                'function' => [
+                    'name' => 'GetFloodForecast',
+                    'description' => 'Fetch the latest 5-day flood risk forecast from the Flood Forecasting Centre. Returns England-wide outlook, risk trend (day1–day5), and source summaries (river, coastal, ground) including Somerset Levels.',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => (object) [],
+                    ],
+                ],
+            ],
         ];
     }
 
@@ -249,6 +276,7 @@ PROMPT;
                 $args['radius_km'] ?? null
             ),
             'GetHighwaysIncidents' => $this->highwaysService->getIncidents(),
+            'GetFloodForecast' => $this->forecastService->getForecast(),
             default => ['error' => "Unknown tool: {$name}"],
         };
     }

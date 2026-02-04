@@ -19,7 +19,13 @@ class EnvironmentAgencyFloodService
         $timeout = config('flood-watch.environment_agency.timeout');
         $url = "{$baseUrl}/id/floods?lat={$lat}&long={$long}&dist={$radiusKm}";
 
-        $response = Http::timeout($timeout)->get($url);
+        try {
+            $response = Http::timeout($timeout)->get($url);
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            report($e);
+
+            return [];
+        }
 
         if (! $response->successful()) {
             return [];
