@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\DTOs\RoadIncident;
 use Illuminate\Support\Facades\Http;
 
 class NationalHighwaysService
@@ -58,12 +59,7 @@ class NationalHighwaysService
                 continue;
             }
 
-            $incidents[] = [
-                'road' => $closure['road'] ?? $closure['roadName'] ?? $closure['location'] ?? '',
-                'status' => $closure['status'] ?? $closure['closureStatus'] ?? '',
-                'incidentType' => $closure['incidentType'] ?? $closure['type'] ?? '',
-                'delayTime' => $closure['delayTime'] ?? $closure['delay'] ?? '',
-            ];
+            $incidents[] = RoadIncident::fromArray($closure)->toArray();
         }
 
         return $incidents;

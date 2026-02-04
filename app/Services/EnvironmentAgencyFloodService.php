@@ -2,11 +2,16 @@
 
 namespace App\Services;
 
+use App\DTOs\FloodWarning;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
 class EnvironmentAgencyFloodService
 {
+    /**
+     * @return array<int, array<string, mixed>>
+     */
     public function getFloods(
         ?float $lat = null,
         ?float $long = null,
@@ -22,7 +27,7 @@ class EnvironmentAgencyFloodService
 
         try {
             $response = Http::timeout($timeout)->get($url);
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             report($e);
 
             return [];
@@ -37,11 +42,12 @@ class EnvironmentAgencyFloodService
         $areaCentroids = $this->fetchFloodAreaCentroids($baseUrl, $timeout, $lat, $long, $radiusKm);
         $polygons = $this->fetchFloodAreaPolygons($baseUrl, $timeout, $items);
 
-        return array_map(function (array $item) use ($areaCentroids, $polygons) {
+        $result = [];
+        foreach ($items as $item) {
             $areaId = $item['floodAreaID'] ?? '';
             $centroid = $areaCentroids[$areaId] ?? null;
 
-            $flood = [
+            $raw = [
                 'description' => $item['description'] ?? '',
                 'severity' => $item['severity'] ?? '',
                 'severityLevel' => $item['severityLevel'] ?? 0,
@@ -53,13 +59,14 @@ class EnvironmentAgencyFloodService
                 'lat' => $centroid['lat'] ?? null,
                 'long' => $centroid['long'] ?? null,
             ];
-
             if (isset($polygons[$areaId])) {
-                $flood['polygon'] = $polygons[$areaId];
+                $raw['polygon'] = $polygons[$areaId];
             }
 
-            return $flood;
-        }, $items);
+            $result[] = FloodWarning::fromArray($raw)->toArray();
+        }
+
+        return $result;
     }
 
     /**
@@ -73,7 +80,7 @@ class EnvironmentAgencyFloodService
 
         try {
             $response = Http::timeout($timeout)->get($url);
-        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+        } catch (ConnectionException $e) {
             return [];
         }
 

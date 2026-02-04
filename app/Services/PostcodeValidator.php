@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\ValueObjects\Postcode;
 use Illuminate\Support\Facades\Http;
 
 class PostcodeValidator
@@ -28,17 +29,18 @@ class PostcodeValidator
      */
     public function validate(string $postcode, bool $geocode = true): array
     {
-        $normalized = $this->normalize($postcode);
+        $postcodeObj = Postcode::tryFrom($postcode);
 
-        if ($normalized === '') {
-            return [
-                'valid' => false,
-                'in_area' => false,
-                'error' => 'Please enter a postcode.',
-            ];
-        }
+        if ($postcodeObj === null) {
+            $normalized = $this->normalize($postcode);
+            if ($normalized === '') {
+                return [
+                    'valid' => false,
+                    'in_area' => false,
+                    'error' => 'Please enter a postcode.',
+                ];
+            }
 
-        if (! $this->matchesUkFormat($normalized) && ! $this->matchesOutcodeOnly($normalized)) {
             return [
                 'valid' => false,
                 'in_area' => false,
@@ -46,27 +48,24 @@ class PostcodeValidator
             ];
         }
 
-        $outcode = $this->extractOutcode($normalized);
-        $inArea = $this->isInSouthWest($outcode);
-
-        if (! $inArea) {
+        if (! $postcodeObj->isInSouthWest()) {
             return [
                 'valid' => true,
                 'in_area' => false,
                 'error' => 'This postcode is outside the South West. Flood Watch covers Bristol, Somerset, Devon and Cornwall.',
-                'outcode' => $outcode,
+                'outcode' => $postcodeObj->outcode(),
             ];
         }
 
         $result = [
             'valid' => true,
             'in_area' => true,
-            'outcode' => $outcode,
-            'region' => $this->getRegionFromOutcode($outcode),
+            'outcode' => $postcodeObj->outcode(),
+            'region' => $postcodeObj->region()?->value,
         ];
 
         if ($geocode) {
-            $coords = $this->geocode($normalized);
+            $coords = $this->geocode($postcodeObj->normalize());
             if ($coords !== null && isset($coords['error'])) {
                 return [
                     'valid' => false,

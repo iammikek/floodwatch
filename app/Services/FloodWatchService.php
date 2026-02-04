@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\DTOs\FloodWarning;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use OpenAI\Laravel\Facades\OpenAI;
@@ -399,11 +400,10 @@ PROMPT;
         }
 
         if ($toolName === 'GetFloodData') {
-            return array_map(function (array $flood) {
-                unset($flood['polygon']);
-
-                return $flood;
-            }, $result);
+            return array_map(
+                fn (array $flood) => FloodWarning::fromArray($flood)->withoutPolygon()->toArray(),
+                $result
+            );
         }
 
         return $result;
