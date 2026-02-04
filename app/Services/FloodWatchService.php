@@ -86,6 +86,7 @@ class FloodWatchService
                 $report('Analyzing with AI...');
             }
 
+            $messages = $this->trimMessagesToTokenBudget($messages);
             $payload = [
                 'model' => config('openai.model', 'gpt-4o-mini'),
                 'messages' => $messages,
@@ -352,24 +353,140 @@ class FloodWatchService
         }
 
         if ($toolName === 'GetFloodForecast') {
-            $maxChars = config('flood-watch.llm_max_forecast_chars', 3000);
+            $maxChars = config('flood-watch.llm_max_forecast_chars', 1200);
             if (isset($result['england_forecast']) && strlen($result['england_forecast']) > $maxChars) {
                 $result['england_forecast'] = substr($result['england_forecast'], 0, $maxChars).'…';
+            }
+            $maxExtraChars = 800;
+            foreach (['flood_risk_trend', 'sources'] as $key) {
+                if (isset($result[$key]) && is_array($result[$key])) {
+                    $encoded = json_encode($result[$key]);
+                    if (strlen($encoded) > $maxExtraChars) {
+                        $result[$key] = array_slice($result[$key], 0, 3, true);
+                    }
+                }
             }
 
             return $result;
         }
 
         if ($toolName === 'GetCorrelationSummary') {
-            $max = config('flood-watch.llm_max_floods', 25);
-            $result['severe_floods'] = array_slice($result['severe_floods'] ?? [], 0, $max);
-            $result['flood_warnings'] = array_slice($result['flood_warnings'] ?? [], 0, $max);
-            $result['road_incidents'] = array_slice($result['road_incidents'] ?? [], 0, config('flood-watch.llm_max_incidents', 25));
-            $result['cross_references'] = array_slice($result['cross_references'] ?? [], 0, 20);
+            $maxFloods = config('flood-watch.llm_max_floods', 12);
+            $maxIncidents = config('flood-watch.llm_max_incidents', 12);
+            $maxMsgChars = config('flood-watch.llm_max_flood_message_chars', 150);
+            $maxTotalChars = config('flood-watch.llm_max_correlation_chars', 8000);
+
+            $stripFlood = function (array $f) use ($maxMsgChars): array {
+                try {
+                    $arr = FloodWarning::fromArray($f)->withoutPolygon()->toArray();
+                } catch (\Throwable) {
+                    return ['description' => $f['description'] ?? '', 'severity' => $f['severity'] ?? '', 'message' => substr((string) ($f['message'] ?? ''), 0, $maxMsgChars)];
+                }
+                if (isset($arr['message']) && strlen($arr['message']) > $maxMsgChars) {
+                    $arr['message'] = substr($arr['message'], 0, $maxMsgChars).'…';
+                }
+
+                return $arr;
+            };
+
+            $result['severe_floods'] = array_map($stripFlood, array_slice($result['severe_floods'] ?? [], 0, $maxFloods));
+            $result['flood_warnings'] = array_map($stripFlood, array_slice($result['flood_warnings'] ?? [], 0, $maxFloods));
+            $result['road_incidents'] = array_slice($result['road_incidents'] ?? [], 0, $maxIncidents);
+            $result['cross_references'] = array_slice($result['cross_references'] ?? [], 0, 15);
+            $result['predictive_warnings'] = array_slice($result['predictive_warnings'] ?? [], 0, 10);
+
+            $encoded = json_encode($result);
+            while (strlen($encoded) > $maxTotalChars && ($maxFloods > 2 || $maxIncidents > 2)) {
+                if ($maxFloods > 2) {
+                    $maxFloods--;
+                    $result['severe_floods'] = array_slice($result['severe_floods'], 0, $maxFloods);
+                    $result['flood_warnings'] = array_slice($result['flood_warnings'], 0, $maxFloods);
+                }
+                if (strlen(json_encode($result)) > $maxTotalChars && $maxIncidents > 2) {
+                    $maxIncidents--;
+                    $result['road_incidents'] = array_slice($result['road_incidents'], 0, $maxIncidents);
+                }
+                $encoded = json_encode($result);
+            }
 
             return $result;
         }
 
         return $result;
+    }
+
+    /**
+     * Trim messages to stay under the model's context limit. Keeps system, user,
+     * and only the most recent assistant+tool block when over budget.
+     *
+     * @param  array<int, array{role: string, content?: string|null, tool_calls?: array, tool_call_id?: string}>  $messages
+     * @return array<int, array{role: string, content?: string|null, tool_calls?: array, tool_call_id?: string}>
+     */
+    private function trimMessagesToTokenBudget(array $messages): array
+    {
+        $maxTokens = config('flood-watch.llm_max_context_tokens', 110000);
+        $estimate = fn (array $m): int => (int) ceil(strlen(json_encode(['messages' => $m])) / 4);
+        $estimatedTokens = $estimate($messages);
+
+        if ($estimatedTokens <= $maxTokens) {
+            return $messages;
+        }
+
+        $lastAssistantIndex = null;
+        for ($i = count($messages) - 1; $i >= 0; $i--) {
+            if (($messages[$i]['role'] ?? '') === 'assistant' && isset($messages[$i]['tool_calls'])) {
+                $lastAssistantIndex = $i;
+                break;
+            }
+        }
+
+        if ($lastAssistantIndex !== null) {
+            $messages = [
+                $messages[0],
+                $messages[1],
+                ...array_slice($messages, $lastAssistantIndex),
+            ];
+            Log::warning('FloodWatch trimmed to last assistant+tool block', [
+                'estimated_tokens' => $estimate($messages),
+            ]);
+        }
+
+        return $this->truncateToolContentsToBudget($messages, $maxTokens);
+    }
+
+    /**
+     * When messages are still over budget, truncate tool message contents until under limit.
+     *
+     * @param  array<int, array{role: string, content?: string|null, tool_calls?: array, tool_call_id?: string}>  $messages
+     * @return array<int, array{role: string, content?: string|null, tool_calls?: array, tool_call_id?: string}>
+     */
+    private function truncateToolContentsToBudget(array $messages, int $maxTokens): array
+    {
+        $estimate = fn (array $m): int => (int) ceil(strlen(json_encode(['messages' => $m])) / 4);
+
+        if ($estimate($messages) <= $maxTokens) {
+            return $messages;
+        }
+
+        $maxContentChars = 8000;
+        $step = 2000;
+
+        while ($estimate($messages) > $maxTokens && $maxContentChars > 500) {
+            foreach ($messages as $i => $msg) {
+                if (($msg['role'] ?? '') === 'tool' && isset($msg['content']) && strlen($msg['content']) > $maxContentChars) {
+                    $messages[$i]['content'] = substr($msg['content'], 0, $maxContentChars).'… [truncated]';
+                }
+            }
+            $maxContentChars -= $step;
+        }
+
+        if ($estimate($messages) > $maxTokens) {
+            Log::warning('FloodWatch payload still over token budget after truncation', [
+                'estimated_tokens' => $estimate($messages),
+                'max_tokens' => $maxTokens,
+            ]);
+        }
+
+        return $messages;
     }
 }

@@ -25,11 +25,13 @@ return [
     |
     */
 
-    'llm_max_floods' => (int) env('FLOOD_WATCH_LLM_MAX_FLOODS', 25),
-    'llm_max_incidents' => (int) env('FLOOD_WATCH_LLM_MAX_INCIDENTS', 25),
-    'llm_max_river_levels' => (int) env('FLOOD_WATCH_LLM_MAX_RIVER_LEVELS', 15),
-    'llm_max_forecast_chars' => (int) env('FLOOD_WATCH_LLM_MAX_FORECAST_CHARS', 3000),
-    'llm_max_flood_message_chars' => (int) env('FLOOD_WATCH_LLM_MAX_FLOOD_MESSAGE_CHARS', 300),
+    'llm_max_floods' => (int) env('FLOOD_WATCH_LLM_MAX_FLOODS', 12),
+    'llm_max_incidents' => (int) env('FLOOD_WATCH_LLM_MAX_INCIDENTS', 12),
+    'llm_max_river_levels' => (int) env('FLOOD_WATCH_LLM_MAX_RIVER_LEVELS', 8),
+    'llm_max_forecast_chars' => (int) env('FLOOD_WATCH_LLM_MAX_FORECAST_CHARS', 1200),
+    'llm_max_flood_message_chars' => (int) env('FLOOD_WATCH_LLM_MAX_FLOOD_MESSAGE_CHARS', 150),
+    'llm_max_context_tokens' => (int) env('FLOOD_WATCH_LLM_MAX_CONTEXT_TOKENS', 110000),
+    'llm_max_correlation_chars' => (int) env('FLOOD_WATCH_LLM_MAX_CORRELATION_CHARS', 8000),
 
     /*
     |--------------------------------------------------------------------------

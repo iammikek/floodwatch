@@ -42,6 +42,8 @@ class FloodWatchDashboard extends Component
 
     public ?int $retryAfterTimestamp = null;
 
+    public bool $autoRefreshEnabled = false;
+
     public function canRetry(): bool
     {
         if ($this->retryAfterTimestamp === null) {

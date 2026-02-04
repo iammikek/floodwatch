@@ -110,6 +110,7 @@
                     class="min-h-[44px] inline-flex items-center justify-center gap-2 px-5 py-3 sm:py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <span wire:loading.remove wire:target="search">Check status</span>
+                    @if (!$assistantResponse)
                     <span wire:loading wire:target="search" class="inline-flex items-center gap-2">
                         <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -117,6 +118,7 @@
                         </svg>
                         Searching...
                     </span>
+                    @endif
                 </button>
             </div>
         </div>
@@ -162,16 +164,51 @@
             <div
                 class="space-y-6 scroll-smooth"
                 id="results"
-                @if (!$error) wire:poll.5m="search" @endif
+                @if (!$error && $autoRefreshEnabled) wire:poll.900s="search" @endif
             >
                 <div class="flex flex-wrap items-center justify-between gap-3">
                     @if ($lastChecked)
                         <p class="text-sm text-slate-500 dark:text-slate-400">
                             Last checked: {{ \Carbon\Carbon::parse($lastChecked)->format('j M Y, g:i a') }}
-                            <span class="text-slate-400 dark:text-slate-500">· Auto-refresh every 5 min</span>
                         </p>
                     @endif
-                    <button
+                    <div
+                        class="flex flex-wrap items-center gap-3"
+                        x-data="{
+                            lastChecked: @js($lastChecked),
+                            nextRefreshAt: null,
+                            minutesLeft: null,
+                            init() {
+                                this.update();
+                                setInterval(() => this.update(), 60000);
+                            },
+                            update() {
+                                if (!this.lastChecked) return;
+                                const last = new Date(this.lastChecked);
+                                if (isNaN(last.getTime())) return;
+                                this.nextRefreshAt = new Date(last.getTime() + 15 * 60 * 1000);
+                                const diff = this.nextRefreshAt - Date.now();
+                                this.minutesLeft = Math.max(0, Math.ceil(diff / 60000));
+                            }
+                        }"
+                        x-init="init()"
+                    >
+                        <label class="inline-flex items-center gap-2 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                wire:model.live="autoRefreshEnabled"
+                                class="rounded border-slate-300 dark:border-slate-600 text-blue-600 focus:ring-blue-500"
+                            />
+                            <span class="text-sm text-slate-600 dark:text-slate-400">Auto-refresh every 15 min</span>
+                        </label>
+                        <span
+                            x-show="$wire.autoRefreshEnabled && lastChecked && minutesLeft !== null"
+                            x-cloak
+                            x-transition
+                            class="text-sm text-slate-500 dark:text-slate-400"
+                            x-text="minutesLeft > 0 ? 'Next refresh in ' + minutesLeft + ' min (at ' + nextRefreshAt.toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'}) + ')' : 'Refreshing...'"
+                        ></span>
+                        <button
                         type="button"
                         wire:click="search"
                         wire:loading.attr="disabled"
@@ -187,10 +224,11 @@
                             Refreshing...
                         </span>
                     </button>
+                    </div>
                 </div>
 
                 @if ($mapCenter)
-                    <div id="map-section" class="rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
+                    <div id="map-section" wire:key="map-{{ $lastChecked ?? 'initial' }}" class="rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
                         <div
                             class="flex flex-col"
                             x-data="{
@@ -259,35 +297,46 @@
                                 init() {
                                     if (!this.center) return;
                                     this.$nextTick(() => {
-                                        this.map = L.map('flood-map').setView([this.center.lat, this.center.long], 11);
-                                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                                            attribution: '&copy; <a href=&quot;https://www.openstreetmap.org/copyright&quot;>OpenStreetMap</a>'
-                                        }).addTo(this.map);
-                                        if (this.hasUser) {
-                                            L.marker([this.center.lat, this.center.long], { icon: this.userIcon() })
-                                                .addTo(this.map)
-                                                .bindPopup('<b>Your location</b>');
-                                        }
-                                        this.stations.forEach(s => {
-                                            L.marker([s.lat, s.long], { icon: this.stationIcon(s) })
-                                                .addTo(this.map)
-                                                .bindPopup(this.stationPopup(s));
-                                        });
-                                        this.floods.forEach(f => {
-                                            if (f.polygon && f.polygon.features) {
-                                                const style = this.floodPolygonStyle(f);
-                                                L.geoJSON(f.polygon, {
-                                                    style: () => style,
-                                                    onEachFeature: (feature, layer) => {
-                                                        layer.bindPopup(this.floodPopup(f));
-                                                    }
-                                                }).addTo(this.map);
+                                        requestAnimationFrame(() => {
+                                            const el = document.getElementById('flood-map');
+                                            if (!el) return;
+                                            if (this.map) {
+                                                this.map.remove();
+                                                this.map = null;
                                             }
-                                            if (f.lat != null && f.long != null) {
-                                                L.marker([f.lat, f.long], { icon: this.floodIcon(f) })
+                                            this.map = L.map('flood-map').setView([this.center.lat, this.center.long], 11);
+                                            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                                attribution: '&copy; <a href=&quot;https://www.openstreetmap.org/copyright&quot;>OpenStreetMap</a>'
+                                            }).addTo(this.map);
+                                            if (this.hasUser) {
+                                                L.marker([this.center.lat, this.center.long], { icon: this.userIcon() })
                                                     .addTo(this.map)
-                                                    .bindPopup(this.floodPopup(f));
+                                                    .bindPopup('<b>Your location</b>');
                                             }
+                                            (this.stations || []).forEach(s => {
+                                                if (s.lat != null && s.long != null) {
+                                                    L.marker([s.lat, s.long], { icon: this.stationIcon(s) })
+                                                        .addTo(this.map)
+                                                        .bindPopup(this.stationPopup(s));
+                                                }
+                                            });
+                                            (this.floods || []).forEach(f => {
+                                                if (f.polygon && f.polygon.features) {
+                                                    const style = this.floodPolygonStyle(f);
+                                                    L.geoJSON(f.polygon, {
+                                                        style: () => style,
+                                                        onEachFeature: (feature, layer) => {
+                                                            layer.bindPopup(this.floodPopup(f));
+                                                        }
+                                                    }).addTo(this.map);
+                                                }
+                                                if (f.lat != null && f.long != null) {
+                                                    L.marker([f.lat, f.long], { icon: this.floodIcon(f) })
+                                                        .addTo(this.map)
+                                                        .bindPopup(this.floodPopup(f));
+                                                }
+                                            });
+                                            this.map.invalidateSize();
                                         });
                                     });
                                 }

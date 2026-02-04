@@ -61,6 +61,10 @@ class NationalHighwaysService
             ])
             ->get($url);
 
+        if ($response->status() === 404) {
+            return [];
+        }
+
         if (! $response->successful()) {
             $response->throw();
         }
