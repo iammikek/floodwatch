@@ -61,6 +61,20 @@ For the pilot, SQLite runs in the container. Data is lost on redeploy. To persis
 2. Mount path: `/app/database`
 3. Set `DB_DATABASE=/app/database/database.sqlite`
 
+### 6. Persistent Users (Neon PostgreSQL, free tier)
+
+To persist users without Railway volumes (free tier):
+
+1. Create a free account at [neon.tech](https://neon.tech)
+2. Create a project and copy the connection string (e.g. `postgresql://user:pass@host/dbname?sslmode=require`)
+3. In Railway Variables, add:
+   - `DB_CONNECTION` = `pgsql`
+   - `DATABASE_URL` = your Neon connection string
+   - `SESSION_DRIVER` = `database` (sessions persist in PostgreSQL)
+4. Remove or leave unset: `DB_DATABASE` (DATABASE_URL takes precedence)
+
+Users can then register at `/register` and log in at `/login`; accounts persist across deploys.
+
 ## Redeploy
 
 Push to `main`:

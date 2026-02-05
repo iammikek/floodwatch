@@ -32,6 +32,7 @@
 /storage/*.key
 /storage/pail
 /vendor
+/laravel
 Homestead.json
 Homestead.yaml
 Thumbs.db

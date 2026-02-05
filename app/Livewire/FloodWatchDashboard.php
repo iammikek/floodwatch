@@ -14,7 +14,7 @@ use OpenAI\Exceptions\ErrorException;
 use OpenAI\Exceptions\RateLimitException;
 use Psr\Http\Message\ResponseInterface;
 
-#[Layout('layouts.app')]
+#[Layout('layouts.flood-watch')]
 class FloodWatchDashboard extends Component
 {
     public string $location = '';
