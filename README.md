@@ -22,7 +22,7 @@ The assistant covers the South West with **region-specific prompts** that tailor
 | **GetFloodForecast** | Flood Guidance Statement (FGS) | 5-day flood risk outlook                                                    |
 | **GetRiverLevels**   | Environment Agency             | Real-time river and sea levels (same data as [check-for-flooding.service.gov.uk](https://check-for-flooding.service.gov.uk/river-and-sea-levels)) |
 
-Weather (5-day forecast with icons) and flood forecast are pre-fetched; the LLM calls the other tools as needed.
+Weather (5-day forecast with icons) and flood forecast are pre-fetched; flood alerts (GetFloodData) and road incidents (GetHighwaysIncidents) are fetched when the LLM calls those tools.
 
 ## Correlated Scenarios
 

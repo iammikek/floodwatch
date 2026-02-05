@@ -20,7 +20,7 @@ Quick reference for AI agents working on this project.
 
 **Muchelney rule**: If Langport flood level exceeds threshold → proactively check Muchelney road status (predictive warning).
 
-**Concurrency**: Pre-fetch (forecast, weather, river levels) runs in parallel via `Concurrency::run()`. Tool calls (GetFloodData, GetHighwaysIncidents) are LLM-driven; the LLM may invoke multiple tools in one turn. See `docs/ARCHITECTURE.md` for details.
+**Data fetch**: Pre-fetch (forecast, weather, river levels) runs in parallel via `Concurrency::run()`. **Flood alerts** and **road incidents** are fetched when the LLM calls GetFloodData and GetHighwaysIncidents – not pre-fetched. See `docs/ARCHITECTURE.md` for details.
 
 **System prompt (Somerset Emergency Assistant)**: Data Correlation (North Moor/King's Sedgemoor → cross-reference A361 East Lyng). Contextual Awareness (Muchelney cut-off risk; predictive warnings when Parrett rising). Prioritization: Danger to Life → road closures → general flood alerts.
 

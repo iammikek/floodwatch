@@ -39,8 +39,12 @@
         }
     },
     "scripts": {
+        "install-hooks": [
+            "@php scripts/install-hooks.php"
+        ],
         "setup": [
             "composer install",
+            "@install-hooks",
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",
             "@php artisan key:generate",
             "@php artisan migrate --force",

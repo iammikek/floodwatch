@@ -1,0 +1,9 @@
+#!/bin/sh
+set -e
+cd "$(git rev-parse --show-toplevel)"
+
+STAGED_PHP=$(git diff --cached --name-only --diff-filter=ACM | grep '\.php$' || true)
+if [ -n "$STAGED_PHP" ]; then
+    echo "$STAGED_PHP" | xargs vendor/bin/pint
+    echo "$STAGED_PHP" | xargs git add
+fi

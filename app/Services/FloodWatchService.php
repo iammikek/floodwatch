@@ -46,7 +46,7 @@ class FloodWatchService
         ];
 
         if (empty(config('openai.api_key'))) {
-            return $emptyResult('Flood Watch is not configured with an OpenAI API key. Please add OPENAI_API_KEY to your environment.');
+            return $emptyResult(__('flood-watch.error.no_api_key'));
         }
 
         $store = $this->resolveCacheStore();
@@ -66,14 +66,14 @@ class FloodWatchService
         $lat = $userLat ?? config('flood-watch.default_lat');
         $long = $userLong ?? config('flood-watch.default_long');
 
-        $report('Fetching flood forecast, weather, and river levels...');
+        $report(__('flood-watch.progress.fetching_prefetch'));
         [$forecast, $weather, $riverLevels] = Concurrency::run([
             fn () => app(FloodForecastService::class)->getForecast(),
             fn () => app(WeatherService::class)->getForecast($lat, $long),
             fn () => app(RiverLevelService::class)->getLevels($lat, $long),
         ]);
 
-        $report('Calling AI assistant...');
+        $report(__('flood-watch.progress.calling_assistant'));
         $messages = $this->buildMessages($userMessage, $conversation, $region);
         $tools = $this->promptBuilder->getToolDefinitions();
         $maxIterations = 8;
@@ -83,7 +83,7 @@ class FloodWatchService
 
         while ($iteration < $maxIterations) {
             if ($iteration > 0) {
-                $report('Analyzing with AI...');
+                $report(__('flood-watch.progress.analysing'));
             }
 
             $messages = $this->trimMessagesToTokenBudget($messages);
@@ -108,17 +108,17 @@ class FloodWatchService
 
             $choice = $response->choices[0] ?? null;
             if (! $choice) {
-                return $emptyResult('Unable to get a response from the assistant.', now()->toIso8601String());
+                return $emptyResult(__('flood-watch.error.no_response'), now()->toIso8601String());
             }
 
             $message = $choice->message;
             $finishReason = $choice->finishReason ?? '';
 
             if ($finishReason === 'stop' || $finishReason === 'end_turn') {
-                $report('Preparing your summary...');
+                $report(__('flood-watch.progress.preparing_summary'));
 
                 return $this->storeAndReturn($key, [
-                    'response' => trim($message->content ?? 'No response generated.'),
+                    'response' => trim($message->content ?? __('flood-watch.error.no_content')),
                     'floods' => $floods,
                     'incidents' => $incidents,
                     'forecast' => $forecast,
@@ -128,10 +128,10 @@ class FloodWatchService
             }
 
             if (empty($message->toolCalls)) {
-                $report('Preparing your summary...');
+                $report(__('flood-watch.progress.preparing_summary'));
 
                 return $this->storeAndReturn($key, [
-                    'response' => trim($message->content ?? 'No response generated.'),
+                    'response' => trim($message->content ?? __('flood-watch.error.no_content')),
                     'floods' => $floods,
                     'incidents' => $incidents,
                     'forecast' => $forecast,
@@ -149,12 +149,12 @@ class FloodWatchService
             foreach ($message->toolCalls as $toolCall) {
                 $toolName = $toolCall->function->name;
                 $report(match ($toolName) {
-                    'GetFloodData' => 'Fetching flood warnings...',
-                    'GetHighwaysIncidents' => 'Checking road status...',
-                    'GetFloodForecast' => 'Getting flood forecast...',
-                    'GetRiverLevels' => 'Fetching river levels...',
-                    'GetCorrelationSummary' => 'Correlating flood and road data...',
-                    default => 'Loading data...',
+                    'GetFloodData' => __('flood-watch.progress.fetching_floods'),
+                    'GetHighwaysIncidents' => __('flood-watch.progress.checking_roads'),
+                    'GetFloodForecast' => __('flood-watch.progress.getting_forecast'),
+                    'GetRiverLevels' => __('flood-watch.progress.fetching_river_levels'),
+                    'GetCorrelationSummary' => __('flood-watch.progress.correlating'),
+                    default => __('flood-watch.progress.loading'),
                 });
                 $context = [
                     'floods' => $floods,
@@ -192,7 +192,7 @@ class FloodWatchService
             $iteration++;
         }
 
-        return $emptyResult('The assistant reached the maximum number of tool calls. Please try again.', now()->toIso8601String());
+        return $emptyResult(__('flood-watch.error.max_tool_calls'), now()->toIso8601String());
     }
 
     private function buildSystemPrompt(?string $region): string

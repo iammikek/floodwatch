@@ -67,26 +67,22 @@ class FloodWatchDashboard extends Component
         $this->loading = true;
 
         $locationTrimmed = trim($this->location);
-        $statusMessages = [];
-
-        $streamStatus = function (string $message) use (&$statusMessages): void {
-            $statusMessages[] = $message;
-            $content = implode('<br>', $statusMessages);
-            $this->stream(to: 'searchStatus', content: $content, replace: true);
+        $streamStatus = function (string $message): void {
+            $this->stream(to: 'searchStatus', content: $message, replace: true);
         };
 
         $validation = null;
         if ($locationTrimmed !== '') {
-            $streamStatus('Looking up location...');
+            $streamStatus(__('flood-watch.progress.looking_up_location'));
             $validation = $locationResolver->resolve($locationTrimmed);
             if (! $validation['valid']) {
-                $this->error = $validation['error'] ?? 'Invalid location.';
+                $this->error = $validation['error'] ?? __('flood-watch.error.invalid_location');
                 $this->loading = false;
 
                 return;
             }
             if (! $validation['in_area']) {
-                $this->error = $validation['error'] ?? 'This location is outside the South West.';
+                $this->error = $validation['error'] ?? __('flood-watch.error.outside_area');
                 $this->loading = false;
 
                 return;
@@ -247,19 +243,19 @@ class FloodWatchDashboard extends Component
     {
         $message = $e->getMessage();
         if (str_contains(strtolower($message), 'rate limit') || str_contains(strtolower($message), '429')) {
-            return 'AI service rate limit exceeded. Please wait a minute and try again.';
+            return __('flood-watch.error.rate_limit');
         }
         if (str_contains($message, 'timed out') || str_contains($message, 'cURL error 28') || str_contains($message, 'Operation timed out')) {
-            return 'The request took too long. The AI service may be busy. Please try again in a moment.';
+            return __('flood-watch.error.timeout');
         }
         if (str_contains($message, 'Connection') && (str_contains($message, 'refused') || str_contains($message, 'reset'))) {
-            return 'Unable to reach the service. Please check your connection and try again.';
+            return __('flood-watch.error.connection');
         }
         if (config('app.debug')) {
             return $message;
         }
 
-        return 'Unable to get a response. Please try again.';
+        return __('flood-watch.error.generic');
     }
 
     /**
@@ -268,7 +264,7 @@ class FloodWatchDashboard extends Component
     private function buildMessage(string $location, ?array $validation): string
     {
         if ($location === '') {
-            return 'Check flood and road status for the South West (Bristol, Somerset, Devon, Cornwall).';
+            return __('flood-watch.message.check_status_default');
         }
 
         $label = $validation['display_name'] ?? $location;
@@ -277,7 +273,7 @@ class FloodWatchDashboard extends Component
             $coords = sprintf(' (lat: %.4f, long: %.4f)', $validation['lat'], $validation['long']);
         }
 
-        return "Check flood and road status for {$label}{$coords} in the South West.";
+        return __('flood-watch.message.check_status_location', ['label' => $label, 'coords' => $coords]);
     }
 
     /**
