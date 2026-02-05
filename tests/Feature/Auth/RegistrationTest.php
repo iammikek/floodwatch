@@ -18,7 +18,7 @@ test('new users can register', function () {
     ]);
 
     $this->assertAuthenticated();
-    $response->assertRedirect(route('dashboard', absolute: false));
+    $response->assertRedirect('/');
 
     $user = User::where('email', 'test@example.com')->first();
     expect($user->role)->toBe('user');
@@ -35,7 +35,7 @@ test('user registering with admin email receives admin role', function () {
     ]);
 
     $this->assertAuthenticated();
-    $response->assertRedirect(route('dashboard', absolute: false));
+    $response->assertRedirect('/');
 
     $user = User::where('email', 'mike@automica.io')->first();
     expect($user->role)->toBe('admin');

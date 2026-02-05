@@ -1,4 +1,8 @@
 <x-guest-layout>
+    <x-slot name="left">
+        <p class="text-lg text-gray-700">{{ __('Register to get more searches.') }}</p>
+    </x-slot>
+
     <form method="POST" action="{{ route('register') }}">
         @csrf
 
