@@ -69,9 +69,9 @@ To persist users without Railway volumes (free tier):
 2. Create a project and copy the connection string (e.g. `postgresql://user:pass@host/dbname?sslmode=require`)
 3. In Railway Variables, add:
    - `DB_CONNECTION` = `pgsql`
-   - `DATABASE_URL` = your Neon connection string
+   - `DATABASE_URL` = your Neon connection string (Laravel uses this when `DB_URL` is unset)
    - `SESSION_DRIVER` = `database` (sessions persist in PostgreSQL)
-4. Remove or leave unset: `DB_DATABASE` (DATABASE_URL takes precedence)
+4. Leave `DB_HOST` unset (the URL contains the host; `127.0.0.1` would fail in containers)
 
 Users can then register at `/register` and log in at `/login`; accounts persist across deploys.
 
