@@ -47,6 +47,18 @@ class FloodWatchDashboard extends Component
 
     public bool $autoRefreshEnabled = false;
 
+    public function mount(): void
+    {
+        if (Auth::guest()) {
+            $key = 'flood-watch-guest:'.request()->ip();
+            if (RateLimiter::tooManyAttempts($key, 1)) {
+                $seconds = RateLimiter::availableIn($key);
+                $this->error = __('flood-watch.error.guest_rate_limit');
+                $this->retryAfterTimestamp = time() + $seconds;
+            }
+        }
+    }
+
     public function canRetry(): bool
     {
         if ($this->retryAfterTimestamp === null) {

@@ -503,6 +503,16 @@ class FloodWatchDashboardTest extends TestCase
         $this->assertSame('FeatureCollection', $floods[0]['polygon']['type'] ?? null);
     }
 
+    public function test_guest_sees_rate_limit_on_page_load_when_already_limited(): void
+    {
+        $key = 'flood-watch-guest:127.0.0.1';
+        RateLimiter::hit($key, 900);
+
+        $component = Livewire::test('flood-watch-dashboard')
+            ->assertSet('error', 'Guests are limited to one search every 15 minutes. Please try again later or register for unlimited access.')
+            ->assertSet('retryAfterTimestamp', fn ($v) => $v !== null && $v > time());
+    }
+
     public function test_guest_user_is_rate_limited_to_one_search_per_fifteen_minutes(): void
     {
         Config::set('openai.api_key', 'test-key');
