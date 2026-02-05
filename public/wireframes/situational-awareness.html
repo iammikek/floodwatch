@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Situational Awareness Dashboard – Wireframe</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .sparkline {
+            height: 40px;
+            display: flex;
+            align-items: flex-end;
+            gap: 2px;
+        }
+        .sparkline span {
+            flex: 1;
+            background: #3b82f6;
+            border-radius: 2px;
+            min-height: 4px;
+        }
+        .gauge-segment { background: linear-gradient(to right, #22c55e 0%, #eab308 25%, #f97316 50%, #ef4444 75%); }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans">
+    <div class="min-h-screen flex flex-col max-w-7xl mx-auto">
+        <!-- Header -->
+        <header class="bg-white border-b border-slate-200 px-4 py-3 flex justify-between items-center shrink-0">
+            <h1 class="text-lg font-semibold text-slate-900">Flood Watch</h1>
+            <div class="flex items-center gap-3">
+                <select class="text-sm rounded-lg border-slate-300 bg-white px-3 py-1.5">
+                    <option>Langport</option>
+                    <option>Muchelney</option>
+                    <option>Bristol</option>
+                </select>
+                <button class="text-sm font-medium px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+                    Check my location
+                </button>
+                <button class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-600" title="Profile">
+                    <span class="text-sm">👤</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Risk Gauge -->
+        <section class="bg-white border-b border-slate-200 px-4 py-4">
+            <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">South West Risk Index</h2>
+            <div class="flex items-center gap-4">
+                <div class="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden">
+                    <div class="h-full w-[42%] rounded-full gauge-segment"></div>
+                </div>
+                <span class="text-lg font-bold text-slate-900">42</span>
+                <span class="text-sm text-slate-500">/ 100</span>
+            </div>
+            <p class="text-sm text-slate-600 mt-1">Moderate · 2 severe warnings, 4 road closures</p>
+        </section>
+
+        <!-- Main: Status Grid + Activity Feed -->
+        <div class="flex-1 flex flex-col lg:flex-row gap-4 p-4">
+            <!-- Status Grid -->
+            <div class="flex-1 flex flex-col lg:flex-row gap-4">
+                <!-- Hydrological -->
+                <div class="flex-1 bg-white rounded-lg border border-slate-200 p-4">
+                    <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Hydrological Activity</h3>
+                    <div class="sparkline mb-1">
+                        <span style="height: 30%"></span>
+                        <span style="height: 45%"></span>
+                        <span style="height: 60%"></span>
+                        <span style="height: 55%"></span>
+                        <span style="height: 70%"></span>
+                        <span style="height: 85%"></span>
+                        <span style="height: 75%"></span>
+                    </div>
+                    <p class="text-xs text-slate-500">7 days · 3 stations elevated</p>
+                </div>
+                <!-- Infrastructure -->
+                <div class="flex-1 bg-white rounded-lg border border-slate-200 p-4">
+                    <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Infrastructural Impact</h3>
+                    <p class="text-2xl font-bold text-slate-900">3 <span class="text-slate-400 font-normal">/ 12</span></p>
+                    <p class="text-sm text-slate-600">road closures active</p>
+                </div>
+                <!-- Weather Outlook -->
+                <div class="flex-1 bg-white rounded-lg border border-slate-200 p-4">
+                    <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Weather Outlook</h3>
+                    <div class="flex gap-2 items-center">
+                        <span class="text-2xl" title="Rain">🌧️</span>
+                        <span class="text-lg font-semibold text-slate-900">11°</span>
+                        <span class="text-slate-400">·</span>
+                        <span class="text-2xl" title="Partly cloudy">🌤️</span>
+                        <span class="text-lg font-semibold text-slate-900">9°</span>
+                        <span class="text-slate-400">·</span>
+                        <span class="text-2xl">🌤️</span>
+                        <span class="text-lg font-semibold text-slate-900">10°</span>
+                    </div>
+                    <p class="text-sm text-sky-600 mt-1">💧 4 mm next 48h</p>
+                </div>
+                <!-- AI Advisory -->
+                <div class="flex-1 bg-white rounded-lg border border-slate-200 p-4">
+                    <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">AI Advisory</h3>
+                    <p class="text-sm text-slate-700 italic">"River Parrett levels elevated. A361 East Lyng remains open. Monitor Muchelney access."</p>
+                </div>
+            </div>
+
+            <!-- Live Activity Feed -->
+            <aside class="w-full lg:w-72 shrink-0 bg-white rounded-lg border border-slate-200 overflow-hidden flex flex-col">
+                <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide px-4 py-3 border-b border-slate-100">
+                    Live Activity
+                </h3>
+                <div class="flex-1 overflow-y-auto p-2">
+                    <div class="flex gap-2 py-2 border-b border-slate-100">
+                        <span class="text-xs text-slate-500 shrink-0">14:32</span>
+                        <div>
+                            <span class="inline-block px-1.5 py-0.5 text-xs font-medium bg-red-100 text-red-800 rounded mb-0.5">Affects you</span>
+                            <p class="text-sm">⚠ New flood warning: North Moor (2 km)</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 py-2 border-b border-slate-100">
+                        <span class="text-xs text-slate-500 shrink-0">14:28</span>
+                        <p class="text-sm">🛣️ A361 reopened</p>
+                    </div>
+                    <div class="flex gap-2 py-2 border-b border-slate-100">
+                        <span class="text-xs text-slate-500 shrink-0">14:15</span>
+                        <p class="text-sm">💧 River level elevated</p>
+                    </div>
+                    <div class="flex gap-2 py-2">
+                        <span class="text-xs text-slate-500 shrink-0">13:45</span>
+                        <p class="text-sm">🛣️ Road closure A372</p>
+                    </div>
+                </div>
+                <a href="#" class="block text-center text-sm text-blue-600 hover:text-blue-700 py-2 border-t border-slate-100">
+                    View all
+                </a>
+            </aside>
+        </div>
+
+        <!-- Map -->
+        <section class="px-4 pb-4">
+            <div class="bg-slate-200 rounded-lg border border-slate-200 h-72 flex items-center justify-center text-slate-500">
+                <div class="text-center">
+                    <p class="text-sm font-medium">[Leaflet map: floods, stations, incidents]</p>
+                    <p class="text-xs mt-1">📍 You &nbsp; 💧 &nbsp; ⚠ &nbsp; 🛣️</p>
+                </div>
+            </div>
+            <p class="text-xs text-slate-500 mt-2">
+                Legend: 📍 Your location &nbsp; 💧 River gauge &nbsp; ⚠ Flood &nbsp; 🛣️ Road incident
+            </p>
+        </section>
+    </div>
+</body>
+</html>

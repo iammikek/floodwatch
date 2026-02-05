@@ -143,10 +143,49 @@
                 },
                 init() {
                     if (!this.center) return;
+                    const addMarkers = (L) => {
+                        if (this.hasUser) {
+                            const loc = this.t?.your_location || 'Your location';
+                            L.marker([this.center.lat, this.center.long], { icon: this.userIcon() })
+                                .addTo(this.map)
+                                .bindPopup('<b>' + loc.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</b>');
+                        }
+                        (this.stations || []).forEach(s => {
+                            if (s.lat != null && s.long != null) {
+                                L.marker([s.lat, s.long], { icon: this.stationIcon(s) })
+                                    .addTo(this.map)
+                                    .bindPopup(this.stationPopup(s));
+                            }
+                        });
+                        (this.floods || []).forEach(f => {
+                            if (f.polygon && f.polygon.features) {
+                                const style = this.floodPolygonStyle(f);
+                                L.geoJSON(f.polygon, {
+                                    style: () => style,
+                                    onEachFeature: (feature, layer) => {
+                                        layer.bindPopup(this.floodPopup(f));
+                                    }
+                                }).addTo(this.map);
+                            }
+                            if (f.lat != null && f.long != null) {
+                                L.marker([f.lat, f.long], { icon: this.floodIcon(f) })
+                                    .addTo(this.map)
+                                    .bindPopup(this.floodPopup(f));
+                            }
+                        });
+                        (this.incidents || []).forEach(i => {
+                            if (i.lat != null && i.long != null) {
+                                L.marker([i.lat, i.long], { icon: this.incidentIcon(i) })
+                                    .addTo(this.map)
+                                    .bindPopup(this.incidentPopup(i));
+                            }
+                        });
+                    };
                     this.$nextTick(() => {
-                        requestAnimationFrame(() => {
-                            const el = document.getElementById('flood-map');
-                            if (!el) return;
+                        const el = document.getElementById('flood-map');
+                        if (!el) return;
+                        (window.__loadLeaflet ? window.__loadLeaflet() : Promise.resolve(window.L)).then((L) => {
+                            if (!L) return;
                             if (this.map) {
                                 this.map.remove();
                                 this.map = null;
@@ -155,43 +194,8 @@
                             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                             }).addTo(this.map);
-                            if (this.hasUser) {
-                                const loc = this.t?.your_location || 'Your location';
-                                L.marker([this.center.lat, this.center.long], { icon: this.userIcon() })
-                                    .addTo(this.map)
-                                    .bindPopup('<b>' + loc.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</b>');
-                            }
-                            (this.stations || []).forEach(s => {
-                                if (s.lat != null && s.long != null) {
-                                    L.marker([s.lat, s.long], { icon: this.stationIcon(s) })
-                                        .addTo(this.map)
-                                        .bindPopup(this.stationPopup(s));
-                                }
-                            });
-                            (this.floods || []).forEach(f => {
-                                if (f.polygon && f.polygon.features) {
-                                    const style = this.floodPolygonStyle(f);
-                                    L.geoJSON(f.polygon, {
-                                        style: () => style,
-                                        onEachFeature: (feature, layer) => {
-                                            layer.bindPopup(this.floodPopup(f));
-                                        }
-                                    }).addTo(this.map);
-                                }
-                                if (f.lat != null && f.long != null) {
-                                    L.marker([f.lat, f.long], { icon: this.floodIcon(f) })
-                                        .addTo(this.map)
-                                        .bindPopup(this.floodPopup(f));
-                                }
-                            });
-                            (this.incidents || []).forEach(i => {
-                                if (i.lat != null && i.long != null) {
-                                    L.marker([i.lat, i.long], { icon: this.incidentIcon(i) })
-                                        .addTo(this.map)
-                                        .bindPopup(this.incidentPopup(i));
-                                }
-                            });
                             this.map.invalidateSize();
+                            requestIdleCallback(() => addMarkers(L), { timeout: 100 });
                         });
                     });
                 }
