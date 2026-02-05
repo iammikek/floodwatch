@@ -21,8 +21,8 @@ RUN apk add --no-cache sqlite-dev sqlite-libs curl libzip-dev icu-dev \
     && docker-php-ext-install pdo_sqlite zip intl opcache
 
 COPY --from=composer /app/vendor /app/vendor
-COPY --from=frontend /app/public/build /app/public/build
 COPY . /app
+COPY --from=frontend /app/public/build /app/public/build
 WORKDIR /app
 
 RUN mkdir -p storage/framework/{sessions,views,cache} storage/logs bootstrap/cache \

@@ -25,3 +25,5 @@ Dockerfile
 .dockerignore
 .editorconfig
 .cursorignore
+public/build
+public/hot

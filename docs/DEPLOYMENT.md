@@ -92,10 +92,11 @@ Railway automatically builds and deploys. No manual steps.
 - Ensure `OPENAI_API_KEY` is set (app shows a message if missing)
 - Run `php artisan config:clear` locally to verify config
 
-### Vite manifest missing
+### Vite manifest missing / CSS not loading
 
 - Frontend build runs in Dockerfile; if assets are missing, check the frontend build stage logs
 - Ensure `public/build` is created by `yarn build`
+- If assets 404, set `ASSET_URL` to match `APP_URL` (e.g. `https://your-app.up.railway.app`)
 
 ### Database errors
 
