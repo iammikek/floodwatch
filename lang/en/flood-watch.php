@@ -91,6 +91,8 @@ return [
         'roads_clear' => 'Roads clear.',
         'summary' => 'Summary',
         'prompt' => 'Enter your location (postcode or place name) and click "Check status" to get a personalised flood and road summary.',
+        'free_to_use' => 'Flood Watch is free to use. If it helps you,',
+        'support_development' => 'consider supporting development',
     ],
     'map' => [
         'your_location' => 'Your location',

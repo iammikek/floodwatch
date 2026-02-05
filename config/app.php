@@ -54,6 +54,8 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    'donation_url' => env('DONATION_URL', 'https://ko-fi.com/automicalabs'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

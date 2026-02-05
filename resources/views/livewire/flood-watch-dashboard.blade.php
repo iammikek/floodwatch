@@ -109,6 +109,7 @@
                 <button
                     type="button"
                     wire:click="search"
+                    @click="window.__loadLeaflet && window.__loadLeaflet()"
                     wire:loading.attr="disabled"
                     @if($retryAfterTimestamp && !$this->canRetry()) disabled @endif
                     class="min-h-[44px] inline-flex items-center justify-center gap-2 px-5 py-3 sm:py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -217,6 +218,7 @@
                         <button
                         type="button"
                         wire:click="search"
+                        @click="window.__loadLeaflet && window.__loadLeaflet()"
                         wire:loading.attr="disabled"
                         @if($retryAfterTimestamp && !$this->canRetry()) disabled @endif
                         class="min-h-[44px] min-w-[44px] inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
@@ -395,6 +397,12 @@
         @endif
 
         <footer class="mt-12 pt-6 border-t border-slate-200">
+            @if (config('app.donation_url'))
+                <p class="text-xs text-slate-500 mb-2">
+                    {{ __('flood-watch.dashboard.free_to_use') }}
+                    <a href="{{ config('app.donation_url') }}" target="_blank" rel="noopener" class="underline hover:text-slate-600">{{ __('flood-watch.dashboard.support_development') }}</a>.
+                </p>
+            @endif
             <p class="text-xs text-slate-500">
                 An <a href="https://automica.io" target="_blank" rel="noopener" class="underline hover:text-slate-600">automica labs</a> project.
                 Data: Environment Agency flood and river level data from the
