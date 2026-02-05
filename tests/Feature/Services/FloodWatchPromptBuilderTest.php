@@ -2,9 +2,6 @@
 
 use App\Services\FloodWatchPromptBuilder;
 use Illuminate\Support\Facades\Config;
-use Tests\TestCase;
-
-uses(TestCase::class);
 
 beforeEach(function () {
     Config::set('flood-watch.regions', [

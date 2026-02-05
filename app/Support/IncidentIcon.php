@@ -2,8 +2,33 @@
 
 namespace App\Support;
 
+use Illuminate\Support\Facades\Lang;
+use Illuminate\Support\Str;
+
 class IncidentIcon
 {
+    public static function statusLabel(?string $status): string
+    {
+        if ($status === null || $status === '') {
+            return '';
+        }
+
+        $key = 'flood-watch.incident_status.'.$status;
+
+        return Lang::has($key) ? __($key) : Str::title(self::splitCamelCase($status));
+    }
+
+    public static function typeLabel(?string $type): string
+    {
+        if ($type === null || $type === '') {
+            return '';
+        }
+
+        $key = 'flood-watch.incident_type.'.$type;
+
+        return Lang::has($key) ? __($key) : Str::title(self::splitCamelCase($type));
+    }
+
     /**
      * Resolve an emoji icon for a road incident based on incidentType and managementType.
      * Matches DATEX II values (constructionWork, sweepingOfRoad, flooding, etc.)
@@ -35,5 +60,12 @@ class IncidentIcon
         }
 
         return $default;
+    }
+
+    private static function splitCamelCase(string $value): string
+    {
+        $withSpaces = preg_replace('/([a-z])([A-Z])/', '$1 $2', str_replace('_', ' ', $value));
+
+        return $withSpaces ?? $value;
     }
 }

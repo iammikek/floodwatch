@@ -1,10 +1,6 @@
 <?php
 
 use App\Flood\Services\EnvironmentAgencyFloodService;
-use Tests\TestCase;
-
-uses(TestCase::class);
-
 use App\Support\CircuitBreaker;
 use App\Support\CircuitOpenException;
 use Illuminate\Support\Facades\Cache;

@@ -10,6 +10,21 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: sail
+          POSTGRES_PASSWORD: password
+          POSTGRES_DB: testing
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U sail"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - uses: actions/checkout@v4
 
@@ -17,7 +32,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
-          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, redis
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, pdo_pgsql, redis
           coverage: none
 
       - name: Get Composer cache directory
@@ -38,13 +53,16 @@ jobs:
         run: |
           cp .env.example .env
           php artisan key:generate
-          touch database/testing.sqlite
 
       - name: Run migrations
         run: php artisan migrate --force
         env:
-          DB_CONNECTION: sqlite
-          DB_DATABASE: database/testing.sqlite
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: testing
+          DB_USERNAME: sail
+          DB_PASSWORD: password
 
       - name: Install Node dependencies
         run: yarn install --frozen-lockfile
@@ -56,7 +74,11 @@ jobs:
         run: php artisan test --compact
         env:
           APP_ENV: testing
-          DB_CONNECTION: sqlite
-          DB_DATABASE: database/testing.sqlite
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: testing
+          DB_USERNAME: sail
+          DB_PASSWORD: password
           FLOOD_WATCH_CACHE_STORE: flood-watch-array
           OPENAI_API_KEY: test-key-for-ci

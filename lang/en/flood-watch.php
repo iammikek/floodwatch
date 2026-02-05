@@ -22,6 +22,7 @@ return [
         'invalid_location' => 'Invalid location.',
         'outside_area' => 'This location is outside the South West.',
         'rate_limit' => 'AI service rate limit exceeded. Please wait a minute and try again.',
+        'guest_rate_limit' => 'Guests are limited to one search every 15 minutes. Please try again later or register for unlimited access.',
         'timeout' => 'The request took too long. The AI service may be busy. Please try again in a moment.',
         'connection' => 'Unable to reach the service. Please check your connection and try again.',
         'generic' => 'Unable to get a response. Please try again.',
@@ -33,6 +34,8 @@ return [
     'dashboard' => [
         'title' => 'Flood Watch',
         'intro' => 'Enter your location and we\'ll use AI to collate flood warnings, river levels, road incidents and forecasts into a single summary. We cross-reference Environment Agency flood data with National Highways road status so you can see how flooding affects travel in Bristol, Somerset, Devon and Cornwall.',
+        'guest_banner' => 'Guests are limited to one search every 15 minutes. Register for free to get more searches.',
+        'guest_banner_register' => 'Register',
         'flood_risk' => 'Flood Risk',
         'road_status' => 'Road Status',
         'forecast' => '5-Day Forecast',
@@ -95,5 +98,23 @@ return [
         'expected_level' => 'Expected level',
         'low_level' => 'Low level',
         'typical_range' => 'Typical: :low–:high :unit',
+    ],
+
+    'incident_status' => [
+        'planned' => 'Planned',
+        'active' => 'Active',
+        'suspended' => 'Suspended',
+    ],
+
+    'incident_type' => [
+        'authorityOperation' => 'Authority operation',
+        'constructionWork' => 'Road works',
+        'maintenanceWork' => 'Maintenance',
+        'roadClosed' => 'Road closed',
+        'laneClosures' => 'Lane closures',
+        'flooding' => 'Flooding',
+        'environmentalObstruction' => 'Environmental obstruction',
+        'vehicleObstruction' => 'Vehicle obstruction',
+        'sweepingOfRoad' => 'Road sweeping',
     ],
 ];

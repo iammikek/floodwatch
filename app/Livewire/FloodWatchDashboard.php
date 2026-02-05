@@ -7,7 +7,9 @@ use App\Services\FloodWatchTrendService;
 use App\Services\LocationResolver;
 use App\Support\IncidentIcon;
 use App\Support\LogMasker;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use OpenAI\Exceptions\ErrorException;
@@ -65,6 +67,22 @@ class FloodWatchDashboard extends Component
     {
         $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'hasUserLocation', 'lastChecked', 'error', 'retryAfterTimestamp']);
         $this->loading = true;
+
+        if (Auth::guest()) {
+            $key = 'flood-watch-guest:'.request()->ip();
+            $decaySeconds = 900;
+
+            if (RateLimiter::tooManyAttempts($key, 1)) {
+                $seconds = RateLimiter::availableIn($key);
+                $this->error = __('flood-watch.error.guest_rate_limit');
+                $this->retryAfterTimestamp = time() + $seconds;
+                $this->loading = false;
+
+                return;
+            }
+
+            RateLimiter::hit($key, $decaySeconds);
+        }
 
         $locationTrimmed = trim($this->location);
         $streamStatus = function (string $message): void {
@@ -277,7 +295,7 @@ class FloodWatchDashboard extends Component
     }
 
     /**
-     * Add icon to each incident based on incidentType and managementType.
+     * Add icon and human-readable labels to each incident.
      *
      * @param  array<int, array<string, mixed>>  $incidents
      * @return array<int, array<string, mixed>>
@@ -289,6 +307,8 @@ class FloodWatchDashboard extends Component
                 $incident['incidentType'] ?? null,
                 $incident['managementType'] ?? null
             );
+            $incident['statusLabel'] = IncidentIcon::statusLabel($incident['status'] ?? null);
+            $incident['typeLabel'] = IncidentIcon::typeLabel($incident['incidentType'] ?? $incident['managementType'] ?? null);
 
             return $incident;
         }, $incidents);

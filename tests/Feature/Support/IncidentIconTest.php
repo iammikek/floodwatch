@@ -69,4 +69,40 @@ class IncidentIconTest extends TestCase
         $this->assertSame('🛣️', IncidentIcon::forIncident(null));
         $this->assertSame('🛣️', IncidentIcon::forIncident(''));
     }
+
+    public function test_status_label_returns_translated_label_for_known_status(): void
+    {
+        $this->assertSame('Planned', IncidentIcon::statusLabel('planned'));
+        $this->assertSame('Active', IncidentIcon::statusLabel('active'));
+        $this->assertSame('Suspended', IncidentIcon::statusLabel('suspended'));
+    }
+
+    public function test_status_label_returns_title_cased_for_unknown_status(): void
+    {
+        $this->assertSame('Unknown Status', IncidentIcon::statusLabel('unknownStatus'));
+    }
+
+    public function test_status_label_returns_empty_for_null_and_empty(): void
+    {
+        $this->assertSame('', IncidentIcon::statusLabel(null));
+        $this->assertSame('', IncidentIcon::statusLabel(''));
+    }
+
+    public function test_type_label_returns_translated_label_for_known_type(): void
+    {
+        $this->assertSame('Authority operation', IncidentIcon::typeLabel('authorityOperation'));
+        $this->assertSame('Road works', IncidentIcon::typeLabel('constructionWork'));
+        $this->assertSame('Flooding', IncidentIcon::typeLabel('flooding'));
+    }
+
+    public function test_type_label_returns_title_cased_for_unknown_type(): void
+    {
+        $this->assertSame('Some Unknown Type', IncidentIcon::typeLabel('someUnknownType'));
+    }
+
+    public function test_type_label_returns_empty_for_null_and_empty(): void
+    {
+        $this->assertSame('', IncidentIcon::typeLabel(null));
+        $this->assertSame('', IncidentIcon::typeLabel(''));
+    }
 }

@@ -27,11 +27,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::define('viewPulse', function (?User $user): bool {
-            if (app()->environment('local')) {
-                return true;
-            }
-
-            return $user !== null;
+            return $user !== null && $user->isAdmin();
         });
     }
 }

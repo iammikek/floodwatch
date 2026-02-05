@@ -10,6 +10,14 @@
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
                     {{ __("You're logged in!") }}
+
+                    @if (Auth::user()->isAdmin())
+                        <p class="mt-4">
+                            <a href="{{ url('/pulse') }}" class="text-blue-600 hover:text-blue-800 underline">
+                                {{ __('Pulse') }}
+                            </a>
+                        </p>
+                    @endif
                 </div>
             </div>
         </div>

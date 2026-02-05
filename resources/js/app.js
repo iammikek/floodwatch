@@ -1,7 +1,7 @@
 import './bootstrap';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
 
-import Alpine from 'alpinejs';
+window.L = L;
 
-window.Alpine = Alpine;
-
-Alpine.start();
+// Alpine is provided by Livewire (@livewireScripts) to avoid multiple instances

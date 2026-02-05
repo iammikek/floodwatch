@@ -2,40 +2,33 @@
     class="min-h-screen bg-slate-50 p-4 sm:p-6 pb-safe"
     x-data="{
         init() {
-            const storedLoc = localStorage.getItem('flood-watch-location');
-            if (storedLoc) {
-                $wire.set('location', storedLoc);
-            }
-            const storedResults = localStorage.getItem('flood-watch-results');
-            if (storedResults) {
-                try {
-                    const data = JSON.parse(storedResults);
-                    $wire.restoreFromStorage(data);
-                } catch (e) {}
-            }
-            Livewire.on('search-completed', () => {
-                const loc = $wire.location;
-                if (loc) {
-                    localStorage.setItem('flood-watch-location', loc);
+            this.$nextTick(() => {
+                const el = this.$el?.closest('[wire\\:id]');
+                const wire = el ? Livewire.find(el.getAttribute('wire:id')) : null;
+                if (!wire) return;
+                const storedLoc = localStorage.getItem('flood-watch-location');
+                if (storedLoc) wire.set('location', storedLoc);
+                const storedResults = localStorage.getItem('flood-watch-results');
+                if (storedResults) {
+                    try {
+                        wire.restoreFromStorage(JSON.parse(storedResults));
+                    } catch (e) {}
                 }
-                try {
-                    const floods = ($wire.floods || []).map(f => {
-                        const { polygon, ...rest } = f;
-                        return rest;
-                    });
-                    const results = {
-                        assistantResponse: $wire.assistantResponse,
-                        floods: floods,
-                        incidents: $wire.incidents || [],
-                        forecast: $wire.forecast || [],
-                        weather: $wire.weather || [],
-                        riverLevels: $wire.riverLevels || [],
-                        mapCenter: $wire.mapCenter,
-                        hasUserLocation: $wire.hasUserLocation || false,
-                        lastChecked: $wire.lastChecked
-                    };
-                    localStorage.setItem('flood-watch-results', JSON.stringify(results));
-                } catch (e) {}
+                Livewire.on('search-completed', () => {
+                    const loc = wire.location;
+                    if (loc) localStorage.setItem('flood-watch-location', loc);
+                    try {
+                        const floods = (wire.floods || []).map(f => { const { polygon, ...rest } = f; return rest; });
+                        localStorage.setItem('flood-watch-results', JSON.stringify({
+                            assistantResponse: wire.assistantResponse,
+                            floods, incidents: wire.incidents || [],
+                            forecast: wire.forecast || [], weather: wire.weather || [],
+                            riverLevels: wire.riverLevels || [], mapCenter: wire.mapCenter,
+                            hasUserLocation: wire.hasUserLocation || false,
+                            lastChecked: wire.lastChecked
+                        }));
+                    } catch (e) {}
+                });
             });
         }
     }"
@@ -48,6 +41,17 @@
         <p class="text-slate-600 mb-6">
             {{ __('flood-watch.dashboard.intro') }}
         </p>
+
+        @guest
+        <div class="mb-6 p-4 rounded-lg bg-blue-50 border border-blue-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <p class="text-sm text-blue-800">
+                {{ __('flood-watch.dashboard.guest_banner') }}
+            </p>
+            <a href="{{ route('register') }}" class="shrink-0 inline-flex items-center justify-center px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors">
+                {{ __('flood-watch.dashboard.guest_banner_register') }}
+            </a>
+        </div>
+        @endguest
 
         <div class="flex flex-nowrap sm:flex-wrap gap-2 sm:gap-3 mb-6 overflow-x-auto pb-1 -mx-1 scrollbar-hide">
             @php
@@ -239,7 +243,7 @@
                                     <div class="flex flex-wrap gap-2">
                                         @foreach ($incidents as $incident)
                                             <span class="inline-flex items-center gap-1 px-2 py-1 rounded text-xs bg-blue-100 text-blue-800">
-                                                <span title="{{ $incident['incidentType'] ?? $incident['managementType'] ?? '' }}">{{ $incident['icon'] ?? '🛣️' }}</span>
+                                                <span title="{{ $incident['typeLabel'] ?? '' }}">{{ $incident['icon'] ?? '🛣️' }}</span>
                                                 <span class="font-medium">{{ $incident['road'] ?? __('flood-watch.dashboard.road') }}</span>
                                                 @if (!empty($incident['status']))
                                                     <span>· {{ $incident['status'] }}</span>
@@ -357,14 +361,14 @@
                             @foreach ($incidents as $incident)
                                 <li class="p-4 rounded-lg bg-white shadow-sm border border-slate-200">
                                     <p class="font-medium text-slate-900 flex items-center gap-2">
-                                        <span class="text-lg" title="{{ $incident['incidentType'] ?? $incident['managementType'] ?? __('flood-watch.dashboard.road_incident') }}">{{ $incident['icon'] ?? '🛣️' }}</span>
+                                        <span class="text-lg" title="{{ $incident['typeLabel'] ?? __('flood-watch.dashboard.road_incident') }}">{{ $incident['icon'] ?? '🛣️' }}</span>
                                         {{ $incident['road'] ?? __('flood-watch.dashboard.road') }}
                                     </p>
-                                    @if (!empty($incident['status']))
-                                        <p class="text-sm text-blue-600 mt-1">{{ $incident['status'] }}</p>
+                                    @if (!empty($incident['statusLabel']))
+                                        <p class="text-sm text-blue-600 mt-1">{{ $incident['statusLabel'] }}</p>
                                     @endif
-                                    @if (!empty($incident['incidentType']))
-                                        <p class="text-sm text-slate-600 mt-1">{{ $incident['incidentType'] }}</p>
+                                    @if (!empty($incident['typeLabel']))
+                                        <p class="text-sm text-slate-600 mt-1">{{ $incident['typeLabel'] }}</p>
                                     @endif
                                     @if (!empty($incident['delayTime']))
                                         <p class="text-sm text-slate-500 mt-1">{{ __('flood-watch.dashboard.delay') }}: {{ $incident['delayTime'] }}</p>

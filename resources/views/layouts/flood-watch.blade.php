@@ -113,7 +113,7 @@
                 incidentIcon(i) {
                     const icon = i.icon || '🛣️';
                     const fallback = this.t?.road_incident || 'Road incident';
-                    const title = this.esc(i.incidentType || i.managementType || fallback);
+                    const title = this.esc(i.typeLabel || i.incidentType || i.managementType || fallback);
                     return L.divIcon({
                         className: 'flood-map-marker flood-map-marker-incident',
                         html: '<span class=\'flood-map-marker-inner\' title=\'' + title + '\'>' + icon + '</span>',
@@ -125,8 +125,8 @@
                     const icon = i.icon || '🛣️';
                     const road = this.t?.road || 'Road';
                     let html = '<span style="font-size:1.1em">' + icon + '</span> <b>' + this.esc(i.road || road) + '</b>';
-                    if (i.status) html += '<br>' + this.esc(i.status);
-                    if (i.incidentType) html += '<br>' + this.esc(i.incidentType);
+                    if (i.statusLabel || i.status) html += '<br>' + this.esc(i.statusLabel || i.status);
+                    if (i.typeLabel || i.incidentType) html += '<br>' + this.esc(i.typeLabel || i.incidentType);
                     if (i.delayTime) html += '<br><small>' + this.esc(i.delayTime) + '</small>';
                     return html;
                 },
