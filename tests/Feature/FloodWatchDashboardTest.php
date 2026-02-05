@@ -215,7 +215,7 @@ class FloodWatchDashboardTest extends TestCase
             ->assertSet('floods.0.description', 'River Parrett at Langport')
             ->assertSet('incidents.0.road', 'A361')
             ->assertSee('Flood warnings')
-            ->assertSee('Road status')
+            ->assertSee('Road Status')
             ->assertSee('River Parrett at Langport')
             ->assertSee('A361')
             ->assertSee('Summary');
