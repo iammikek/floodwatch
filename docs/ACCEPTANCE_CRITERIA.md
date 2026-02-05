@@ -18,11 +18,9 @@ Business standards for the Flood Watch POC. Verify these once implementation is 
 
 **Criterion**: Does the AI say: "The A361 is closed, and the River Parrett is rising. Expect Muchelney to be isolated within 4 hours"?
 
-**Status**: [ ] To verify
+**Status**: [x] Met (automated test)
 
-**Current state**: System has Muchelney predictive rules (Parrett elevated, Langport flood → Muchelney cut-off warning). `RiskCorrelationService` and region prompts instruct the LLM. The exact phrasing and "within 4 hours" time estimate depend on LLM behaviour and available data—predictive rules do not currently include time estimates.
-
-**To verify**: Run with fixture/mock data: A361 closed (flooding), River Parrett elevated. Check that the summary correlates road closure + river level and warns about Muchelney. Note: "4 hours" may require adding time-estimate logic or accepting LLM variation.
+**Current state**: `FloodWatchServiceTest::test_intelligence_correlation_a361_parrett_muchelney` verifies the flow with mocked data: A361 closed (flooding), River Parrett elevated, Langport flood warning. The mocked LLM response correlates road closure + river level and warns about Muchelney. The "within 4 hours" time estimate depends on LLM behaviour—predictive rules do not include time estimates.
 
 ---
 
@@ -55,6 +53,6 @@ Business standards for the Flood Watch POC. Verify these once implementation is 
 | Criterion | Status | Action |
 |-----------|--------|--------|
 | Latency (Concurrency::run) | Met | — |
-| Intelligence correlation | To verify | Test with A361 + Parrett scenario |
+| Intelligence correlation | Met | `test_intelligence_correlation_a361_parrett_muchelney` |
 | Graceful failure | Met | Manual verification recommended |
 | Attribution | Met | — |

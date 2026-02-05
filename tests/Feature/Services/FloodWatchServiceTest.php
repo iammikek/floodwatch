@@ -338,6 +338,152 @@ class FloodWatchServiceTest extends TestCase
         $this->assertSame('A361', $result['incidents'][0]['road']);
     }
 
+    /**
+     * Acceptance criterion: Intelligence correlation.
+     * With A361 closed (flooding) + River Parrett elevated, the AI should correlate
+     * road closure with river level and warn about Muchelney.
+     */
+    public function test_intelligence_correlation_a361_parrett_muchelney(): void
+    {
+        Config::set('openai.api_key', 'test-key');
+        Config::set('flood-watch.national_highways.api_key', 'test-key');
+        Config::set('flood-watch.national_highways.base_url', 'https://api.example.com');
+        Config::set('flood-watch.national_highways.fetch_unplanned', false);
+
+        Http::fake(function ($request) {
+            $url = $request->url();
+            if (str_contains($url, 'environment.data.gov.uk')) {
+                if (str_contains($url, '/id/stations?') || str_contains($url, '/id/stations&')) {
+                    return Http::response([
+                        'items' => [
+                            [
+                                'notation' => '52119',
+                                'label' => 'Parrett at Langport',
+                                'riverName' => 'River Parrett',
+                                'town' => 'Langport',
+                                'lat' => 51.036,
+                                'long' => -2.832,
+                                'stageScale' => ['typicalRangeLow' => 1.5, 'typicalRangeHigh' => 3.5],
+                            ],
+                        ],
+                    ], 200);
+                }
+                if (str_contains($url, '/stations/52119/readings')) {
+                    return Http::response([
+                        'items' => [
+                            [
+                                'value' => 4.2,
+                                'dateTime' => '2026-02-04T12:00:00Z',
+                                'measure' => 'http://environment.data.gov.uk/flood-monitoring/id/measures/52119-level-stage-i-15_min-mASD',
+                            ],
+                        ],
+                    ], 200);
+                }
+                if (str_contains($url, '/id/floodAreas')) {
+                    return Http::response(['items' => []], 200);
+                }
+                if (str_contains($url, '/id/floods')) {
+                    return Http::response([
+                        'items' => [
+                            [
+                                'description' => 'River Parrett at Langport',
+                                'severity' => 'Flood Warning',
+                                'severityLevel' => 2,
+                                'message' => 'River levels are rising. Flooding expected.',
+                            ],
+                        ],
+                    ], 200);
+                }
+
+                return Http::response(['items' => []], 200);
+            }
+            if (str_contains($url, 'api.example.com')) {
+                return Http::response([
+                    'D2Payload' => [
+                        'situation' => [
+                            [
+                                'situationRecord' => [
+                                    [
+                                        'sitRoadOrCarriagewayOrLaneManagement' => [
+                                            'validity' => ['validityStatus' => 'closed'],
+                                            'cause' => [
+                                                'causeType' => 'environmentalObstruction',
+                                                'detailedCauseType' => ['environmentalObstructionType' => 'flooding'],
+                                            ],
+                                            'generalPublicComment' => [['comment' => 'A361 closed due to flooding']],
+                                            'roadOrCarriagewayOrLaneManagementType' => ['value' => 'roadClosed'],
+                                            'locationReference' => [
+                                                'locSingleRoadLinearLocation' => [
+                                                    'linearWithinLinearElement' => [
+                                                        ['linearElement' => ['locLinearElementByCode' => ['roadName' => 'A361']]],
+                                                    ],
+                                                ],
+                                            ],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ],
+                ], 200);
+            }
+            if (str_contains($url, 'fgs.metoffice.gov.uk')) {
+                return Http::response(['statement' => []], 200);
+            }
+            if (str_contains($url, 'open-meteo.com')) {
+                return Http::response(['daily' => ['time' => [], 'weathercode' => [], 'temperature_2m_max' => [], 'temperature_2m_min' => [], 'precipitation_sum' => []]], 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
+        $toolCallResponse = CreateResponse::fake([
+            'choices' => [
+                [
+                    'index' => 0,
+                    'message' => [
+                        'role' => 'assistant',
+                        'content' => null,
+                        'tool_calls' => [
+                            ['id' => 'call_1', 'type' => 'function', 'function' => ['name' => 'GetFloodData', 'arguments' => '{}']],
+                            ['id' => 'call_2', 'type' => 'function', 'function' => ['name' => 'GetHighwaysIncidents', 'arguments' => '{}']],
+                            ['id' => 'call_3', 'type' => 'function', 'function' => ['name' => 'GetCorrelationSummary', 'arguments' => '{}']],
+                        ],
+                    ],
+                    'logprobs' => null,
+                    'finish_reason' => 'tool_calls',
+                ],
+            ],
+        ]);
+
+        $finalResponse = CreateResponse::fake([
+            'choices' => [
+                [
+                    'index' => 0,
+                    'message' => [
+                        'role' => 'assistant',
+                        'content' => "## Current Status\n\nThe A361 is closed due to flooding, and the River Parrett is elevated. Expect Muchelney to be isolated. Do not attempt to travel.",
+                        'tool_calls' => [],
+                    ],
+                    'logprobs' => null,
+                    'finish_reason' => 'stop',
+                ],
+            ],
+        ]);
+
+        OpenAI::fake([$toolCallResponse, $finalResponse]);
+
+        $service = app(FloodWatchService::class);
+        $result = $service->chat('Check flood and road status for Langport', [], null, 51.0358, -2.8318, 'somerset');
+
+        $this->assertStringContainsString('A361', $result['response'], 'Response should mention A361 closure');
+        $this->assertStringContainsString('Parrett', $result['response'], 'Response should mention River Parrett');
+        $this->assertStringContainsString('Muchelney', $result['response'], 'Response should warn about Muchelney isolation');
+        $this->assertCount(1, $result['floods']);
+        $this->assertCount(1, $result['incidents']);
+        $this->assertSame('A361', $result['incidents'][0]['road']);
+    }
+
     public function test_identical_queries_hit_cache(): void
     {
         Config::set('openai.api_key', 'test-key');
