@@ -231,139 +231,7 @@
                     <div id="map-section" wire:key="map-{{ $lastChecked ?? 'initial' }}" class="rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
                         <div
                             class="flex flex-col"
-                            x-data="{
-                                center: @js($mapCenter),
-                                stations: @js($riverLevels),
-                                floods: @js($floods),
-                                incidents: @js($incidents),
-                                hasUser: @js($hasUserLocation),
-                                map: null,
-                                userIcon() {
-                                    return L.divIcon({
-                                        className: 'flood-map-marker flood-map-marker-user',
-                                        html: '<span class=\'flood-map-marker-inner\' title=\'Your location\'>📍</span>',
-                                        iconSize: [28, 28],
-                                        iconAnchor: [14, 14]
-                                    });
-                                },
-                                stationIcon(s) {
-                                    const status = s.levelStatus || 'unknown';
-                                    const type = s.stationType || 'river_gauge';
-                                    const statusClass = status === 'elevated' ? 'elevated' : status === 'low' ? 'low' : 'expected';
-                                    const icon = type === 'pumping_station' ? '⚙' : type === 'barrier' ? '🛡' : type === 'drain' ? '〰' : '💧';
-                                    const levelLabel = status === 'elevated' ? 'Elevated' : status === 'expected' ? 'Expected' : status === 'low' ? 'Low' : '';
-                                    return L.divIcon({
-                                        className: 'flood-map-marker flood-map-marker-station ' + statusClass,
-                                        html: '<span class=\'flood-map-marker-inner\' title=\'' + (levelLabel ? levelLabel + ' level' : '') + '\'>' + icon + '</span>',
-                                        iconSize: [26, 26],
-                                        iconAnchor: [13, 13]
-                                    });
-                                },
-                                stationPopup(s) {
-                                    let html = '<b>' + (s.station || '') + '</b><br>' + (s.river || '') + '<br>' + s.value + ' ' + (s.unit || 'm');
-                                    if (s.levelStatus === 'elevated') html += '<br><span style=\'color:#b91c1c;font-weight:600\'>↑ Elevated</span>';
-                                    else if (s.levelStatus === 'expected') html += '<br><span style=\'color:#1d4ed8\'>→ Expected</span>';
-                                    else if (s.levelStatus === 'low') html += '<br><span style=\'color:#64748b\'>↓ Low</span>';
-                                    if (s.typicalRangeLow != null && s.typicalRangeHigh != null) {
-                                        html += '<br><small>Typical: ' + s.typicalRangeLow + '–' + s.typicalRangeHigh + ' ' + (s.unit || 'm') + '</small>';
-                                    }
-                                    return html;
-                                },
-                                floodIcon(f) {
-                                    const level = f.severityLevel || 0;
-                                    const isSevere = level === 1;
-                                    return L.divIcon({
-                                        className: 'flood-map-marker flood-map-marker-flood' + (isSevere ? ' severe' : ''),
-                                        html: '<span class=\'flood-map-marker-inner\' title=\'Flood warning\'>' + (isSevere ? '🚨' : '⚠') + '</span>',
-                                        iconSize: [26, 26],
-                                        iconAnchor: [13, 13]
-                                    });
-                                },
-                                floodPopup(f) {
-                                    let html = '<b>' + (f.description || 'Flood area') + '</b><br><span style=\'color:#b91c1c;font-weight:600\'>' + (f.severity || '') + '</span>';
-                                    if (f.distanceKm != null) html += '<br><small>' + f.distanceKm + ' km from your location</small>';
-                                    if (f.message) html += '<br><small>' + f.message.replace(/<[^>]*>/g, '').substring(0, 150) + (f.message.length > 150 ? '…' : '') + '</small>';
-                                    return html;
-                                },
-                                floodPolygonStyle(f) {
-                                    const level = f.severityLevel || 0;
-                                    const isSevere = level === 1;
-                                    return {
-                                        color: isSevere ? '#dc2626' : '#f59e0b',
-                                        fillColor: isSevere ? '#dc2626' : '#f59e0b',
-                                        fillOpacity: 0.25,
-                                        weight: 2
-                                    };
-                                },
-                                incidentIcon(i) {
-                                    return L.divIcon({
-                                        className: 'flood-map-marker flood-map-marker-incident',
-                                        html: '<span class=\'flood-map-marker-inner\' title=\'Road incident\'>🛣</span>',
-                                        iconSize: [26, 26],
-                                        iconAnchor: [13, 13]
-                                    });
-                                },
-                                incidentPopup(i) {
-                                    let html = '<b>' + (i.road || 'Road') + '</b>';
-                                    if (i.status) html += '<br>' + i.status;
-                                    if (i.incidentType) html += '<br>' + i.incidentType;
-                                    if (i.delayTime) html += '<br><small>' + i.delayTime + '</small>';
-                                    return html;
-                                },
-                                init() {
-                                    if (!this.center) return;
-                                    this.$nextTick(() => {
-                                        requestAnimationFrame(() => {
-                                            const el = document.getElementById('flood-map');
-                                            if (!el) return;
-                                            if (this.map) {
-                                                this.map.remove();
-                                                this.map = null;
-                                            }
-                                            this.map = L.map('flood-map').setView([this.center.lat, this.center.long], 11);
-                                            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                                                attribution: '&copy; <a href=&quot;https://www.openstreetmap.org/copyright&quot;>OpenStreetMap</a>'
-                                            }).addTo(this.map);
-                                            if (this.hasUser) {
-                                                L.marker([this.center.lat, this.center.long], { icon: this.userIcon() })
-                                                    .addTo(this.map)
-                                                    .bindPopup('<b>Your location</b>');
-                                            }
-                                            (this.stations || []).forEach(s => {
-                                                if (s.lat != null && s.long != null) {
-                                                    L.marker([s.lat, s.long], { icon: this.stationIcon(s) })
-                                                        .addTo(this.map)
-                                                        .bindPopup(this.stationPopup(s));
-                                                }
-                                            });
-                                            (this.floods || []).forEach(f => {
-                                                if (f.polygon && f.polygon.features) {
-                                                    const style = this.floodPolygonStyle(f);
-                                                    L.geoJSON(f.polygon, {
-                                                        style: () => style,
-                                                        onEachFeature: (feature, layer) => {
-                                                            layer.bindPopup(this.floodPopup(f));
-                                                        }
-                                                    }).addTo(this.map);
-                                                }
-                                                if (f.lat != null && f.long != null) {
-                                                    L.marker([f.lat, f.long], { icon: this.floodIcon(f) })
-                                                        .addTo(this.map)
-                                                        .bindPopup(this.floodPopup(f));
-                                                }
-                                            });
-                                            (this.incidents || []).forEach(i => {
-                                                if (i.lat != null && i.long != null) {
-                                                    L.marker([i.lat, i.long], { icon: this.incidentIcon(i) })
-                                                        .addTo(this.map)
-                                                        .bindPopup(this.incidentPopup(i));
-                                                }
-                                            });
-                                            this.map.invalidateSize();
-                                        });
-                                    });
-                                }
-                            }"
+                            x-data="floodMap({ center: @js($mapCenter), stations: @js($riverLevels), floods: @js($floods), incidents: @js($incidents), hasUser: @js($hasUserLocation) })"
                             x-init="init()"
                         >
                             <div id="flood-map" class="h-72 sm:h-80 md:h-96 w-full bg-slate-100 dark:bg-slate-800"></div>
@@ -373,6 +241,7 @@
                                     <div class="flex flex-wrap gap-2">
                                         @foreach ($incidents as $incident)
                                             <span class="inline-flex items-center gap-1 px-2 py-1 rounded text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
+                                                <span title="{{ $incident['incidentType'] ?? $incident['managementType'] ?? '' }}">{{ $incident['icon'] ?? '🛣️' }}</span>
                                                 <span class="font-medium">{{ $incident['road'] ?? 'Road' }}</span>
                                                 @if (!empty($incident['status']))
                                                     <span>· {{ $incident['status'] }}</span>
@@ -489,7 +358,10 @@
                         <ul class="space-y-3">
                             @foreach ($incidents as $incident)
                                 <li class="p-4 rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700">
-                                    <p class="font-medium text-slate-900 dark:text-white">{{ $incident['road'] ?? 'Road' }}</p>
+                                    <p class="font-medium text-slate-900 dark:text-white flex items-center gap-2">
+                                        <span class="text-lg" title="{{ $incident['incidentType'] ?? $incident['managementType'] ?? 'Road incident' }}">{{ $incident['icon'] ?? '🛣️' }}</span>
+                                        {{ $incident['road'] ?? 'Road' }}
+                                    </p>
                                     @if (!empty($incident['status']))
                                         <p class="text-sm text-blue-600 dark:text-blue-400 mt-1">{{ $incident['status'] }}</p>
                                     @endif
@@ -522,6 +394,8 @@
                 Data: Environment Agency flood and river level data from the
                 <a href="https://environment.data.gov.uk/flood-monitoring/doc/reference" target="_blank" rel="noopener" class="underline hover:text-slate-600 dark:hover:text-slate-300">Real-Time data API</a>
                 (Open Government Licence).
+                National Highways road and lane closure data (DATEX II v3.4) from the
+                <a href="https://developer.data.nationalhighways.co.uk/" target="_blank" rel="noopener" class="underline hover:text-slate-600 dark:hover:text-slate-300">Developer Portal</a>.
                 Weather from <a href="https://open-meteo.com/" target="_blank" rel="noopener" class="underline hover:text-slate-600 dark:hover:text-slate-300">Open-Meteo</a> (CC-BY 4.0).
                 Geocoding by <a href="https://postcodes.io" target="_blank" rel="noopener" class="underline hover:text-slate-600 dark:hover:text-slate-300">postcodes.io</a> and <a href="https://nominatim.openstreetmap.org" target="_blank" rel="noopener" class="underline hover:text-slate-600 dark:hover:text-slate-300">OpenStreetMap Nominatim</a>.
             </p>

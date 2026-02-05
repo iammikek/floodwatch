@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Services\FloodWatchService;
 use App\Services\FloodWatchTrendService;
 use App\Services\LocationResolver;
+use App\Support\IncidentIcon;
 use App\Support\LogMasker;
 use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Layout;
@@ -107,7 +108,7 @@ class FloodWatchDashboard extends Component
                 $userLat,
                 $userLong
             );
-            $this->incidents = $result['incidents'];
+            $this->incidents = $this->enrichIncidentsWithIcons($result['incidents']);
             $this->forecast = $result['forecast'] ?? [];
             $this->weather = $result['weather'] ?? [];
             $this->riverLevels = $result['riverLevels'] ?? [];
@@ -280,6 +281,24 @@ class FloodWatchDashboard extends Component
     }
 
     /**
+     * Add icon to each incident based on incidentType and managementType.
+     *
+     * @param  array<int, array<string, mixed>>  $incidents
+     * @return array<int, array<string, mixed>>
+     */
+    private function enrichIncidentsWithIcons(array $incidents): array
+    {
+        return array_map(function (array $incident): array {
+            $incident['icon'] = IncidentIcon::forIncident(
+                $incident['incidentType'] ?? null,
+                $incident['managementType'] ?? null
+            );
+
+            return $incident;
+        }, $incidents);
+    }
+
+    /**
      * Restore component state from client-side storage (e.g. localStorage).
      * Called by the frontend when cached results exist.
      *
@@ -289,7 +308,7 @@ class FloodWatchDashboard extends Component
     {
         $this->assistantResponse = is_string($data['assistantResponse'] ?? null) ? $data['assistantResponse'] : null;
         $this->floods = is_array($data['floods'] ?? null) ? $data['floods'] : [];
-        $this->incidents = is_array($data['incidents'] ?? null) ? $data['incidents'] : [];
+        $this->incidents = $this->enrichIncidentsWithIcons(is_array($data['incidents'] ?? null) ? $data['incidents'] : []);
         $this->forecast = is_array($data['forecast'] ?? null) ? $data['forecast'] : [];
         $this->weather = is_array($data['weather'] ?? null) ? $data['weather'] : [];
         $this->riverLevels = is_array($data['riverLevels'] ?? null) ? $data['riverLevels'] : [];

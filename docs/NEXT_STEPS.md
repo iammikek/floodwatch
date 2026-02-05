@@ -33,7 +33,6 @@ Consolidated development plan based on planning work (Feb 2026).
 
 **Ref**: `docs/DEVELOPMENT.md`
 
-- Pre-fetch parallelization (Concurrency::run)
 - Queue-based async for high traffic
 - Polygon limit tuning
 
@@ -41,6 +40,7 @@ Consolidated development plan based on planning work (Feb 2026).
 
 | Doc | Purpose |
 |-----|---------|
+| `docs/ACCEPTANCE_CRITERIA.md` | Success checklist: latency, correlation, graceful failure, attribution |
 | `docs/ROAD_DATA_STRATEGY.md` | Road data relevance, cascading impact, predictive rules, cut-off areas |
 | `docs/DATA_SOURCES.md` | National Rail, emergency services, surfacing options |
 | `docs/DEVELOPMENT.md` | Backlog, milestones, tooling |

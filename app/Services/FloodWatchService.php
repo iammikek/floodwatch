@@ -9,6 +9,7 @@ use App\Flood\Services\RiverLevelService;
 use App\Roads\Services\NationalHighwaysService;
 use App\Support\LogMasker;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Concurrency;
 use Illuminate\Support\Facades\Log;
 use OpenAI\Laravel\Facades\OpenAI;
 
@@ -62,16 +63,15 @@ class FloodWatchService
             $onProgress !== null && $onProgress($status);
         };
 
-        $report('Fetching 5-day flood forecast...');
-        $forecast = $this->forecastService->getForecast();
         $lat = $userLat ?? config('flood-watch.default_lat');
         $long = $userLong ?? config('flood-watch.default_long');
 
-        $report('Getting weather forecast...');
-        $weather = $this->weatherService->getForecast($lat, $long);
-
-        $report('Fetching river levels...');
-        $riverLevels = $this->riverLevelService->getLevels($lat, $long);
+        $report('Fetching flood forecast, weather, and river levels...');
+        [$forecast, $weather, $riverLevels] = Concurrency::run([
+            fn () => app(FloodForecastService::class)->getForecast(),
+            fn () => app(WeatherService::class)->getForecast($lat, $long),
+            fn () => app(RiverLevelService::class)->getLevels($lat, $long),
+        ]);
 
         $report('Calling AI assistant...');
         $messages = $this->buildMessages($userMessage, $conversation, $region);

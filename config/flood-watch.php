@@ -232,6 +232,34 @@ return [
     |
     */
 
+    /*
+    |--------------------------------------------------------------------------
+    | Road Incident Type Icons
+    |--------------------------------------------------------------------------
+    |
+    | Maps incident types (from National Highways DATEX II) to emoji icons
+    | for the road status UI and map. Keys are matched case-insensitively
+    | against incidentType and managementType. First match wins.
+    | UK road sign equivalents: 🚧 (road works), 🚫 (road closed), etc.
+    |
+    */
+
+    'incident_icons' => [
+        'flooding' => '🌊',
+        'roadClosed' => '🚫',
+        'laneClosures' => '⚠️',
+        'lane closure' => '⚠️',
+        'constructionWork' => '🚧',
+        'maintenanceWork' => '🛠️',
+        'sweepingOfRoad' => '🧹',
+        'roadworks' => '🚧',
+        'roadWorks' => '🚧',
+        'road works' => '🚧',
+        'accident' => '🚗',
+        'vehicleObstruction' => '🚗',
+        'default' => '🛣️',
+    ],
+
     'incident_road_coordinates' => [
         'A361' => [51.04, -2.83],
         'A372' => [51.07, -2.90],
