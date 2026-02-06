@@ -77,6 +77,30 @@ class FloodWatchService
         return $result;
     }
 
+    /**
+     * Fetch map data without using cache. Used by FetchLatestInfrastructureData job for delta comparison.
+     *
+     * @return array{floods: array, incidents: array, riverLevels: array}
+     */
+    public function getMapDataUncached(float $lat, float $long, ?string $region = null): array
+    {
+        $radiusKm = config('flood-watch.default_radius_km', 15);
+
+        [$floods, $incidents, $riverLevels] = Concurrency::run([
+            fn () => $this->floodService->getFloods($lat, $long, $radiusKm),
+            fn () => $this->filterIncidentsByRegion($this->highwaysService->getIncidents(), $region),
+            fn () => $this->riverLevelService->getLevels($lat, $long, $radiusKm),
+        ]);
+
+        $incidents = $this->sortIncidentsByPriority($incidents);
+
+        return [
+            'floods' => $floods,
+            'incidents' => $incidents,
+            'riverLevels' => $riverLevels,
+        ];
+    }
+
     private function mapDataCacheKey(float $lat, float $long, ?array $bounds): string
     {
         $prefix = config('flood-watch.cache_key_prefix', 'flood-watch');

@@ -269,6 +269,26 @@ class FloodWatchDashboardTest extends TestCase
             ->assertSee('italic', false);
     }
 
+    public function test_dashboard_has_side_by_side_layout_with_activity_feed_on_desktop(): void
+    {
+        Livewire::test('flood-watch-dashboard')
+            ->assertSee('Live Activity', false)
+            ->assertSee('activity-feed', false)
+            ->assertSee('lg:flex-row', false);
+    }
+
+    public function test_dashboard_activity_feed_shows_recent_activities(): void
+    {
+        $activity = \App\Models\SystemActivity::factory()->create([
+            'description' => 'New flood warning: North Moor',
+            'occurred_at' => now(),
+        ]);
+
+        Livewire::test('flood-watch-dashboard')
+            ->assertSee('New flood warning: North Moor', false)
+            ->assertSee($activity->occurred_at->format('H:i'), false);
+    }
+
     public function test_dashboard_risk_gauge_shows_index_label_and_summary(): void
     {
         Config::set('flood-watch.national_highways.api_key', 'test-key');

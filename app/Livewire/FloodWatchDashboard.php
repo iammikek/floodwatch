@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Models\SystemActivity;
 use App\Services\FloodWatchService;
 use App\Services\FloodWatchTrendService;
 use App\Services\LocationResolver;
@@ -371,6 +372,8 @@ class FloodWatchDashboard extends Component
 
     public function render()
     {
-        return view('livewire.flood-watch-dashboard');
+        return view('livewire.flood-watch-dashboard', [
+            'activities' => SystemActivity::recent(10),
+        ]);
     }
 }

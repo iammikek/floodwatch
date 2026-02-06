@@ -88,7 +88,8 @@
             @endif
         </section>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="flex flex-col lg:flex-row gap-4 mb-6">
+            <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="p-4 rounded-lg bg-white shadow-sm border border-slate-200">
                 <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">{{ __('flood-watch.dashboard.status_grid_hydrological') }}</p>
                 <p class="text-slate-600 text-sm">
@@ -148,6 +149,26 @@
                     @endif
                 </p>
             </div>
+            </div>
+
+            <aside id="activity-feed" class="w-full lg:w-72 shrink-0 bg-white rounded-lg border border-slate-200 overflow-hidden flex flex-col">
+                <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide px-4 py-3 border-b border-slate-100">
+                    {{ __('flood-watch.dashboard.activity_feed_title') }}
+                </h3>
+                <div class="flex-1 overflow-y-auto p-2">
+                    @forelse ($activities as $activity)
+                        <div class="flex gap-2 py-2 {{ !$loop->last ? 'border-b border-slate-100' : '' }}">
+                            <span class="text-xs text-slate-500 shrink-0">{{ $activity->occurred_at->format('H:i') }}</span>
+                            <p class="text-sm text-slate-700">{{ $activity->description }}</p>
+                        </div>
+                    @empty
+                        <p class="text-sm text-slate-500 p-4">{{ __('flood-watch.dashboard.activity_feed_empty') }}</p>
+                    @endforelse
+                </div>
+                <a href="#" class="block text-center text-sm text-blue-600 hover:text-blue-700 py-2 border-t border-slate-100">
+                    {{ __('flood-watch.dashboard.activity_feed_view_all') }}
+                </a>
+            </aside>
         </div>
 
         @guest
