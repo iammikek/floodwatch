@@ -63,6 +63,7 @@ return [
         'status_grid_stations_elevated' => ':count stations elevated',
         'status_grid_closures_format' => ':active / :total closures',
         'status_grid_precipitation_48h' => '💧 :mm mm next 48h',
+        'status_grid_precipitation_5d' => '💧 :mm mm next 5 days',
         'activity_feed_title' => 'Live Activity',
         'activity_feed_empty' => 'No recent activity.',
         'activity_feed_view_all' => 'View all',
@@ -122,6 +123,19 @@ return [
         'planned' => 'Planned',
         'active' => 'Active',
         'suspended' => 'Suspended',
+    ],
+
+    'activities' => [
+        'title' => 'Activity Log',
+        'subtitle' => 'Recent flood warnings, road closures and infrastructure changes.',
+        'empty' => 'No activity recorded yet.',
+        'type_flood_warning' => 'Flood warning',
+        'type_road_closure' => 'Road closure',
+        'type_road_reopened' => 'Road reopened',
+        'type_river_level_elevated' => 'River level elevated',
+        'tooltip_type' => 'Type',
+        'tooltip_severity' => 'Severity',
+        'tooltip_time' => 'Time',
     ],
 
     'incident_type' => [

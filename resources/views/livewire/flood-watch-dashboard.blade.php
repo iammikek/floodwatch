@@ -88,84 +88,117 @@
             @endif
         </section>
 
-        <div class="flex flex-col lg:flex-row gap-4 mb-6">
-            <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="p-4 rounded-lg bg-white shadow-sm border border-slate-200">
-                <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">{{ __('flood-watch.dashboard.status_grid_hydrological') }}</p>
-                <p class="text-slate-600 text-sm">
-                    @php
-                        $elevatedCount = count(array_filter($riverLevels, fn ($r) => ($r['levelStatus'] ?? '') === 'elevated'));
-                    @endphp
-                    @if (count($riverLevels) > 0)
-                        @if ($elevatedCount > 0)
-                            {{ __('flood-watch.dashboard.status_grid_stations_elevated', ['count' => $elevatedCount]) }}
-                        @else
-                            {{ count($riverLevels) }} {{ __('flood-watch.dashboard.stations') }}
-                        @endif
-                    @else
-                        {{ __('flood-watch.dashboard.status_grid_no_data') }}
-                    @endif
-                </p>
-            </div>
-            <div class="p-4 rounded-lg bg-white shadow-sm border border-slate-200">
-                <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">{{ __('flood-watch.dashboard.status_grid_infrastructure') }}</p>
-                <p class="text-slate-600 text-sm">
-                    @if ($assistantResponse)
+        <div class="flex flex-col lg:flex-row gap-4 mb-6 max-h-[50vh] sm:max-h-[42vh] lg:max-h-[38vh] min-h-0 overflow-hidden">
+            <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 min-h-0 overflow-hidden grid-rows-4 sm:grid-rows-2 lg:grid-rows-1">
+            <div class="rounded-lg bg-white shadow-sm border border-slate-200 min-h-0 overflow-hidden flex flex-col">
+                <p class="text-xs font-medium text-slate-500 uppercase tracking-wide px-4 py-3 border-b border-slate-100 shrink-0">{{ __('flood-watch.dashboard.status_grid_hydrological') }}</p>
+                <div class="flex-1 overflow-y-auto p-4 min-h-0">
+                    <p class="text-slate-600 text-sm">
                         @php
-                            $monitoredTotal = config('flood-watch.status_grid_monitored_routes', 7);
+                            $elevatedCount = count(array_filter($riverLevels, fn ($r) => ($r['levelStatus'] ?? '') === 'elevated'));
                         @endphp
-                        {{ __('flood-watch.dashboard.status_grid_closures_format', ['active' => count($incidents), 'total' => $monitoredTotal]) }}
-                    @else
-                        {{ __('flood-watch.dashboard.status_grid_no_data') }}
-                    @endif
-                </p>
+                        @if (count($riverLevels) > 0)
+                            @if ($elevatedCount > 0)
+                                {{ __('flood-watch.dashboard.status_grid_stations_elevated', ['count' => $elevatedCount]) }}
+                            @else
+                                {{ count($riverLevels) }} {{ __('flood-watch.dashboard.stations') }}
+                            @endif
+                        @else
+                            {{ __('flood-watch.dashboard.status_grid_no_data') }}
+                        @endif
+                    </p>
+                </div>
             </div>
-            <div class="p-4 rounded-lg bg-white shadow-sm border border-slate-200">
-                <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">{{ __('flood-watch.dashboard.status_grid_weather') }}</p>
-                <p class="text-slate-600 text-sm">
+            <div class="rounded-lg bg-white shadow-sm border border-slate-200 min-h-0 overflow-hidden flex flex-col">
+                <p class="text-xs font-medium text-slate-500 uppercase tracking-wide px-4 py-3 border-b border-slate-100 shrink-0">{{ __('flood-watch.dashboard.status_grid_infrastructure') }}</p>
+                <div class="flex-1 overflow-y-auto p-4 min-h-0">
+                    <p class="text-slate-600 text-sm">
+                        @if ($assistantResponse)
+                            @php
+                                $monitoredTotal = config('flood-watch.status_grid_monitored_routes', 7);
+                            @endphp
+                            {{ __('flood-watch.dashboard.status_grid_closures_format', ['active' => count($incidents), 'total' => $monitoredTotal]) }}
+                        @else
+                            {{ __('flood-watch.dashboard.status_grid_no_data') }}
+                        @endif
+                    </p>
+                </div>
+            </div>
+            <div id="weather" class="rounded-lg bg-white shadow-sm border border-slate-200 min-h-0 overflow-hidden flex flex-col">
+                <p class="text-xs font-medium text-slate-500 uppercase tracking-wide px-4 py-3 border-b border-slate-100 shrink-0">{{ __('flood-watch.dashboard.status_grid_weather') }}</p>
+                <div class="flex-1 overflow-y-auto p-4 min-h-0">
                     @if (count($weather) > 0)
-                        @foreach (array_slice($weather, 0, 3) as $day)
-                            {{ $day['icon'] ?? '🌤️' }} {{ round($day['temp_max'] ?? 0) }}°
-                            @if (!$loop->last) · @endif
-                        @endforeach
                         @php
                             $precip48h = array_sum(array_column(array_slice($weather, 0, 2), 'precipitation'));
+                            $precip5d = array_sum(array_column($weather, 'precipitation'));
                         @endphp
-                        @if ($precip48h > 0)
-                            <span class="block text-sky-600 mt-1">{{ __('flood-watch.dashboard.status_grid_precipitation_48h', ['mm' => round($precip48h, 1)]) }}</span>
+                        @if ($precip48h > 0 || $precip5d > 0)
+                            <p class="text-sky-600 text-sm font-medium mb-2">
+                                @if ($precip48h > 0)
+                                    {{ __('flood-watch.dashboard.status_grid_precipitation_48h', ['mm' => round($precip48h, 1)]) }}
+                                    @if ($precip5d > $precip48h)
+                                        <span class="text-slate-500 font-normal">({{ round($precip5d, 1) }} mm 5d)</span>
+                                    @endif
+                                @else
+                                    {{ __('flood-watch.dashboard.status_grid_precipitation_5d', ['mm' => round($precip5d, 1)]) }}
+                                @endif
+                            </p>
                         @endif
+                        <div class="space-y-1.5 text-slate-600 text-sm">
+                            @foreach ($weather as $day)
+                                <div class="flex items-center justify-between gap-2">
+                                    <span>{{ \Carbon\Carbon::parse($day['date'])->format('D') }}</span>
+                                    <span class="shrink-0" title="{{ $day['description'] ?? '' }}">{{ $day['icon'] ?? '🌤️' }}</span>
+                                    <span>{{ round($day['temp_max'] ?? 0) }}°</span>
+                                    @if (($day['precipitation'] ?? 0) > 0)
+                                        <span class="text-sky-600 text-xs">💧 {{ round($day['precipitation'], 1) }} mm</span>
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
                     @else
-                        {{ __('flood-watch.dashboard.status_grid_no_data') }}
+                        <p class="text-slate-600 text-sm">{{ __('flood-watch.dashboard.status_grid_no_data') }}</p>
                     @endif
-                </p>
+                </div>
             </div>
-            <div class="p-4 rounded-lg bg-white shadow-sm border border-slate-200">
-                <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">{{ __('flood-watch.dashboard.status_grid_ai_advisory') }}</p>
-                <p class="text-slate-600 text-sm italic">
-                    @if ($assistantResponse)
-                        {{ Str::limit(strip_tags(Str::markdown($assistantResponse)), 80) }}
-                    @else
-                        {{ __('flood-watch.dashboard.status_grid_prompt') }}
-                    @endif
-                </p>
+            <div class="rounded-lg bg-white shadow-sm border border-slate-200 min-h-0 overflow-hidden flex flex-col">
+                <p class="text-xs font-medium text-slate-500 uppercase tracking-wide px-4 py-3 border-b border-slate-100 shrink-0">{{ __('flood-watch.dashboard.status_grid_ai_advisory') }}</p>
+                <div class="flex-1 overflow-y-auto p-4 min-h-0">
+                    <p class="text-slate-600 text-sm italic">
+                        @if ($assistantResponse)
+                            {{ strip_tags(Str::markdown($assistantResponse)) }}
+                        @else
+                            {{ __('flood-watch.dashboard.status_grid_prompt') }}
+                        @endif
+                    </p>
+                </div>
             </div>
             </div>
 
-            <aside id="activity-feed" class="w-full lg:w-72 shrink-0 bg-white rounded-lg border border-slate-200 overflow-hidden flex flex-col">
+            <aside id="activity-feed" class="w-full lg:w-72 shrink-0 min-h-0 bg-white rounded-lg border border-slate-200 overflow-hidden flex flex-col">
                 <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide px-4 py-3 border-b border-slate-100">
                     {{ __('flood-watch.dashboard.activity_feed_title') }}
                 </h3>
                 <div class="flex-1 overflow-y-auto p-2">
                     @forelse ($activities as $activity)
-                        <div class="flex gap-2 py-2 {{ !$loop->last ? 'border-b border-slate-100' : '' }}">
-                            <span class="text-xs text-slate-500 shrink-0">{{ $activity->occurred_at->format('H:i') }}</span>
-                            <p class="text-sm text-slate-700">{{ $activity->description }}</p>
-                        </div>
+                        @php
+                            $severityClasses = match ($activity->severity) {
+                                'severe' => 'bg-red-50 border-l-4 border-l-red-500',
+                                'high' => 'bg-amber-50 border-l-4 border-l-amber-500',
+                                'moderate' => 'bg-slate-50 border-l-4 border-l-slate-300',
+                                default => '',
+                            };
+                        @endphp
+                        <x-activity-item
+                            :activity="$activity"
+                            time-format="H:i"
+                            :class="$severityClasses . ($loop->last ? '' : ' border-b border-slate-100')"
+                        />
                     @empty
                         <p class="text-sm text-slate-500 p-4">{{ __('flood-watch.dashboard.activity_feed_empty') }}</p>
                     @endforelse
                 </div>
-                <a href="#" class="block text-center text-sm text-blue-600 hover:text-blue-700 py-2 border-t border-slate-100">
+                <a href="{{ route('activities') }}" class="block text-center text-sm text-blue-600 hover:text-blue-700 py-2 border-t border-slate-100">
                     {{ __('flood-watch.dashboard.activity_feed_view_all') }}
                 </a>
             </aside>
@@ -263,7 +296,7 @@
                     x-data="floodMap({ center: @js($mapCenter), stations: @js($riverLevels), floods: @js($floods), incidents: @js($incidents), hasUser: @js($hasUserLocation), t: @js(['your_location' => __('flood-watch.map.your_location'), 'elevated_level' => __('flood-watch.map.elevated_level'), 'expected_level' => __('flood-watch.map.expected_level'), 'low_level' => __('flood-watch.map.low_level'), 'typical_range' => __('flood-watch.map.typical_range'), 'flood_warning' => __('flood-watch.dashboard.flood_warning'), 'flood_area' => __('flood-watch.dashboard.flood_area'), 'km_from_location' => __('flood-watch.dashboard.km_from_location'), 'road' => __('flood-watch.dashboard.road'), 'road_incident' => __('flood-watch.dashboard.road_incident')]) })"
                     x-init="init()"
                 >
-                    <div id="flood-map" class="h-72 sm:h-80 md:h-96 w-full bg-slate-100"></div>
+                    <div id="flood-map" class="min-h-[40vh] h-72 sm:h-80 md:h-96 w-full bg-slate-100"></div>
                     @if (count($incidents) > 0)
                         <div class="px-3 py-2 bg-blue-50/50 border-t border-slate-200">
                             <p class="text-xs font-medium text-blue-800 mb-1.5">{{ __('flood-watch.dashboard.road_incidents_on_map') }}</p>
@@ -429,29 +462,6 @@
                         </div>
                     @else
                         <p class="p-4 rounded-lg bg-white shadow-sm border border-slate-200 text-slate-600">{{ __('flood-watch.dashboard.no_forecast') }}</p>
-                    @endif
-                </div>
-
-                <div id="weather">
-                    <h2 class="text-lg font-medium text-slate-900 mb-3">{{ __('flood-watch.dashboard.weather_forecast') }}</h2>
-                    @if (count($weather) > 0)
-                        <div class="flex flex-nowrap gap-3 overflow-x-auto pb-2 -mx-1 scrollbar-hide">
-                            @foreach ($weather as $day)
-                                <div class="flex-1 min-w-[6.5rem] sm:min-w-[7rem] p-4 rounded-lg bg-white shadow-sm border border-slate-200 text-center shrink-0">
-                                    <p class="text-sm font-medium text-slate-600">
-                                        {{ \Carbon\Carbon::parse($day['date'])->format('D j M') }}
-                                    </p>
-                                    <p class="text-3xl my-2" title="{{ $day['description'] ?? '' }}">{{ $day['icon'] ?? '🌤️' }}</p>
-                                    <p class="text-slate-900 font-semibold">{{ round($day['temp_max'] ?? 0) }}° / {{ round($day['temp_min'] ?? 0) }}°</p>
-                                    @if (($day['precipitation'] ?? 0) > 0)
-                                        <p class="text-sm text-sky-600 mt-1">💧 {{ round($day['precipitation'], 1) }} mm</p>
-                                    @endif
-                                    <p class="text-xs text-slate-500 mt-1">{{ $day['description'] ?? '' }}</p>
-                                </div>
-                            @endforeach
-                        </div>
-                    @else
-                        <p class="p-4 rounded-lg bg-white shadow-sm border border-slate-200 text-slate-600">{{ __('flood-watch.dashboard.no_weather') }}</p>
                     @endif
                 </div>
 
