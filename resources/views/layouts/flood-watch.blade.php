@@ -185,6 +185,30 @@
                                     .bindPopup(this.incidentPopup(i));
                             }
                         });
+                        (this.infrastructure || []).forEach(p => {
+                            if (p.lat != null && p.long != null) {
+                                const icon = p.type === 'reservoir' ? '🏞' : '⚙';
+                                const title = this.t?.reservoir || 'Reservoir';
+                                const divIcon = L.divIcon({
+                                    className: 'flood-map-marker flood-map-marker-infrastructure',
+                                    html: '<span class=\'flood-map-marker-inner\' title=\'' + (p.name || title).replace(/'/g, '&#39;') + '\'>' + icon + '</span>',
+                                    iconSize: [24, 24],
+                                    iconAnchor: [12, 12]
+                                });
+                                L.marker([p.lat, p.long], { icon: divIcon })
+                                    .addTo(this.map)
+                                    .bindPopup('<b>' + (p.name || title).replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</b><br><small>' + (p.type || 'infrastructure') + '</small>');
+                            }
+                        });
+                        const bounds = [];
+                        if (this.hasUser) bounds.push([this.center.lat, this.center.long]);
+                        (this.stations || []).forEach(s => { if (s.lat != null && s.long != null) bounds.push([s.lat, s.long]); });
+                        (this.floods || []).forEach(f => { if (f.lat != null && f.long != null) bounds.push([f.lat, f.long]); });
+                        (this.incidents || []).forEach(i => { if (i.lat != null && i.long != null) bounds.push([i.lat, i.long]); });
+                        (this.infrastructure || []).forEach(p => { if (p.lat != null && p.long != null) bounds.push([p.lat, p.long]); });
+                        if (bounds.length > 1) {
+                            this.map.fitBounds(bounds, { padding: [30, 30], maxZoom: 12 });
+                        }
                     };
                     this.$nextTick(() => {
                         const el = document.getElementById('flood-map');

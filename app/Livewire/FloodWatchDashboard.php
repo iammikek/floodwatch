@@ -53,12 +53,26 @@ class FloodWatchDashboard extends Component
     /** @var array{index: int, label: string, summary: string}|null */
     public ?array $risk = null;
 
-    public function mount(RiskService $riskService): void
+    public function mount(RiskService $riskService, FloodWatchService $floodWatchService): void
     {
         $this->mapCenter = [
             'lat' => config('flood-watch.default_lat'),
             'long' => config('flood-watch.default_long'),
         ];
+
+        $defaultLat = config('flood-watch.default_lat');
+        $defaultLong = config('flood-watch.default_long');
+        $mapData = Cache::remember("flood-watch:map-data:{$defaultLat}:{$defaultLong}", 300, function () use ($floodWatchService, $defaultLat, $defaultLong) {
+            try {
+                return $floodWatchService->getMapDataUncached($defaultLat, $defaultLong, null);
+            } catch (\Throwable) {
+                return ['floods' => [], 'incidents' => [], 'riverLevels' => [], 'lastChecked' => null];
+            }
+        });
+        $this->floods = $this->enrichFloodsWithDistance($mapData['floods'] ?? [], $defaultLat, $defaultLong);
+        $this->incidents = $this->enrichIncidentsWithIcons($mapData['incidents'] ?? []);
+        $this->riverLevels = $mapData['riverLevels'] ?? [];
+        $this->lastChecked = $mapData['lastChecked'] ?? null;
 
         $this->risk = Cache::remember('flood-watch-risk-gauge', 900, function () use ($riskService) {
             try {

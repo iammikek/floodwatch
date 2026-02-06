@@ -35,483 +35,76 @@
     x-init="init()"
 >
     <div class="max-w-7xl mx-auto w-full">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-            <h1 class="text-2xl font-semibold text-slate-900 shrink-0">
-                {{ __('flood-watch.dashboard.title') }}
-            </h1>
-            <div class="flex flex-col sm:flex-row gap-2 sm:items-center">
-                <input
-                    type="text"
-                    id="location"
-                    wire:model="location"
-                    placeholder="{{ __('flood-watch.dashboard.location_placeholder') }}"
-                    class="block w-full sm:w-48 min-h-[44px] rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base sm:text-sm"
-                />
-                <button
-                    type="button"
-                    wire:click="search"
-                    @click="window.__loadLeaflet && window.__loadLeaflet()"
-                    wire:loading.attr="disabled"
-                    @if($retryAfterTimestamp && !$this->canRetry()) disabled @endif
-                    class="min-h-[44px] inline-flex items-center justify-center gap-2 px-5 py-3 sm:py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
-                >
-                    <span wire:loading.remove wire:target="search">{{ __('flood-watch.dashboard.check_my_location') }}</span>
-                    @if (!$assistantResponse)
-                    <span wire:loading wire:target="search" class="inline-flex items-center gap-2">
-                        <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        {{ __('flood-watch.dashboard.searching') }}
-                    </span>
-                    @endif
-                </button>
-            </div>
-        </div>
+        <x-flood-watch.header
+            :retryAfterTimestamp="$retryAfterTimestamp"
+            :canRetry="$this->canRetry()"
+            :assistantResponse="$assistantResponse"
+        />
 
-        <section id="risk-gauge" class="mb-6 p-4 rounded-lg bg-white shadow-sm border border-slate-200">
-            <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">{{ __('flood-watch.dashboard.risk_gauge_title') }}</h2>
-            @if ($risk)
-                <div class="flex items-center gap-4">
-                    <div class="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden">
-                        <div
-                            class="h-full rounded-full transition-all duration-300"
-                            style="width: {{ $risk['index'] }}%; background: linear-gradient(to right, #22c55e 0%, #eab308 25%, #f97316 50%, #ef4444 75%);"
-                        ></div>
-                    </div>
-                    <span class="text-lg font-bold text-slate-900">{{ $risk['index'] }}</span>
-                    <span class="text-sm text-slate-500">/ 100</span>
-                </div>
-                <p class="text-sm text-slate-600 mt-1">{{ $risk['label'] }} · {{ $risk['summary'] }}</p>
-            @else
-                <p class="text-sm text-slate-500">{{ __('flood-watch.dashboard.risk_gauge_unavailable') }}</p>
-            @endif
-        </section>
+        <x-flood-watch.risk-gauge :risk="$risk" />
 
         <div class="flex flex-col lg:flex-row gap-4 mb-6 max-h-[50vh] sm:max-h-[42vh] lg:max-h-[38vh] min-h-0 overflow-hidden">
-            <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 min-h-0 overflow-hidden grid-rows-4 sm:grid-rows-2 lg:grid-rows-1">
-            <div class="rounded-lg bg-white shadow-sm border border-slate-200 min-h-0 overflow-hidden flex flex-col">
-                <p class="text-xs font-medium text-slate-500 uppercase tracking-wide px-4 py-3 border-b border-slate-100 shrink-0">{{ __('flood-watch.dashboard.status_grid_hydrological') }}</p>
-                <div class="flex-1 overflow-y-auto p-4 min-h-0">
-                    <p class="text-slate-600 text-sm">
-                        @php
-                            $elevatedCount = count(array_filter($riverLevels, fn ($r) => ($r['levelStatus'] ?? '') === 'elevated'));
-                        @endphp
-                        @if (count($riverLevels) > 0)
-                            @if ($elevatedCount > 0)
-                                {{ __('flood-watch.dashboard.status_grid_stations_elevated', ['count' => $elevatedCount]) }}
-                            @else
-                                {{ count($riverLevels) }} {{ __('flood-watch.dashboard.stations') }}
-                            @endif
-                        @else
-                            {{ __('flood-watch.dashboard.status_grid_no_data') }}
-                        @endif
-                    </p>
-                </div>
-            </div>
-            <div class="rounded-lg bg-white shadow-sm border border-slate-200 min-h-0 overflow-hidden flex flex-col">
-                <p class="text-xs font-medium text-slate-500 uppercase tracking-wide px-4 py-3 border-b border-slate-100 shrink-0">{{ __('flood-watch.dashboard.status_grid_infrastructure') }}</p>
-                <div class="flex-1 overflow-y-auto p-4 min-h-0">
-                    <p class="text-slate-600 text-sm">
-                        @if ($assistantResponse)
-                            @php
-                                $monitoredTotal = config('flood-watch.status_grid_monitored_routes', 7);
-                            @endphp
-                            {{ __('flood-watch.dashboard.status_grid_closures_format', ['active' => count($incidents), 'total' => $monitoredTotal]) }}
-                        @else
-                            {{ __('flood-watch.dashboard.status_grid_no_data') }}
-                        @endif
-                    </p>
-                </div>
-            </div>
-            <div id="weather" class="rounded-lg bg-white shadow-sm border border-slate-200 min-h-0 overflow-hidden flex flex-col">
-                <p class="text-xs font-medium text-slate-500 uppercase tracking-wide px-4 py-3 border-b border-slate-100 shrink-0">{{ __('flood-watch.dashboard.status_grid_weather') }}</p>
-                <div class="flex-1 overflow-y-auto p-4 min-h-0">
-                    @if (count($weather) > 0)
-                        @php
-                            $precip48h = array_sum(array_column(array_slice($weather, 0, 2), 'precipitation'));
-                            $precip5d = array_sum(array_column($weather, 'precipitation'));
-                        @endphp
-                        @if ($precip48h > 0 || $precip5d > 0)
-                            <p class="text-sky-600 text-sm font-medium mb-2">
-                                @if ($precip48h > 0)
-                                    {{ __('flood-watch.dashboard.status_grid_precipitation_48h', ['mm' => round($precip48h, 1)]) }}
-                                    @if ($precip5d > $precip48h)
-                                        <span class="text-slate-500 font-normal">({{ round($precip5d, 1) }} mm 5d)</span>
-                                    @endif
-                                @else
-                                    {{ __('flood-watch.dashboard.status_grid_precipitation_5d', ['mm' => round($precip5d, 1)]) }}
-                                @endif
-                            </p>
-                        @endif
-                        <div class="space-y-1.5 text-slate-600 text-sm">
-                            @foreach ($weather as $day)
-                                <div class="flex items-center justify-between gap-2">
-                                    <span>{{ \Carbon\Carbon::parse($day['date'])->format('D') }}</span>
-                                    <span class="shrink-0" title="{{ $day['description'] ?? '' }}">{{ $day['icon'] ?? '🌤️' }}</span>
-                                    <span>{{ round($day['temp_max'] ?? 0) }}°</span>
-                                    @if (($day['precipitation'] ?? 0) > 0)
-                                        <span class="text-sky-600 text-xs">💧 {{ round($day['precipitation'], 1) }} mm</span>
-                                    @endif
-                                </div>
-                            @endforeach
-                        </div>
-                    @else
-                        <p class="text-slate-600 text-sm">{{ __('flood-watch.dashboard.status_grid_no_data') }}</p>
-                    @endif
-                </div>
-            </div>
-            <div class="rounded-lg bg-white shadow-sm border border-slate-200 min-h-0 overflow-hidden flex flex-col">
-                <p class="text-xs font-medium text-slate-500 uppercase tracking-wide px-4 py-3 border-b border-slate-100 shrink-0">{{ __('flood-watch.dashboard.status_grid_ai_advisory') }}</p>
-                <div class="flex-1 overflow-y-auto p-4 min-h-0">
-                    <p class="text-slate-600 text-sm italic">
-                        @if ($assistantResponse)
-                            {{ strip_tags(Str::markdown($assistantResponse)) }}
-                        @else
-                            {{ __('flood-watch.dashboard.status_grid_prompt') }}
-                        @endif
-                    </p>
-                </div>
-            </div>
-            </div>
-
-            <aside id="activity-feed" class="w-full lg:w-72 shrink-0 min-h-0 bg-white rounded-lg border border-slate-200 overflow-hidden flex flex-col">
-                <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide px-4 py-3 border-b border-slate-100">
-                    {{ __('flood-watch.dashboard.activity_feed_title') }}
-                </h3>
-                <div class="flex-1 overflow-y-auto p-2">
-                    @forelse ($activities as $activity)
-                        @php
-                            $severityClasses = match ($activity->severity) {
-                                'severe' => 'bg-red-50 border-l-4 border-l-red-500',
-                                'high' => 'bg-amber-50 border-l-4 border-l-amber-500',
-                                'moderate' => 'bg-slate-50 border-l-4 border-l-slate-300',
-                                default => '',
-                            };
-                        @endphp
-                        <x-activity-item
-                            :activity="$activity"
-                            time-format="H:i"
-                            :class="$severityClasses . ($loop->last ? '' : ' border-b border-slate-100')"
-                        />
-                    @empty
-                        <p class="text-sm text-slate-500 p-4">{{ __('flood-watch.dashboard.activity_feed_empty') }}</p>
-                    @endforelse
-                </div>
-                <a href="{{ route('activities') }}" class="block text-center text-sm text-blue-600 hover:text-blue-700 py-2 border-t border-slate-100">
-                    {{ __('flood-watch.dashboard.activity_feed_view_all') }}
-                </a>
-            </aside>
+            <x-flood-watch.status-grid
+                :riverLevels="$riverLevels"
+                :assistantResponse="$assistantResponse"
+                :incidents="$incidents"
+                :weather="$weather"
+            />
+            <x-flood-watch.activity-feed :activities="$activities" />
         </div>
 
         @guest
-        <div class="mb-6 p-4 rounded-lg bg-blue-50 border border-blue-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <p class="text-sm text-blue-800">
-                {{ __('flood-watch.dashboard.guest_banner') }}
-            </p>
-            <a href="{{ route('register') }}" class="shrink-0 inline-flex items-center justify-center px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors">
-                {{ __('flood-watch.dashboard.guest_banner_register') }}
-            </a>
-        </div>
+            <x-flood-watch.guest-banner />
         @endguest
 
-        <div class="flex flex-nowrap sm:flex-wrap gap-2 sm:gap-3 mb-6 overflow-x-auto pb-1 -mx-1 scrollbar-hide">
-            @php
-                $hasResults = !$loading && $assistantResponse;
-                $floodStatus = $hasResults ? (count($floods) > 0 ? count($floods) . ' ' . (count($floods) === 1 ? __('flood-watch.dashboard.warning') : __('flood-watch.dashboard.warnings')) : __('flood-watch.dashboard.no_alerts')) : null;
-                $roadStatus = $hasResults ? (count($incidents) > 0 ? count($incidents) . ' ' . (count($incidents) === 1 ? __('flood-watch.dashboard.incident') : __('flood-watch.dashboard.incidents')) : __('flood-watch.dashboard.clear')) : null;
-                $forecastStatus = $hasResults ? (!empty($forecast['england_forecast']) ? __('flood-watch.dashboard.available') : '—') : null;
-                $weatherStatus = $hasResults ? (count($weather) > 0 ? count($weather) . ' ' . __('flood-watch.dashboard.days') : '—') : null;
-                $riverStatus = $hasResults ? (count($riverLevels) > 0 ? count($riverLevels) . ' ' . __('flood-watch.dashboard.stations') : '—') : null;
-            @endphp
-            <a href="#flood-risk" class="inline-flex items-center gap-1.5 px-3 py-2 sm:py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-800 hover:bg-amber-200 transition-colors shrink-0 {{ $hasResults ? 'cursor-pointer' : 'pointer-events-none cursor-default' }}">
-                {{ __('flood-watch.dashboard.flood_risk') }}
-                @if($floodStatus)
-                    <span class="opacity-90">· {{ $floodStatus }}</span>
-                @endif
-            </a>
-            <a href="#road-status" class="inline-flex items-center gap-1.5 px-3 py-2 sm:py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors shrink-0 {{ $hasResults ? 'cursor-pointer' : 'pointer-events-none cursor-default' }}">
-                {{ __('flood-watch.dashboard.road_status') }}
-                @if($roadStatus)
-                    <span class="opacity-90">· {{ $roadStatus }}</span>
-                @endif
-            </a>
-            <a href="#forecast" class="inline-flex items-center gap-1.5 px-3 py-2 sm:py-1 rounded-full text-sm font-medium bg-emerald-100 text-emerald-800 hover:bg-emerald-200 transition-colors shrink-0 {{ $hasResults ? 'cursor-pointer' : 'pointer-events-none cursor-default' }}">
-                {{ __('flood-watch.dashboard.forecast') }}
-                @if($forecastStatus)
-                    <span class="opacity-90">· {{ $forecastStatus }}</span>
-                @endif
-            </a>
-            <a href="#weather" class="inline-flex items-center gap-1.5 px-3 py-2 sm:py-1 rounded-full text-sm font-medium bg-sky-100 text-sky-800 hover:bg-sky-200 transition-colors shrink-0 {{ $hasResults ? 'cursor-pointer' : 'pointer-events-none cursor-default' }}">
-                {{ __('flood-watch.dashboard.weather') }}
-                @if($weatherStatus)
-                    <span class="opacity-90">· {{ $weatherStatus }}</span>
-                @endif
-            </a>
-            <a href="#map-section" class="inline-flex items-center gap-1.5 px-3 py-2 sm:py-1 rounded-full text-sm font-medium bg-slate-100 text-slate-800 hover:bg-slate-200 transition-colors shrink-0 {{ $hasResults ? 'cursor-pointer' : 'pointer-events-none cursor-default' }}">
-                {{ __('flood-watch.dashboard.map') }}
-                @if($riverStatus)
-                    <span class="opacity-90">· {{ $riverStatus }}</span>
-                @endif
-            </a>
-        </div>
+        @php
+            $hasResults = !$loading && $assistantResponse;
+            $floodStatus = $hasResults ? (count($floods) > 0 ? count($floods) . ' ' . (count($floods) === 1 ? __('flood-watch.dashboard.warning') : __('flood-watch.dashboard.warnings')) : __('flood-watch.dashboard.no_alerts')) : null;
+            $roadStatus = $hasResults ? (count($incidents) > 0 ? count($incidents) . ' ' . (count($incidents) === 1 ? __('flood-watch.dashboard.incident') : __('flood-watch.dashboard.incidents')) : __('flood-watch.dashboard.clear')) : null;
+            $forecastStatus = $hasResults ? (!empty($forecast['england_forecast']) ? __('flood-watch.dashboard.available') : '—') : null;
+            $weatherStatus = $hasResults ? (count($weather) > 0 ? count($weather) . ' ' . __('flood-watch.dashboard.days') : '—') : null;
+            $riverStatus = $hasResults ? (count($riverLevels) > 0 ? count($riverLevels) . ' ' . __('flood-watch.dashboard.stations') : '—') : null;
+        @endphp
+        <x-flood-watch.quick-links
+            :hasResults="$hasResults"
+            :floodStatus="$floodStatus"
+            :roadStatus="$roadStatus"
+            :forecastStatus="$forecastStatus"
+            :weatherStatus="$weatherStatus"
+            :riverStatus="$riverStatus"
+        />
 
         @if ($error)
-            <div
-                class="mb-6 p-4 rounded-lg bg-red-50 text-red-700 text-sm"
-                @if($retryAfterTimestamp) wire:poll.1s="checkRetry" @endif
-                x-data="{
-                    retryAfter: @js($retryAfterTimestamp),
-                    secondsLeft: 0,
-                    init() {
-                        if (this.retryAfter) {
-                            const update = () => {
-                                this.secondsLeft = Math.max(0, this.retryAfter - Math.floor(Date.now() / 1000));
-                            };
-                            update();
-                            setInterval(update, 1000);
-                        }
-                    }
-                }"
-                x-init="init()"
-            >
-                <span>{{ $error }}</span>
-                <span x-show="retryAfter && secondsLeft > 0" x-cloak x-transition> — {{ __('flood-watch.dashboard.retry_in_prefix') }} <span x-text="secondsLeft"></span> {{ __('flood-watch.dashboard.retry_in_suffix') }}</span>
-                <span x-show="retryAfter && secondsLeft === 0" x-cloak x-transition> — {{ __('flood-watch.dashboard.retry_now') }}</span>
-            </div>
+            <x-flood-watch.error-banner
+                :error="$error"
+                :retryAfterTimestamp="$retryAfterTimestamp"
+            />
         @endif
 
-        <div wire:loading wire:target="search" class="w-full flex flex-row flex-nowrap items-center gap-3 p-4 rounded-lg bg-white shadow-sm border border-slate-200 mb-6">
-            <svg class="animate-spin h-6 w-6 text-blue-600 shrink-0 flex-none" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span class="text-slate-600 text-sm flex-1 min-w-0 inline-block" wire:stream.replace="searchStatus">{{ __('flood-watch.dashboard.connecting') }}</span>
-        </div>
+        <x-flood-watch.loading-bar />
 
-        @if ($mapCenter)
-            <div id="map-section" wire:key="map-{{ $lastChecked ?? 'default' }}" class="mb-6 rounded-lg overflow-hidden border border-slate-200">
-                <div
-                    class="flex flex-col"
-                    x-data="floodMap({ center: @js($mapCenter), stations: @js($riverLevels), floods: @js($floods), incidents: @js($incidents), hasUser: @js($hasUserLocation), t: @js(['your_location' => __('flood-watch.map.your_location'), 'elevated_level' => __('flood-watch.map.elevated_level'), 'expected_level' => __('flood-watch.map.expected_level'), 'low_level' => __('flood-watch.map.low_level'), 'typical_range' => __('flood-watch.map.typical_range'), 'flood_warning' => __('flood-watch.dashboard.flood_warning'), 'flood_area' => __('flood-watch.dashboard.flood_area'), 'km_from_location' => __('flood-watch.dashboard.km_from_location'), 'road' => __('flood-watch.dashboard.road'), 'road_incident' => __('flood-watch.dashboard.road_incident')]) })"
-                    x-init="init()"
-                >
-                    <div id="flood-map" class="min-h-[40vh] h-72 sm:h-80 md:h-96 w-full bg-slate-100"></div>
-                    @if (count($incidents) > 0)
-                        <div class="px-3 py-2 bg-blue-50/50 border-t border-slate-200">
-                            <p class="text-xs font-medium text-blue-800 mb-1.5">{{ __('flood-watch.dashboard.road_incidents_on_map') }}</p>
-                            <div class="flex flex-wrap gap-2">
-                                @foreach ($incidents as $incident)
-                                    <span class="inline-flex items-center gap-1 px-2 py-1 rounded text-xs bg-blue-100 text-blue-800">
-                                        <span title="{{ $incident['typeLabel'] ?? '' }}">{{ $incident['icon'] ?? '🛣️' }}</span>
-                                        <span class="font-medium">{{ $incident['road'] ?? __('flood-watch.dashboard.road') }}</span>
-                                        @if (!empty($incident['status']))
-                                            <span>· {{ $incident['status'] }}</span>
-                                        @endif
-                                    </span>
-                                @endforeach
-                            </div>
-                        </div>
-                    @endif
-                    <div class="flex flex-wrap gap-x-4 gap-y-2 px-3 py-2 bg-slate-50 border-t border-slate-200 text-xs text-slate-600">
-                        @if ($hasUserLocation)
-                            <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon flood-map-legend-user">📍</span> {{ __('flood-watch.dashboard.your_location') }}</span>
-                        @endif
-                        <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon">💧</span> {{ __('flood-watch.dashboard.river_gauge') }}</span>
-                        <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon">⚙</span> {{ __('flood-watch.dashboard.pumping_station') }}</span>
-                        <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon">🛡</span> {{ __('flood-watch.dashboard.barrier') }}</span>
-                        <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon">〰</span> {{ __('flood-watch.dashboard.drain') }}</span>
-                        <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon flood-map-marker-incident">🛣</span> {{ __('flood-watch.dashboard.road_incident') }}</span>
-                        <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon flood-map-legend-flood">⚠</span> {{ __('flood-watch.dashboard.flood_warning') }}</span>
-                        <span class="flex items-center gap-1.5"><span class="flood-map-legend-polygon" style="display:inline-block;width:12px;height:12px;background:#f59e0b;opacity:0.4;border:1px solid #f59e0b;border-radius:2px"></span> {{ __('flood-watch.dashboard.flood_area') }}</span>
-                        <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon flood-map-legend-elevated">●</span> {{ __('flood-watch.dashboard.elevated') }}</span>
-                        <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon flood-map-legend-expected">●</span> {{ __('flood-watch.dashboard.expected') }}</span>
-                        <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon flood-map-legend-low">●</span> {{ __('flood-watch.dashboard.low') }}</span>
-                    </div>
-                </div>
-            </div>
-        @endif
+        <x-flood-watch.map-section
+            :mapCenter="$mapCenter"
+            :lastChecked="$lastChecked"
+            :riverLevels="$riverLevels"
+            :floods="$floods"
+            :incidents="$incidents"
+            :hasUserLocation="$hasUserLocation"
+        />
 
-        @if (!$loading && $assistantResponse)
-            <div
-                class="space-y-6 scroll-smooth"
-                id="results"
-                @if (!$error && $autoRefreshEnabled && auth()->check()) wire:poll.900s="search" @endif
-            >
-                <div class="flex flex-wrap items-center justify-between gap-3">
-                    @if ($lastChecked)
-                        <p class="text-sm text-slate-500">
-                            {{ __('flood-watch.dashboard.last_checked') }}: {{ \Carbon\Carbon::parse($lastChecked)->format('j M Y, g:i a') }}
-                        </p>
-                    @endif
-                    <div class="flex flex-wrap items-center gap-3">
-                        @auth
-                        <div
-                            x-data="{
-                                lastChecked: @js($lastChecked),
-                                nextRefreshAt: null,
-                                minutesLeft: null,
-                                nextRefreshTemplate: @js(__('flood-watch.dashboard.next_refresh')),
-                                refreshText: @js(__('flood-watch.dashboard.refreshing')),
-                                init() {
-                                    this.update();
-                                    setInterval(() => this.update(), 60000);
-                                },
-                                update() {
-                                    if (!this.lastChecked) return;
-                                    const last = new Date(this.lastChecked);
-                                    if (isNaN(last.getTime())) return;
-                                    this.nextRefreshAt = new Date(last.getTime() + 15 * 60 * 1000);
-                                    const diff = this.nextRefreshAt - Date.now();
-                                    this.minutesLeft = Math.max(0, Math.ceil(diff / 60000));
-                                }
-                            }"
-                            x-init="init()"
-                            class="contents"
-                        >
-                            <label class="inline-flex items-center gap-2 cursor-pointer">
-                            <input
-                                type="checkbox"
-                                wire:model.live="autoRefreshEnabled"
-                                class="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                            />
-                            <span class="text-sm text-slate-600">{{ __('flood-watch.dashboard.auto_refresh') }}</span>
-                        </label>
-                            <span
-                                x-show="$wire.autoRefreshEnabled && lastChecked && minutesLeft !== null"
-                                x-cloak
-                                x-transition
-                                class="text-sm text-slate-500"
-                                x-text="minutesLeft > 0 ? nextRefreshTemplate.replace(':minutes', minutesLeft).replace(':time', nextRefreshAt.toLocaleTimeString([], {hour: 'numeric', minute: '2-digit'})) : refreshText"
-                            ></span>
-                        </div>
-                        @endauth
-                        <button
-                        type="button"
-                        wire:click="search"
-                        @click="window.__loadLeaflet && window.__loadLeaflet()"
-                        wire:loading.attr="disabled"
-                        @if($retryAfterTimestamp && !$this->canRetry()) disabled @endif
-                        class="min-h-[44px] min-w-[44px] inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
-                    >
-                        <span wire:loading.remove wire:target="search">{{ __('flood-watch.dashboard.refresh') }}</span>
-                        <span wire:loading wire:target="search" class="inline-flex items-center gap-2">
-                            <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            {{ __('flood-watch.dashboard.refreshing') }}
-                        </span>
-                    </button>
-                    </div>
-                </div>
+        <x-flood-watch.results-section
+            :loading="$loading"
+            :floods="$floods"
+            :incidents="$incidents"
+            :forecast="$forecast"
+            :assistantResponse="$assistantResponse"
+            :lastChecked="$lastChecked"
+            :hasUserLocation="$hasUserLocation"
+            :error="$error"
+            :autoRefreshEnabled="$autoRefreshEnabled"
+            :retryAfterTimestamp="$retryAfterTimestamp"
+        />
 
-                <div id="flood-risk">
-                    <h2 class="text-lg font-medium text-slate-900 mb-3">{{ __('flood-watch.dashboard.flood_warnings') }}</h2>
-                    @if (count($floods) > 0)
-                        <ul class="space-y-3">
-                            @foreach ($floods as $flood)
-                                <li class="p-4 rounded-lg bg-white shadow-sm border border-slate-200 text-left overflow-visible">
-                                    <p class="font-medium text-slate-900">{{ $flood['description'] ?? __('flood-watch.dashboard.flood_area') }}</p>
-                                    <p class="text-sm text-amber-600 mt-1">{{ $flood['severity'] ?? '' }}</p>
-                                    @if (!empty($flood['distanceKm']) && $hasUserLocation)
-                                        <p class="text-xs text-slate-500 mt-1">{{ __('flood-watch.dashboard.km_from_location', ['distance' => $flood['distanceKm']]) }}</p>
-                                    @endif
-                                    @if (!empty($flood['timeRaised']) || !empty($flood['timeMessageChanged']))
-                                        <p class="text-xs text-slate-500 mt-1">
-                                            @if (!empty($flood['timeRaised']))
-                                                {{ __('flood-watch.dashboard.raised') }}: {{ \Carbon\Carbon::parse($flood['timeRaised'])->format('j M Y, g:i a') }}
-                                            @endif
-                                            @if (!empty($flood['timeMessageChanged']))
-                                                @if (!empty($flood['timeRaised'])) · @endif
-                                                {{ __('flood-watch.dashboard.updated') }}: {{ \Carbon\Carbon::parse($flood['timeMessageChanged'])->format('j M Y, g:i a') }}
-                                            @endif
-                                        </p>
-                                    @endif
-                                    @if (!empty($flood['message']))
-                                        <div x-data="{ open: false }" class="mt-2">
-                                            <button type="button" @click="open = !open" class="flex items-center gap-2 cursor-pointer text-amber-600 hover:text-amber-700" aria-label="{{ __('flood-watch.dashboard.toggle_message') }}">
-                                                <svg class="w-4 h-4 transition-transform duration-200" :class="open && 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                                </svg>
-                                            </button>
-                                            <p x-show="open" x-cloak x-transition class="mt-2 text-sm text-slate-600 whitespace-pre-wrap break-words">{{ $flood['message'] }}</p>
-                                        </div>
-                                    @endif
-                                </li>
-                            @endforeach
-                        </ul>
-                    @else
-                        <p class="p-4 rounded-lg bg-white shadow-sm border border-slate-200 text-slate-600">{{ __('flood-watch.dashboard.no_flood_warnings') }}</p>
-                    @endif
-                </div>
-
-                <div id="forecast">
-                    <h2 class="text-lg font-medium text-slate-900 mb-3">{{ __('flood-watch.dashboard.forecast_outlook') }}</h2>
-                    @if (count($forecast) > 0 && !empty($forecast['england_forecast']))
-                        <div class="p-4 rounded-lg bg-white shadow-sm border border-slate-200">
-                            <p class="text-slate-600">{{ $forecast['england_forecast'] }}</p>
-                            @if (!empty($forecast['flood_risk_trend']))
-                                <p class="text-sm text-slate-500 mt-2">
-                                    {{ __('flood-watch.dashboard.trend') }}: @foreach ($forecast['flood_risk_trend'] as $day => $trend){{ ucfirst($day) }}: {{ $trend }}@if (!$loop->last) → @endif @endforeach
-                                </p>
-                            @endif
-                            @if (!empty($forecast['issued_at']))
-                                <p class="text-xs text-slate-400 mt-1">{{ __('flood-watch.dashboard.issued') }}: {{ \Carbon\Carbon::parse($forecast['issued_at'])->format('j M Y, g:i') }}</p>
-                            @endif
-                        </div>
-                    @else
-                        <p class="p-4 rounded-lg bg-white shadow-sm border border-slate-200 text-slate-600">{{ __('flood-watch.dashboard.no_forecast') }}</p>
-                    @endif
-                </div>
-
-                <div id="road-status">
-                    <h2 class="text-lg font-medium text-slate-900 mb-3">{{ __('flood-watch.dashboard.road_status') }}</h2>
-                    @if (count($incidents) > 0)
-                        <ul class="space-y-3">
-                            @foreach ($incidents as $incident)
-                                <li class="p-4 rounded-lg bg-white shadow-sm border border-slate-200">
-                                    <p class="font-medium text-slate-900 flex items-center gap-2">
-                                        <span class="text-lg" title="{{ $incident['typeLabel'] ?? __('flood-watch.dashboard.road_incident') }}">{{ $incident['icon'] ?? '🛣️' }}</span>
-                                        {{ $incident['road'] ?? __('flood-watch.dashboard.road') }}
-                                    </p>
-                                    @if (!empty($incident['statusLabel']))
-                                        <p class="text-sm text-blue-600 mt-1">{{ $incident['statusLabel'] }}</p>
-                                    @endif
-                                    @if (!empty($incident['typeLabel']))
-                                        <p class="text-sm text-slate-600 mt-1">{{ $incident['typeLabel'] }}</p>
-                                    @endif
-                                    @if (!empty($incident['delayTime']))
-                                        <p class="text-sm text-slate-500 mt-1">{{ __('flood-watch.dashboard.delay') }}: {{ $incident['delayTime'] }}</p>
-                                    @endif
-                                </li>
-                            @endforeach
-                        </ul>
-                    @else
-                        <p class="p-4 rounded-lg bg-white shadow-sm border border-slate-200 text-slate-600">{{ __('flood-watch.dashboard.roads_clear') }}</p>
-                    @endif
-                </div>
-
-                <div class="p-4 rounded-lg bg-white shadow-sm border border-slate-200 prose prose-slate max-w-none">
-                    <h2 class="text-lg font-medium text-slate-900 mb-2">{{ __('flood-watch.dashboard.summary') }}</h2>
-                    {!! Str::markdown($assistantResponse) !!}
-                </div>
-            </div>
-        @elseif (!$loading && !$error)
-            <p class="text-slate-500 text-sm">{{ __('flood-watch.dashboard.prompt') }}</p>
-        @endif
-
-        <footer class="mt-12 pt-6 border-t border-slate-200">
-            <p class="text-xs text-slate-500">
-                An <a href="https://automica.io" target="_blank" rel="noopener" class="underline hover:text-slate-600">automica labs</a> project.
-                Data: Environment Agency flood and river level data from the
-                <a href="https://environment.data.gov.uk/flood-monitoring/doc/reference" target="_blank" rel="noopener" class="underline hover:text-slate-600">Real-Time data API</a>
-                (Open Government Licence).
-                National Highways road and lane closure data (DATEX II v3.4) from the
-                <a href="https://developer.data.nationalhighways.co.uk/" target="_blank" rel="noopener" class="underline hover:text-slate-600">Developer Portal</a>.
-                Weather from <a href="https://open-meteo.com/" target="_blank" rel="noopener" class="underline hover:text-slate-600">Open-Meteo</a> (CC-BY 4.0).
-                Geocoding by <a href="https://postcodes.io" target="_blank" rel="noopener" class="underline hover:text-slate-600">postcodes.io</a> and <a href="https://nominatim.openstreetmap.org" target="_blank" rel="noopener" class="underline hover:text-slate-600">OpenStreetMap Nominatim</a>.
-            </p>
-        </footer>
+        <x-flood-watch.footer />
     </div>
 </div>

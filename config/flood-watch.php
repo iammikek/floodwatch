@@ -232,6 +232,15 @@ return [
         'A30', 'A303', 'A361', 'A372', 'A38', 'M4', 'M5',
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Status Grid: Monitored Routes Count
+    |--------------------------------------------------------------------------
+    |
+    | Number of South West routes we monitor (A30, A303, A361, A372, A38, M4, M5).
+    | Used for "X incidents on N monitored routes" in the status grid.
+    |
+    */
     'status_grid_monitored_routes' => 7,
 
     /*
@@ -281,6 +290,67 @@ return [
         'A38' => [50.72, -3.53],
         'M5' => [51.45, -2.58],
         'M4' => [51.45, -2.58],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Infrastructure Points (Reservoirs, Pumping Stations, etc.)
+    |--------------------------------------------------------------------------
+    |
+    | Reservoirs and water infrastructure across the South West (Somerset, Devon,
+    | Cornwall, Bristol, Gloucestershire, Wiltshire, Dorset). Coordinates from
+    | Wikipedia/OpenStreetMap. Add entries: ['name' => string, 'lat' => float,
+    | 'long' => float, 'type' => 'reservoir'|'pumping_station'|etc].
+    |
+    */
+    'infrastructure_points' => [
+        // Somerset (Bristol Water, Wessex Water)
+        ['name' => 'Chew Valley Lake', 'lat' => 51.3347, 'long' => -2.6180, 'type' => 'reservoir'],
+        ['name' => 'Blagdon Lake', 'lat' => 51.3667, 'long' => -2.7167, 'type' => 'reservoir'],
+        ['name' => 'Cheddar Reservoir', 'lat' => 51.2833, 'long' => -2.7667, 'type' => 'reservoir'],
+        ['name' => 'Wimbleball Lake', 'lat' => 51.0500, 'long' => -3.4333, 'type' => 'reservoir'],
+        ['name' => 'Clatworthy Reservoir', 'lat' => 51.0833, 'long' => -3.3167, 'type' => 'reservoir'],
+        ['name' => 'Durleigh Reservoir', 'lat' => 51.1167, 'long' => -3.0500, 'type' => 'reservoir'],
+        ['name' => 'Sutton Bingham Reservoir', 'lat' => 50.9000, 'long' => -2.7167, 'type' => 'reservoir'],
+        ['name' => 'Hawkridge Reservoir', 'lat' => 51.0833, 'long' => -3.1833, 'type' => 'reservoir'],
+        ['name' => 'Chard Reservoir', 'lat' => 50.8667, 'long' => -2.9667, 'type' => 'reservoir'],
+        ['name' => 'Ashford Reservoir', 'lat' => 51.3833, 'long' => -2.6167, 'type' => 'reservoir'],
+        ['name' => 'Barrow Gurney Reservoirs', 'lat' => 51.4000, 'long' => -2.6667, 'type' => 'reservoir'],
+        ['name' => 'Otterhead Lakes', 'lat' => 50.9333, 'long' => -2.9833, 'type' => 'reservoir'],
+        ['name' => 'Nutscale Reservoir', 'lat' => 51.1500, 'long' => -3.5667, 'type' => 'reservoir'],
+        ['name' => 'Leigh Reservoir', 'lat' => 51.2333, 'long' => -2.6500, 'type' => 'reservoir'],
+        ['name' => 'Litton Reservoirs', 'lat' => 51.2833, 'long' => -2.5833, 'type' => 'reservoir'],
+        ['name' => 'Luxhay Reservoir', 'lat' => 51.0833, 'long' => -3.3833, 'type' => 'reservoir'],
+        // Devon (South West Water)
+        ['name' => 'Roadford Lake', 'lat' => 50.7000, 'long' => -4.2292, 'type' => 'reservoir'],
+        ['name' => 'Wistlandpound Reservoir', 'lat' => 51.1833, 'long' => -3.9000, 'type' => 'reservoir'],
+        ['name' => 'Burrator Reservoir', 'lat' => 50.5167, 'long' => -4.0333, 'type' => 'reservoir'],
+        ['name' => 'Fernworthy Reservoir', 'lat' => 50.6167, 'long' => -3.8500, 'type' => 'reservoir'],
+        ['name' => 'Meldon Reservoir', 'lat' => 50.7000, 'long' => -4.0167, 'type' => 'reservoir'],
+        ['name' => 'Upper Tamar Lake', 'lat' => 50.8833, 'long' => -4.4500, 'type' => 'reservoir'],
+        ['name' => 'Lower Tamar Lake', 'lat' => 50.8500, 'long' => -4.4500, 'type' => 'reservoir'],
+        ['name' => 'Tottiford Reservoir', 'lat' => 50.6867, 'long' => -3.6417, 'type' => 'reservoir'],
+        ['name' => 'Trenchford Reservoir', 'lat' => 50.6817, 'long' => -3.6250, 'type' => 'reservoir'],
+        ['name' => 'Kennick Reservoir', 'lat' => 50.6783, 'long' => -3.6333, 'type' => 'reservoir'],
+        ['name' => 'Venford Reservoir', 'lat' => 50.5167, 'long' => -3.8833, 'type' => 'reservoir'],
+        ['name' => 'Avon Dam Reservoir', 'lat' => 50.4833, 'long' => -3.8833, 'type' => 'reservoir'],
+        ['name' => 'Slade Reservoir', 'lat' => 50.4833, 'long' => -3.5333, 'type' => 'reservoir'],
+        // Cornwall (South West Water)
+        ['name' => 'Colliford Lake', 'lat' => 50.5277, 'long' => -4.5710, 'type' => 'reservoir'],
+        ['name' => 'Stithians Reservoir', 'lat' => 50.1815, 'long' => -5.2036, 'type' => 'reservoir'],
+        ['name' => 'Siblyback Lake', 'lat' => 50.5000, 'long' => -4.4833, 'type' => 'reservoir'],
+        ['name' => 'Porth Reservoir', 'lat' => 50.4167, 'long' => -5.0500, 'type' => 'reservoir'],
+        ['name' => 'Drift Reservoir', 'lat' => 50.1167, 'long' => -5.5500, 'type' => 'reservoir'],
+        ['name' => 'Crowdy Reservoir', 'lat' => 50.6833, 'long' => -4.5500, 'type' => 'reservoir'],
+        ['name' => 'Argal Reservoir', 'lat' => 50.1500, 'long' => -5.0833, 'type' => 'reservoir'],
+        ['name' => 'College Reservoir', 'lat' => 50.1500, 'long' => -5.0833, 'type' => 'reservoir'],
+        ['name' => 'Bussow Reservoir', 'lat' => 50.2167, 'long' => -5.4833, 'type' => 'reservoir'],
+        ['name' => 'Boscathnoe Reservoir', 'lat' => 50.1167, 'long' => -5.5500, 'type' => 'reservoir'],
+        // Gloucestershire
+        ['name' => 'Dowdeswell Reservoir', 'lat' => 51.8500, 'long' => -1.9167, 'type' => 'reservoir'],
+        ['name' => 'Witcombe Reservoir', 'lat' => 51.8167, 'long' => -2.0833, 'type' => 'reservoir'],
+        // Wiltshire
+        ['name' => 'Wilton Water', 'lat' => 51.3833, 'long' => -1.8500, 'type' => 'reservoir'],
     ],
 
     'correlation' => [
