@@ -42,10 +42,13 @@ All changes must have a failing test first. Tests in `tests/Feature/` for:
 - **InfrastructureStatusChanged** event: dispatched per new activity
 - Dashboard displays recent activities in sidebar; ActivitiesController returns JSON:API
 
+## Manual Run
+
+- `php artisan flood-watch:fetch-infrastructure` – Run the job immediately (for testing/seeding)
+
 ## Out of Scope (Part 2+)
 
 - "Affects you" badge (location-aware)
 - Real-time push (Echo) for activity updates
-- SystemActivity / FetchLatestInfrastructureData
 - Real sparkline data (7-day trend; requires persistence)
 - API-first Livewire refactor (still uses services directly for now)
