@@ -4,7 +4,7 @@
 ])
 
 <div id="flood-risk">
-    <h2 class="text-lg font-medium text-slate-900 mb-3">{{ __('flood-watch.dashboard.flood_warnings') }}</h2>
+    <h3 class="text-sm font-medium text-slate-900 mb-2">{{ __('flood-watch.dashboard.flood_warnings') }}</h3>
     @if (count($floods) > 0)
         <ul class="space-y-3">
             @foreach ($floods as $flood)

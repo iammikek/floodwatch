@@ -9,6 +9,9 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
 
         @livewireStyles
+        <script>
+        (function(){window.addEventListener('unhandledrejection',function(e){if(e.reason?.isFromCancelledTransition===true)e.preventDefault()});})();
+        </script>
     </head>
     <body>
         @auth
@@ -35,11 +38,19 @@
             </header>
         @else
             <header class="bg-white border-b border-slate-200 px-4 py-3">
-                <div class="max-w-7xl mx-auto flex justify-between items-center">
+                <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2 sm:gap-3">
                     <a href="{{ url('/') }}" class="shrink-0 flex items-center">
                         <x-application-logo class="block h-4 w-auto fill-current text-slate-800" />
                     </a>
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-2 sm:gap-3">
+                        <div class="flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-1.5 rounded-lg bg-blue-50 border border-blue-200">
+                            <p class="text-xs text-blue-800">
+                                {{ __('flood-watch.dashboard.guest_banner') }}
+                            </p>
+                            <a href="{{ route('register') }}" class="shrink-0 inline-flex items-center justify-center px-2 sm:px-3 py-1 rounded-lg bg-blue-600 text-white text-xs font-medium hover:bg-blue-700 transition-colors">
+                                {{ __('flood-watch.dashboard.guest_banner_register') }}
+                            </a>
+                        </div>
                         @if (config('app.donation_url'))
                             <a href="{{ config('app.donation_url') }}" target="_blank" rel="noopener" class="text-sm text-amber-600 hover:text-amber-700 font-medium" title="{{ __('flood-watch.dashboard.support_development') }}">☕ {{ __('flood-watch.dashboard.support') }}</a>
                         @endif
@@ -88,7 +99,8 @@
                 },
                 stationPopup(s) {
                     const t = this.t || {};
-                    let html = '<b>' + (s.station || '') + '</b><br>' + (s.river || '') + '<br>' + s.value + ' ' + (s.unit || 'm');
+                    const valueStr = s.value != null ? s.value + ' ' + (s.unit || 'm') : (t.no_recent_data || 'No recent data');
+                    let html = '<b>' + (s.station || '') + '</b><br>' + (s.river || '') + '<br>' + valueStr;
                     if (s.levelStatus === 'elevated') html += '<br><span style=\'color:#b91c1c;font-weight:600\'>↑ ' + (t.elevated_level || 'Elevated').replace(/ level$/, '') + '</span>';
                     else if (s.levelStatus === 'expected') html += '<br><span style=\'color:#1d4ed8\'>→ ' + (t.expected_level || 'Expected').replace(/ level$/, '') + '</span>';
                     else if (s.levelStatus === 'low') html += '<br><span style=\'color:#64748b\'>↓ ' + (t.low_level || 'Low').replace(/ level$/, '') + '</span>';
@@ -113,9 +125,16 @@
                     const t = this.t || {};
                     const floodArea = t.flood_area || 'Flood area';
                     const kmFrom = (t.km_from_location || ':distance km from your location').replace(':distance', f.distanceKm);
-                    let html = '<b>' + (f.description || floodArea) + '</b><br><span style=\'color:#b91c1c;font-weight:600\'>' + (f.severity || '') + '</span>';
+                    const fmt = (s) => { if (!s) return ''; try { const d = new Date(s); return isNaN(d) ? '' : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' }); } catch (e) { return ''; } };
+                    let html = '<b>' + this.esc(f.description || floodArea) + '</b><br><span style=\'color:#b91c1c;font-weight:600\'>' + this.esc(f.severity || '') + '</span>';
                     if (f.distanceKm != null) html += '<br><small>' + kmFrom + '</small>';
-                    if (f.message) html += '<br><small>' + f.message.replace(/<[^>]*>/g, '').substring(0, 150) + (f.message.length > 150 ? '…' : '') + '</small>';
+                    if (f.timeRaised || f.timeMessageChanged) {
+                        const parts = [];
+                        if (f.timeRaised) parts.push((t.raised || 'Raised') + ': ' + fmt(f.timeRaised));
+                        if (f.timeMessageChanged) parts.push((t.updated || 'Updated') + ': ' + fmt(f.timeMessageChanged));
+                        html += '<br><small>' + parts.join(' · ') + '</small>';
+                    }
+                    if (f.message) html += '<br><small style=\'white-space:pre-wrap;word-break:break-word\'>' + this.esc(f.message.replace(/<[^>]*>/g, '')) + '</small>';
                     return html;
                 },
                 floodPolygonStyle(f) {
@@ -150,7 +169,20 @@
                 },
                 init() {
                     if (!this.center) return;
+                    const loadMapData = () => {
+                        if (this.mapDataUrl && this.center) {
+                            const url = this.mapDataUrl + '?lat=' + encodeURIComponent(this.center.lat) + '&long=' + encodeURIComponent(this.center.long);
+                            return fetch(url).then(r => r.ok ? r.json() : Promise.reject()).then(res => {
+                                const d = res.data || {};
+                                this.stations = d.riverLevels || [];
+                                this.floods = d.floods || [];
+                                this.incidents = d.incidents || [];
+                            }).catch(() => {});
+                        }
+                        return Promise.resolve();
+                    };
                     const addMarkers = (L) => {
+                        if (!this.map || !document.contains(this.map.getContainer())) return;
                         if (this.hasUser) {
                             const loc = this.t?.your_location || 'Your location';
                             L.marker([this.center.lat, this.center.long], { icon: this.userIcon() })
@@ -158,6 +190,7 @@
                                 .bindPopup('<b>' + loc.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</b>');
                         }
                         this.stationMarkers = {};
+                        this.floodMarkers = {};
                         (this.stations || []).forEach(s => {
                             if (s.lat != null && s.long != null) {
                                 const marker = L.marker([s.lat, s.long], { icon: this.stationIcon(s) })
@@ -177,9 +210,10 @@
                                 }).addTo(this.map);
                             }
                             if (f.lat != null && f.long != null) {
-                                L.marker([f.lat, f.long], { icon: this.floodIcon(f) })
+                                const marker = L.marker([f.lat, f.long], { icon: this.floodIcon(f) })
                                     .addTo(this.map)
                                     .bindPopup(this.floodPopup(f));
+                                this.floodMarkers[`${f.lat},${f.long}`] = marker;
                             }
                         });
                         (this.incidents || []).forEach(i => {
@@ -204,9 +238,9 @@
                                     .bindPopup('<b>' + (p.name || title).replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</b><br><small>' + (p.type || 'infrastructure') + '</small>');
                             }
                         });
-                        if (this.riverBoundaryUrl) {
+                        if (this.riverBoundaryUrl && !this.riverBoundaryUrl.includes('example.com')) {
                             fetch(this.riverBoundaryUrl)
-                                .then(r => r.json())
+                                .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
                                 .then(geojson => {
                                     if (this.map && geojson && document.contains(this.map.getContainer())) {
                                         L.geoJSON(geojson, {
@@ -223,17 +257,29 @@
                         (this.incidents || []).forEach(i => { if (i.lat != null && i.long != null) bounds.push([i.lat, i.long]); });
                         (this.infrastructure || []).forEach(p => { if (p.lat != null && p.long != null) bounds.push([p.lat, p.long]); });
                         if (bounds.length > 1) {
-                            this.map.fitBounds(bounds, { padding: [30, 30], maxZoom: 12 });
+                            try {
+                                this.map.fitBounds(bounds, { padding: [30, 30], maxZoom: 12 });
+                            } catch (err) {}
                         }
                     };
+                    loadMapData().then(() => {
                     this.$nextTick(() => {
                         const el = document.getElementById('flood-map');
                         if (!el) return;
                         (window.__loadLeaflet ? window.__loadLeaflet() : Promise.resolve(window.L)).then((L) => {
                             if (!L) return;
+                            const elNow = document.getElementById('flood-map');
+                            if (!elNow || !elNow.isConnected) return;
                             if (this.map) {
                                 this.map.remove();
                                 this.map = null;
+                            }
+                            if (elNow._leaflet_id) {
+                                const parent = elNow.parentNode;
+                                const fresh = document.createElement('div');
+                                fresh.id = 'flood-map';
+                                fresh.className = elNow.className;
+                                parent.replaceChild(fresh, elNow);
                             }
                             this.mapLoading = true;
                             this.map = L.map('flood-map').setView([this.center.lat, this.center.long], 11);
@@ -247,16 +293,19 @@
                             const focusHandler = (e) => {
                                 const { lat, long } = e.detail || {};
                                 if (this.map && lat != null && long != null && document.contains(this.map.getContainer())) {
-                                    this.map.setView([lat, long], 14);
-                                    const marker = this.stationMarkers?.[`${lat},${long}`];
-                                    if (marker) marker.openPopup();
+                                    try {
+                                        this.map.setView([lat, long], 14, { animate: false });
+                                        const marker = this.stationMarkers?.[`${lat},${long}`] || this.floodMarkers?.[`${lat},${long}`];
+                                        if (marker) marker.openPopup();
+                                    } catch (err) {}
                                 }
                             };
                             if (this._focusHandler) window.removeEventListener('flood-map-focus-station', this._focusHandler);
                             this._focusHandler = focusHandler;
                             window.addEventListener('flood-map-focus-station', focusHandler);
-                            requestIdleCallback(() => addMarkers(L), { timeout: 100 });
+                            (window.requestIdleCallback || (cb => setTimeout(cb, 1)))(() => addMarkers(L));
                         });
+                    });
                     });
                 }
             }));

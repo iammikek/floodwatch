@@ -249,14 +249,35 @@ class RiverLevelService
         foreach ($stations as $station) {
             $notation = $station['notation'];
             $reading = $readings[$notation] ?? null;
+            $typicalLow = $station['typicalRangeLow'] ?? null;
+            $typicalHigh = $station['typicalRangeHigh'] ?? null;
 
             if ($reading === null) {
+                $item = [
+                    'station' => $station['label'],
+                    'river' => $station['riverName'],
+                    'town' => $station['town'],
+                    'value' => null,
+                    'unit' => 'm',
+                    'unitName' => 'm',
+                    'dateTime' => null,
+                    'lat' => $station['lat'],
+                    'long' => $station['long'],
+                    'stationType' => $station['stationType'],
+                    'levelStatus' => 'unknown',
+                ];
+                if ($typicalLow !== null) {
+                    $item['typicalRangeLow'] = $typicalLow;
+                }
+                if ($typicalHigh !== null) {
+                    $item['typicalRangeHigh'] = $typicalHigh;
+                }
+                $result[] = $item;
+
                 continue;
             }
 
             $value = $reading['value'];
-            $typicalLow = $station['typicalRangeLow'] ?? null;
-            $typicalHigh = $station['typicalRangeHigh'] ?? null;
             $levelStatus = $this->computeLevelStatus($value, $typicalLow, $typicalHigh);
 
             $item = [

@@ -1,3 +1,8 @@
+{{--
+  Saved template: Road Status component
+  Originally: resources/views/components/flood-watch/road-status.blade.php
+  To restore: copy to components/flood-watch/road-status.blade.php and add to results-section
+--}}
 @props([
     'incidents' => [],
 ])

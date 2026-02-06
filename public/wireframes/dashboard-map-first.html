@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard – Map First (Compact Layout)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .gauge-segment { background: linear-gradient(to right, #22c55e 0%, #eab308 25%, #f97316 50%, #ef4444 75%); }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans">
+    <div class="min-h-screen flex flex-col max-w-7xl mx-auto">
+        <!-- Header -->
+        <header class="bg-white border-b border-slate-200 px-4 py-3 flex justify-between items-center shrink-0">
+            <h1 class="text-lg font-semibold text-slate-900">Flood Watch</h1>
+            <div class="flex items-center gap-3">
+                <input type="text" placeholder="e.g. Langport, TA10" class="text-sm rounded-lg border-slate-300 w-40 px-3 py-1.5">
+                <button class="text-sm font-medium px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700">
+                    Check my location
+                </button>
+                <button class="text-sm text-slate-600 hover:text-slate-800">Log in</button>
+                <button class="text-sm text-blue-600 hover:text-blue-700">Register</button>
+            </div>
+        </header>
+
+        <!-- Risk Gauge -->
+        <section class="bg-white border-b border-slate-200 px-4 py-3">
+            <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">South West Risk Index</h2>
+            <div class="flex items-center gap-4">
+                <div class="flex-1 h-3 bg-slate-100 rounded-full overflow-hidden">
+                    <div class="h-full w-[42%] rounded-full gauge-segment"></div>
+                </div>
+                <span class="text-lg font-bold text-slate-900">42</span>
+                <span class="text-sm text-slate-500">/ 100</span>
+            </div>
+            <p class="text-sm text-slate-600 mt-1">Moderate · 2 severe warnings, 4 road closures</p>
+        </section>
+
+        <!-- Status Grid + Activity Feed -->
+        <div class="flex flex-col lg:flex-row gap-4 p-4 shrink-0">
+            <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Hydrological (includes flood warnings) -->
+                <div class="bg-white rounded-lg border border-slate-200 p-4 min-h-0">
+                    <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Hydrological Activity</h3>
+                    <p class="text-sm font-medium text-slate-600">2 flood warnings</p>
+                    <ul class="mt-1 space-y-0.5 text-xs text-slate-600">
+                        <li class="flex gap-1.5">🚨 North Moor · Severe</li>
+                        <li class="flex gap-1.5">⚠ Curry Moor · Warning</li>
+                    </ul>
+                    <p class="text-sm text-slate-600 mt-2">3 stations elevated</p>
+                </div>
+                <!-- Infrastructure -->
+                <div class="bg-white rounded-lg border border-slate-200 p-4">
+                    <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Infrastructural Impact</h3>
+                    <p class="text-2xl font-bold text-slate-900">3 <span class="text-slate-400 font-normal">/ 7</span></p>
+                    <p class="text-sm text-slate-600">incidents on monitored routes</p>
+                </div>
+                <!-- Weather Outlook -->
+                <div class="bg-white rounded-lg border border-slate-200 p-4">
+                    <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Weather Outlook</h3>
+                    <div class="flex gap-2 items-center">
+                        <span class="text-xl">🌧️</span>
+                        <span class="font-semibold">11°</span>
+                        <span class="text-slate-400">·</span>
+                        <span class="text-xl">🌤️</span>
+                        <span class="font-semibold">9°</span>
+                        <span class="text-slate-400">·</span>
+                        <span class="text-xl">🌤️</span>
+                        <span class="font-semibold">10°</span>
+                    </div>
+                    <p class="text-sm text-sky-600 mt-1">💧 4 mm next 48h</p>
+                </div>
+                <!-- AI Advisory -->
+                <div class="bg-white rounded-lg border border-slate-200 p-4">
+                    <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">AI Advisory</h3>
+                    <p class="text-sm text-slate-700 italic">"River Parrett levels elevated. A361 East Lyng remains open. Monitor Muchelney access."</p>
+                </div>
+            </div>
+
+            <!-- Live Activity Feed -->
+            <aside class="w-full lg:w-72 shrink-0 bg-white rounded-lg border border-slate-200 overflow-hidden flex flex-col max-h-[280px] lg:max-h-[240px]">
+                <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wide px-4 py-3 border-b border-slate-100">
+                    Live Activity
+                </h3>
+                <div class="flex-1 overflow-y-auto p-2">
+                    <div class="flex gap-2 py-2 border-b border-slate-100">
+                        <span class="text-xs text-slate-500 shrink-0">14:32</span>
+                        <p class="text-sm">⚠ New flood warning: North Moor</p>
+                    </div>
+                    <div class="flex gap-2 py-2 border-b border-slate-100">
+                        <span class="text-xs text-slate-500 shrink-0">14:28</span>
+                        <p class="text-sm">🛣️ A361 reopened</p>
+                    </div>
+                    <div class="flex gap-2 py-2">
+                        <span class="text-xs text-slate-500 shrink-0">14:15</span>
+                        <p class="text-sm">💧 River level elevated</p>
+                    </div>
+                </div>
+                <a href="#" class="block text-center text-sm text-blue-600 hover:text-blue-700 py-2 border-t border-slate-100">
+                    View all
+                </a>
+            </aside>
+        </div>
+
+        <!-- Map (directly below status grid – always visible) -->
+        <section class="px-4 shrink-0">
+            <div class="bg-slate-200 rounded-lg border border-slate-200 h-[40vh] min-h-[280px] flex items-center justify-center text-slate-500">
+                <div class="text-center">
+                    <p class="text-sm font-medium">[Leaflet map: floods, stations, incidents]</p>
+                    <p class="text-xs mt-1">📍 You &nbsp; 💧 &nbsp; ⚠ &nbsp; 🛣️</p>
+                </div>
+            </div>
+            <p class="text-xs text-slate-500 mt-2 mb-4">
+                Legend: 📍 Your location &nbsp; 💧 River gauge &nbsp; ⚠ Flood &nbsp; 🛣️ Road incident
+            </p>
+        </section>
+
+        <!-- Compact details (collapsible / below fold) -->
+        <div class="flex-1 px-4 pb-4 overflow-y-auto">
+            <details class="group bg-white rounded-lg border border-slate-200">
+                <summary class="px-4 py-3 cursor-pointer text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg list-none flex items-center justify-between">
+                    <span>5-day forecast & full summary</span>
+                    <svg class="w-4 h-4 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </summary>
+                <div class="px-4 pb-4 pt-2 border-t border-slate-100 space-y-4">
+                    <div>
+                        <h3 class="text-sm font-medium text-slate-900 mb-2">5-Day Flood Forecast</h3>
+                        <p class="text-sm text-slate-600">Flood risk for England: Risk of flooding from rivers and surface water across parts of the South West through the week. Wednesday and Thursday see the highest risk. Conditions improving from Friday.</p>
+                        <p class="text-xs text-slate-500 mt-1">Trend: Wed: High → Thu: High → Fri: Low</p>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-medium text-slate-900 mb-2">Full Summary</h3>
+                        <p class="text-sm text-slate-600">River Parrett levels remain elevated at Gaw Bridge. North Moor and Curry Moor have active flood warnings. A361 East Lyng is open. Muchelney access via Thorney Road may be affected if levels rise further. Monitor EA updates.</p>
+                    </div>
+                </div>
+            </details>
+        </div>
+    </div>
+</body>
+</html>

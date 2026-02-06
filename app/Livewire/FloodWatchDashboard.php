@@ -67,7 +67,9 @@ class FloodWatchDashboard extends Component
                 return ['floods' => [], 'incidents' => [], 'riverLevels' => [], 'lastChecked' => null];
             }
         });
-        $this->floods = $floodEnrichment->enrichWithDistance($mapData['floods'] ?? [], $defaultLat, $defaultLong);
+        $this->floods = $this->floodsWithoutPolygons(
+            $floodEnrichment->enrichWithDistance($mapData['floods'] ?? [], $defaultLat, $defaultLong)
+        );
         $this->incidents = IncidentIcon::enrich($mapData['incidents'] ?? []);
         $this->riverLevels = $mapData['riverLevels'] ?? [];
         $this->lastChecked = $mapData['lastChecked'] ?? null;
@@ -166,10 +168,12 @@ class FloodWatchDashboard extends Component
             $onProgress = fn (string $status) => $streamStatus($status);
             $result = $assistant->chat($message, [], $cacheKey, $userLat, $userLong, $region, $onProgress);
             $this->assistantResponse = $result['response'];
-            $this->floods = $floodEnrichment->enrichWithDistance(
-                $result['floods'],
-                $userLat,
-                $userLong
+            $this->floods = $this->floodsWithoutPolygons(
+                $floodEnrichment->enrichWithDistance(
+                    $result['floods'],
+                    $userLat,
+                    $userLong
+                )
             );
             $this->incidents = IncidentIcon::enrich($result['incidents']);
             $this->forecast = $result['forecast'] ?? [];
@@ -218,9 +222,29 @@ class FloodWatchDashboard extends Component
         $this->forecast = is_array($data['forecast'] ?? null) ? $data['forecast'] : [];
         $this->weather = is_array($data['weather'] ?? null) ? $data['weather'] : [];
         $this->riverLevels = is_array($data['riverLevels'] ?? null) ? $data['riverLevels'] : [];
-        $this->mapCenter = is_array($data['mapCenter'] ?? null) ? $data['mapCenter'] : null;
+        $this->mapCenter = is_array($data['mapCenter'] ?? null) ? $data['mapCenter'] : [
+            'lat' => config('flood-watch.default_lat'),
+            'long' => config('flood-watch.default_long'),
+        ];
         $this->hasUserLocation = (bool) ($data['hasUserLocation'] ?? false);
         $this->lastChecked = is_string($data['lastChecked'] ?? null) ? $data['lastChecked'] : null;
+    }
+
+    /**
+     * Strip polygon data from floods to reduce Livewire payload size.
+     * Map fetches full flood data (with polygons) from the API.
+     *
+     * @param  array<int, array<string, mixed>>  $floods
+     * @return array<int, array<string, mixed>>
+     */
+    private function floodsWithoutPolygons(array $floods): array
+    {
+        return array_map(function (array $f) {
+            $copy = $f;
+            unset($copy['polygon']);
+
+            return $copy;
+        }, $floods);
     }
 
     public function render()

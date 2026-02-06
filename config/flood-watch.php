@@ -320,6 +320,12 @@ return [
         ['name' => 'Barrow Gurney Reservoirs', 'lat' => 51.4000, 'long' => -2.6667, 'type' => 'reservoir'],
         ['name' => 'Otterhead Lakes', 'lat' => 50.9333, 'long' => -2.9833, 'type' => 'reservoir'],
         ['name' => 'Nutscale Reservoir', 'lat' => 51.1500, 'long' => -3.5667, 'type' => 'reservoir'],
+        // Somerset Levels pumping stations (Environment Agency monitored)
+        ['name' => 'Huish Episcopi Pumping Station', 'lat' => 51.0380, 'long' => -2.8210, 'type' => 'pumping_station'],
+        ['name' => 'Westover Pumping Station', 'lat' => 51.1280, 'long' => -2.9930, 'type' => 'pumping_station'],
+        ['name' => 'Northmoor Pumping Station', 'lat' => 51.1150, 'long' => -2.9350, 'type' => 'pumping_station'],
+        ['name' => 'Saltmoor Pumping Station', 'lat' => 51.1180, 'long' => -2.9580, 'type' => 'pumping_station'],
+        ['name' => 'Aller Moor Pumping Station', 'lat' => 51.0580, 'long' => -2.8580, 'type' => 'pumping_station'],
         ['name' => 'Leigh Reservoir', 'lat' => 51.2333, 'long' => -2.6500, 'type' => 'reservoir'],
         ['name' => 'Litton Reservoirs', 'lat' => 51.2833, 'long' => -2.5833, 'type' => 'reservoir'],
         ['name' => 'Luxhay Reservoir', 'lat' => 51.0833, 'long' => -3.3833, 'type' => 'reservoir'],

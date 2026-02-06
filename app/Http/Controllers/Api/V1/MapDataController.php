@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\JsonApi\JsonApiResource;
+use App\Roads\IncidentIcon;
 use App\Services\FloodWatchService;
 use App\Services\LocationResolver;
 use Illuminate\Http\JsonResponse;
@@ -47,7 +48,7 @@ class MapDataController extends Controller
 
         return JsonApiResource::document([
             'floods' => $result['floods'],
-            'incidents' => $result['incidents'],
+            'incidents' => IncidentIcon::enrich($result['incidents']),
             'riverLevels' => $result['riverLevels'],
             'forecast' => $result['forecast'],
             'weather' => $result['weather'],

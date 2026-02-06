@@ -2,13 +2,42 @@
     'retryAfterTimestamp' => null,
     'canRetry' => true,
     'assistantResponse' => null,
+    'error' => null,
+    'lastChecked' => null,
 ])
 
-<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
     <h1 class="text-2xl font-semibold text-slate-900 shrink-0">
         {{ __('flood-watch.dashboard.title') }}
     </h1>
-    <div class="flex flex-col sm:flex-row gap-2 sm:items-center">
+    <div class="flex flex-col sm:flex-row gap-2 sm:items-center sm:gap-3">
+        @if ($error)
+            <div
+                class="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-50 text-red-700 text-sm border border-red-200"
+                x-data="{
+                    retryAfter: @js($retryAfterTimestamp),
+                    secondsLeft: 0,
+                    init() {
+                        if (this.retryAfter) {
+                            const update = () => {
+                                this.secondsLeft = Math.max(0, this.retryAfter - Math.floor(Date.now() / 1000));
+                            };
+                            update();
+                            setInterval(update, 1000);
+                        }
+                    }
+                }"
+                x-init="init()"
+                @if($retryAfterTimestamp) wire:poll.1s="checkRetry" @endif
+            >
+                <span>{{ $error }}</span>
+                <span x-show="retryAfter && secondsLeft > 0" x-cloak x-transition>— {{ __('flood-watch.dashboard.retry_in_prefix') }} <span x-text="secondsLeft"></span> {{ __('flood-watch.dashboard.retry_in_suffix') }}</span>
+                <span x-show="retryAfter && secondsLeft === 0" x-cloak x-transition>— {{ __('flood-watch.dashboard.retry_now') }}</span>
+            </div>
+        @endif
+        @if ($lastChecked)
+            <span class="text-sm text-slate-500 shrink-0">{{ __('flood-watch.dashboard.last_checked') }}: {{ \Carbon\Carbon::parse($lastChecked)->format('j M Y, g:i a') }}</span>
+        @endif
         <input
             type="text"
             id="location"

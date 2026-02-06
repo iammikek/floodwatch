@@ -1,17 +1,17 @@
 @props([
-    'mapCenter',
+    'mapCenter' => null,
     'lastChecked' => null,
-    'riverLevels' => [],
-    'floods' => [],
-    'incidents' => [],
     'hasUserLocation' => false,
 ])
 
+@php
+    $mapCenter = $mapCenter ?? ['lat' => config('flood-watch.default_lat'), 'long' => config('flood-watch.default_long')];
+@endphp
 @if ($mapCenter)
-    <div id="map-section" wire:key="map-{{ $lastChecked ?? 'default' }}" class="mb-6 rounded-lg overflow-hidden border border-slate-200">
+    <div id="map-section" wire:key="map-section" class="rounded-lg overflow-hidden border border-slate-200">
         <div
             class="flex flex-col"
-            x-data="floodMap({ center: @js($mapCenter), stations: @js($riverLevels), floods: @js($floods), incidents: @js($incidents), infrastructure: @js(config('flood-watch.infrastructure_points', [])), riverBoundaryUrl: @js(config('flood-watch.environment_agency.river_boundary_geojson_url')), hasUser: @js($hasUserLocation), t: @js(['your_location' => __('flood-watch.map.your_location'), 'elevated_level' => __('flood-watch.map.elevated_level'), 'expected_level' => __('flood-watch.map.expected_level'), 'low_level' => __('flood-watch.map.low_level'), 'typical_range' => __('flood-watch.map.typical_range'), 'flood_warning' => __('flood-watch.dashboard.flood_warning'), 'flood_area' => __('flood-watch.dashboard.flood_area'), 'km_from_location' => __('flood-watch.dashboard.km_from_location'), 'road' => __('flood-watch.dashboard.road'), 'road_incident' => __('flood-watch.dashboard.road_incident'), 'reservoir' => __('flood-watch.dashboard.reservoir')]) })"
+            x-data="floodMap({ center: @js($mapCenter), mapDataUrl: @js(route('api.v1.map-data')), stations: [], floods: [], incidents: [], infrastructure: @js(config('flood-watch.infrastructure_points', [])), riverBoundaryUrl: @js(config('flood-watch.environment_agency.river_boundary_geojson_url')), hasUser: @js($hasUserLocation), t: @js(['your_location' => __('flood-watch.map.your_location'), 'elevated_level' => __('flood-watch.map.elevated_level'), 'expected_level' => __('flood-watch.map.expected_level'), 'low_level' => __('flood-watch.map.low_level'), 'typical_range' => __('flood-watch.map.typical_range'), 'flood_warning' => __('flood-watch.dashboard.flood_warning'), 'flood_area' => __('flood-watch.dashboard.flood_area'), 'km_from_location' => __('flood-watch.dashboard.km_from_location'), 'raised' => __('flood-watch.dashboard.raised'), 'updated' => __('flood-watch.dashboard.updated'), 'no_recent_data' => __('flood-watch.dashboard.no_recent_data'), 'road' => __('flood-watch.dashboard.road'), 'road_incident' => __('flood-watch.dashboard.road_incident'), 'reservoir' => __('flood-watch.dashboard.reservoir')]) })"
             x-init="init()"
         >
             <div class="relative">

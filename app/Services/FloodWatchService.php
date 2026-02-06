@@ -55,10 +55,10 @@ class FloodWatchService
 
         $incidents = $this->sortIncidentsByPriority($incidents);
 
-        if ($bounds !== null) {
-            $floods = $this->filterByBounds($floods, $bounds);
-            $riverLevels = $this->filterRiverLevelsByBounds($riverLevels, $bounds);
-        }
+        $mapBounds = $bounds ?? $this->boundsFromCenter($lat, $long, $radiusKm);
+        $floods = $bounds !== null ? $this->filterByBounds($floods, $bounds) : $floods;
+        $riverLevels = $bounds !== null ? $this->filterRiverLevelsByBounds($riverLevels, $bounds) : $riverLevels;
+        $incidents = $this->filterIncidentsByBounds($incidents, $mapBounds);
 
         $result = [
             'floods' => $floods,
@@ -93,6 +93,8 @@ class FloodWatchService
         ]);
 
         $incidents = $this->sortIncidentsByPriority($incidents);
+        $bounds = $this->boundsFromCenter($lat, $long, $radiusKm);
+        $incidents = $this->filterIncidentsByBounds($incidents, $bounds);
 
         return [
             'floods' => $floods,
@@ -140,6 +142,45 @@ class FloodWatchService
     private function filterRiverLevelsByBounds(array $stations, array $bounds): array
     {
         return $this->filterByBounds($stations, $bounds);
+    }
+
+    /**
+     * Filter incidents to those within map bounds. Excludes incidents without lat/long (cannot verify).
+     *
+     * @param  array<int, array<string, mixed>>  $incidents
+     * @return array<int, array<string, mixed>>
+     */
+    private function filterIncidentsByBounds(array $incidents, array $bounds): array
+    {
+        [$minLat, $maxLat, $minLng, $maxLng] = $bounds;
+
+        return array_values(array_filter($incidents, function (array $item) use ($minLat, $maxLat, $minLng, $maxLng): bool {
+            $lat = $item['lat'] ?? null;
+            $long = $item['long'] ?? null;
+            if ($lat === null || $long === null) {
+                return false;
+            }
+
+            return $lat >= $minLat && $lat <= $maxLat && $long >= $minLng && $long <= $maxLng;
+        }));
+    }
+
+    /**
+     * Compute map bounds [minLat, maxLat, minLng, maxLng] from center and radius.
+     */
+    private function boundsFromCenter(float $lat, float $long, float $radiusKm): array
+    {
+        $degPerKmLat = 1 / 111.0;
+        $degPerKmLng = 1 / (111.0 * cos(deg2rad($lat)));
+        $deltaLat = $radiusKm * $degPerKmLat;
+        $deltaLng = $radiusKm * $degPerKmLng;
+
+        return [
+            $lat - $deltaLat,
+            $lat + $deltaLat,
+            $long - $deltaLng,
+            $long + $deltaLng,
+        ];
     }
 
     /**

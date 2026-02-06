@@ -1,75 +1,136 @@
 @props([
+    'mapCenter' => null,
+    'mapDataUrl' => null,
     'riverLevels' => [],
     'assistantResponse' => null,
-    'incidents' => [],
     'weather' => [],
 ])
 
-<div class="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 min-h-0 overflow-hidden grid-rows-4 sm:grid-rows-2 lg:grid-rows-1">
+<div class="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 min-h-0 overflow-hidden grid-rows-3 sm:grid-rows-2 lg:grid-rows-1">
+    @php
+        $hasMapDataFetch = $mapCenter && $mapDataUrl;
+    @endphp
+    @if ($hasMapDataFetch)
+    <div
+        x-data="{
+            riverLevels: [],
+            floods: [],
+            loading: true,
+            elevatedFormat: @js(__('flood-watch.dashboard.status_grid_stations_elevated', ['count' => '__COUNT__'])),
+            floodWarningsFormat: @js(__('flood-watch.dashboard.status_grid_flood_warnings_count', ['count' => '__COUNT__'])),
+            stationsLabel: @js(__('flood-watch.dashboard.stations')),
+            noDataLabel: @js(__('flood-watch.dashboard.status_grid_no_data')),
+            focusTitle: @js(__('flood-watch.dashboard.focus_on_map')),
+            riverLevelsUrl: @js(route('api.v1.river-levels')),
+            async init() {
+                const center = @js($mapCenter);
+                const url = @js($mapDataUrl);
+                const params = '?lat=' + encodeURIComponent(center.lat) + '&long=' + encodeURIComponent(center.long);
+                try {
+                    const [mapRes, rlRes] = await Promise.all([
+                        fetch(url + params),
+                        fetch(this.riverLevelsUrl + params)
+                    ]);
+                    if (mapRes.ok) {
+                        const json = await mapRes.json();
+                        const d = json.data || {};
+                        this.floods = d.floods || [];
+                        this.riverLevels = d.riverLevels || [];
+                    }
+                    if (this.riverLevels.length === 0 && rlRes.ok) {
+                        const rlJson = await rlRes.json();
+                        const rlData = rlJson.data;
+                        this.riverLevels = Array.isArray(rlData) ? rlData.map(r => r.attributes || r) : [];
+                    }
+                } catch (e) {}
+                this.loading = false;
+            },
+            elevatedCount() { return this.riverLevels.filter(r => (r.levelStatus || '') === 'elevated'); }
+        }"
+        x-init="init()"
+        class="contents"
+    >
+    @endif
     <x-flood-watch.status-grid-card :title="__('flood-watch.dashboard.status_grid_hydrological')">
-        @php
-            $elevatedStations = array_values(array_filter($riverLevels, fn ($r) => ($r['levelStatus'] ?? '') === 'elevated'));
-            $elevatedCount = count($elevatedStations);
-        @endphp
-        @if (count($riverLevels) > 0)
-            @if ($elevatedCount > 0)
-                <p class="text-slate-600 text-sm font-medium">
-                    {{ __('flood-watch.dashboard.status_grid_stations_elevated', ['count' => $elevatedCount]) }}
-                </p>
-                <ul class="mt-1.5 space-y-1 text-slate-600 text-xs">
-                    @foreach ($elevatedStations as $station)
-                        <li
-                            class="flex items-center gap-1.5 cursor-pointer hover:bg-slate-100 rounded px-1.5 py-0.5 -mx-1.5 transition-colors"
-                            role="button"
-                            tabindex="0"
-                            title="{{ __('flood-watch.dashboard.focus_on_map') }}"
-                            data-lat="{{ $station['lat'] ?? '' }}"
-                            data-long="{{ $station['long'] ?? '' }}"
-                            @click="const el = $event.currentTarget; const lat = parseFloat(el.dataset.lat), long = parseFloat(el.dataset.long); if (!isNaN(lat) && !isNaN(long)) { window.dispatchEvent(new CustomEvent('flood-map-focus-station', { detail: { lat, long } })); document.getElementById('map-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }"
-                            @keydown.enter.prevent="$event.currentTarget.click()"
-                            @keydown.space.prevent="$event.currentTarget.click()"
-                        >
-                            @if (! empty($station['trend']) && $station['trend'] !== 'unknown')
-                                <span class="shrink-0" title="{{ __('flood-watch.dashboard.trend_' . $station['trend']) }}">
-                                    @switch($station['trend'])
-                                        @case('rising')
-                                            ↑
-                                            @break
-                                        @case('falling')
-                                            ↓
-                                            @break
-                                        @default
-                                            →
-                                    @endswitch
-                                </span>
-                            @endif
-                            <span>{{ $station['station'] ?? '' }}{{ ! empty($station['river']) ? ' (' . ($station['river']) . ')' : '' }}</span>
-                            @if (isset($station['value'], $station['typicalRangeHigh']) && $station['value'] > $station['typicalRangeHigh'])
-                                <span class="text-amber-600 shrink-0">{{ number_format($station['value'] - $station['typicalRangeHigh'], 1) }} m above</span>
-                            @endif
-                        </li>
-                    @endforeach
-                </ul>
-            @else
-                <p class="text-slate-600 text-sm">{{ count($riverLevels) }} {{ __('flood-watch.dashboard.stations') }}</p>
-            @endif
+        @if ($hasMapDataFetch)
+            <template x-if="loading">
+                <p class="text-slate-500 text-sm" x-text="noDataLabel"></p>
+            </template>
+            <template x-if="!loading && (riverLevels.length > 0 || floods.length > 0)">
+                <div class="space-y-1.5">
+                    <template x-if="floods.length > 0">
+                        <div>
+                            <p class="text-slate-600 text-sm font-medium" x-text="floodWarningsFormat.replace('__COUNT__', floods.length)"></p>
+                            <ul class="mt-1 space-y-0.5 text-slate-600 text-xs">
+                                <template x-for="(flood, i) in floods" :key="(flood.description || '') + (flood.lat || '') + i">
+                                    <li
+                                        class="flex items-center gap-1.5 rounded px-1.5 py-0.5 -mx-1.5 cursor-pointer hover:bg-slate-100 transition-colors border-l-4"
+                                        :class="{
+                                            'border-l-red-500 bg-red-50/50': flood.severityLevel === 1,
+                                            'border-l-amber-500 bg-amber-50/50': flood.severityLevel === 2,
+                                            'border-l-slate-300 bg-slate-50/50': flood.severityLevel === 3,
+                                            'border-l-transparent': !flood.severityLevel || flood.severityLevel > 3
+                                        }"
+                                        role="button"
+                                        tabindex="0"
+                                        :title="focusTitle"
+                                        :data-lat="flood.lat || ''"
+                                        :data-long="flood.long || ''"
+                                        @click="const el = $event.currentTarget; const lat = parseFloat(el.dataset.lat), long = parseFloat(el.dataset.long); if (!isNaN(lat) && !isNaN(long)) { window.dispatchEvent(new CustomEvent('flood-map-focus-station', { detail: { lat, long } })); document.getElementById('map-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }"
+                                        @keydown.enter.prevent="$event.currentTarget.click()"
+                                        @keydown.space.prevent="$event.currentTarget.click()"
+                                    >
+                                        <span class="shrink-0" x-text="(flood.severityLevel === 1) ? '🚨' : '⚠'"></span>
+                                        <span class="truncate" x-text="flood.description || 'Flood area'"></span>
+                                    </li>
+                                </template>
+                            </ul>
+                        </div>
+                    </template>
+                    <template x-if="riverLevels.length > 0">
+                        <div>
+                            <template x-if="elevatedCount().length > 0">
+                                <div>
+                                    <p class="text-slate-600 text-sm font-medium" x-text="elevatedFormat.replace('__COUNT__', elevatedCount().length)"></p>
+                                    <ul class="mt-1 space-y-0.5 text-slate-600 text-xs">
+                                        <template x-for="station in elevatedCount()" :key="(station.station || '') + (station.lat || '')">
+                                            <li
+                                                class="flex items-center gap-1.5 cursor-pointer hover:bg-slate-100 rounded px-1.5 py-0.5 -mx-1.5 transition-colors"
+                                                role="button"
+                                                tabindex="0"
+                                                :title="focusTitle"
+                                                :data-lat="station.lat || ''"
+                                                :data-long="station.long || ''"
+                                                @click="const el = $event.currentTarget; const lat = parseFloat(el.dataset.lat), long = parseFloat(el.dataset.long); if (!isNaN(lat) && !isNaN(long)) { window.dispatchEvent(new CustomEvent('flood-map-focus-station', { detail: { lat, long } })); document.getElementById('map-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }"
+                                                @keydown.enter.prevent="$event.currentTarget.click()"
+                                                @keydown.space.prevent="$event.currentTarget.click()"
+                                            >
+                                                <span x-show="station.trend && station.trend !== 'unknown'" x-text="station.trend === 'rising' ? '↑' : station.trend === 'falling' ? '↓' : '→'"></span>
+                                                <span x-text="(station.station || '') + (station.river ? ' (' + station.river + ')' : '')"></span>
+                                                <span x-show="station.value != null && station.typicalRangeHigh != null && station.value > station.typicalRangeHigh" class="text-amber-600 shrink-0" x-text="(station.value - station.typicalRangeHigh).toFixed(1) + ' m above'"></span>
+                                            </li>
+                                        </template>
+                                    </ul>
+                                </div>
+                            </template>
+                            <template x-if="riverLevels.length > 0 && elevatedCount().length === 0">
+                                <p class="text-slate-600 text-sm" x-text="riverLevels.length + ' ' + stationsLabel"></p>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+            </template>
+            <template x-if="!loading && riverLevels.length === 0 && floods.length === 0">
+                <p class="text-slate-600 text-sm" x-text="noDataLabel"></p>
+            </template>
         @else
             <p class="text-slate-600 text-sm">{{ __('flood-watch.dashboard.status_grid_no_data') }}</p>
         @endif
     </x-flood-watch.status-grid-card>
 
-    <x-flood-watch.status-grid-card :title="__('flood-watch.dashboard.status_grid_infrastructure')">
-        <p class="text-slate-600 text-sm">
-            @if ($assistantResponse)
-                @php
-                    $monitoredTotal = count(config('flood-watch.incident_allowed_roads', [])) ?: config('flood-watch.status_grid_monitored_routes', 7);
-                @endphp
-                {{ __('flood-watch.dashboard.status_grid_incidents_on_routes', ['active' => count($incidents), 'total' => $monitoredTotal]) }}
-            @else
-                {{ __('flood-watch.dashboard.status_grid_no_data') }}
-            @endif
-        </p>
-    </x-flood-watch.status-grid-card>
+    @if ($hasMapDataFetch)
+    </div>
+    @endif
 
     <x-flood-watch.status-grid-card id="weather" :title="__('flood-watch.dashboard.status_grid_weather')">
         @if (count($weather) > 0)

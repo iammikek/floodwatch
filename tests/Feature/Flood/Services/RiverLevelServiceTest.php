@@ -211,4 +211,44 @@ class RiverLevelServiceTest extends TestCase
         $this->assertIsArray($result);
         $this->assertEmpty($result);
     }
+
+    public function test_includes_stations_without_readings(): void
+    {
+        Http::fake(function ($request) {
+            $url = (string) $request->url();
+            if (str_contains($url, '/id/stations?') || str_contains($url, '/id/stations&')) {
+                return Http::response([
+                    'items' => [
+                        [
+                            'notation' => '52345',
+                            'label' => 'Huish Episcopi Pumping Station',
+                            'riverName' => 'River Yeo',
+                            'town' => 'Langport',
+                            'lat' => 51.031,
+                            'long' => -2.799,
+                            'stageScale' => [
+                                'typicalRangeLow' => 2.0,
+                                'typicalRangeHigh' => 3.5,
+                            ],
+                        ],
+                    ],
+                ], 200);
+            }
+            if (str_contains($url, '/stations/52345/readings')) {
+                return Http::response(['items' => []], 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
+        $service = new RiverLevelService;
+        $result = $service->getLevels();
+
+        $this->assertCount(1, $result);
+        $this->assertSame('Huish Episcopi Pumping Station', $result[0]['station']);
+        $this->assertSame('pumping_station', $result[0]['stationType']);
+        $this->assertSame('unknown', $result[0]['levelStatus']);
+        $this->assertNull($result[0]['value']);
+        $this->assertNull($result[0]['dateTime']);
+    }
 }
