@@ -85,6 +85,71 @@ class FloodWatchDashboardTest extends TestCase
             ->assertSee('Check status', false);
     }
 
+    public function test_dashboard_displays_risk_gauge_section(): void
+    {
+        Config::set('flood-watch.national_highways.api_key', 'test-key');
+        Config::set('flood-watch.national_highways.base_url', 'https://api.example.com');
+        Config::set('flood-watch.national_highways.fetch_unplanned', false);
+
+        Http::fake(function ($request) {
+            if (str_contains($request->url(), 'environment.data.gov.uk')) {
+                return Http::response(['items' => []], 200);
+            }
+            if (str_contains($request->url(), 'api.example.com')) {
+                return Http::response(['D2Payload' => ['situation' => []]], 200);
+            }
+            if (str_contains($request->url(), 'fgs.metoffice.gov.uk')) {
+                return Http::response(['statement' => []], 200);
+            }
+            if (str_contains($request->url(), 'open-meteo.com')) {
+                return Http::response(['daily' => ['time' => [], 'weathercode' => [], 'temperature_2m_max' => [], 'temperature_2m_min' => [], 'precipitation_sum' => []]], 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
+        Livewire::test('flood-watch-dashboard')
+            ->assertSee('South West Risk Index', false)
+            ->assertSee('risk-gauge', false);
+    }
+
+    public function test_dashboard_risk_gauge_shows_index_label_and_summary(): void
+    {
+        Config::set('flood-watch.national_highways.api_key', 'test-key');
+        Config::set('flood-watch.national_highways.base_url', 'https://api.example.com');
+        Config::set('flood-watch.national_highways.fetch_unplanned', false);
+
+        Http::fake(function ($request) {
+            if (str_contains($request->url(), 'environment.data.gov.uk')) {
+                return Http::response(['items' => []], 200);
+            }
+            if (str_contains($request->url(), 'api.example.com')) {
+                return Http::response(['D2Payload' => ['situation' => []]], 200);
+            }
+            if (str_contains($request->url(), 'fgs.metoffice.gov.uk')) {
+                return Http::response(['statement' => []], 200);
+            }
+            if (str_contains($request->url(), 'open-meteo.com')) {
+                return Http::response(['daily' => ['time' => [], 'weathercode' => [], 'temperature_2m_max' => [], 'temperature_2m_min' => [], 'precipitation_sum' => []]], 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
+        $component = Livewire::test('flood-watch-dashboard');
+
+        $risk = $component->get('risk');
+        $this->assertIsArray($risk);
+        $this->assertArrayHasKey('index', $risk);
+        $this->assertArrayHasKey('label', $risk);
+        $this->assertArrayHasKey('summary', $risk);
+
+        $component->assertSee((string) $risk['index'], false)
+            ->assertSee('/ 100', false)
+            ->assertSee($risk['label'], false)
+            ->assertSee($risk['summary'], false);
+    }
+
     public function test_search_displays_assistant_response(): void
     {
         Config::set('openai.api_key', 'test-key');

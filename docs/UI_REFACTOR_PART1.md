@@ -13,6 +13,7 @@
    - AI Advisory (summary or prompt)
 3. **Map visible by default** – Map loads on page load with default centre (Langport); no search required.
 4. **"Check my location"** – Primary CTA in header; search refocused on personalised alerts.
+5. **Regional Risk Gauge** – South West Risk Index (0–100) with colour bands, label, and summary. Cached 15 min.
 
 ## TDD
 

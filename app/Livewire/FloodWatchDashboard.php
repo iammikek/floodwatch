@@ -5,9 +5,11 @@ namespace App\Livewire;
 use App\Services\FloodWatchService;
 use App\Services\FloodWatchTrendService;
 use App\Services\LocationResolver;
+use App\Services\RiskService;
 use App\Support\IncidentIcon;
 use App\Support\LogMasker;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Attributes\Layout;
@@ -47,12 +49,29 @@ class FloodWatchDashboard extends Component
 
     public bool $autoRefreshEnabled = false;
 
-    public function mount(): void
+    /** @var array{index: int, label: string, summary: string}|null */
+    public ?array $risk = null;
+
+    public function mount(RiskService $riskService): void
     {
         $this->mapCenter = [
             'lat' => config('flood-watch.default_lat'),
             'long' => config('flood-watch.default_long'),
         ];
+
+        $this->risk = Cache::remember('flood-watch-risk-gauge', 900, function () use ($riskService) {
+            try {
+                $result = $riskService->calculate();
+
+                return [
+                    'index' => $result['index'],
+                    'label' => $result['label'],
+                    'summary' => $result['summary'],
+                ];
+            } catch (\Throwable) {
+                return null;
+            }
+        });
 
         if (Auth::guest()) {
             $key = 'flood-watch-guest:'.request()->ip();

@@ -60,6 +60,8 @@ return [
         'status_grid_ai_advisory' => 'AI Advisory',
         'status_grid_no_data' => '—',
         'status_grid_prompt' => 'Enter your location and click "Check my location" to get a personalised flood and road summary.',
+        'risk_gauge_title' => 'South West Risk Index',
+        'risk_gauge_unavailable' => '—',
         'searching' => 'Searching…',
         'connecting' => 'Connecting…',
         'retry_in_prefix' => 'Retry in',
