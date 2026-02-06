@@ -2,22 +2,20 @@
 
 namespace App\Livewire;
 
+use App\Flood\Services\FloodEnrichmentService;
 use App\Models\SystemActivity;
+use App\Roads\IncidentIcon;
 use App\Services\FloodWatchService;
 use App\Services\FloodWatchTrendService;
 use App\Services\LocationResolver;
 use App\Services\RiskService;
-use App\Support\IncidentIcon;
-use App\Support\LogMasker;
+use App\Services\SearchMessageBuilder;
+use App\Support\OpenAiErrorHandler;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
-use OpenAI\Exceptions\ErrorException;
-use OpenAI\Exceptions\RateLimitException;
-use Psr\Http\Message\ResponseInterface;
 
 #[Layout('layouts.flood-watch')]
 class FloodWatchDashboard extends Component
@@ -53,7 +51,7 @@ class FloodWatchDashboard extends Component
     /** @var array{index: int, label: string, summary: string}|null */
     public ?array $risk = null;
 
-    public function mount(RiskService $riskService, FloodWatchService $floodWatchService): void
+    public function mount(RiskService $riskService, FloodWatchService $floodWatchService, FloodEnrichmentService $floodEnrichment): void
     {
         $this->mapCenter = [
             'lat' => config('flood-watch.default_lat'),
@@ -69,8 +67,8 @@ class FloodWatchDashboard extends Component
                 return ['floods' => [], 'incidents' => [], 'riverLevels' => [], 'lastChecked' => null];
             }
         });
-        $this->floods = $this->enrichFloodsWithDistance($mapData['floods'] ?? [], $defaultLat, $defaultLong);
-        $this->incidents = $this->enrichIncidentsWithIcons($mapData['incidents'] ?? []);
+        $this->floods = $floodEnrichment->enrichWithDistance($mapData['floods'] ?? [], $defaultLat, $defaultLong);
+        $this->incidents = IncidentIcon::enrich($mapData['incidents'] ?? []);
         $this->riverLevels = $mapData['riverLevels'] ?? [];
         $this->lastChecked = $mapData['lastChecked'] ?? null;
 
@@ -114,7 +112,7 @@ class FloodWatchDashboard extends Component
         }
     }
 
-    public function search(FloodWatchService $assistant, LocationResolver $locationResolver, FloodWatchTrendService $trendService): void
+    public function search(FloodWatchService $assistant, LocationResolver $locationResolver, FloodWatchTrendService $trendService, FloodEnrichmentService $floodEnrichment, SearchMessageBuilder $messageBuilder, OpenAiErrorHandler $errorHandler): void
     {
         $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'hasUserLocation', 'lastChecked', 'error', 'retryAfterTimestamp']);
         $this->loading = true;
@@ -158,7 +156,7 @@ class FloodWatchDashboard extends Component
             }
         }
 
-        $message = $this->buildMessage($locationTrimmed, $validation);
+        $message = $messageBuilder->build($locationTrimmed, $validation);
         $cacheKey = $locationTrimmed !== '' ? $locationTrimmed : null;
         $userLat = $validation['lat'] ?? null;
         $userLong = $validation['long'] ?? null;
@@ -168,12 +166,12 @@ class FloodWatchDashboard extends Component
             $onProgress = fn (string $status) => $streamStatus($status);
             $result = $assistant->chat($message, [], $cacheKey, $userLat, $userLong, $region, $onProgress);
             $this->assistantResponse = $result['response'];
-            $this->floods = $this->enrichFloodsWithDistance(
+            $this->floods = $floodEnrichment->enrichWithDistance(
                 $result['floods'],
                 $userLat,
                 $userLong
             );
-            $this->incidents = $this->enrichIncidentsWithIcons($result['incidents']);
+            $this->incidents = IncidentIcon::enrich($result['incidents']);
             $this->forecast = $result['forecast'] ?? [];
             $this->weather = $result['weather'] ?? [];
             $this->riverLevels = $result['riverLevels'] ?? [];
@@ -196,173 +194,14 @@ class FloodWatchDashboard extends Component
             $this->dispatch('search-completed');
         } catch (\Throwable $e) {
             report($e);
-            if ($this->isAiRateLimitError($e)) {
-                $this->logOpenAiRateLimit($e);
+            if ($errorHandler->isRateLimitError($e)) {
+                $errorHandler->logRateLimit($e);
                 $this->retryAfterTimestamp = now()->addSeconds(60)->timestamp;
             }
-            $this->error = $this->formatErrorMessage($e);
+            $this->error = $errorHandler->formatErrorMessage($e);
         } finally {
             $this->loading = false;
         }
-    }
-
-    /**
-     * Enrich floods with distance from user location and sort by proximity (closest first).
-     *
-     * @param  array<int, array<string, mixed>>  $floods
-     * @return array<int, array<string, mixed>>
-     */
-    private function enrichFloodsWithDistance(array $floods, ?float $userLat, ?float $userLong): array
-    {
-        $hasCenter = $userLat !== null && $userLong !== null;
-
-        $enriched = array_map(function (array $flood) use ($userLat, $userLong, $hasCenter) {
-            $floodLat = $flood['lat'] ?? null;
-            $floodLong = $flood['long'] ?? null;
-            $flood['distanceKm'] = null;
-            if ($hasCenter && $floodLat !== null && $floodLong !== null) {
-                $flood['distanceKm'] = round($this->haversineDistanceKm($userLat, $userLong, (float) $floodLat, (float) $floodLong), 1);
-            }
-
-            return $flood;
-        }, $floods);
-
-        if ($hasCenter) {
-            return collect($enriched)
-                ->sortBy(fn (array $f) => $f['distanceKm'] ?? PHP_FLOAT_MAX)
-                ->values()
-                ->all();
-        }
-
-        return collect($enriched)
-            ->sortByDesc(fn (array $f) => $f['timeMessageChanged'] ?? $f['timeRaised'] ?? '')
-            ->values()
-            ->all();
-    }
-
-    private function haversineDistanceKm(float $lat1, float $long1, float $lat2, float $long2): float
-    {
-        $earthRadiusKm = 6371.0;
-        $dLat = deg2rad($lat2 - $lat1);
-        $dLong = deg2rad($long2 - $long1);
-        $a = sin($dLat / 2) ** 2
-            + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLong / 2) ** 2;
-        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
-
-        return $earthRadiusKm * $c;
-    }
-
-    private function logOpenAiRateLimit(\Throwable $e): void
-    {
-        $response = null;
-        if ($e instanceof RateLimitException) {
-            $response = $e->response;
-        }
-        if ($e instanceof ErrorException) {
-            $response = $e->response;
-        }
-
-        $context = [
-            'exception' => $e::class,
-            'message' => $e->getMessage(),
-        ];
-
-        if ($response instanceof ResponseInterface) {
-            $context['rate_limit'] = $this->extractRateLimitHeaders($response);
-            $context['retry_after'] = $response->getHeaderLine('Retry-After');
-            $context['status_code'] = $response->getStatusCode();
-            try {
-                $body = (string) $response->getBody();
-                if ($body !== '') {
-                    $context['response_body'] = LogMasker::maskResponseBody($body);
-                }
-            } catch (\Throwable) {
-                // Stream may already be consumed
-            }
-        }
-
-        Log::warning('OpenAI rate limit exceeded', $context);
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    private function extractRateLimitHeaders(ResponseInterface $response): array
-    {
-        $headers = [
-            'x-ratelimit-limit-requests' => $response->getHeaderLine('x-ratelimit-limit-requests'),
-            'x-ratelimit-remaining-requests' => $response->getHeaderLine('x-ratelimit-remaining-requests'),
-            'x-ratelimit-reset-requests' => $response->getHeaderLine('x-ratelimit-reset-requests'),
-            'x-ratelimit-limit-tokens' => $response->getHeaderLine('x-ratelimit-limit-tokens'),
-            'x-ratelimit-remaining-tokens' => $response->getHeaderLine('x-ratelimit-remaining-tokens'),
-            'x-ratelimit-reset-tokens' => $response->getHeaderLine('x-ratelimit-reset-tokens'),
-        ];
-
-        return array_filter($headers, fn (string $v) => $v !== '');
-    }
-
-    private function isAiRateLimitError(\Throwable $e): bool
-    {
-        $message = strtolower($e->getMessage());
-
-        return str_contains($message, 'rate limit') || str_contains($message, '429');
-    }
-
-    private function formatErrorMessage(\Throwable $e): string
-    {
-        $message = $e->getMessage();
-        if (str_contains(strtolower($message), 'rate limit') || str_contains(strtolower($message), '429')) {
-            return __('flood-watch.error.rate_limit');
-        }
-        if (str_contains($message, 'timed out') || str_contains($message, 'cURL error 28') || str_contains($message, 'Operation timed out')) {
-            return __('flood-watch.error.timeout');
-        }
-        if (str_contains($message, 'Connection') && (str_contains($message, 'refused') || str_contains($message, 'reset'))) {
-            return __('flood-watch.error.connection');
-        }
-        if (config('app.debug')) {
-            return $message;
-        }
-
-        return __('flood-watch.error.generic');
-    }
-
-    /**
-     * @param  array{lat?: float, long?: float, outcode?: string, display_name?: string}|null  $validation
-     */
-    private function buildMessage(string $location, ?array $validation): string
-    {
-        if ($location === '') {
-            return __('flood-watch.message.check_status_default');
-        }
-
-        $label = $validation['display_name'] ?? $location;
-        $coords = '';
-        if ($validation !== null && isset($validation['lat'], $validation['long'])) {
-            $coords = sprintf(' (lat: %.4f, long: %.4f)', $validation['lat'], $validation['long']);
-        }
-
-        return __('flood-watch.message.check_status_location', ['label' => $label, 'coords' => $coords]);
-    }
-
-    /**
-     * Add icon and human-readable labels to each incident.
-     *
-     * @param  array<int, array<string, mixed>>  $incidents
-     * @return array<int, array<string, mixed>>
-     */
-    private function enrichIncidentsWithIcons(array $incidents): array
-    {
-        return array_map(function (array $incident): array {
-            $incident['icon'] = IncidentIcon::forIncident(
-                $incident['incidentType'] ?? null,
-                $incident['managementType'] ?? null
-            );
-            $incident['statusLabel'] = IncidentIcon::statusLabel($incident['status'] ?? null);
-            $incident['typeLabel'] = IncidentIcon::typeLabel($incident['incidentType'] ?? $incident['managementType'] ?? null);
-
-            return $incident;
-        }, $incidents);
     }
 
     /**
@@ -375,7 +214,7 @@ class FloodWatchDashboard extends Component
     {
         $this->assistantResponse = is_string($data['assistantResponse'] ?? null) ? $data['assistantResponse'] : null;
         $this->floods = is_array($data['floods'] ?? null) ? $data['floods'] : [];
-        $this->incidents = $this->enrichIncidentsWithIcons(is_array($data['incidents'] ?? null) ? $data['incidents'] : []);
+        $this->incidents = IncidentIcon::enrich(is_array($data['incidents'] ?? null) ? $data['incidents'] : []);
         $this->forecast = is_array($data['forecast'] ?? null) ? $data['forecast'] : [];
         $this->weather = is_array($data['weather'] ?? null) ? $data['weather'] : [];
         $this->riverLevels = is_array($data['riverLevels'] ?? null) ? $data['riverLevels'] : [];

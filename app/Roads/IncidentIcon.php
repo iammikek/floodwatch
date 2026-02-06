@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Support;
+namespace App\Roads;
 
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Str;
@@ -60,6 +60,26 @@ class IncidentIcon
         }
 
         return $default;
+    }
+
+    /**
+     * Add icon and human-readable labels to each incident.
+     *
+     * @param  array<int, array<string, mixed>>  $incidents
+     * @return array<int, array<string, mixed>>
+     */
+    public static function enrich(array $incidents): array
+    {
+        return array_map(function (array $incident): array {
+            $incident['icon'] = self::forIncident(
+                $incident['incidentType'] ?? null,
+                $incident['managementType'] ?? null
+            );
+            $incident['statusLabel'] = self::statusLabel($incident['status'] ?? null);
+            $incident['typeLabel'] = self::typeLabel($incident['incidentType'] ?? $incident['managementType'] ?? null);
+
+            return $incident;
+        }, $incidents);
     }
 
     private static function splitCamelCase(string $value): string

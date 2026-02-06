@@ -1,8 +1,8 @@
 <?php
 
-namespace Tests\Feature\Support;
+namespace Tests\Feature\Roads;
 
-use App\Support\IncidentIcon;
+use App\Roads\IncidentIcon;
 use Illuminate\Support\Facades\Config;
 use Tests\TestCase;
 
@@ -104,5 +104,43 @@ class IncidentIconTest extends TestCase
     {
         $this->assertSame('', IncidentIcon::typeLabel(null));
         $this->assertSame('', IncidentIcon::typeLabel(''));
+    }
+
+    public function test_enrich_adds_icon_status_label_and_type_label_to_each_incident(): void
+    {
+        $incidents = [
+            [
+                'incidentType' => 'flooding',
+                'managementType' => 'roadClosed',
+                'status' => 'active',
+            ],
+        ];
+
+        $enriched = IncidentIcon::enrich($incidents);
+
+        $this->assertSame('🌊', $enriched[0]['icon']);
+        $this->assertSame('Active', $enriched[0]['statusLabel']);
+        $this->assertSame('Flooding', $enriched[0]['typeLabel']);
+    }
+
+    public function test_enrich_handles_empty_incidents(): void
+    {
+        $enriched = IncidentIcon::enrich([]);
+
+        $this->assertSame([], $enriched);
+    }
+
+    public function test_enrich_handles_incidents_with_missing_fields(): void
+    {
+        $incidents = [
+            [],
+        ];
+
+        $enriched = IncidentIcon::enrich($incidents);
+
+        $this->assertArrayHasKey('icon', $enriched[0]);
+        $this->assertArrayHasKey('statusLabel', $enriched[0]);
+        $this->assertArrayHasKey('typeLabel', $enriched[0]);
+        $this->assertSame('🛣️', $enriched[0]['icon']);
     }
 }

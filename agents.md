@@ -58,13 +58,16 @@ app/
 ├── Flood/             # Flood domain
 │   ├── DTOs/FloodWarning
 │   ├── Enums/SeverityLevel
-│   └── Services/EnvironmentAgencyFloodService, FloodForecastService, RiverLevelService
+│   └── Services/EnvironmentAgencyFloodService, FloodForecastService, FloodEnrichmentService, RiverLevelService
 ├── Roads/             # Roads domain
 │   ├── DTOs/RoadIncident
+│   ├── IncidentIcon    # Incident enrichment (icons, labels)
 │   └── Services/NationalHighwaysService
 ├── Services/          # Orchestration
 │   ├── FloodWatchService, FloodWatchPromptBuilder, RiskCorrelationService
-│   ├── LocationResolver, PostcodeValidator, WeatherService
+│   ├── LocationResolver, PostcodeValidator, SearchMessageBuilder, WeatherService
+├── Support/           # Cross-cutting
+│   ├── CircuitBreaker, OpenAiErrorHandler, LogMasker
 ├── DTOs/RiskAssessment
 ├── Enums/Region
 ├── ValueObjects/Postcode
@@ -75,7 +78,7 @@ routes/
 database/
 ├── migrations/
 tests/
-├── Feature/           # Primary tests
+├── Feature/           # Primary tests (mirrors app structure)
 ├── Unit/
 ```
 

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\RateLimiter;
@@ -15,6 +16,25 @@ use Tests\TestCase;
 class FloodWatchDashboardTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $lat = config('flood-watch.default_lat', 51.0358);
+        $long = config('flood-watch.default_long', -2.8318);
+        Cache::put("flood-watch:map-data:{$lat}:{$long}", [
+            'floods' => [],
+            'incidents' => [],
+            'riverLevels' => [],
+            'lastChecked' => null,
+        ], 300);
+        Cache::put('flood-watch-risk-gauge', [
+            'index' => 0,
+            'label' => 'Low',
+            'summary' => 'No active alerts.',
+        ], 900);
+    }
 
     public function test_home_page_renders_flood_watch_dashboard_component(): void
     {
@@ -121,8 +141,7 @@ class FloodWatchDashboardTest extends TestCase
                 ['road' => 'A361', 'status' => 'closed'],
             ]);
 
-        $component->assertSee('1 / 7', false)
-            ->assertSee('closures', false);
+        $component->assertSee('1 incidents on 7 monitored routes', false);
     }
 
     public function test_status_grid_weather_shows_precipitation_next_48h(): void
