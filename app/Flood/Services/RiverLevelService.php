@@ -6,6 +6,7 @@ use App\Support\CircuitBreaker;
 use App\Support\CircuitOpenException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
 
 /**
@@ -140,14 +141,15 @@ class RiverLevelService
 
     /**
      * @param  array<int, array{notation: string, label: string, riverName: string, town: string, lat: float, long: float}>  $stations
-     * @return array<string, array{value: float, unitName: string, dateTime: string}>
+     * @return array<string, array{value: float, unitName: string, dateTime: string, trend?: string}>
      */
     private function fetchReadings(string $baseUrl, int $timeout, array $stations): array
     {
+        $since = Carbon::now()->subHours(config('flood-watch.environment_agency.trend_hours', 24))->toIso8601String();
         $requests = [];
         foreach ($stations as $station) {
             $notation = $station['notation'];
-            $requests[$notation] = "{$baseUrl}/id/stations/{$notation}/readings?latest&_sorted";
+            $requests[$notation] = "{$baseUrl}/id/stations/{$notation}/readings?since={$since}&_sorted&_limit=100";
         }
 
         $responses = Http::timeout($timeout)->pool(function ($pool) use ($requests) {
@@ -164,7 +166,8 @@ class RiverLevelService
 
             $data = $response->json();
             $items = $data['items'] ?? [];
-            $latest = $items[0] ?? null;
+            $levelItems = $this->filterLevelReadings($items);
+            $latest = $levelItems[0] ?? null;
 
             if ($latest !== null && isset($latest['value'], $latest['dateTime'])) {
                 $measure = $latest['measure'] ?? '';
@@ -174,11 +177,52 @@ class RiverLevelService
                     'value' => (float) $latest['value'],
                     'unitName' => $unitName,
                     'dateTime' => $latest['dateTime'] ?? '',
+                    'trend' => $this->computeTrend($levelItems),
                 ];
             }
         }
 
         return $readings;
+    }
+
+    /**
+     * Filter to level/stage readings (exclude flow, etc.) and sort newest first.
+     *
+     * @param  array<int, array{measure?: string, value?: float, dateTime?: string}>  $items
+     * @return array<int, array{measure?: string, value?: float, dateTime?: string}>
+     */
+    private function filterLevelReadings(array $items): array
+    {
+        $level = array_filter($items, function (array $item) {
+            $measure = (string) ($item['measure'] ?? '');
+
+            return str_contains(strtolower($measure), 'level') || str_contains(strtolower($measure), 'stage');
+        });
+        if (empty($level)) {
+            return $items;
+        }
+        usort($level, fn (array $a, array $b) => strcmp($b['dateTime'] ?? '', $a['dateTime'] ?? ''));
+
+        return array_values($level);
+    }
+
+    /**
+     * @param  array<int, array{value?: float, dateTime?: string}>  $items  Sorted newest first
+     * @return string 'rising'|'stable'|'falling'|'unknown'
+     */
+    private function computeTrend(array $items): string
+    {
+        if (count($items) < 2) {
+            return 'unknown';
+        }
+        $newest = (float) ($items[0]['value'] ?? 0);
+        $oldest = (float) ($items[array_key_last($items)]['value'] ?? 0);
+        $diff = abs($newest - $oldest);
+        if ($diff < 0.01) {
+            return 'stable';
+        }
+
+        return $newest > $oldest ? 'rising' : 'falling';
     }
 
     private function extractUnitFromMeasure(string $measure): string
@@ -195,7 +239,7 @@ class RiverLevelService
 
     /**
      * @param  array<int, array{notation: string, label: string, riverName: string, town: string, lat: float, long: float, stationType: string, typicalRangeLow?: float|null, typicalRangeHigh?: float|null}>  $stations
-     * @param  array<string, array{value: float, unitName: string, dateTime: string}>  $readings
+     * @param  array<string, array{value: float, unitName: string, dateTime: string, trend?: string}>  $readings
      * @return array<int, array{station: string, river: string, town: string, value: float, unit: string, unitName: string, dateTime: string, lat: float, long: float, stationType: string, levelStatus: string, typicalRangeLow?: float, typicalRangeHigh?: float}>
      */
     private function mergeStationsWithReadings(array $stations, array $readings): array
@@ -228,6 +272,9 @@ class RiverLevelService
                 'stationType' => $station['stationType'],
                 'levelStatus' => $levelStatus,
             ];
+            if (isset($reading['trend']) && $reading['trend'] !== 'unknown') {
+                $item['trend'] = $reading['trend'];
+            }
             if ($typicalLow !== null) {
                 $item['typicalRangeLow'] = $typicalLow;
             }

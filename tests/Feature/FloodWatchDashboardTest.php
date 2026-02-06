@@ -269,8 +269,8 @@ class FloodWatchDashboardTest extends TestCase
         OpenAI::fake([$toolCallResponse, $finalResponse]);
 
         $riverLevelsWithElevated = [
-            ['station' => 'Parrett', 'levelStatus' => 'elevated', 'value' => 2.5],
-            ['station' => 'Tone', 'levelStatus' => 'elevated', 'value' => 1.8],
+            ['station' => 'Gaw Bridge', 'river' => 'Parrett', 'levelStatus' => 'elevated', 'value' => 4.0, 'typicalRangeHigh' => 3.5, 'trend' => 'rising'],
+            ['station' => 'Bishops Hull', 'river' => 'Tone', 'levelStatus' => 'elevated', 'value' => 1.8, 'typicalRangeHigh' => 1.5, 'trend' => 'stable'],
             ['station' => 'Other', 'levelStatus' => 'low', 'value' => 0.5],
         ];
 
@@ -278,7 +278,10 @@ class FloodWatchDashboardTest extends TestCase
         $component->set('assistantResponse', 'Checked.');
         $component->set('riverLevels', $riverLevelsWithElevated);
 
-        $component->assertSee('2 stations elevated', false);
+        $component->assertSee('2 stations elevated', false)
+            ->assertSee('Gaw Bridge (Parrett)', false)
+            ->assertSee('Bishops Hull (Tone)', false)
+            ->assertSee('0.5 m above', false);
     }
 
     public function test_status_grid_ai_advisory_has_italic_styling(): void

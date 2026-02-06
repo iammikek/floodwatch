@@ -7,20 +7,55 @@
 
 <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 min-h-0 overflow-hidden grid-rows-4 sm:grid-rows-2 lg:grid-rows-1">
     <x-flood-watch.status-grid-card :title="__('flood-watch.dashboard.status_grid_hydrological')">
-        <p class="text-slate-600 text-sm">
-            @php
-                $elevatedCount = count(array_filter($riverLevels, fn ($r) => ($r['levelStatus'] ?? '') === 'elevated'));
-            @endphp
-            @if (count($riverLevels) > 0)
-                @if ($elevatedCount > 0)
+        @php
+            $elevatedStations = array_values(array_filter($riverLevels, fn ($r) => ($r['levelStatus'] ?? '') === 'elevated'));
+            $elevatedCount = count($elevatedStations);
+        @endphp
+        @if (count($riverLevels) > 0)
+            @if ($elevatedCount > 0)
+                <p class="text-slate-600 text-sm font-medium">
                     {{ __('flood-watch.dashboard.status_grid_stations_elevated', ['count' => $elevatedCount]) }}
-                @else
-                    {{ count($riverLevels) }} {{ __('flood-watch.dashboard.stations') }}
-                @endif
+                </p>
+                <ul class="mt-1.5 space-y-1 text-slate-600 text-xs">
+                    @foreach ($elevatedStations as $station)
+                        <li
+                            class="flex items-center gap-1.5 cursor-pointer hover:bg-slate-100 rounded px-1.5 py-0.5 -mx-1.5 transition-colors"
+                            role="button"
+                            tabindex="0"
+                            title="{{ __('flood-watch.dashboard.focus_on_map') }}"
+                            data-lat="{{ $station['lat'] ?? '' }}"
+                            data-long="{{ $station['long'] ?? '' }}"
+                            @click="const el = $event.currentTarget; const lat = parseFloat(el.dataset.lat), long = parseFloat(el.dataset.long); if (!isNaN(lat) && !isNaN(long)) { window.dispatchEvent(new CustomEvent('flood-map-focus-station', { detail: { lat, long } })); document.getElementById('map-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); }"
+                            @keydown.enter.prevent="$event.currentTarget.click()"
+                            @keydown.space.prevent="$event.currentTarget.click()"
+                        >
+                            @if (! empty($station['trend']) && $station['trend'] !== 'unknown')
+                                <span class="shrink-0" title="{{ __('flood-watch.dashboard.trend_' . $station['trend']) }}">
+                                    @switch($station['trend'])
+                                        @case('rising')
+                                            ↑
+                                            @break
+                                        @case('falling')
+                                            ↓
+                                            @break
+                                        @default
+                                            →
+                                    @endswitch
+                                </span>
+                            @endif
+                            <span>{{ $station['station'] ?? '' }}{{ ! empty($station['river']) ? ' (' . ($station['river']) . ')' : '' }}</span>
+                            @if (isset($station['value'], $station['typicalRangeHigh']) && $station['value'] > $station['typicalRangeHigh'])
+                                <span class="text-amber-600 shrink-0">{{ number_format($station['value'] - $station['typicalRangeHigh'], 1) }} m above</span>
+                            @endif
+                        </li>
+                    @endforeach
+                </ul>
             @else
-                {{ __('flood-watch.dashboard.status_grid_no_data') }}
+                <p class="text-slate-600 text-sm">{{ count($riverLevels) }} {{ __('flood-watch.dashboard.stations') }}</p>
             @endif
-        </p>
+        @else
+            <p class="text-slate-600 text-sm">{{ __('flood-watch.dashboard.status_grid_no_data') }}</p>
+        @endif
     </x-flood-watch.status-grid-card>
 
     <x-flood-watch.status-grid-card :title="__('flood-watch.dashboard.status_grid_infrastructure')">

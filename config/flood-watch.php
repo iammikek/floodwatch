@@ -63,8 +63,10 @@ return [
     'environment_agency' => [
         'base_url' => env('ENVIRONMENT_AGENCY_URL', 'https://environment.data.gov.uk/flood-monitoring'),
         'timeout' => (int) env('ENVIRONMENT_AGENCY_TIMEOUT', 25),
+        'trend_hours' => (int) env('FLOOD_WATCH_TREND_HOURS', 24),
         'polygon_cache_hours' => (int) env('FLOOD_WATCH_POLYGON_CACHE_HOURS', 168),
         'max_polygons_per_request' => (int) env('FLOOD_WATCH_MAX_POLYGONS', 10),
+        'river_boundary_geojson_url' => env('FLOOD_WATCH_RIVER_BOUNDARY_GEOJSON_URL'),
         'retry_times' => (int) env('FLOOD_WATCH_EA_RETRY_TIMES', 3),
         'retry_sleep_ms' => (int) env('FLOOD_WATCH_EA_RETRY_SLEEP_MS', 100),
     ],

@@ -58,6 +58,8 @@
             Alpine.data('floodMap', (config) => ({
                 ...config,
                 map: null,
+                mapLoading: false,
+                stationMarkers: {},
                 esc(s) {
                     if (s == null || s === '') return '';
                     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -65,7 +67,7 @@
                 userIcon() {
                     const title = this.t?.your_location || 'Your location';
                     return L.divIcon({
-                        className: 'flood-map-marker flood-map-marker-user',
+                        className: 'leaflet-div-icon flood-map-marker flood-map-marker-user',
                         html: '<span class=\'flood-map-marker-inner\' title=\'' + title.replace(/'/g, '&#39;') + '\'>📍</span>',
                         iconSize: [28, 28],
                         iconAnchor: [14, 14]
@@ -78,7 +80,7 @@
                     const icon = type === 'pumping_station' ? '⚙' : type === 'barrier' ? '🛡' : type === 'drain' ? '〰' : '💧';
                     const levelLabel = status === 'elevated' ? (this.t?.elevated_level || 'Elevated level') : status === 'expected' ? (this.t?.expected_level || 'Expected level') : status === 'low' ? (this.t?.low_level || 'Low level') : '';
                     return L.divIcon({
-                        className: 'flood-map-marker flood-map-marker-station ' + statusClass,
+                        className: 'leaflet-div-icon flood-map-marker flood-map-marker-station ' + statusClass,
                         html: '<span class=\'flood-map-marker-inner\' title=\'' + levelLabel.replace(/'/g, '&#39;') + '\'>' + icon + '</span>',
                         iconSize: [26, 26],
                         iconAnchor: [13, 13]
@@ -101,7 +103,7 @@
                     const isSevere = level === 1;
                     const title = this.t?.flood_warning || 'Flood warning';
                     return L.divIcon({
-                        className: 'flood-map-marker flood-map-marker-flood' + (isSevere ? ' severe' : ''),
+                        className: 'leaflet-div-icon flood-map-marker flood-map-marker-flood' + (isSevere ? ' severe' : ''),
                         html: '<span class=\'flood-map-marker-inner\' title=\'' + title.replace(/'/g, '&#39;') + '\'>' + (isSevere ? '🚨' : '⚠') + '</span>',
                         iconSize: [26, 26],
                         iconAnchor: [13, 13]
@@ -131,7 +133,7 @@
                     const fallback = this.t?.road_incident || 'Road incident';
                     const title = this.esc(i.typeLabel || i.incidentType || i.managementType || fallback);
                     return L.divIcon({
-                        className: 'flood-map-marker flood-map-marker-incident',
+                        className: 'leaflet-div-icon flood-map-marker flood-map-marker-incident',
                         html: '<span class=\'flood-map-marker-inner\' title=\'' + title + '\'>' + icon + '</span>',
                         iconSize: [26, 26],
                         iconAnchor: [13, 13]
@@ -155,11 +157,13 @@
                                 .addTo(this.map)
                                 .bindPopup('<b>' + loc.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</b>');
                         }
+                        this.stationMarkers = {};
                         (this.stations || []).forEach(s => {
                             if (s.lat != null && s.long != null) {
-                                L.marker([s.lat, s.long], { icon: this.stationIcon(s) })
+                                const marker = L.marker([s.lat, s.long], { icon: this.stationIcon(s) })
                                     .addTo(this.map)
                                     .bindPopup(this.stationPopup(s));
+                                this.stationMarkers[`${s.lat},${s.long}`] = marker;
                             }
                         });
                         (this.floods || []).forEach(f => {
@@ -190,7 +194,7 @@
                                 const icon = p.type === 'reservoir' ? '🏞' : '⚙';
                                 const title = this.t?.reservoir || 'Reservoir';
                                 const divIcon = L.divIcon({
-                                    className: 'flood-map-marker flood-map-marker-infrastructure',
+                                    className: 'leaflet-div-icon flood-map-marker flood-map-marker-infrastructure',
                                     html: '<span class=\'flood-map-marker-inner\' title=\'' + (p.name || title).replace(/'/g, '&#39;') + '\'>' + icon + '</span>',
                                     iconSize: [24, 24],
                                     iconAnchor: [12, 12]
@@ -200,6 +204,18 @@
                                     .bindPopup('<b>' + (p.name || title).replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</b><br><small>' + (p.type || 'infrastructure') + '</small>');
                             }
                         });
+                        if (this.riverBoundaryUrl) {
+                            fetch(this.riverBoundaryUrl)
+                                .then(r => r.json())
+                                .then(geojson => {
+                                    if (this.map && geojson && document.contains(this.map.getContainer())) {
+                                        L.geoJSON(geojson, {
+                                            style: { color: '#0ea5e9', weight: 2, fillColor: '#0ea5e9', fillOpacity: 0.1 }
+                                        }).addTo(this.map);
+                                    }
+                                })
+                                .catch(() => {});
+                        }
                         const bounds = [];
                         if (this.hasUser) bounds.push([this.center.lat, this.center.long]);
                         (this.stations || []).forEach(s => { if (s.lat != null && s.long != null) bounds.push([s.lat, s.long]); });
@@ -219,11 +235,26 @@
                                 this.map.remove();
                                 this.map = null;
                             }
+                            this.mapLoading = true;
                             this.map = L.map('flood-map').setView([this.center.lat, this.center.long], 11);
-                            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                            const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                            }).addTo(this.map);
+                            });
+                            tileLayer.on('loading', () => { this.mapLoading = true; });
+                            tileLayer.on('load', () => { this.mapLoading = false; });
+                            tileLayer.addTo(this.map);
                             this.map.invalidateSize();
+                            const focusHandler = (e) => {
+                                const { lat, long } = e.detail || {};
+                                if (this.map && lat != null && long != null && document.contains(this.map.getContainer())) {
+                                    this.map.setView([lat, long], 14);
+                                    const marker = this.stationMarkers?.[`${lat},${long}`];
+                                    if (marker) marker.openPopup();
+                                }
+                            };
+                            if (this._focusHandler) window.removeEventListener('flood-map-focus-station', this._focusHandler);
+                            this._focusHandler = focusHandler;
+                            window.addEventListener('flood-map-focus-station', focusHandler);
                             requestIdleCallback(() => addMarkers(L), { timeout: 100 });
                         });
                     });

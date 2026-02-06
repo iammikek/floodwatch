@@ -118,6 +118,55 @@ class RiverLevelServiceTest extends TestCase
         $this->assertSame('elevated', $result[0]['levelStatus']);
     }
 
+    public function test_includes_trend_when_multiple_readings_available(): void
+    {
+        Http::fake(function ($request) {
+            $url = $request->url();
+            if (str_contains($url, '/id/stations?') || str_contains($url, '/id/stations&')) {
+                return Http::response([
+                    'items' => [
+                        [
+                            'notation' => '52119',
+                            'label' => 'Gaw Bridge',
+                            'riverName' => 'River Parrett',
+                            'town' => 'Kingsbury Episcopi',
+                            'lat' => 50.976043,
+                            'long' => -2.793549,
+                            'stageScale' => [
+                                'typicalRangeLow' => 1.5,
+                                'typicalRangeHigh' => 3.5,
+                            ],
+                        ],
+                    ],
+                ], 200);
+            }
+            if (str_contains($url, '/stations/52119/readings')) {
+                return Http::response([
+                    'items' => [
+                        [
+                            'value' => 2.5,
+                            'dateTime' => '2026-02-04T12:00:00Z',
+                            'measure' => 'http://environment.data.gov.uk/flood-monitoring/id/measures/52119-level-stage-i-15_min-mASD',
+                        ],
+                        [
+                            'value' => 2.2,
+                            'dateTime' => '2026-02-04T11:00:00Z',
+                            'measure' => 'http://environment.data.gov.uk/flood-monitoring/id/measures/52119-level-stage-i-15_min-mASD',
+                        ],
+                    ],
+                ], 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
+        $service = new RiverLevelService;
+        $result = $service->getLevels();
+
+        $this->assertCount(1, $result);
+        $this->assertSame('rising', $result[0]['trend']);
+    }
+
     public function test_fetches_river_levels_for_custom_coordinates(): void
     {
         Http::fake([
