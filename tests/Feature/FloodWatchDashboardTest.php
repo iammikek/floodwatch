@@ -605,6 +605,8 @@ class FloodWatchDashboardTest extends TestCase
         Config::set('openai.api_key', 'test-key');
         Config::set('app.debug', true);
 
+        $this->fakeChatPrefetchHttp();
+
         OpenAI::fake([new \RuntimeException('OpenAI API rate limit exceeded')]);
 
         $component = Livewire::test('flood-watch-dashboard')
@@ -620,6 +622,8 @@ class FloodWatchDashboardTest extends TestCase
         Config::set('openai.api_key', 'test-key');
         Config::set('app.debug', false);
 
+        $this->fakeChatPrefetchHttp();
+
         OpenAI::fake([new \RuntimeException('OpenAI API rate limit exceeded')]);
 
         $component = Livewire::test('flood-watch-dashboard')
@@ -633,6 +637,8 @@ class FloodWatchDashboardTest extends TestCase
     {
         Config::set('openai.api_key', 'test-key');
         Config::set('app.debug', true);
+
+        $this->fakeChatPrefetchHttp();
 
         OpenAI::fake([
             new \RuntimeException('cURL error 28: Operation timed out after 30005 milliseconds with 0 bytes received'),
@@ -983,5 +989,26 @@ class FloodWatchDashboardTest extends TestCase
             ->call('search')
             ->assertSet('assistantResponse', 'After cooldown.')
             ->assertSet('error', null);
+    }
+
+    private function fakeChatPrefetchHttp(): void
+    {
+        Http::fake(function ($request) {
+            if (str_contains($request->url(), 'environment.data.gov.uk')) {
+                if (str_contains($request->url(), '/id/stations')) {
+                    return Http::response(['items' => []], 200);
+                }
+
+                return Http::response(['items' => []], 200);
+            }
+            if (str_contains($request->url(), 'fgs.metoffice.gov.uk')) {
+                return Http::response(['statement' => []], 200);
+            }
+            if (str_contains($request->url(), 'open-meteo.com')) {
+                return Http::response(['daily' => ['time' => [], 'weathercode' => [], 'temperature_2m_max' => [], 'temperature_2m_min' => [], 'precipitation_sum' => []]], 200);
+            }
+
+            return Http::response(null, 404);
+        });
     }
 }

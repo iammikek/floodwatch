@@ -3,11 +3,20 @@
 namespace Tests\Feature\Flood\Services;
 
 use App\Flood\Services\RiverLevelService;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class RiverLevelServiceTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Config::set('flood-watch.circuit_breaker.enabled', false);
+        Config::set('flood-watch.environment_agency.timeout', 2);
+        Config::set('flood-watch.environment_agency.retry_times', 0);
+    }
+
     public function test_fetches_river_levels_for_default_coordinates(): void
     {
         Http::fake(function ($request) {

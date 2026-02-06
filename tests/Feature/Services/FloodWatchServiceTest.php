@@ -209,6 +209,24 @@ class FloodWatchServiceTest extends TestCase
     {
         Config::set('openai.api_key', 'test-key');
 
+        Http::fake(function ($request) {
+            if (str_contains($request->url(), 'environment.data.gov.uk')) {
+                if (str_contains($request->url(), '/id/stations')) {
+                    return Http::response(['items' => []], 200);
+                }
+
+                return Http::response(['items' => []], 200);
+            }
+            if (str_contains($request->url(), 'fgs.metoffice.gov.uk')) {
+                return Http::response(['statement' => []], 200);
+            }
+            if (str_contains($request->url(), 'open-meteo.com')) {
+                return Http::response(['daily' => ['time' => [], 'weathercode' => [], 'temperature_2m_max' => [], 'temperature_2m_min' => [], 'precipitation_sum' => []]], 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
         $directResponse = CreateResponse::fake([
             'choices' => [
                 [
