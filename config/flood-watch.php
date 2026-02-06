@@ -232,6 +232,8 @@ return [
         'A30', 'A303', 'A361', 'A372', 'A38', 'M4', 'M5',
     ],
 
+    'status_grid_monitored_routes' => 7,
+
     /*
     |--------------------------------------------------------------------------
     | Fallback Coordinates for Road Incidents (Map Display)

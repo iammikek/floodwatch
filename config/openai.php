@@ -52,8 +52,10 @@ return [
     |--------------------------------------------------------------------------
     |
     | The timeout may be used to specify the maximum number of seconds to wait
-    | for a response. By default, the client will time out after 30 seconds.
+    | for a response. Local dev defaults to 10s for faster feedback; production
+    | uses 30s. Override with OPENAI_REQUEST_TIMEOUT.
+    |
     */
 
-    'request_timeout' => env('OPENAI_REQUEST_TIMEOUT', 30),
+    'request_timeout' => env('OPENAI_REQUEST_TIMEOUT', env('APP_ENV') === 'local' ? 10 : 30),
 ];

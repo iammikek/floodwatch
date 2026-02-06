@@ -34,7 +34,7 @@
     }"
     x-init="init()"
 >
-    <div class="max-w-2xl mx-auto w-full">
+    <div class="max-w-7xl mx-auto w-full">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <h1 class="text-2xl font-semibold text-slate-900 shrink-0">
                 {{ __('flood-watch.dashboard.title') }}
@@ -92,8 +92,15 @@
             <div class="p-4 rounded-lg bg-white shadow-sm border border-slate-200">
                 <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">{{ __('flood-watch.dashboard.status_grid_hydrological') }}</p>
                 <p class="text-slate-600 text-sm">
+                    @php
+                        $elevatedCount = count(array_filter($riverLevels, fn ($r) => ($r['levelStatus'] ?? '') === 'elevated'));
+                    @endphp
                     @if (count($riverLevels) > 0)
-                        {{ count($riverLevels) }} {{ __('flood-watch.dashboard.stations') }}
+                        @if ($elevatedCount > 0)
+                            {{ __('flood-watch.dashboard.status_grid_stations_elevated', ['count' => $elevatedCount]) }}
+                        @else
+                            {{ count($riverLevels) }} {{ __('flood-watch.dashboard.stations') }}
+                        @endif
                     @else
                         {{ __('flood-watch.dashboard.status_grid_no_data') }}
                     @endif
@@ -103,7 +110,10 @@
                 <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">{{ __('flood-watch.dashboard.status_grid_infrastructure') }}</p>
                 <p class="text-slate-600 text-sm">
                     @if ($assistantResponse)
-                        {{ count($incidents) }} {{ count($incidents) === 1 ? __('flood-watch.dashboard.incident') : __('flood-watch.dashboard.incidents') }}
+                        @php
+                            $monitoredTotal = config('flood-watch.status_grid_monitored_routes', 7);
+                        @endphp
+                        {{ __('flood-watch.dashboard.status_grid_closures_format', ['active' => count($incidents), 'total' => $monitoredTotal]) }}
                     @else
                         {{ __('flood-watch.dashboard.status_grid_no_data') }}
                     @endif
@@ -117,6 +127,12 @@
                             {{ $day['icon'] ?? '🌤️' }} {{ round($day['temp_max'] ?? 0) }}°
                             @if (!$loop->last) · @endif
                         @endforeach
+                        @php
+                            $precip48h = array_sum(array_column(array_slice($weather, 0, 2), 'precipitation'));
+                        @endphp
+                        @if ($precip48h > 0)
+                            <span class="block text-sky-600 mt-1">{{ __('flood-watch.dashboard.status_grid_precipitation_48h', ['mm' => round($precip48h, 1)]) }}</span>
+                        @endif
                     @else
                         {{ __('flood-watch.dashboard.status_grid_no_data') }}
                     @endif
@@ -124,7 +140,7 @@
             </div>
             <div class="p-4 rounded-lg bg-white shadow-sm border border-slate-200">
                 <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">{{ __('flood-watch.dashboard.status_grid_ai_advisory') }}</p>
-                <p class="text-slate-600 text-sm">
+                <p class="text-slate-600 text-sm italic">
                     @if ($assistantResponse)
                         {{ Str::limit(strip_tags(Str::markdown($assistantResponse)), 80) }}
                     @else

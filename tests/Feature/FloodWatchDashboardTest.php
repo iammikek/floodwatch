@@ -113,6 +113,162 @@ class FloodWatchDashboardTest extends TestCase
             ->assertSee('risk-gauge', false);
     }
 
+    public function test_status_grid_infrastructure_shows_active_over_monitored_format(): void
+    {
+        $component = Livewire::test('flood-watch-dashboard')
+            ->set('assistantResponse', 'Summary.')
+            ->set('incidents', [
+                ['road' => 'A361', 'status' => 'closed'],
+            ]);
+
+        $component->assertSee('1 / 7', false)
+            ->assertSee('closures', false);
+    }
+
+    public function test_status_grid_weather_shows_precipitation_next_48h(): void
+    {
+        Config::set('openai.api_key', 'test-key');
+        Config::set('flood-watch.national_highways.api_key', 'test-key');
+        Config::set('flood-watch.national_highways.base_url', 'https://api.example.com');
+
+        Http::fake(function ($request) {
+            if (str_contains($request->url(), 'environment.data.gov.uk')) {
+                return Http::response(['items' => []], 200);
+            }
+            if (str_contains($request->url(), 'api.example.com')) {
+                return Http::response(['D2Payload' => ['situation' => []]], 200);
+            }
+            if (str_contains($request->url(), 'fgs.metoffice.gov.uk')) {
+                return Http::response(['statement' => []], 200);
+            }
+            if (str_contains($request->url(), 'open-meteo.com')) {
+                return Http::response(['daily' => ['time' => ['2025-02-04', '2025-02-05', '2025-02-06'], 'weathercode' => [61, 0, 0], 'temperature_2m_max' => [10, 9, 8], 'temperature_2m_min' => [5, 4, 3], 'precipitation_sum' => [3.2, 2.1, 0]]], 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
+        $directResponse = CreateResponse::fake([
+            'choices' => [
+                [
+                    'index' => 0,
+                    'message' => [
+                        'role' => 'assistant',
+                        'content' => 'Weather checked.',
+                        'tool_calls' => [],
+                    ],
+                    'logprobs' => null,
+                    'finish_reason' => 'stop',
+                ],
+            ],
+        ]);
+
+        OpenAI::fake([$directResponse]);
+
+        Livewire::test('flood-watch-dashboard')
+            ->call('search')
+            ->assertSee('5.3', false)
+            ->assertSee('mm next 48h', false);
+    }
+
+    public function test_status_grid_hydrological_shows_stations_elevated_when_applicable(): void
+    {
+        Config::set('openai.api_key', 'test-key');
+        Config::set('flood-watch.national_highways.api_key', 'test-key');
+        Config::set('flood-watch.national_highways.base_url', 'https://api.example.com');
+
+        Http::fake(function ($request) {
+            if (str_contains($request->url(), 'environment.data.gov.uk')) {
+                if (str_contains($request->url(), '/id/stations')) {
+                    return Http::response(['items' => [['notation' => 'E123', 'lat' => 51.04, 'long' => -2.83]]], 200);
+                }
+                if (str_contains($request->url(), '/id/measures')) {
+                    return Http::response(['items' => [['@id' => 'm1', 'latestReading' => ['value' => 2.5], 'period' => 900]]], 200);
+                }
+
+                return Http::response(['items' => []], 200);
+            }
+            if (str_contains($request->url(), 'api.example.com')) {
+                return Http::response(['D2Payload' => ['situation' => []]], 200);
+            }
+            if (str_contains($request->url(), 'fgs.metoffice.gov.uk')) {
+                return Http::response(['statement' => []], 200);
+            }
+            if (str_contains($request->url(), 'open-meteo.com')) {
+                return Http::response(['daily' => ['time' => [], 'weathercode' => [], 'temperature_2m_max' => [], 'temperature_2m_min' => [], 'precipitation_sum' => []]], 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
+        $toolCallResponse = CreateResponse::fake([
+            'choices' => [
+                [
+                    'index' => 0,
+                    'message' => [
+                        'role' => 'assistant',
+                        'content' => null,
+                        'tool_calls' => [
+                            [
+                                'id' => 'call_1',
+                                'type' => 'function',
+                                'function' => ['name' => 'GetFloodData', 'arguments' => '{}'],
+                            ],
+                            [
+                                'id' => 'call_2',
+                                'type' => 'function',
+                                'function' => ['name' => 'GetHighwaysIncidents', 'arguments' => '{}'],
+                            ],
+                            [
+                                'id' => 'call_3',
+                                'type' => 'function',
+                                'function' => ['name' => 'GetRiverLevels', 'arguments' => '{}'],
+                            ],
+                        ],
+                    ],
+                    'logprobs' => null,
+                    'finish_reason' => 'tool_calls',
+                ],
+            ],
+        ]);
+
+        $finalResponse = CreateResponse::fake([
+            'choices' => [
+                [
+                    'index' => 0,
+                    'message' => [
+                        'role' => 'assistant',
+                        'content' => 'River levels checked.',
+                        'tool_calls' => [],
+                    ],
+                    'logprobs' => null,
+                    'finish_reason' => 'stop',
+                ],
+            ],
+        ]);
+
+        OpenAI::fake([$toolCallResponse, $finalResponse]);
+
+        $riverLevelsWithElevated = [
+            ['station' => 'Parrett', 'levelStatus' => 'elevated', 'value' => 2.5],
+            ['station' => 'Tone', 'levelStatus' => 'elevated', 'value' => 1.8],
+            ['station' => 'Other', 'levelStatus' => 'low', 'value' => 0.5],
+        ];
+
+        $component = Livewire::test('flood-watch-dashboard');
+        $component->set('assistantResponse', 'Checked.');
+        $component->set('riverLevels', $riverLevelsWithElevated);
+
+        $component->assertSee('2 stations elevated', false);
+    }
+
+    public function test_status_grid_ai_advisory_has_italic_styling(): void
+    {
+        Livewire::test('flood-watch-dashboard')
+            ->set('assistantResponse', 'River Parrett levels elevated.')
+            ->assertSee('italic', false);
+    }
+
     public function test_dashboard_risk_gauge_shows_index_label_and_summary(): void
     {
         Config::set('flood-watch.national_highways.api_key', 'test-key');

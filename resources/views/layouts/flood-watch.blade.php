@@ -12,8 +12,8 @@
     </head>
     <body>
         @auth
-            <header class="bg-white border-b border-slate-200 px-4 py-2">
-                <div class="max-w-2xl mx-auto flex justify-between items-center">
+            <header class="bg-white border-b border-slate-200 px-4 py-3">
+                <div class="max-w-7xl mx-auto flex justify-between items-center">
                     <a href="{{ url('/') }}" class="shrink-0 flex items-center">
                         <x-application-logo class="block h-4 w-auto fill-current text-slate-800" />
                     </a>
@@ -34,8 +34,8 @@
                 </div>
             </header>
         @else
-            <header class="bg-white border-b border-slate-200 px-4 py-2">
-                <div class="max-w-2xl mx-auto flex justify-between items-center">
+            <header class="bg-white border-b border-slate-200 px-4 py-3">
+                <div class="max-w-7xl mx-auto flex justify-between items-center">
                     <a href="{{ url('/') }}" class="shrink-0 flex items-center">
                         <x-application-logo class="block h-4 w-auto fill-current text-slate-800" />
                     </a>

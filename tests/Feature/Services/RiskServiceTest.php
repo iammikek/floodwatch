@@ -84,6 +84,38 @@ class RiskServiceTest extends TestCase
         $this->assertStringContainsString('severe', $result['summary']);
     }
 
+    public function test_calculate_filters_incidents_to_south_west_roads_only(): void
+    {
+        Config::set('flood-watch.national_highways.api_key', 'test-key');
+        Config::set('flood-watch.national_highways.base_url', 'https://api.example.com');
+        Config::set('flood-watch.national_highways.fetch_unplanned', false);
+
+        $fixture = file_get_contents(__DIR__.'/../../fixtures/national_highways_mixed_routes.json');
+
+        Http::fake(function ($request) use ($fixture) {
+            if (str_contains($request->url(), 'environment.data.gov.uk')) {
+                return Http::response(['items' => []], 200);
+            }
+            if (str_contains($request->url(), 'api.example.com')) {
+                return Http::response($fixture, 200, ['Content-Type' => 'application/json']);
+            }
+            if (str_contains($request->url(), 'fgs.metoffice.gov.uk')) {
+                return Http::response(['statement' => []], 200);
+            }
+            if (str_contains($request->url(), 'open-meteo.com')) {
+                return Http::response(['daily' => ['time' => [], 'weathercode' => [], 'temperature_2m_max' => [], 'temperature_2m_min' => [], 'precipitation_sum' => []]], 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
+        $service = app(RiskService::class);
+        $result = $service->calculate();
+
+        $this->assertStringContainsString('1 road closure', $result['summary']);
+        $this->assertStringNotContainsString('2 road', $result['summary']);
+    }
+
     public function test_calculate_label_maps_index_to_severity(): void
     {
         Config::set('flood-watch.national_highways.api_key', 'test-key');

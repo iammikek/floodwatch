@@ -35,6 +35,8 @@ class RiskService
             fn () => $this->forecastService->getForecast(),
         ]);
 
+        $incidents = $this->filterIncidentsToSouthWest($incidents);
+
         $floodScore = $this->floodScore($floods);
         $incidentScore = $this->incidentScore($incidents);
         $riverScore = $this->riverScore($riverLevels);
@@ -158,6 +160,39 @@ class RiskService
             $index <= 60 => 'High',
             default => 'Severe',
         };
+    }
+
+    /**
+     * Filter incidents to only those on South West monitored routes (A30, A303, A361, A372, A38, M4, M5).
+     *
+     * @param  array<int, array{road?: string}>  $incidents
+     * @return array<int, array{road?: string}>
+     */
+    private function filterIncidentsToSouthWest(array $incidents): array
+    {
+        $allowed = config('flood-watch.incident_allowed_roads', []);
+        if (empty($allowed)) {
+            return $incidents;
+        }
+
+        return array_values(array_filter($incidents, function (array $incident) use ($allowed): bool {
+            $road = trim((string) ($incident['road'] ?? ''));
+            if ($road === '') {
+                return false;
+            }
+            $baseRoad = $this->extractBaseRoad($road);
+
+            return in_array($baseRoad, $allowed, true);
+        }));
+    }
+
+    private function extractBaseRoad(string $roadOrKeyRoute): string
+    {
+        if (preg_match('/^([AM]\d+[A-Z]?)/', trim($roadOrKeyRoute), $m)) {
+            return $m[1];
+        }
+
+        return '';
     }
 
     /**

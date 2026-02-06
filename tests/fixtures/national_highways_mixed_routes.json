@@ -1,0 +1,58 @@
+{
+  "D2Payload": {
+    "situation": [
+      {
+        "situationRecord": [
+          {
+            "sitRoadOrCarriagewayOrLaneManagement": {
+              "validity": {"validityStatus": "closed"},
+              "cause": {"causeType": "environmentalObstruction"},
+              "generalPublicComment": [{"comment": "A361 closed"}],
+              "roadOrCarriagewayOrLaneManagementType": {"value": "roadClosed"},
+              "locationReference": {
+                "locLocationGroupByList": {
+                  "locationContainedInGroup": [
+                    {
+                      "locSingleRoadLinearLocation": {
+                        "linearWithinLinearElement": [
+                          {
+                            "linearElement": {
+                              "locLinearElementByCode": {"roadName": "A361"}
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      },
+      {
+        "situationRecord": [
+          {
+            "sitRoadOrCarriagewayOrLaneManagement": {
+              "validity": {"validityStatus": "closed"},
+              "cause": {"causeType": "environmentalObstruction"},
+              "generalPublicComment": [{"comment": "A120 closed"}],
+              "roadOrCarriagewayOrLaneManagementType": {"value": "roadClosed"},
+              "locationReference": {
+                "locSingleRoadLinearLocation": {
+                  "linearWithinLinearElement": [
+                    {
+                      "linearElement": {
+                        "locLinearElementByCode": {"roadName": "A120"}
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
