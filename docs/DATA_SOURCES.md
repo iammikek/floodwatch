@@ -34,12 +34,13 @@ National Rail provides real-time train running information via **Darwin**, the G
 
 ### Relevance to Flood Watch
 
+- **Primary interest**: Trackside flooding – disruption where the cause is flooding or adverse weather affecting the line
 - **Dawlish line** (Exeter–Plymouth): Famous for coastal flooding; when flooded, rail is often cut
 - **Exeter–London Paddington**: Stoke Canon, Cowley Bridge – river flood risk
 - **Bristol area**: Temple Meads, Parkway – Severn/Avon flood correlation
 - **Somerset**: Limited rail; Taunton, Bridgwater – Tone/Parrett
 
-**Potential use**: When flood warnings exist for coastal/river areas near rail lines, surface rail disruption (delays, cancellations) to give users a fuller travel picture. Would require station–flood-area mapping.
+**Potential use**: Surface rail disruption (delays, cancellations) where the reason mentions flooding, trackside flooding, or adverse weather. Correlate with EA flood warnings for coastal/river areas near rail lines. Would require station–flood-area mapping and filtering disruption reasons.
 
 ### Technical Notes
 

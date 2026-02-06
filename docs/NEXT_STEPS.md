@@ -2,6 +2,13 @@
 
 Consolidated development plan based on planning work (Feb 2026).
 
+## 0. Instant Load Dashboard (Priority)
+
+**Ref**: `docs/NEXT_STEPS_INSTANT_LOAD.md`
+
+- Make Langport dashboard load instantly by using cached `getMapData()` in mount, pre-warming cache in scheduled job, and passing server data to status grid and map
+- See `NEXT_STEPS_INSTANT_LOAD.md` for step-by-step implementation plan
+
 ## 1. Road Data Strategy
 
 **Ref**: `docs/ROAD_DATA_STRATEGY.md`
@@ -15,9 +22,11 @@ Consolidated development plan based on planning work (Feb 2026).
 
 **Ref**: `docs/DATA_SOURCES.md`
 
+- **Primary focus**: Trackside flooding reports – surface disruption where cause is flooding or adverse weather affecting the line (e.g. Dawlish coastal, Stoke Canon, Cowley Bridge)
 - **Sign-up**: Rail Data Marketplace (raildata.org.uk) for LDB/Darwin access
 - **Service**: `NationalRailService` – fetch departures/delays for key South West stations
-- **Tool**: `GetRailDisruption` – LLM can call when region has rail
+- **Filtering**: Prioritise or flag disruption reasons that mention flooding, trackside flooding, adverse weather, line closure
+- **Tool**: `GetRailDisruption` – LLM can call when region has rail; include flood-related disruption in summary
 - **UI**: Dedicated "Rail Status" section (pill + list), mirror Road Status pattern
 - **Config**: `flood-watch.rail_stations` per region (Exeter, Dawlish, Plymouth, Bristol, Taunton)
 - **Attribution**: National Rail in footer
@@ -40,6 +49,7 @@ Consolidated development plan based on planning work (Feb 2026).
 
 | Doc | Purpose |
 |-----|---------|
+| `docs/NEXT_STEPS_INSTANT_LOAD.md` | Instant load dashboard: cache, pre-warm, server data to grid/map |
 | `docs/ACCEPTANCE_CRITERIA.md` | Success checklist: latency, correlation, graceful failure, attribution |
 | `docs/ROAD_DATA_STRATEGY.md` | Road data relevance, cascading impact, predictive rules, cut-off areas |
 | `docs/DATA_SOURCES.md` | National Rail, emergency services, surfacing options |

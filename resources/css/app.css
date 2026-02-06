@@ -20,3 +20,29 @@
     line-height: 1 !important;
 }
 
+/* Flood warning popup: text to the right of marker, scroll when tall */
+.flood-map-popup-flood.leaflet-popup {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+}
+.flood-map-popup-flood .leaflet-popup-content-wrapper {
+    order: 2;
+}
+.flood-map-popup-flood .leaflet-popup-tip-container {
+    order: 1;
+    position: static !important;
+    width: 20px;
+    height: 40px;
+    margin: 0;
+    margin-right: -1px;
+}
+.flood-map-popup-flood .leaflet-popup-tip {
+    margin: 0;
+    transform: rotate(135deg);
+}
+.flood-map-popup-flood .leaflet-popup-content {
+    max-height: min(80vh, 400px);
+    overflow-y: auto;
+}
+

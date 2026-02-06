@@ -137,6 +137,9 @@
                     if (f.message) html += '<br><small style=\'white-space:pre-wrap;word-break:break-word\'>' + this.esc(f.message.replace(/<[^>]*>/g, '')) + '</small>';
                     return html;
                 },
+                floodPopupOptions() {
+                    return { offset: [15, 0], className: 'flood-map-popup-flood' };
+                },
                 floodPolygonStyle(f) {
                     const level = f.severityLevel || 0;
                     const isSevere = level === 1;
@@ -205,14 +208,14 @@
                                 L.geoJSON(f.polygon, {
                                     style: () => style,
                                     onEachFeature: (feature, layer) => {
-                                        layer.bindPopup(this.floodPopup(f));
+                                        layer.bindPopup(this.floodPopup(f), this.floodPopupOptions());
                                     }
                                 }).addTo(this.map);
                             }
                             if (f.lat != null && f.long != null) {
                                 const marker = L.marker([f.lat, f.long], { icon: this.floodIcon(f) })
                                     .addTo(this.map)
-                                    .bindPopup(this.floodPopup(f));
+                                    .bindPopup(this.floodPopup(f), this.floodPopupOptions());
                                 this.floodMarkers[`${f.lat},${f.long}`] = marker;
                             }
                         });
