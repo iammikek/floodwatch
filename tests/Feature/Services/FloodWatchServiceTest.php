@@ -99,6 +99,112 @@ class FloodWatchServiceTest extends TestCase
         $this->assertIsArray($result['incidents']);
     }
 
+    public function test_get_map_data_returns_floods_incidents_river_levels_forecast_weather(): void
+    {
+        Config::set('flood-watch.national_highways.api_key', 'test-key');
+        Config::set('flood-watch.national_highways.base_url', 'https://api.example.com');
+        Config::set('flood-watch.national_highways.fetch_unplanned', false);
+
+        Http::fake(function ($request) {
+            if (str_contains($request->url(), 'environment.data.gov.uk')) {
+                if (str_contains($request->url(), '/id/stations')) {
+                    return Http::response(['items' => []], 200);
+                }
+                if (str_contains($request->url(), '/id/floodAreas')) {
+                    return Http::response(['items' => []], 200);
+                }
+                if (str_contains($request->url(), '/id/floods')) {
+                    return Http::response(['items' => []], 200);
+                }
+            }
+            if (str_contains($request->url(), 'api.example.com')) {
+                return Http::response(['D2Payload' => ['situation' => []]], 200);
+            }
+            if (str_contains($request->url(), 'fgs.metoffice.gov.uk')) {
+                return Http::response(['statement' => []], 200);
+            }
+            if (str_contains($request->url(), 'open-meteo.com')) {
+                return Http::response(['daily' => ['time' => [], 'weathercode' => [], 'temperature_2m_max' => [], 'temperature_2m_min' => [], 'precipitation_sum' => []]], 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
+        $service = app(FloodWatchService::class);
+        $result = $service->getMapData(51.0358, -2.8318, 'somerset');
+
+        $this->assertArrayHasKey('floods', $result);
+        $this->assertArrayHasKey('incidents', $result);
+        $this->assertArrayHasKey('riverLevels', $result);
+        $this->assertArrayHasKey('forecast', $result);
+        $this->assertArrayHasKey('weather', $result);
+        $this->assertArrayHasKey('lastChecked', $result);
+        $this->assertIsArray($result['floods']);
+        $this->assertIsArray($result['incidents']);
+        $this->assertIsArray($result['riverLevels']);
+    }
+
+    public function test_chat_uses_pre_fetched_data_when_provided(): void
+    {
+        Config::set('openai.api_key', 'test-key');
+        Config::set('flood-watch.cache_ttl_minutes', 0);
+
+        $preFetched = [
+            'floods' => [['description' => 'North Moor', 'severityLevel' => 2]],
+            'incidents' => [['road' => 'A361', 'status' => 'Closed']],
+            'riverLevels' => [['station' => 'Parrett', 'levelStatus' => 'elevated']],
+            'forecast' => ['england_forecast' => 'Stable'],
+            'weather' => ['daily' => ['time' => ['2026-02-05']]],
+        ];
+
+        $toolCallResponse = CreateResponse::fake([
+            'choices' => [
+                [
+                    'index' => 0,
+                    'message' => [
+                        'role' => 'assistant',
+                        'content' => null,
+                        'tool_calls' => [
+                            ['id' => 'c1', 'type' => 'function', 'function' => ['name' => 'GetFloodData', 'arguments' => '{}']],
+                            ['id' => 'c2', 'type' => 'function', 'function' => ['name' => 'GetHighwaysIncidents', 'arguments' => '{}']],
+                        ],
+                    ],
+                    'logprobs' => null,
+                    'finish_reason' => 'tool_calls',
+                ],
+            ],
+        ]);
+
+        $finalResponse = CreateResponse::fake([
+            'choices' => [
+                [
+                    'index' => 0,
+                    'message' => [
+                        'role' => 'assistant',
+                        'content' => 'North Moor has a flood warning. A361 is closed.',
+                        'tool_calls' => [],
+                    ],
+                    'logprobs' => null,
+                    'finish_reason' => 'stop',
+                ],
+            ],
+        ]);
+
+        OpenAI::fake([$toolCallResponse, $finalResponse]);
+
+        Http::fake(fn () => Http::response(null, 404));
+
+        $service = app(FloodWatchService::class);
+        $result = $service->chat('Check status', [], null, 51.03, -2.83, 'somerset', null, $preFetched);
+
+        $this->assertSame('North Moor has a flood warning. A361 is closed.', $result['response']);
+        $this->assertCount(1, $result['floods']);
+        $this->assertSame('North Moor', $result['floods'][0]['description']);
+        $this->assertCount(1, $result['incidents']);
+        $this->assertSame('A361', $result['incidents'][0]['road']);
+        Http::assertNothingSent();
+    }
+
     public function test_chat_returns_response_when_llm_responds_without_tool_calls(): void
     {
         Config::set('openai.api_key', 'test-key');

@@ -24,6 +24,27 @@ class FloodWatchDashboardTest extends TestCase
         $response->assertSeeLivewire('flood-watch-dashboard');
     }
 
+    public function test_home_page_shows_support_link_when_donation_url_configured(): void
+    {
+        Config::set('app.donation_url', 'https://ko-fi.com/automicalabs');
+
+        $response = $this->get('/');
+
+        $response->assertStatus(200);
+        $response->assertSee('Support', false);
+        $response->assertSee('https://ko-fi.com/automicalabs', false);
+    }
+
+    public function test_home_page_hides_support_link_when_donation_url_not_configured(): void
+    {
+        Config::set('app.donation_url', null);
+
+        $response = $this->get('/');
+
+        $response->assertStatus(200);
+        $response->assertDontSee('https://ko-fi.com/automicalabs', false);
+    }
+
     public function test_flood_watch_dashboard_displays_flood_risk_road_status_and_forecast_badges(): void
     {
         Livewire::test('flood-watch-dashboard')
@@ -37,6 +58,31 @@ class FloodWatchDashboardTest extends TestCase
         Livewire::test('flood-watch-dashboard')
             ->assertSee('Your location', false)
             ->assertSet('location', '');
+    }
+
+    public function test_dashboard_displays_status_grid_with_four_columns(): void
+    {
+        Livewire::test('flood-watch-dashboard')
+            ->assertSee('Hydrological Activity', false)
+            ->assertSee('Infrastructural Impact', false)
+            ->assertSee('Weather Outlook', false)
+            ->assertSee('AI Advisory', false);
+    }
+
+    public function test_dashboard_shows_map_by_default_with_default_centre(): void
+    {
+        $component = Livewire::test('flood-watch-dashboard');
+
+        $component->assertSet('mapCenter.lat', 51.0358);
+        $component->assertSet('mapCenter.long', -2.8318);
+        $component->assertSee('flood-map', false);
+    }
+
+    public function test_dashboard_has_check_my_location_as_primary_cta(): void
+    {
+        Livewire::test('flood-watch-dashboard')
+            ->assertSee('Check my location', false)
+            ->assertSee('Check status', false);
     }
 
     public function test_search_displays_assistant_response(): void

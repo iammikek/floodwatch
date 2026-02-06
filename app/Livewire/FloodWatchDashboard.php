@@ -49,6 +49,11 @@ class FloodWatchDashboard extends Component
 
     public function mount(): void
     {
+        $this->mapCenter = [
+            'lat' => config('flood-watch.default_lat'),
+            'long' => config('flood-watch.default_long'),
+        ];
+
         if (Auth::guest()) {
             $key = 'flood-watch-guest:'.request()->ip();
             if (RateLimiter::tooManyAttempts($key, 1)) {
@@ -77,7 +82,7 @@ class FloodWatchDashboard extends Component
 
     public function search(FloodWatchService $assistant, LocationResolver $locationResolver, FloodWatchTrendService $trendService): void
     {
-        $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'hasUserLocation', 'lastChecked', 'error', 'retryAfterTimestamp']);
+        $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'hasUserLocation', 'lastChecked', 'error', 'retryAfterTimestamp']);
         $this->loading = true;
 
         if (Auth::guest()) {

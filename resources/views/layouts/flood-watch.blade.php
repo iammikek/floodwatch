@@ -18,6 +18,9 @@
                         <x-application-logo class="block h-4 w-auto fill-current text-slate-800" />
                     </a>
                     <div class="flex items-center gap-3">
+                        @if (config('app.donation_url'))
+                            <a href="{{ config('app.donation_url') }}" target="_blank" rel="noopener" class="text-sm text-amber-600 hover:text-amber-700 font-medium" title="{{ __('flood-watch.dashboard.support_development') }}">☕ {{ __('flood-watch.dashboard.support') }}</a>
+                        @endif
                         <span class="text-sm text-slate-600">{{ Auth::user()->name }}</span>
                         @if (Auth::user()->isAdmin())
                             <a href="{{ url('/pulse') }}" class="text-sm text-blue-600 hover:text-blue-700">{{ __('Pulse') }}</a>
@@ -28,7 +31,6 @@
                             <button type="submit" class="text-sm text-slate-600 hover:text-slate-800 p-0 border-0 bg-transparent cursor-pointer">{{ __('Log Out') }}</button>
                         </form>
                     </div>
-                    </div>
                 </div>
             </header>
         @else
@@ -37,7 +39,10 @@
                     <a href="{{ url('/') }}" class="shrink-0 flex items-center">
                         <x-application-logo class="block h-4 w-auto fill-current text-slate-800" />
                     </a>
-                    <div class="flex gap-3">
+                    <div class="flex items-center gap-3">
+                        @if (config('app.donation_url'))
+                            <a href="{{ config('app.donation_url') }}" target="_blank" rel="noopener" class="text-sm text-amber-600 hover:text-amber-700 font-medium" title="{{ __('flood-watch.dashboard.support_development') }}">☕ {{ __('flood-watch.dashboard.support') }}</a>
+                        @endif
                         <a href="{{ route('login') }}" class="text-sm text-slate-600 hover:text-slate-800">{{ __('Log in') }}</a>
                         <a href="{{ route('register') }}" class="text-sm text-blue-600 hover:text-blue-700">{{ __('Register') }}</a>
                     </div>

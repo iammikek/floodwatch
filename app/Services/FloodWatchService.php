@@ -26,14 +26,108 @@ class FloodWatchService
     ) {}
 
     /**
+     * Fetch map data (floods, incidents, river levels, forecast, weather) without AI.
+     * Used for fast map rendering and by the Situational Awareness dashboard.
+     *
+     * @return array{floods: array, incidents: array, riverLevels: array, forecast: array, weather: array, lastChecked: string}
+     */
+    public function getMapData(float $lat, float $long, ?string $region = null, ?array $bounds = null): array
+    {
+        $radiusKm = config('flood-watch.default_radius_km', 15);
+        $store = $this->resolveCacheStore();
+        $cacheKey = $this->mapDataCacheKey($lat, $long, $bounds);
+        $cacheEnabled = config('flood-watch.cache_ttl_minutes', 15) > 0;
+
+        if ($cacheEnabled) {
+            $cached = $this->cacheGet($store, $cacheKey);
+            if ($cached !== null) {
+                return $cached;
+            }
+        }
+
+        [$floods, $incidents, $riverLevels, $forecast, $weather] = Concurrency::run([
+            fn () => $this->floodService->getFloods($lat, $long, $radiusKm),
+            fn () => $this->filterIncidentsByRegion($this->highwaysService->getIncidents(), $region),
+            fn () => $this->riverLevelService->getLevels($lat, $long, $radiusKm),
+            fn () => $this->forecastService->getForecast(),
+            fn () => $this->weatherService->getForecast($lat, $long),
+        ]);
+
+        $incidents = $this->sortIncidentsByPriority($incidents);
+
+        if ($bounds !== null) {
+            $floods = $this->filterByBounds($floods, $bounds);
+            $riverLevels = $this->filterRiverLevelsByBounds($riverLevels, $bounds);
+        }
+
+        $result = [
+            'floods' => $floods,
+            'incidents' => $incidents,
+            'riverLevels' => $riverLevels,
+            'forecast' => $forecast,
+            'weather' => $weather,
+            'lastChecked' => now()->toIso8601String(),
+        ];
+
+        $ttl = config('flood-watch.cache_ttl_minutes', 15) * 60;
+        if ($cacheEnabled && $ttl > 0) {
+            $this->cachePut($store, $cacheKey, $result, $ttl);
+        }
+
+        return $result;
+    }
+
+    private function mapDataCacheKey(float $lat, float $long, ?array $bounds): string
+    {
+        $prefix = config('flood-watch.cache_key_prefix', 'flood-watch');
+        $rounded = round($lat, 2).':'.round($long, 2);
+        if ($bounds !== null) {
+            $rounded .= ':'.implode(',', array_map(fn ($v) => round((float) $v, 2), $bounds));
+        }
+
+        return "{$prefix}:map:".md5($rounded);
+    }
+
+    /**
+     * @param  array<int, array{lat?: float, long?: float}>  $items
+     * @param  array{0: float, 1: float, 2: float, 3: float}  $bounds  [minLat, maxLat, minLng, maxLng]
+     * @return array<int, array>
+     */
+    private function filterByBounds(array $items, array $bounds): array
+    {
+        [$minLat, $maxLat, $minLng, $maxLng] = $bounds;
+
+        return array_values(array_filter($items, function (array $item) use ($minLat, $maxLat, $minLng, $maxLng): bool {
+            $lat = $item['lat'] ?? null;
+            $long = $item['long'] ?? null;
+            if ($lat === null || $long === null) {
+                return true;
+            }
+
+            return $lat >= $minLat && $lat <= $maxLat && $long >= $minLng && $long <= $maxLng;
+        }));
+    }
+
+    /**
+     * @param  array<int, array{lat?: float, long?: float}>  $stations
+     * @param  array{0: float, 1: float, 2: float, 3: float}  $bounds
+     * @return array<int, array>
+     */
+    private function filterRiverLevelsByBounds(array $stations, array $bounds): array
+    {
+        return $this->filterByBounds($stations, $bounds);
+    }
+
+    /**
      * Send a user message to the Flood Watch Assistant and return the synthesized response with flood and road data.
      * Results are cached to avoid hammering the APIs. Use $cacheKey to scope the cache (e.g. postcode).
      *
      * @param  array<int, array{role: string, content: string}>  $conversation  Previous messages (optional)
      * @param  callable(string): void|null  $onProgress  Optional callback for progress updates (e.g. for streaming to UI)
+     * @param  array{floods?: array, incidents?: array, riverLevels?: array, forecast?: array, weather?: array}|null  $preFetchedData
      * @return array{response: string, floods: array, incidents: array, forecast: array, weather: array, lastChecked: string}
      */
-    public function chat(string $userMessage, array $conversation = [], ?string $cacheKey = null, ?float $userLat = null, ?float $userLong = null, ?string $region = null, ?callable $onProgress = null): array
+    public function chat(string $userMessage, array $conversation = [], ?string $cacheKey = null, ?float $userLat = null, ?float $userLong = null, ?string $region = null, ?callable $onProgress = null, ?array $preFetchedData = null): array
     {
         $emptyResult = fn (string $response, ?string $lastChecked = null): array => [
             'response' => $response,
@@ -66,20 +160,28 @@ class FloodWatchService
         $lat = $userLat ?? config('flood-watch.default_lat');
         $long = $userLong ?? config('flood-watch.default_long');
 
-        $report(__('flood-watch.progress.fetching_prefetch'));
-        [$forecast, $weather, $riverLevels] = Concurrency::run([
-            fn () => app(FloodForecastService::class)->getForecast(),
-            fn () => app(WeatherService::class)->getForecast($lat, $long),
-            fn () => app(RiverLevelService::class)->getLevels($lat, $long),
-        ]);
+        if ($preFetchedData !== null) {
+            $forecast = $preFetchedData['forecast'] ?? [];
+            $weather = $preFetchedData['weather'] ?? [];
+            $riverLevels = $preFetchedData['riverLevels'] ?? [];
+            $floods = $preFetchedData['floods'] ?? [];
+            $incidents = $preFetchedData['incidents'] ?? [];
+        } else {
+            $report(__('flood-watch.progress.fetching_prefetch'));
+            [$forecast, $weather, $riverLevels] = Concurrency::run([
+                fn () => app(FloodForecastService::class)->getForecast(),
+                fn () => app(WeatherService::class)->getForecast($lat, $long),
+                fn () => app(RiverLevelService::class)->getLevels($lat, $long),
+            ]);
+            $floods = [];
+            $incidents = [];
+        }
 
         $report(__('flood-watch.progress.calling_assistant'));
         $messages = $this->buildMessages($userMessage, $conversation, $region);
         $tools = $this->promptBuilder->getToolDefinitions();
         $maxIterations = 8;
         $iteration = 0;
-        $floods = [];
-        $incidents = [];
 
         while ($iteration < $maxIterations) {
             if ($iteration > 0) {
@@ -161,6 +263,7 @@ class FloodWatchService
                     'incidents' => $incidents,
                     'riverLevels' => $riverLevels,
                     'region' => $region,
+                    'preFetchedData' => $preFetchedData,
                 ];
                 $result = $this->executeTool($toolName, $toolCall->function->arguments, $context);
                 if ($toolName === 'GetFloodData' && is_array($result)) {
@@ -280,11 +383,25 @@ class FloodWatchService
     }
 
     /**
-     * @param  array{floods?: array, incidents?: array, riverLevels?: array, region?: string|null}  $context
+     * @param  array{floods?: array, incidents?: array, riverLevels?: array, region?: string|null, preFetchedData?: array|null}  $context
      */
     private function executeTool(string $name, string $argumentsJson, array $context = []): array|string
     {
         $args = json_decode($argumentsJson, true) ?? [];
+        $preFetched = $context['preFetchedData'] ?? null;
+
+        if ($preFetched !== null) {
+            $fromPrefetch = match ($name) {
+                'GetFloodData' => $context['floods'] ?? [],
+                'GetHighwaysIncidents' => $context['incidents'] ?? [],
+                'GetFloodForecast' => $preFetched['forecast'] ?? [],
+                'GetRiverLevels' => $context['riverLevels'] ?? [],
+                default => null,
+            };
+            if ($fromPrefetch !== null) {
+                return $fromPrefetch;
+            }
+        }
 
         if ($name === 'GetCorrelationSummary') {
             $assessment = $this->correlationService->correlate(

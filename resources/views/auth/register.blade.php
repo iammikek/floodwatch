@@ -1,6 +1,12 @@
 <x-guest-layout>
     <x-slot name="left">
         <p class="text-lg text-gray-700">{{ __('Register to get more searches.') }}</p>
+        @if (config('app.donation_url'))
+            <p class="mt-4 text-sm text-gray-600">
+                {{ __('flood-watch.dashboard.free_to_use') }}
+                <a href="{{ config('app.donation_url') }}" target="_blank" rel="noopener" class="underline hover:text-gray-800">{{ __('flood-watch.dashboard.support_development') }}</a>.
+            </p>
+        @endif
     </x-slot>
 
     <form method="POST" action="{{ route('register') }}">

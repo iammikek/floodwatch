@@ -9,6 +9,26 @@ test('registration screen can be rendered', function () {
     $response->assertStatus(200);
 });
 
+test('registration screen shows support text when donation url is configured', function () {
+    Config::set('app.donation_url', 'https://ko-fi.com/automicalabs');
+
+    $response = $this->get('/register');
+
+    $response->assertStatus(200);
+    $response->assertSee('Flood Watch is free to use', false);
+    $response->assertSee('consider supporting development', false);
+    $response->assertSee('https://ko-fi.com/automicalabs', false);
+});
+
+test('registration screen does not show support text when donation url is not configured', function () {
+    Config::set('app.donation_url', null);
+
+    $response = $this->get('/register');
+
+    $response->assertStatus(200);
+    $response->assertDontSee('consider supporting development', false);
+});
+
 test('new users can register', function () {
     $response = $this->post('/register', [
         'name' => 'Test User',

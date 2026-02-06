@@ -36,6 +36,7 @@ Primary dev environment. All commands run via Sail. Use `./vendor/bin/sail` or c
 
 ## TDD Requirements
 
+- **All new development must be accompanied by a test following TDD principles**
 - **Red-Green-Refactor**: Write failing test first, then implementation
 - **No production code without a failing test first**
 - **Test types**: Feature tests (primary) in `tests/Feature/`, Unit tests in `tests/Unit/`
@@ -94,7 +95,7 @@ tests/
 
 ## Conventions
 
-- TDD: No production code without a failing test first
+- TDD: All new development must be accompanied by a test; no production code without a failing test first
 - Prefer Pest syntax when using Pest
 - Use Form Requests for validation
 - Use Eloquent conventions (snake_case DB, camelCase PHP)
@@ -103,6 +104,7 @@ tests/
 ## Key Files
 
 - `docs/ACCEPTANCE_CRITERIA.md` - Success checklist: latency, correlation, graceful failure, attribution
+- `docs/UI_REFACTOR_PART1.md` - UI refactor scope (search top-right, status grid, map by default)
 - `compose.yaml` - Sail Docker config
 - `phpunit.xml` - Test config
 - `routes/web.php`, `routes/api.php` - Routes
