@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
+use Throwable;
 
 /**
  * Resolves location strings (postcodes or place names) to coordinates and region.
@@ -137,7 +138,7 @@ class LocationResolver
                 'region' => $region,
                 'display_name' => $displayName,
             ];
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             report($e);
 
             return [
@@ -242,7 +243,7 @@ class LocationResolver
                 'region' => $region,
                 'error' => null,
             ];
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             report($e);
 
             return [

@@ -3,13 +3,14 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Redis;
+use Throwable;
 
 class FloodWatchTrendService
 {
     public function record(
         ?string $location,
         ?float $lat,
-        ?float $long,
+        ?float $lng,
         ?string $region,
         int $floodCount,
         int $incidentCount,
@@ -22,7 +23,7 @@ class FloodWatchTrendService
         $payload = json_encode([
             'location' => $location,
             'lat' => $lat,
-            'long' => $long,
+            'lng' => $lng,
             'region' => $region,
             'flood_count' => $floodCount,
             'incident_count' => $incidentCount,
@@ -34,13 +35,13 @@ class FloodWatchTrendService
             $score = (float) now()->timestamp;
             Redis::connection()->zadd($key, $score, $payload);
             $this->trimOldEntries($key);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             report($e);
         }
     }
 
     /**
-     * @return array<int, array{location: ?string, lat: ?float, long: ?float, region: ?string, flood_count: int, incident_count: int, checked_at: string}>
+     * @return array<int, array{location: ?string, lat: ?float, lng: ?float, region: ?string, flood_count: int, incident_count: int, checked_at: string}>
      */
     public function getTrends(?int $sinceDays = null, ?int $limit = null): array
     {
@@ -69,7 +70,7 @@ class FloodWatchTrendService
             }
 
             return array_reverse($results);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             report($e);
 
             return [];
@@ -83,7 +84,7 @@ class FloodWatchTrendService
 
         try {
             Redis::connection()->zremrangebyscore($key, '-inf', $cutoff);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             report($e);
         }
     }

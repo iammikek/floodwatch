@@ -8,6 +8,7 @@ use App\Support\CoordinateMapper;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
+use Throwable;
 
 /**
  * Fetches river and sea level data from the Environment Agency Real-Time API.
@@ -30,19 +31,19 @@ class RiverLevelService
      */
     public function getLevels(
         ?float $lat = null,
-        ?float $long = null,
+        ?float $lng = null,
         ?int $radiusKm = null
     ): array {
         try {
-            return $this->circuitBreaker->execute(function () use ($lat, $long, $radiusKm) {
+            return $this->circuitBreaker->execute(function () use ($lat, $lng, $radiusKm) {
                 $lat ??= config('flood-watch.default_lat');
-                $long ??= config('flood-watch.default_lng');
+                $lng ??= config('flood-watch.default_lng');
                 $radiusKm ??= config('flood-watch.default_radius_km');
 
                 $baseUrl = config('flood-watch.environment_agency.base_url');
                 $timeout = config('flood-watch.environment_agency.timeout');
 
-                $stations = $this->fetchStations($baseUrl, $timeout, $lat, $long, $radiusKm);
+                $stations = $this->fetchStations($baseUrl, $timeout, $lat, $lng, $radiusKm);
                 if (empty($stations)) {
                     return [];
                 }
@@ -158,7 +159,7 @@ class RiverLevelService
 
         $readings = [];
         foreach ($responses as $notation => $response) {
-            if ($response instanceof \Throwable || ! $response->successful()) {
+            if ($response instanceof Throwable || ! $response->successful()) {
                 continue;
             }
 

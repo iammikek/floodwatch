@@ -111,6 +111,7 @@ tests/
 - **Coordinates**: `UserSearch`, `LocationBookmark`, services, and DTOs (LocationResolver, PostcodeValidator, API responses) use `lat`, `lng` consistently.
 - **CoordinateMapper**: Use `App\Support\CoordinateMapper` when ingesting external API data. Maps `lat`/`lon`/`long`/`latitude`/`longitude` to our schema (`lat`, `lng`). Keeps internal schema consistent.
 - **Mappers**: Use enums for key→value mappings (e.g. region→location, incidentType→icon). Add mapper methods on the enum (e.g. `Region::warmCacheLocation()`, `IncidentType::icon()`) instead of config arrays.
+- **Imports**: Prefer `use` statements and imported class names over fully qualified names (FQN). Use `@use` in PHPDoc when referencing generics.
 - TDD: No production code without a failing test first
 - Prefer Pest syntax when using Pest
 - Use Form Requests for validation

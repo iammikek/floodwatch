@@ -5,6 +5,7 @@ namespace App\Flood\DTOs;
 use App\Flood\Enums\SeverityLevel;
 use App\Support\CoordinateMapper;
 use Carbon\CarbonImmutable;
+use Throwable;
 
 final readonly class FloodWarning
 {
@@ -93,7 +94,7 @@ final readonly class FloodWarning
 
         try {
             return CarbonImmutable::parse($value);
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return null;
         }
     }

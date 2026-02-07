@@ -6,6 +6,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Throwable;
 
 class HealthController extends Controller
 {
@@ -42,7 +43,7 @@ class HealthController extends Controller
                 'status' => $response->successful() ? 'ok' : 'degraded',
                 'message' => $response->successful() ? null : "HTTP {$response->status()}",
             ];
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return [
                 'status' => 'unhealthy',
                 'message' => $e->getMessage(),
@@ -62,7 +63,7 @@ class HealthController extends Controller
                 'status' => $response->successful() ? 'ok' : 'degraded',
                 'message' => $response->successful() ? null : "HTTP {$response->status()}",
             ];
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return [
                 'status' => 'unhealthy',
                 'message' => $e->getMessage(),
@@ -82,7 +83,7 @@ class HealthController extends Controller
                 'status' => $response->successful() ? 'ok' : 'degraded',
                 'message' => $response->successful() ? null : "HTTP {$response->status()}",
             ];
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return [
                 'status' => 'unhealthy',
                 'message' => $e->getMessage(),
@@ -113,7 +114,7 @@ class HealthController extends Controller
                 'status' => $response->successful() ? 'ok' : 'degraded',
                 'message' => $response->successful() ? null : "HTTP {$response->status()}",
             ];
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return [
                 'status' => 'unhealthy',
                 'message' => $e->getMessage(),
@@ -138,7 +139,7 @@ class HealthController extends Controller
                 'status' => $ok ? 'ok' : 'degraded',
                 'message' => $ok ? null : 'Read/write failed',
             ];
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return [
                 'status' => 'unhealthy',
                 'message' => $e->getMessage(),

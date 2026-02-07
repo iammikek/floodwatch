@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use InvalidArgumentException;
+
 /**
  * Maps external coordinate keys to our internal schema (lat, lng).
  * Use when ingesting data from APIs that use lon, long, latitude, longitude.
@@ -48,16 +50,22 @@ class CoordinateMapper
 
     /**
      * Map [lat, lng] or [lat, long] array (e.g. from posList) to our schema.
-     * Returns null for missing indices to avoid invalid defaults (0,0).
+     * Validates that both coordinates are present; throws if malformed.
      *
-     * @param  array{0?: float, 1?: float}  $point
-     * @return array{lat: ?float, lng: ?float}
+     * @param  array{0: float, 1: float}  $point
+     * @return array{lat: float, lng: float}
+     *
+     * @throws InvalidArgumentException When point has fewer than two elements
      */
     public static function fromPointArray(array $point): array
     {
+        if (! isset($point[0], $point[1])) {
+            throw new InvalidArgumentException('Point array must contain both lat (index 0) and lng (index 1)');
+        }
+
         return [
-            'lat' => isset($point[0]) ? (float) $point[0] : null,
-            'lng' => isset($point[1]) ? (float) $point[1] : null,
+            'lat' => (float) $point[0],
+            'lng' => (float) $point[1],
         ];
     }
 }

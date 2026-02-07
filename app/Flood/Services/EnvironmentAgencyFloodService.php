@@ -10,6 +10,7 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Throwable;
 
 class EnvironmentAgencyFloodService
 {
@@ -34,12 +35,12 @@ class EnvironmentAgencyFloodService
      */
     public function getFloods(
         ?float $lat = null,
-        ?float $long = null,
+        ?float $lng = null,
         ?int $radiusKm = null
     ): array {
         try {
-            return $this->circuitBreaker->execute(function () use ($lat, $long, $radiusKm) {
-                return $this->fetchFloods($lat, $long, $radiusKm);
+            return $this->circuitBreaker->execute(function () use ($lat, $lng, $radiusKm) {
+                return $this->fetchFloods($lat, $lng, $radiusKm);
             });
         } catch (CircuitOpenException) {
             return [];
@@ -55,16 +56,16 @@ class EnvironmentAgencyFloodService
      */
     private function fetchFloods(
         ?float $lat,
-        ?float $long,
+        ?float $lng,
         ?int $radiusKm
     ): array {
         $lat ??= config('flood-watch.default_lat');
-        $long ??= config('flood-watch.default_lng');
+        $lng ??= config('flood-watch.default_lng');
         $radiusKm ??= config('flood-watch.default_radius_km');
 
         $baseUrl = config('flood-watch.environment_agency.base_url');
         $timeout = config('flood-watch.environment_agency.timeout');
-        $url = "{$baseUrl}/id/floods?lat={$lat}&long={$long}&dist={$radiusKm}";
+        $url = "{$baseUrl}/id/floods?lat={$lat}&long={$lng}&dist={$radiusKm}";
 
         $response = $this->http($url, $timeout);
         if (! $response->successful()) {
@@ -73,7 +74,7 @@ class EnvironmentAgencyFloodService
 
         $data = $response->json();
         $items = $data['items'] ?? [];
-        $areaCentroids = $this->fetchFloodAreaCentroids($baseUrl, $timeout, $lat, $long, $radiusKm);
+        $areaCentroids = $this->fetchFloodAreaCentroids($baseUrl, $timeout, $lat, $lng, $radiusKm);
         $polygons = $this->fetchFloodAreaPolygons($baseUrl, $timeout, $items);
 
         $result = [];
@@ -109,9 +110,9 @@ class EnvironmentAgencyFloodService
      *
      * @return array<string, array{lat: float, lng: float}>
      */
-    private function fetchFloodAreaCentroids(string $baseUrl, int $timeout, float $lat, float $long, int $radiusKm): array
+    private function fetchFloodAreaCentroids(string $baseUrl, int $timeout, float $lat, float $lng, int $radiusKm): array
     {
-        $url = "{$baseUrl}/id/floodAreas?lat={$lat}&long={$long}&dist={$radiusKm}&_limit=200";
+        $url = "{$baseUrl}/id/floodAreas?lat={$lat}&long={$lng}&dist={$radiusKm}&_limit=200";
 
         $response = $this->http($url, $timeout);
         if (! $response->successful()) {
@@ -183,7 +184,7 @@ class EnvironmentAgencyFloodService
         });
 
         foreach ($responses as $areaId => $response) {
-            if ($response instanceof \Throwable || ! $response->successful()) {
+            if ($response instanceof Throwable || ! $response->successful()) {
                 continue;
             }
             $geojson = $response->json();

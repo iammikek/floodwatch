@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\ValueObjects\Postcode;
 use Illuminate\Support\Facades\Http;
+use Throwable;
 
 class PostcodeValidator
 {
@@ -161,7 +162,7 @@ class PostcodeValidator
                 'lat' => (float) $result['latitude'],
                 'lng' => (float) $result['longitude'],
             ];
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return null;
         }
     }

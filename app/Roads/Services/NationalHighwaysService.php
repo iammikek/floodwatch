@@ -164,10 +164,8 @@ class NationalHighwaysService
         ];
         if ($coords !== null) {
             $mapped = CoordinateMapper::fromPointArray($coords);
-            if ($mapped['lat'] !== null && $mapped['lng'] !== null) {
-                $flat['lat'] = $mapped['lat'];
-                $flat['lng'] = $mapped['lng'];
-            }
+            $flat['lat'] = $mapped['lat'];
+            $flat['lng'] = $mapped['lng'];
         }
         if (is_string($startTime) && $startTime !== '') {
             $flat['startTime'] = $startTime;
