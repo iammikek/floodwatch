@@ -87,6 +87,7 @@ flowchart LR
 | Low | Polygon limit tuning | `max_polygons_per_request` |
 | Low | Additional regions | Beyond South West; see `docs/CONSIDERATIONS.md` |
 | Low | Test coverage visibility | Document critical paths; consider `--coverage` in CI |
+| Low | Postcode sector cache key | Use sector (TA10 0) not full (TA10 0DP) for cache; reduces cost |
 
 ---
 

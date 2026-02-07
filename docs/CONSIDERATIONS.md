@@ -65,7 +65,21 @@ Review findings and recommendations for production readiness.
 
 ---
 
-## 5. Test Coverage Visibility
+## 5. Postcode Granularity for Cache
+
+**Opportunity**: Cache key currently uses full user input (e.g. TA10 0DP). Same sector = same flood/road data, so sector-level is usually enough and cheaper.
+
+**Recommendation**: Use postcode sector for cache key instead of full postcode:
+- Full postcode `TA10 0DP` → cache key `TA10 0` (outcode + first digit of incode)
+- Full postcode `BS3 2AB` → cache key `BS3 2`
+- Outcode-only `TA10` → use as-is
+- Place names (Langport, Bristol) → use rounded lat/long grid cell (e.g. 2 decimal places ≈ 1 km)
+
+**Benefit**: Fewer unique cache keys = more cache hits = fewer API and LLM calls = lower cost. Flood and road data are area-based; sector-level granularity is sufficient.
+
+---
+
+## 6. Test Coverage Visibility
 
 **Risk**: TDD mentioned but critical-path coverage not visible. Unclear if tool calling, caching, correlation are well-tested.
 
