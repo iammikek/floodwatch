@@ -4,6 +4,8 @@
 
 Flood Watch correlates Environment Agency flood data with National Highways road status to provide a single source of truth for flood and road viability in the South West (Bristol, Somerset, Devon, Cornwall).
 
+**Product brief**: See `docs/BRIEF.md` for the revised scope – user decision support (house/car at risk), location lookup (postcode, address, What3Words), route check, backend polling, and LLM cost control.
+
 ## Domain Structure
 
 ```
@@ -110,6 +112,10 @@ The main `chat()` flow is synchronous. For high traffic, consider:
 - **Laravel Boost**: MCP server, guidelines, `search-docs` for version-specific Laravel/Pest/Tailwind docs
 - **Cursor skills**: `.cursor/skills/` (livewire-development, pest-testing, tailwindcss-development) and `.cursor/rules/` (laravel-boost.mdc) tracked in version control
 - **MCP config**: `.cursor/mcp.json` for Laravel Boost
+
+## LLM and Data Flow
+
+See **`docs/LLM_DATA_FLOW.md`** for a detailed description of how data flows to the LLM, which tools are available, what the LLM receives (and its limits), and how correlation works.
 
 ## Key Files
 

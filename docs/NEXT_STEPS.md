@@ -40,7 +40,10 @@ Consolidated development plan based on planning work (Feb 2026).
 
 | Doc | Purpose |
 |-----|---------|
-| `docs/ACCEPTANCE_CRITERIA.md` | Success checklist: latency, correlation, graceful failure, attribution |
+| `docs/BRIEF.md` | Revised product brief – user needs, location, route check, data architecture |
+| `docs/ACCEPTANCE_CRITERIA.md` | Success checklist for revised brief |
+| `docs/WIREFRAME_REVISED_BRIEF.md` | Mobile condensed + desktop enhanced wireframes |
+| `docs/LLM_DATA_FLOW.md` | How data flows to the LLM – tools, prompts, pre-fetch, correlation |
 | `docs/ROAD_DATA_STRATEGY.md` | Road data relevance, cascading impact, predictive rules, cut-off areas |
 | `docs/DATA_SOURCES.md` | National Rail, emergency services, surfacing options |
 | `docs/DEVELOPMENT.md` | Backlog, milestones, tooling |
