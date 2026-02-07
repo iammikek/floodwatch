@@ -109,6 +109,7 @@ tests/
 ## Key Files
 
 - `docs/PLAN.md` - Development plan (backlog, roadmap)
+- `docs/build/` - Implementation specs for Phase 1 features (Cursor build order)
 - `docs/ACCEPTANCE_CRITERIA.md` - Success checklist
 - `docs/CONSIDERATIONS.md` - Risks, API dependency, regional scope, costs
 

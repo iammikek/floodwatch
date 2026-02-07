@@ -7,6 +7,21 @@ Single development plan consolidating roadmap, backlog, data sources, and implem
 
 ---
 
+## Cursor Agentic Build (Build Today)
+
+Effort estimates assume **Cursor agentic** (AI-assisted development). Phase 1 items can be built in **hours–days** rather than sprints when using agentic workflows.
+
+**Build order** (see `docs/build/README.md`):
+
+0. **Foundation** (do first): Migrations, models, config, admin gate, reverse-geocode, lang; ~45–60 min  
+1. **Admin dashboard** (early) → 2. Search history → 3. Use my location → 4. Bookmarks → 5. Route check → 6. Donations → 7. Backend polling
+
+**Agentic tips**: Use plan mode for docs; switch to agent mode for implementation. Run tests after each feature. TDD: failing test first, then implementation.
+
+**Implementation specs**: `docs/build/` – per-feature build specs for Cursor (migrations, models, services, tests, UI).
+
+---
+
 ## MVP (Shipped)
 
 What's **built and in the codebase** today. Verified against current implementation.
@@ -280,3 +295,4 @@ Reverb as second service or process; Redis if scaling. Alternative: Pusher (free
 | `docs/DATA_SOURCES.md` | Current + planned APIs; National Rail implementation plan |
 | `docs/NEXT_STEPS.md` | Success metrics, extended next steps |
 | `docs/SCHEMA.md` | Database schema, object map, entity relationships |
+| `docs/build/` | Implementation specs for Cursor (per-feature build order) |
