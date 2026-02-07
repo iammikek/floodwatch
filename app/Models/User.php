@@ -51,4 +51,14 @@ class User extends Authenticatable
     {
         return $this->role === 'admin';
     }
+
+    public function userSearches(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(UserSearch::class);
+    }
+
+    public function locationBookmarks(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(LocationBookmark::class);
+    }
 }

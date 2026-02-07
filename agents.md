@@ -98,6 +98,13 @@ tests/
 | `sail artisan boost:install` | Install Laravel Boost (after `composer require laravel/boost --dev`) |
 | `sail artisan boost:update` | Refresh Boost guidelines and resources |
 
+## API / OpenAPI
+
+- **Spec**: All API endpoints must follow **OpenAPI** and **JSON:API** spec. Each endpoint must be accompanied by an API spec.
+- **Docblocks**: Controllers must have OpenAPI annotations in their docblocks; these are used to generate the API documentation.
+- **Validation in tests**: API responses must be validated against the OpenAPI spec when testing. Use a Laravel package (e.g. `league/openapi-psr7-validator` or `darkaonline/l5-swagger` with validation middleware) – see project docs for chosen package.
+- **Workflow**: Write OpenAPI spec (or docblock annotations) first; validate responses in feature tests against that spec.
+
 ## Conventions
 
 - TDD: No production code without a failing test first

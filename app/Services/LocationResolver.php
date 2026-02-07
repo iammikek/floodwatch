@@ -175,6 +175,86 @@ class LocationResolver
         return false;
     }
 
+    /**
+     * Reverse geocode coordinates to a location string and region.
+     *
+     * @return array{valid: bool, in_area: bool, location?: string, region?: string, error?: string}
+     */
+    public function reverseFromCoords(float $lat, float $long): array
+    {
+        $url = 'https://nominatim.openstreetmap.org/reverse';
+        $params = [
+            'lat' => $lat,
+            'lon' => $long,
+            'format' => 'json',
+            'addressdetails' => 1,
+        ];
+
+        try {
+            $response = Http::timeout(10)
+                ->withHeaders(['User-Agent' => config('app.name').'/1.0'])
+                ->get($url, $params);
+
+            if ($response->tooManyRequests()) {
+                return [
+                    'valid' => false,
+                    'in_area' => false,
+                    'location' => '',
+                    'region' => null,
+                    'error' => 'Location lookup rate limit exceeded. Please wait a minute and try again.',
+                ];
+            }
+
+            if (! $response->successful()) {
+                return [
+                    'valid' => false,
+                    'in_area' => false,
+                    'location' => '',
+                    'region' => null,
+                    'error' => 'Could not get location. Try entering a postcode.',
+                ];
+            }
+
+            $data = $response->json();
+            $address = $data['address'] ?? [];
+            $displayName = $data['display_name'] ?? '';
+
+            if ($displayName === '') {
+                return [
+                    'valid' => false,
+                    'in_area' => false,
+                    'location' => '',
+                    'region' => null,
+                    'error' => 'Could not get location. Try entering a postcode.',
+                ];
+            }
+
+            $inArea = $this->isInSouthWest($lat, $long, $address);
+            $region = $this->getRegionFromAddress($address);
+
+            /** @var string $location */
+            $location = $address['town'] ?? $address['city'] ?? $address['village'] ?? $address['county'] ?? $displayName;
+
+            return [
+                'valid' => true,
+                'in_area' => $inArea,
+                'location' => $location,
+                'region' => $region,
+                'error' => null,
+            ];
+        } catch (\Throwable $e) {
+            report($e);
+
+            return [
+                'valid' => false,
+                'in_area' => false,
+                'location' => '',
+                'region' => null,
+                'error' => 'Could not get location. Try entering a postcode.',
+            ];
+        }
+    }
+
     private function getRegionFromAddress(array $address): ?string
     {
         $county = strtolower($address['county'] ?? $address['state_district'] ?? $address['state'] ?? '');

@@ -26,6 +26,15 @@ return [
 
     'admin_email' => env('ADMIN_EMAIL', 'mike@automica.io'),
 
+    'donation_url' => env('FLOOD_WATCH_DONATION_URL', ''),
+
+    'warm_cache_locations' => [
+        'somerset' => 'Langport',
+        'bristol' => 'Bristol',
+        'devon' => 'Exeter',
+        'cornwall' => 'Truro',
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | LLM Token Limits

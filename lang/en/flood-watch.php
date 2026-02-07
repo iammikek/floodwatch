@@ -93,6 +93,9 @@ return [
         'prompt' => 'Enter your location (postcode or place name) and click "Check status" to get a personalised flood and road summary.',
         'free_to_use' => 'Flood Watch is free to use. If it helps you,',
         'support_development' => 'consider supporting development',
+        'use_my_location' => 'Use my location',
+        'recent_searches' => 'Recent searches',
+        'gps_error' => 'Could not get location. Try entering a postcode.',
     ],
     'map' => [
         'your_location' => 'Your location',
