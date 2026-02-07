@@ -49,6 +49,10 @@ flowchart TD
 
 **Criterion**: Output prioritises: Danger to Life → road closures → general flood alerts.
 
+**Danger to Life**: When severe flood warnings (danger to life) are detected, the app must display:
+- Relevant emergency phone numbers (999, Environment Agency Floodline 0345 988 1188)
+- Clear instructions (evacuate, move to higher ground, call 999 if life at risk)
+
 **Verification**: Severe flood warnings and road closures appear first in the summary and action steps.
 
 ---
@@ -73,9 +77,11 @@ All resolve to coordinates used for flood, road, and forecast checks.
 
 ### 2.2 Persistence
 
-**Criterion**: The app remembers the user's previous location.
+**Criterion**: The app remembers the user's previous location. **Registered users** can bookmark more than one location and switch between them.
 
-**Verification**: On return visit, the last-used location is pre-filled or auto-loaded; user sees their area without re-entering.
+**Verification**:
+- Guest: last location in localStorage; pre-filled on return.
+- Registered: profile default location (pre-loaded on open); multiple bookmarks (e.g. home, work, relatives); quick switch; each bookmark persists location and label. Default locations enable admin metrics (top regions, postcodes).
 
 ---
 
@@ -92,6 +98,14 @@ All resolve to coordinates used for flood, road, and forecast checks.
 ---
 
 ## 4. Data Architecture
+
+### 4.0 Connectivity & Offline
+
+**Criterion**: The app is fast to load and optimises cache and local storage so users can check at home and still access last-known state when in the Levels with limited or no data.
+
+**Verification**: Last results persist in localStorage; app shows cached state immediately on load; works offline or with poor connectivity from last cached data.
+
+---
 
 ### 4.1 Backend Polling
 
@@ -139,9 +153,9 @@ All resolve to coordinates used for flood, road, and forecast checks.
 
 ### 6.1 Mobile Condensed
 
-**Criterion**: On mobile, the app shows a condensed view: risk level, alerts, roads, and key advice.
+**Criterion**: On mobile, the app shows a condensed view: risk level, alerts, roads, and key advice. The map may be omitted if it is too heavy for mobile (tiles, payload) and screen is small – prioritise text and cached state.
 
-**Verification**: Layout is scannable on small screens; primary information visible without horizontal scroll.
+**Verification**: Layout is scannable on small screens; primary information visible without horizontal scroll. Map omitted or simplified on mobile when performance/connectivity benefit outweighs spatial view.
 
 ---
 
@@ -180,7 +194,14 @@ All resolve to coordinates used for flood, road, and forecast checks.
 | | Address lookup | [ ] |
 | | What3Words lookup | [ ] |
 | | Remember previous location | [x] Partial (localStorage) |
+| | Bookmarks (multiple locations) for registered users | [ ] |
+| | Profile default location | [ ] |
+| | Admin dashboard (/admin-dashboard) with user metrics | [ ] |
+| | Admin: API health (EA, Flood Forecast, Weather, NH, Cache) | [ ] |
+| | Admin: LLM cost (requests, est. spend, budget alert) | [ ] |
+| | Danger to life: emergency numbers + instructions | [ ] |
 | **Route check** | From/To route status | [ ] |
+| **Connectivity** | Fast load, cache, localStorage for offline | [x] Partial |
 | **Data** | Backend polling (15 min) | [ ] |
 | | Geographic caching | [ ] |
 | | Poll intervals enforced | [ ] |

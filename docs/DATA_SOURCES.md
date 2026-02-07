@@ -1,10 +1,74 @@
-# Other Data Sources
+# Data Sources
 
-Research on additional data sources that could enrich Flood Watch: National Rail, emergency services, and related open data.
+Overview of data we access (current and planned), plus research on additional sources: National Rail, emergency services, and related open data.
 
 ---
 
-## National Rail
+## 1. Current Data Sources (Integrated)
+
+```mermaid
+flowchart TB
+    subgraph External["External APIs"]
+        EA[Environment Agency<br/>environment.data.gov.uk]
+        NH[National Highways<br/>api.data.nationalhighways.co.uk]
+        FFC[Flood Forecast Centre<br/>api.ffc-environment-agency.fgs.metoffice.gov.uk]
+        Wx[Open-Meteo<br/>api.open-meteo.com]
+    end
+
+    subgraph Data["Data We Get"]
+        D1[Flood warnings, river levels, polygons]
+        D2[Road incidents DATEX II]
+        D3[5-day flood forecast]
+        D4[5-day weather]
+    end
+
+    EA --> D1
+    NH --> D2
+    FFC --> D3
+    Wx --> D4
+```
+
+| Source | Data | Auth |
+|--------|------|------|
+| **Environment Agency** | Flood warnings, river/sea levels, polygons | None |
+| **National Highways** | Road incidents (closures, lane closures) | API key |
+| **Flood Forecast Centre** | 5-day flood risk outlook | None |
+| **Open-Meteo** | 5-day weather (temp, precipitation) | None |
+
+---
+
+## 2. Situational-Awareness Branch – Additions
+
+`feature/situational-awareness` adds architecture that may be valuable for the focused BRIEF:
+
+| Component | Purpose | Value for focused version |
+|-----------|---------|----------------------------|
+| **getMapData()** | Parallel fetch floods, incidents, river, forecast, weather; cache | ✅ High – instant map |
+| **getMapDataUncached()** | Same without cache – for delta comparison | ✅ High – backend polling |
+| **FetchLatestInfrastructureData** | Job every 15 min; fetches, compares, writes activities | ✅ High – backend polling per BRIEF |
+| **InfrastructureDeltaService** | Diff previous vs current; detect changes | ⚠️ Medium – delta useful; activity feed deferrable |
+| **RiskService** | Regional risk index 0–100 | ✅ High |
+| **infrastructure_points** | Pumping stations, reservoirs (config) | ✅ High – Somerset Levels |
+| **API-first (JSON:API)** | `/api/v1/map-data`, floods, incidents, etc. | ❌ Defer – add when SPA/mobile |
+| **SystemActivity / Activity feed** | Event feed | ❌ Defer |
+
+**Recommendations**: Adopt getMapData, getMapDataUncached, FetchLatestInfrastructureData, geographic cache, infrastructure_points. Defer full API layer and Activity feed.
+
+---
+
+## 3. Not Yet Integrated
+
+| Source | Data | Feasibility | Notes |
+|--------|------|-------------|-------|
+| **National Rail (LDB)** | Delays, cancellations by station | High | Trackside flooding focus |
+| **What3Words** | Address → coordinates | High | Free tier |
+| **Geocoding (Nominatim)** | Address → coordinates | Medium | Free, rate limits |
+| **Routing (OSRM)** | Route geometry | High | Free |
+| **Power Cut UK** | Power outages | Medium | Flood-related |
+
+---
+
+## 4. National Rail (Research)
 
 ### Overview
 
@@ -34,6 +98,7 @@ National Rail provides real-time train running information via **Darwin**, the G
 
 ### Relevance to Flood Watch
 
+- **Primary interest**: Trackside flooding – disruption where the cause is flooding or adverse weather affecting the line
 - **Dawlish line** (Exeter–Plymouth): Famous for coastal flooding; when flooded, rail is often cut
 - **Exeter–London Paddington**: Stoke Canon, Cowley Bridge – river flood risk
 - **Bristol area**: Temple Meads, Parkway – Severn/Avon flood correlation

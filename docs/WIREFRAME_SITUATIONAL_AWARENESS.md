@@ -166,6 +166,18 @@ flowchart TB
 - "Check my location" primary CTA
 - Optional location dropdown for saved postcodes
 
+### 7. Profile (Logged-in)
+- **Default location**: Stored in profile; pre-loaded on app open
+- **Bookmarks**: Same locations as header dropdown; any can be set as default
+- Access via 👤 menu → Profile. Enables user metrics for admin dashboard.
+
+### 8. Admin Dashboard (`/admin-dashboard`)
+- Admin-only; sections:
+  - **API health**: Environment Agency, Flood Forecast, Weather, National Highways, Cache (reuse `/health` or embed)
+  - **LLM cost**: Requests today/month, estimated spend, budget alert when approaching limit
+  - **User metrics**: Total users, active (7d), searches (24h), users with default location; top regions, top postcodes
+- Links to Pulse / app metrics if available
+
 ---
 
 ## State: No Data Yet (First Load)
@@ -217,9 +229,11 @@ flowchart TB
 
 | Area | Guest (current) | Registered (Situational Awareness) |
 |------|-----------------|-----------------------------------|
-| Header | Logo, Login, Register | Logo, Location, Check my location, Profile |
+| Header | Logo, Login, Register | Logo, Location dropdown, Check my location, Profile (👤) |
+| Default location | localStorage only | Profile default + bookmarks; tracked for admin metrics |
 | Hero | Search bar + "Check status" | Risk gauge + Status grid |
 | Map | After search | Always visible, auto-refresh |
 | Activity | None | Live feed in sidebar |
 | AI | On search only | Periodic "Current State" |
 | Refresh | Manual | Every 15 min |
+| Admin | — | `/admin-dashboard` for admins: user metrics, top regions/postcodes |

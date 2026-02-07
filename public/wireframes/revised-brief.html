@@ -11,18 +11,97 @@
         <h1 class="text-xl font-bold text-slate-900">Flood Watch – Revised Brief</h1>
         <p class="text-sm text-slate-600">Ref: docs/BRIEF.md · Mobile condensed, desktop enhanced</p>
 
+        <!-- Registration flow -->
+        <section>
+            <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-2">Registration Flow</h2>
+            <div class="w-full max-w-md border-2 border-slate-200 rounded-lg overflow-hidden bg-white shadow">
+                <div class="p-4 border-b border-slate-200">
+                    <h3 class="font-semibold text-slate-900">Flood Watch</h3>
+                    <p class="text-right text-sm text-blue-600">Login</p>
+                </div>
+                <div class="p-6 space-y-4">
+                    <p class="text-slate-700">Register to get more searches.</p>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500">Name</label>
+                        <input type="text" class="mt-1 w-full border border-slate-300 rounded px-3 py-2 text-sm" placeholder="" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500">Email</label>
+                        <input type="email" class="mt-1 w-full border border-slate-300 rounded px-3 py-2 text-sm" placeholder="" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500">Password</label>
+                        <input type="password" class="mt-1 w-full border border-slate-300 rounded px-3 py-2 text-sm" placeholder="" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500">Confirm Password</label>
+                        <input type="password" class="mt-1 w-full border border-slate-300 rounded px-3 py-2 text-sm" placeholder="" />
+                    </div>
+                    <div class="flex justify-between items-center pt-2">
+                        <a href="#" class="text-sm text-slate-600 underline">Already registered?</a>
+                        <button class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded">Register</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Mobile view -->
         <section>
             <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-2">Mobile (Condensed)</h2>
-            <div class="w-[375px] border-2 border-slate-200 rounded-lg overflow-hidden bg-white shadow">
-                <div class="p-4 border-b border-slate-200 flex justify-between items-center">
-                    <span class="font-semibold text-slate-900">Flood Watch</span>
-                    <span class="text-slate-400">≡</span>
+            <p class="text-xs text-slate-500 mb-2">Guest · Logged in</p>
+            <div class="flex gap-4 flex-wrap">
+                <div class="w-[375px] border-2 border-slate-200 rounded-lg overflow-hidden bg-white shadow">
+                    <div class="p-4 border-b border-slate-200 flex justify-between items-center">
+                        <span class="font-semibold text-slate-900">Flood Watch</span>
+                        <div class="flex gap-2 text-sm">
+                            <span class="text-blue-600">Login</span>
+                            <span class="text-blue-600">Register</span>
+                        </div>
+                    </div>
+                    <div class="p-4 border-b border-slate-200 bg-slate-50">
+                        <p class="text-sm font-medium text-slate-700">📍 Langport · TA10 9</p>
+                        <button class="text-xs text-blue-600 mt-1">Change location</button>
+                    </div>
+                    <div class="p-4 border-b border-slate-200">
+                        <p class="text-xs font-semibold text-slate-500 uppercase">Your Risk</p>
+                        <p class="text-sm mt-1 text-amber-700 font-medium">House: At risk – deploy defences if forecast worsens</p>
+                        <p class="text-sm mt-1 text-slate-600">Roads: A361 closed · avoid driving</p>
+                    </div>
+                    <div class="p-4 border-b border-slate-200">
+                        <p class="text-xs font-semibold text-slate-500 uppercase">Action Steps</p>
+                        <ul class="text-sm mt-2 space-y-1 text-slate-700 list-disc list-inside">
+                            <li>Deploy defences if you have them</li>
+                            <li>Do not drive – routes at risk</li>
+                            <li>Monitor EA updates</li>
+                        </ul>
+                    </div>
+                    <div class="p-4 border-b border-slate-200 bg-blue-50">
+                        <p class="text-xs font-semibold text-slate-500 uppercase">Route Check</p>
+                        <div class="mt-2 space-y-2">
+                            <input class="w-full text-sm rounded border-slate-300" placeholder="From: Langport" />
+                            <input class="w-full text-sm rounded border-slate-300" placeholder="To:" />
+                            <button class="w-full py-2 bg-blue-600 text-white text-sm font-medium rounded">Check route</button>
+                        </div>
+                    </div>
+                    <div class="p-3 text-xs text-slate-500">
+                        2 flood warnings · 1 road closed · Last updated: 2:45 pm
+                    </div>
                 </div>
-                <div class="p-4 border-b border-slate-200 bg-slate-50">
-                    <p class="text-sm font-medium text-slate-700">📍 Langport · TA10 9</p>
-                    <button class="text-xs text-blue-600 mt-1">Change location</button>
-                </div>
+                <div class="w-[375px] border-2 border-slate-200 rounded-lg overflow-hidden bg-white shadow">
+                    <div class="p-4 border-b border-slate-200 flex justify-between items-center">
+                        <span class="font-semibold text-slate-900">Flood Watch</span>
+                        <div class="flex items-center gap-2">
+                            <select class="text-sm rounded border-slate-300 px-2 py-1">Langport</select>
+                            <span class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 text-sm">👤</span>
+                        </div>
+                    </div>
+                    <div class="p-4 border-b border-slate-200 bg-slate-50">
+                        <p class="text-sm font-medium text-slate-700">📍 Langport · TA10 9 <span class="text-slate-500 text-xs">(default)</span></p>
+                        <div class="flex gap-2 mt-1">
+                            <button class="text-xs text-blue-600">Change</button>
+                            <button class="text-xs text-slate-600">Profile</button>
+                        </div>
+                    </div>
                 <div class="p-4 border-b border-slate-200">
                     <p class="text-xs font-semibold text-slate-500 uppercase">Your Risk</p>
                     <p class="text-sm mt-1 text-amber-700 font-medium">House: At risk – deploy defences if forecast worsens</p>
@@ -47,19 +126,23 @@
                 <div class="p-3 text-xs text-slate-500">
                     2 flood warnings · 1 road closed · Last updated: 2:45 pm
                 </div>
+                </div>
             </div>
         </section>
 
         <!-- Desktop view -->
         <section>
             <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-2">Desktop (Enhanced)</h2>
+            <p class="text-xs text-slate-500 mb-2">Guest: [Login] [Register] · Logged in: [Location ▼] [Change] [Refresh] [👤]</p>
             <div class="border-2 border-slate-200 rounded-lg overflow-hidden bg-white shadow">
                 <header class="p-4 border-b border-slate-200 flex justify-between items-center">
                     <h2 class="font-semibold text-slate-900">Flood Watch</h2>
                     <div class="flex items-center gap-3">
-                        <span class="text-sm text-slate-600">📍 Langport · TA10 9</span>
+                        <select class="text-sm rounded border-slate-300 px-3 py-1.5">Langport</select>
+                        <span class="text-sm text-slate-600">📍 TA10 9</span>
                         <button class="text-sm px-3 py-1.5 border border-slate-300 rounded">Change</button>
                         <button class="text-sm px-3 py-1.5 bg-blue-600 text-white rounded">Refresh</button>
+                        <span class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 text-sm">👤</span>
                     </div>
                 </header>
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 p-4">
@@ -105,6 +188,29 @@
             </div>
         </section>
 
+        <!-- Danger to Life -->
+        <section>
+            <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-2">Danger to Life (Severe Flood Warning)</h2>
+            <div class="w-[375px] border-2 border-red-300 rounded-lg overflow-hidden bg-red-50 shadow">
+                <div class="p-4 border-b border-red-200">
+                    <p class="text-xs font-semibold text-red-700 uppercase">🆘 Emergency</p>
+                    <p class="text-sm mt-2 font-medium text-red-900">Danger to life. Immediate action required.</p>
+                </div>
+                <div class="p-4 space-y-2">
+                    <p class="text-sm font-semibold text-slate-800">Emergency numbers</p>
+                    <p class="text-sm text-slate-700">999 – if life at risk</p>
+                    <p class="text-sm text-slate-700">0345 988 1188 – Floodline (24/7)</p>
+                    <p class="text-sm font-semibold text-slate-800 mt-3">What to do</p>
+                    <ul class="text-sm text-slate-700 list-disc list-inside space-y-0.5">
+                        <li>Evacuate if advised by emergency services</li>
+                        <li>Move to higher ground</li>
+                        <li>Do not enter floodwater</li>
+                        <li>Call 999 if life at risk</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
         <!-- Location input options -->
         <section>
             <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-2">Location Input</h2>
@@ -112,6 +218,141 @@
                 <span class="px-3 py-1.5 rounded bg-slate-200 text-sm">Postcode: TA10 9</span>
                 <span class="px-3 py-1.5 rounded bg-slate-200 text-sm">Address: High Street, Langport</span>
                 <span class="px-3 py-1.5 rounded bg-slate-200 text-sm">What3Words: ///word.word.word</span>
+            </div>
+        </section>
+
+        <!-- Profile -->
+        <section>
+            <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-2">Profile (Logged-in)</h2>
+            <div class="max-w-2xl border-2 border-slate-200 rounded-lg overflow-hidden bg-white shadow">
+                <div class="p-4 border-b border-slate-200">
+                    <h3 class="font-semibold text-slate-900">Profile</h3>
+                </div>
+                <div class="p-6 space-y-6">
+                    <div>
+                        <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Profile Information</h4>
+                        <div class="space-y-3">
+                            <div><label class="block text-xs text-slate-500">Name</label><input type="text" class="mt-0.5 w-full border border-slate-300 rounded px-3 py-2 text-sm" value="Jane Smith" /></div>
+                            <div><label class="block text-xs text-slate-500">Email</label><input type="email" class="mt-0.5 w-full border border-slate-300 rounded px-3 py-2 text-sm" value="jane@example.com" /></div>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Default Location (used when you open the app)</h4>
+                        <div class="flex gap-2">
+                            <input type="text" class="flex-1 border border-slate-300 rounded px-3 py-2 text-sm" value="Langport · TA10 9" />
+                            <button class="px-4 py-2 bg-blue-600 text-white text-sm rounded shrink-0">Set as default</button>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-2">Or choose from bookmarks: <span class="inline-flex gap-1 mt-1"><span class="px-2 py-0.5 rounded bg-slate-100 text-slate-700">Home</span><span class="px-2 py-0.5 rounded bg-slate-100 text-slate-700">Work</span><span class="px-2 py-0.5 rounded bg-slate-100 text-slate-700">Parents</span></span></p>
+                    </div>
+                    <p class="text-xs text-slate-500">Update Password · Delete Account</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Admin Dashboard -->
+        <section>
+            <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-2">Admin Dashboard (/admin-dashboard)</h2>
+            <div class="border-2 border-slate-200 rounded-lg overflow-hidden bg-white shadow">
+                <div class="p-4 border-b border-slate-200 flex justify-between items-center">
+                    <h3 class="font-semibold text-slate-900">Flood Watch Admin</h3>
+                    <span class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 text-sm">👤</span>
+                </div>
+                <div class="p-6 space-y-6">
+                    <div>
+                        <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">API Health</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div class="flex justify-between items-center p-2 rounded border border-slate-200">
+                                <span class="text-sm">Environment Agency</span>
+                                <span class="text-xs font-medium text-green-600">✓ ok</span>
+                            </div>
+                            <div class="flex justify-between items-center p-2 rounded border border-slate-200">
+                                <span class="text-sm">Flood Forecast</span>
+                                <span class="text-xs font-medium text-green-600">✓ ok</span>
+                            </div>
+                            <div class="flex justify-between items-center p-2 rounded border border-slate-200">
+                                <span class="text-sm">Weather (Open-Meteo)</span>
+                                <span class="text-xs font-medium text-green-600">✓ ok</span>
+                            </div>
+                            <div class="flex justify-between items-center p-2 rounded border border-slate-200">
+                                <span class="text-sm">National Highways</span>
+                                <span class="text-xs font-medium text-green-600">✓ ok</span>
+                            </div>
+                            <div class="flex justify-between items-center p-2 rounded border border-slate-200">
+                                <span class="text-sm">Cache</span>
+                                <span class="text-xs font-medium text-green-600">✓ ok</span>
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-2">Source: /health endpoint</p>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">LLM Cost (OpenAI)</h4>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                            <div class="p-4 rounded-lg border border-slate-200">
+                                <p class="text-2xl font-bold text-slate-900">23</p>
+                                <p class="text-xs text-slate-500">Requests today</p>
+                            </div>
+                            <div class="p-4 rounded-lg border border-slate-200">
+                                <p class="text-2xl font-bold text-slate-900">412</p>
+                                <p class="text-xs text-slate-500">This month</p>
+                            </div>
+                            <div class="p-4 rounded-lg border border-slate-200">
+                                <p class="text-2xl font-bold text-slate-900">$4.12</p>
+                                <p class="text-xs text-slate-500">Est. spend</p>
+                            </div>
+                            <div class="p-4 rounded-lg border border-slate-200">
+                                <p class="text-sm font-medium text-slate-700">2:45 pm</p>
+                                <p class="text-xs text-slate-500">Last updated</p>
+                            </div>
+                        </div>
+                        <p class="text-xs text-amber-600 mt-2">⚠ Budget alert when approaching limit (e.g. $20/month)</p>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">User Metrics</h4>
+                        <div class="grid grid-cols-4 gap-4">
+                            <div class="p-4 rounded-lg border border-slate-200">
+                                <p class="text-2xl font-bold text-slate-900">142</p>
+                                <p class="text-xs text-slate-500">Total users</p>
+                            </div>
+                            <div class="p-4 rounded-lg border border-slate-200">
+                                <p class="text-2xl font-bold text-slate-900">28</p>
+                                <p class="text-xs text-slate-500">Active (7d)</p>
+                            </div>
+                            <div class="p-4 rounded-lg border border-slate-200">
+                                <p class="text-2xl font-bold text-slate-900">89</p>
+                                <p class="text-xs text-slate-500">Searches 24h</p>
+                            </div>
+                            <div class="p-4 rounded-lg border border-slate-200">
+                                <p class="text-2xl font-bold text-slate-900">67</p>
+                                <p class="text-xs text-slate-500">Default locations set</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="p-4 rounded-lg border border-slate-200">
+                            <h5 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Top Regions</h5>
+                            <ul class="text-sm space-y-1">
+                                <li>Somerset Levels · 45 users</li>
+                                <li>Bristol · 23 users</li>
+                                <li>Devon · 18 users</li>
+                            </ul>
+                        </div>
+                        <div class="p-4 rounded-lg border border-slate-200">
+                            <h5 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Top Postcodes</h5>
+                            <ul class="text-sm space-y-1">
+                                <li>TA10 · 12</li>
+                                <li>TA3 · 8</li>
+                                <li>BS1 · 6</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 text-sm">
+                        <a href="#" class="text-blue-600">Pulse</a>
+                        <span class="text-slate-400">·</span>
+                        <a href="#" class="text-blue-600">Logs</a>
+                        <span class="text-slate-400">·</span>
+                        <a href="/health" class="text-blue-600">Health</a>
+                    </div>
+                </div>
             </div>
         </section>
     </div>

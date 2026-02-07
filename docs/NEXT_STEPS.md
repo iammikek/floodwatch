@@ -15,6 +15,11 @@ flowchart LR
         N2[GetRailDisruption tool]
     end
 
+    subgraph Realtime["Real-time & Push"]
+        RT1[Laravel Reverb]
+        RT2[Push notifications]
+    end
+
     subgraph Backlog["Backlog"]
         B1[Queue async]
         B2[Polygon tuning]
@@ -51,7 +56,21 @@ flowchart LR
 - **Done**: RoadIncident enriched with startTime, endTime, locationDescription, managementType, isFloodRelated
 - **Pending**: sortIncidentsByPriority, location-aware filtering (proximity), expand correlation pairs
 
-## 4. Existing Backlog
+## 4. Real-time Updates & Push Notifications
+
+**Ref**: `docs/SITUATIONAL_AWARENESS_DASHBOARD.md`, `docs/DEPLOYMENT.md`
+
+| Feature | Approach | Cost (Railway) |
+|---------|----------|----------------|
+| **WebSockets** | Laravel Reverb (self-hosted) | Included in Railway compute; add as second service or run alongside `serve` |
+| **Push notifications** | Web Push API + Firebase Cloud Messaging | Free; minimal backend egress |
+
+- **Reverb**: Real-time Activity Feed updates, live dashboard refresh when flood/road data changes
+- **Push**: Browser notifications for high-severity, location-relevant events when app is closed
+- **Infrastructure**: Reverb as separate Railway service or second process; Redis if scaling horizontally
+- **Alternative**: Pusher Channels (free tier: 200k msg/day, 100 connections) instead of Reverb if preferred
+
+## 5. Existing Backlog
 
 **Ref**: `docs/DEVELOPMENT.md`
 
@@ -63,6 +82,7 @@ flowchart LR
 | Doc | Purpose |
 |-----|---------|
 | `docs/BRIEF.md` | Revised product brief – user needs, location, route check, data architecture |
+| `docs/DEPLOYMENT.md` | Railway setup, variables; cost notes for Reverb + push |
 | `docs/ACCEPTANCE_CRITERIA.md` | Success checklist for revised brief |
 | `docs/WIREFRAME_REVISED_BRIEF.md` | Mobile condensed + desktop enhanced wireframes |
 | `docs/LLM_DATA_FLOW.md` | How data flows to the LLM – tools, prompts, pre-fetch, correlation |

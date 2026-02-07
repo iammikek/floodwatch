@@ -6,6 +6,8 @@ Flood Watch correlates Environment Agency flood data with National Highways road
 
 **Product brief**: See `docs/BRIEF.md` for the revised scope – user decision support (house/car at risk), location lookup (postcode, address, What3Words), route check, backend polling, and LLM cost control.
 
+**Connectivity constraint**: Users may check at home then go to the Levels with limited data. The app must be fast to load, cache aggressively, and persist to localStorage so last-known state is available when offline or connectivity is poor.
+
 ## Domain Structure
 
 ```

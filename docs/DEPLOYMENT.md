@@ -143,3 +143,4 @@ Railway automatically builds and deploys. No manual steps.
 
 - **Railway free tier:** $5 credits for 30 days, then $1/month
 - **OpenAI:** Pay-per-use (gpt-4o-mini ~$0.01–0.10 per request)
+- **Real-time (planned):** Laravel Reverb adds minimal compute; push notifications (FCM) are free. See `docs/NEXT_STEPS.md` §4.

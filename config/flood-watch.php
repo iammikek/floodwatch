@@ -255,6 +255,28 @@ return [
     |
     */
 
+    /*
+    |--------------------------------------------------------------------------
+    | Emergency Services (Danger to Life)
+    |--------------------------------------------------------------------------
+    |
+    | Phone numbers and instructions shown when severe flood warnings
+    | (danger to life) are detected. Used by the UI and LLM prompts.
+    |
+    */
+
+    'emergency' => [
+        '999' => 'Emergency (life at risk)',
+        'floodline' => '0345 988 1188',
+        'floodline_label' => 'Environment Agency Floodline (24/7)',
+        'instructions' => [
+            'Evacuate if advised by emergency services.',
+            'Move to higher ground.',
+            'Do not enter floodwater.',
+            'Call 999 if life at risk.',
+        ],
+    ],
+
     'incident_icons' => [
         'flooding' => '🌊',
         'roadClosed' => '🚫',

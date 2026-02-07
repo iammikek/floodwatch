@@ -24,6 +24,7 @@ Backlog, milestones, and future work for the Flood Watch project.
 | Medium | Expand predictive rules | Curry Moor, Salt Moor, Thorney, Devon cut-off areas – see `docs/ROAD_DATA_STRATEGY.md` |
 | Medium | Queue-based async | Move `FloodWatchService::chat()` to a job for high-traffic scenarios; poll for results |
 | Medium | Polygon limit tuning | Adjust `flood-watch.environment_agency.max_polygons_per_request` based on real usage |
+| Medium | Real-time & push | Laravel Reverb + Web Push (FCM); see `docs/NEXT_STEPS.md` §4 |
 | Low | Additional regions | Extend beyond South West if needed |
 | Low | Snapshot test coverage | Ensure prompt changes are covered by `FloodWatchPromptBuilderTest` |
 
@@ -45,7 +46,7 @@ flowchart LR
 ## Future Work
 
 - **Trends**: `FloodWatchTrendService` and `flood-watch:trends` command exist; consider UI for historical flood/road patterns
-- **Alerts**: Push or email alerts when flood/road status changes (would require background polling or webhooks)
+- **Alerts**: Push notifications (Web Push + FCM) and WebSockets (Laravel Reverb) for real-time updates; planned in `docs/NEXT_STEPS.md` §4
 - **Mobile**: Responsive dashboard; consider PWA for offline last-known status
 
 ## Reference

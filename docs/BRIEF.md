@@ -28,6 +28,38 @@ I am an app developer and want to build an app that uses OpenAI to process data 
 
 The app must help users make these decisions quickly and clearly.
 
+---
+
+## 2.1 Connectivity Constraint
+
+**Users may check at home (good connectivity) then find themselves in the Levels with limited or no data access.**
+
+The app must be **fast to load** and **optimise cache and local storage** so that:
+
+- **At home**: Fetch and cache aggressively; store last results in local storage.
+- **In the Levels**: Show cached results immediately; work from last-known state when online access is poor or unavailable.
+
+```mermaid
+flowchart LR
+    subgraph Home["At home"]
+        H1[Good connectivity]
+        H2[Fetch & cache]
+        H3[Persist to localStorage]
+    end
+
+    subgraph Levels["In the Levels"]
+        L1[Limited / no data]
+        L2[Load from cache]
+        L3[Show last-known state]
+    end
+
+    H1 --> H2 --> H3
+    H3 -.-> L2
+    L1 --> L2 --> L3
+```
+
+**Implications**: Minimise initial payload; prioritise instant render from cache; treat localStorage as the fallback when the user is cut off.
+
 ```mermaid
 flowchart TD
     User[User] --> Q1{House at risk?}
@@ -40,7 +72,13 @@ flowchart TD
     A1 --> Out[Clear guidance]
     A2 --> Out
     A3 --> Out
+
+    A3 --> Emerg[Emergency numbers + instructions]
 ```
+
+When **Danger to Life** is detected (e.g. severe flood warning), the app must:
+- Show **relevant emergency phone numbers** (999, Floodline 0345 988 1188)
+- Provide **clear instructions** (evacuate, move to higher ground, call 999 if life at risk)
 
 ---
 
@@ -60,7 +98,14 @@ All resolve to coordinates for flood, road, and forecast checks.
 
 ### 3.2 Persistence
 
-The app must **remember the user's previous location** so that returning users see their area immediately without re-entering. Stored per user when logged in, or in browser storage for guests.
+The app must **remember the user's previous location** so that returning users see their area immediately without re-entering.
+
+| User type | Storage |
+|-----------|---------|
+| **Guest** | Browser storage (localStorage) – last location only |
+| **Registered** | Profile default location + bookmarks – multiple locations; quick switch between home, work, relatives, etc. |
+
+Registered users can **bookmark more than one location** and switch between them. A **default location** is stored in the user's profile and pre-loaded on app open. Example: home (Langport), parents (Muchelney), work (Taunton). Each bookmark stores the resolved coordinates and label (postcode or place name). Default locations feed user metrics for the admin dashboard.
 
 ---
 
@@ -197,7 +242,7 @@ We must always consider LLM cost:
 
 | Viewport | Layout |
 |----------|--------|
-| **Mobile** | Condensed, scannable – risk level, alerts, roads, key advice |
+| **Mobile** | Condensed, scannable – risk level, alerts, roads, key advice. **Map may be omitted** if too heavy for mobile (tiles, payload) and screen is small – prioritise text and cached state over map. |
 | **Desktop** | Full dashboard – map, lists, forecast, route check, more detail |
 
 ---

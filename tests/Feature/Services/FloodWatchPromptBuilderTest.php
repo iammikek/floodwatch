@@ -50,6 +50,8 @@ test('load base prompt loads content from prompts directory', function () {
 
     expect($content)->toContain('South West Emergency Assistant');
     expect($content)->toContain('Never invent or hallucinate data');
+    expect($content)->toContain('Danger to Life');
+    expect($content)->toContain('0345 988 1188');
 });
 
 test('load base prompt throws when version does not exist', function () {

@@ -245,6 +245,6 @@ To highlight events that affect the user's location:
 
 - Exact risk formula weights (to be tuned with domain input).
 - Whether AI "Current State" runs on every job cycle or only on significant changes.
-- Echo vs. Livewire polling for real-time updates (Echo requires Pusher/Redis broadcast setup).
+- **Resolved:** Use Laravel Reverb (self-hosted WebSockets) for real-time updates; planned in `docs/NEXT_STEPS.md` §4.
 - Scope of "monitored routes" for Infrastructural Impact (A361, A372, M5 J23–J25, etc.).
 - AI token budget per registered user (e.g. cap summaries per day) to control cost.
