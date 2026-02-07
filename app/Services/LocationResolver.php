@@ -180,12 +180,12 @@ class LocationResolver
      *
      * @return array{valid: bool, in_area: bool, location?: string, region?: string, error?: string}
      */
-    public function reverseFromCoords(float $lat, float $long): array
+    public function reverseFromCoords(float $lat, float $lng): array
     {
         $url = 'https://nominatim.openstreetmap.org/reverse';
         $params = [
             'lat' => $lat,
-            'lon' => $long,
+            'lon' => $lng,
             'format' => 'json',
             'addressdetails' => 1,
         ];
@@ -229,7 +229,7 @@ class LocationResolver
                 ];
             }
 
-            $inArea = $this->isInSouthWest($lat, $long, $address);
+            $inArea = $this->isInSouthWest($lat, $lng, $address);
             $region = $this->getRegionFromAddress($address);
 
             /** @var string $location */

@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('label');
             $table->string('location');
             $table->float('lat');
-            $table->float('long');
+            $table->float('lng');
             $table->string('region')->nullable();
             $table->boolean('is_default')->default(false);
             $table->timestamps();

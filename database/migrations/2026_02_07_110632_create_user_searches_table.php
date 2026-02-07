@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('session_id')->nullable();
             $table->string('location');
             $table->float('lat');
-            $table->float('long');
+            $table->float('lng');
             $table->string('region')->nullable();
             $table->timestamp('searched_at');
             $table->timestamps();

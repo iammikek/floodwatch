@@ -31,6 +31,7 @@ class LocationBookmark extends Model
     protected static function booted(): void
     {
         static::saving(function (LocationBookmark $bookmark): void {
+            // When setting is_default=true, clear other defaults so only one per user.
             if ($bookmark->is_default && $bookmark->user_id) {
                 static::where('user_id', $bookmark->user_id)
                     ->where('id', '!=', $bookmark->id)
