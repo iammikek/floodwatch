@@ -214,6 +214,19 @@ All resolve to coordinates used for flood, road, and forecast checks.
 
 ---
 
+## Test Coverage
+
+**Target**: >80% for critical paths (correlation, tool calling, caching, circuit breaker). Run `sail test --coverage` to check.
+
+---
+
+## Deployment Verification
+
+See `docs/DEPLOYMENT.md` **Pre-Launch Checklist**:
+- Verify API keys, run `sail test --coverage` (>80%), test graceful failure, regional postcodes.
+
+---
+
 ## Reference
 
 - **Brief**: `docs/BRIEF.md`

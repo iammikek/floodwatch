@@ -99,7 +99,7 @@ flowchart TB
 ### Resilience
 
 - **Retry**: All HTTP calls use `retry(times, sleepMs, null, false)` – configurable per service
-- **Circuit breaker**: Wired into all external API services (Environment Agency, Flood Forecast, River Level, National Highways, Weather). After N consecutive failures, the circuit opens and requests return empty until cooldown expires. Config: `flood-watch.circuit_breaker` (enabled, failure_threshold, cooldown_seconds). Set `FLOOD_WATCH_CIRCUIT_BREAKER_ENABLED=false` to disable.
+- **Circuit breaker**: Wired into all external API services (Environment Agency, Flood Forecast, River Level, National Highways, Weather). After N consecutive failures, the circuit opens and requests return empty until cooldown expires. Config: `flood-watch.circuit_breaker` – `enabled` (default: true), `failure_threshold` (default: 5), `cooldown_seconds` (default: 60). Env: `FLOOD_WATCH_CIRCUIT_BREAKER_ENABLED`, `FLOOD_WATCH_CIRCUIT_FAILURE_THRESHOLD`, `FLOOD_WATCH_CIRCUIT_COOLDOWN`.
 - **Graceful degradation**: When one API fails, app returns partial summary with available data and clear indication of missing data (see ACCEPTANCE_CRITERIA). No cached-data fallback when circuit is open – consider serving last-known cache per area.
 - **Cache**: `flood-watch.cache_key_prefix` ensures distinct keys across services
 
@@ -137,7 +137,7 @@ The main `chat()` flow is synchronous. For high traffic, consider:
 ### Scaling Notes
 
 - **Redis**: Use for cache and trends in production (`flood-watch.cache_store`, `flood-watch.trends_enabled`)
-- **Concurrency**: Pre-fetch (forecast, weather, river levels) runs in parallel via `Concurrency::run()`. Flood alerts and road incidents are fetched when the LLM calls GetFloodData and GetHighwaysIncidents.
+- **Concurrency**: Pre-fetch (forecast, weather, river levels) runs in parallel via `Concurrency::run()`. Flood alerts and road incidents are fetched when the LLM calls GetFloodData and GetHighwaysIncidents. Driver: `sync` (default, in-process) vs `process` (spawns PHP processes). Use `sync` for testing (`phpunit.xml` sets `CONCURRENCY_DRIVER=sync`). Use `process` in production for better parallelism under load. Env: `CONCURRENCY_DRIVER` (or `APP_CONCURRENCY_DRIVER` depending on Laravel version).
 - **Polygon limit**: `flood-watch.environment_agency.max_polygons_per_request` caps polygon fetches per request
 
 ## AI Development

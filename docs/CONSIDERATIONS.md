@@ -63,6 +63,8 @@ Review findings and recommendations for production readiness.
 - Consider: increase TTL for low-risk periods; geo-grid cache (same cell = same key)
 - Rate limiting: guests already limited; consider per-user caps for registered
 
+**Time estimates in LLM output**: If the app should surface specific time windows (e.g. "check again within 4 hours"), decide whether to bake this into the system prompt or leave it LLM-generated. Currently no explicit instruction; LLM may infer from data.
+
 ---
 
 ## 5. Postcode Granularity for Cache

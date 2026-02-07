@@ -23,6 +23,15 @@ flowchart TD
 - GitHub repo connected
 - OpenAI API key
 
+## Pre-Launch Checklist
+
+- [ ] Verify `OPENAI_API_KEY` is set and can call GPT-4
+- [ ] Verify `NATIONAL_HIGHWAYS_API_KEY` is valid
+- [ ] Run `sail test --coverage` and confirm >80% coverage
+- [ ] Test graceful failure: disable NH key, verify assistant still returns flood data
+- [ ] Load test: run `flood-watch:warm-cache` and monitor Redis memory
+- [ ] Regional test: Query Somerset (BA postcode), Bristol (BS), Devon (EX), Cornwall (TR)
+
 ## Initial Setup
 
 ### 1. Create Railway Project
@@ -57,6 +66,7 @@ In Railway → Your Service → Variables, add:
 | `CACHE_STORE` | `file` |
 | `FLOOD_WATCH_CACHE_STORE` | `flood-watch-array` |
 | `FLOOD_WATCH_CACHE_TTL_MINUTES` | `15` |
+| `CONCURRENCY_DRIVER` | `process` (production). Use `sync` for testing. |
 
 Optional (for road closure data):
 

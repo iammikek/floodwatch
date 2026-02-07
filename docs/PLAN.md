@@ -119,5 +119,6 @@ Reverb as second service or process; Redis if scaling. Alternative: Pusher (free
 | `docs/WIREFRAMES.md` | UI wireframes |
 | `docs/ARCHITECTURE.md` | System structure, data flow |
 | `docs/LLM_DATA_FLOW.md` | How LLM consumes data |
-| `docs/DEPLOYMENT.md` | Railway runbook |
+| `docs/DEPLOYMENT.md` | Railway runbook, pre-launch checklist |
+| `docs/TROUBLESHOOTING.md` | LLM timeout, circuit breaker, cache |
 | `docs/CONSIDERATIONS.md` | Risks, API dependency, regional scope, costs |
