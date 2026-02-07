@@ -9,6 +9,9 @@ use Illuminate\Support\Str;
 
 class IncidentIcon
 {
+    /**
+     * Resolve status label, preferring translation keys over enum hard-coded labels.
+     */
     public static function statusLabel(?string $status): string
     {
         if ($status === null || $status === '') {
@@ -21,10 +24,21 @@ class IncidentIcon
         }
 
         $enum = IncidentStatus::tryFromString($status);
+        if ($enum !== null) {
+            $enumKey = 'flood-watch.incident_status.'.$enum->value;
+            if (Lang::has($enumKey)) {
+                return __($enumKey);
+            }
 
-        return $enum !== null ? $enum->label() : Str::title(self::splitCamelCase($status));
+            return $enum->label();
+        }
+
+        return Str::title(self::splitCamelCase($status));
     }
 
+    /**
+     * Resolve type label, preferring translation keys over enum hard-coded labels.
+     */
     public static function typeLabel(?string $type): string
     {
         if ($type === null || $type === '') {
@@ -37,8 +51,16 @@ class IncidentIcon
         }
 
         $enum = IncidentType::tryFromString($type);
+        if ($enum !== null) {
+            $enumKey = 'flood-watch.incident_type.'.$enum->value;
+            if (Lang::has($enumKey)) {
+                return __($enumKey);
+            }
 
-        return $enum !== null ? $enum->label() : Str::title(self::splitCamelCase($type));
+            return $enum->label();
+        }
+
+        return Str::title(self::splitCamelCase($type));
     }
 
     /**

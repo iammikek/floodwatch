@@ -6,7 +6,6 @@ use Database\Factories\LocationBookmarkFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\DB;
 
 class LocationBookmark extends Model
 {
@@ -30,19 +29,16 @@ class LocationBookmark extends Model
         ];
     }
 
-    public function save(array $options = []): bool
+    protected static function booted(): void
     {
-        return DB::transaction(function () use ($options) {
-            if ($this->is_default && $this->user_id) {
-                static::where('user_id', $this->user_id)->lockForUpdate()->get();
-                $query = static::where('user_id', $this->user_id);
-                if ($this->exists) {
-                    $query->where('id', '!=', $this->getKey());
+        static::saving(function (self $model) {
+            if ($model->is_default && $model->user_id) {
+                $query = static::where('user_id', $model->user_id);
+                if ($model->exists) {
+                    $query->where('id', '!=', $model->getKey());
                 }
                 $query->update(['is_default' => false]);
             }
-
-            return parent::save($options);
         });
     }
 

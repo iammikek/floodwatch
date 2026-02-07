@@ -108,7 +108,7 @@ tests/
 ## Conventions
 
 - **Models**: When creating models, also create a factory and seeder (e.g. `sail artisan make:model X -mf -s`).
-- **Coordinates**: `UserSearch` and `LocationBookmark` use `lat`, `lng`. Services/DTOs (LocationResolver, PostcodeValidator, API responses) use `lat`, `long`. When creating models from resolver/API data, map `long` → `lng`.
+- **Coordinates**: `UserSearch`, `LocationBookmark`, services, and DTOs (LocationResolver, PostcodeValidator, API responses) use `lat`, `lng` consistently.
 - **Mappers**: Use enums for key→value mappings (e.g. region→location, incidentType→icon). Add mapper methods on the enum (e.g. `Region::warmCacheLocation()`, `IncidentType::icon()`) instead of config arrays.
 - TDD: No production code without a failing test first
 - Prefer Pest syntax when using Pest
