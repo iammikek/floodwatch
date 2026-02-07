@@ -52,10 +52,10 @@ class WeatherService
      *
      * @return array<int, array{date: string, icon: string, temp_max: float, temp_min: float, precipitation: float, description: string}>
      */
-    public function getForecast(float $lat, float $long): array
+    public function getForecast(float $lat, float $lng): array
     {
         try {
-            return $this->circuitBreaker->execute(fn () => $this->fetchForecast($lat, $long));
+            return $this->circuitBreaker->execute(fn () => $this->fetchForecast($lat, $lng));
         } catch (CircuitOpenException) {
             return [];
         } catch (ConnectionException|RequestException $e) {
@@ -68,11 +68,11 @@ class WeatherService
     /**
      * @return array<int, array{date: string, icon: string, temp_max: float, temp_min: float, precipitation: float, description: string}>
      */
-    private function fetchForecast(float $lat, float $long): array
+    private function fetchForecast(float $lat, float $lng): array
     {
         $baseUrl = config('flood-watch.weather.base_url', 'https://api.open-meteo.com/v1');
         $timeout = config('flood-watch.weather.timeout', 10);
-        $url = "{$baseUrl}/forecast?latitude={$lat}&longitude={$long}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=Europe/London&forecast_days=5";
+        $url = "{$baseUrl}/forecast?latitude={$lat}&longitude={$lng}&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=Europe/London&forecast_days=5";
 
         $retryTimes = config('flood-watch.weather.retry_times', 3);
         $retrySleep = config('flood-watch.weather.retry_sleep_ms', 100);
