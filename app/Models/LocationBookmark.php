@@ -2,13 +2,15 @@
 
 namespace App\Models;
 
+use Database\Factories\LocationBookmarkFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\DB;
 
 class LocationBookmark extends Model
 {
-    /** @use HasFactory<\Database\Factories\LocationBookmarkFactory> */
+    /** @use HasFactory<LocationBookmarkFactory> */
     use HasFactory;
 
     protected $fillable = [
@@ -28,16 +30,19 @@ class LocationBookmark extends Model
         ];
     }
 
-    protected static function booted(): void
+    public function save(array $options = []): bool
     {
-        static::saved(function (LocationBookmark $bookmark): void {
-            // When is_default=true, clear other defaults so only one per user.
-            // Runs after save succeeds to avoid leaving user with no default if save fails.
-            if ($bookmark->is_default && $bookmark->user_id) {
-                static::where('user_id', $bookmark->user_id)
-                    ->where('id', '!=', $bookmark->getKey())
-                    ->update(['is_default' => false]);
+        return DB::transaction(function () use ($options) {
+            if ($this->is_default && $this->user_id) {
+                static::where('user_id', $this->user_id)->lockForUpdate()->get();
+                $query = static::where('user_id', $this->user_id);
+                if ($this->exists) {
+                    $query->where('id', '!=', $this->getKey());
+                }
+                $query->update(['is_default' => false]);
             }
+
+            return parent::save($options);
         });
     }
 

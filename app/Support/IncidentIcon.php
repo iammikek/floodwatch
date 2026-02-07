@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Enums\IncidentStatus;
 use App\Enums\IncidentType;
+use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Str;
 
 class IncidentIcon
@@ -12,6 +13,11 @@ class IncidentIcon
     {
         if ($status === null || $status === '') {
             return '';
+        }
+
+        $key = 'flood-watch.incident_status.'.$status;
+        if (Lang::has($key)) {
+            return __($key);
         }
 
         $enum = IncidentStatus::tryFromString($status);
@@ -23,6 +29,11 @@ class IncidentIcon
     {
         if ($type === null || $type === '') {
             return '';
+        }
+
+        $key = 'flood-watch.incident_type.'.$type;
+        if (Lang::has($key)) {
+            return __($key);
         }
 
         $enum = IncidentType::tryFromString($type);

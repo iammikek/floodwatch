@@ -63,7 +63,6 @@ enum IncidentType: string
             'lane closure' => self::LaneClosures,
             'road works' => self::Roadworks,
             'roadworks' => self::Roadworks,
-            'roadWorks' => self::Roadworks,
         ];
 
         if (isset($aliases[$lower])) {
