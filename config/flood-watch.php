@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\Region;
+
 return [
 
     /*
@@ -28,12 +30,9 @@ return [
 
     'donation_url' => env('FLOOD_WATCH_DONATION_URL', ''),
 
-    'warm_cache_locations' => [
-        'somerset' => 'Langport',
-        'bristol' => 'Bristol',
-        'devon' => 'Exeter',
-        'cornwall' => 'Truro',
-    ],
+    'warm_cache_locations' => collect(Region::cases())
+        ->mapWithKeys(fn (Region $r) => [$r->value => $r->warmCacheLocation()])
+        ->all(),
 
     /*
     |--------------------------------------------------------------------------

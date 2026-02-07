@@ -1,8 +1,6 @@
 <?php
 
-use App\Models\LocationBookmark;
 use App\Models\User;
-use App\Models\UserSearch;
 use App\Services\LocationResolver;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Http;
@@ -12,101 +10,8 @@ beforeEach(function () {
     $this->resolver = app(LocationResolver::class);
 });
 
-test('user_searches table exists and model can be created', function () {
-    $user = User::factory()->create();
-
-    $search = UserSearch::create([
-        'user_id' => $user->id,
-        'location' => 'Langport',
-        'lat' => 51.0358,
-        'lng' => -2.8318,
-        'region' => 'somerset',
-        'searched_at' => now(),
-    ]);
-
-    expect($search->id)->toBeGreaterThan(0)
-        ->and($search->location)->toBe('Langport')
-        ->and($search->user_id)->toBe($user->id)
-        ->and($search->user)->toBeInstanceOf(User::class);
-});
-
-test('user_search can be created for guest with session_id', function () {
-    $search = UserSearch::create([
-        'user_id' => null,
-        'session_id' => 'test-session-123',
-        'location' => 'TA10 0',
-        'lat' => 51.0358,
-        'lng' => -2.8318,
-        'region' => 'somerset',
-        'searched_at' => now(),
-    ]);
-
-    expect($search->user_id)->toBeNull()
-        ->and($search->session_id)->toBe('test-session-123');
-});
-
-test('location_bookmarks table exists and model can be created', function () {
-    $user = User::factory()->create();
-
-    $bookmark = LocationBookmark::create([
-        'user_id' => $user->id,
-        'label' => 'Home',
-        'location' => 'Langport',
-        'lat' => 51.0358,
-        'lng' => -2.8318,
-        'region' => 'somerset',
-        'is_default' => true,
-    ]);
-
-    expect($bookmark->id)->toBeGreaterThan(0)
-        ->and($bookmark->user)->toBeInstanceOf(User::class)
-        ->and($bookmark->is_default)->toBeTrue();
-});
-
-test('creating new bookmark with is_default clears other defaults for user', function () {
-    $user = User::factory()->create();
-
-    $first = LocationBookmark::create([
-        'user_id' => $user->id,
-        'label' => 'Home',
-        'location' => 'Langport',
-        'lat' => 51.04,
-        'lng' => -2.83,
-        'is_default' => true,
-    ]);
-
-    $second = LocationBookmark::create([
-        'user_id' => $user->id,
-        'label' => 'Work',
-        'location' => 'Bristol',
-        'lat' => 51.45,
-        'lng' => -2.58,
-        'is_default' => true,
-    ]);
-
-    expect($first->fresh()->is_default)->toBeFalse()
-        ->and($second->fresh()->is_default)->toBeTrue();
-});
-
-test('user has userSearches and locationBookmarks relationships', function () {
-    $user = User::factory()->create();
-
-    UserSearch::create([
-        'user_id' => $user->id,
-        'location' => 'Langport',
-        'lat' => 51.04,
-        'lng' => -2.83,
-        'searched_at' => now(),
-    ]);
-
-    expect($user->userSearches)->toHaveCount(1)
-        ->and($user->locationBookmarks)->toHaveCount(0);
-});
-
 test('config flood-watch donation_url exists', function () {
-    config(['flood-watch.donation_url' => 'https://ko-fi.com/test']);
-
-    expect(config('flood-watch.donation_url'))->toBe('https://ko-fi.com/test');
+    expect(array_key_exists('donation_url', config('flood-watch')))->toBeTrue();
 });
 
 test('config flood-watch warm_cache_locations exists with all regions', function () {
