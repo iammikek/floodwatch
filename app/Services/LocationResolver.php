@@ -178,7 +178,7 @@ class LocationResolver
     /**
      * Reverse geocode coordinates to a location string and region.
      *
-     * @return array{valid: bool, in_area: bool, location?: string, region?: string, error?: string}
+     * @return array{valid: bool, in_area: bool, location: string, region: ?string, error: ?string}
      */
     public function reverseFromCoords(float $lat, float $lng): array
     {
