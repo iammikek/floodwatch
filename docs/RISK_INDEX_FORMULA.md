@@ -24,6 +24,22 @@ The Regional Risk Index is a weighted score from 0–100 that answers "How dange
 
 ### Raw score (before normalisation)
 
+```mermaid
+flowchart LR
+    subgraph Components
+        FS[floodScore]
+        IS[incidentScore]
+        RS[riverScore]
+        FCS[forecastScore]
+    end
+
+    FS --> Raw[rawScore]
+    IS --> Raw
+    RS --> Raw
+    FCS --> Raw
+    Raw --> Norm[normalisedScore 0-100]
+```
+
 ```
 rawScore = floodScore + incidentScore + riverScore + forecastScore
 ```
@@ -109,6 +125,16 @@ index = min(100, round(rawScore × (100 / 142)))
 ---
 
 ## Label mapping
+
+```mermaid
+flowchart LR
+    subgraph Ranges
+        R1[0-20: Low]
+        R2[21-40: Moderate]
+        R3[41-60: High]
+        R4[61-100: Severe]
+    end
+```
 
 | Index range | Label |
 |-------------|-------|

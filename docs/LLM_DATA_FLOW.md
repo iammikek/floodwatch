@@ -22,33 +22,46 @@
 
 ## 2. Data Flow Overview
 
-```
-User → Location (postcode/place) → LocationResolver → lat, long, region
-                    ↓
-    FloodWatchService.chat()
-                    ↓
-    ┌───────────────────────────────────────────────────────────────┐
-    │ PRE-FETCH (parallel, before LLM)                              │
-    │   • FloodForecastService.getForecast()                         │
-    │   • WeatherService.getForecast(lat, long)                      │
-    │   • RiverLevelService.getLevels(lat, long)                     │
-    └───────────────────────────────────────────────────────────────┘
-                    ↓
-    ┌───────────────────────────────────────────────────────────────┐
-    │ LLM LOOP (tool_choice: auto, max 8 iterations)                 │
-    │   System prompt + user message → OpenAI                         │
-    │   LLM decides which tools to call                              │
-    │   Tools: GetFloodData, GetHighwaysIncidents, GetFloodForecast,  │
-    │          GetRiverLevels, GetCorrelationSummary                  │
-    │   Floods + incidents accumulate across tool calls               │
-    │   Tool results → trimmed for tokens → fed back to LLM           │
-    │   LLM stops when it has enough to write response                │
-    └───────────────────────────────────────────────────────────────┘
-                    ↓
-    Result: { response, floods, incidents, forecast, weather, riverLevels }
-                    ↓
-    Dashboard: AI summary, flood list, road list, forecast, weather,
-               river levels, map (all from same result)
+```mermaid
+flowchart TB
+    subgraph Input
+        User[User]
+        Location[Location: postcode/place]
+    end
+
+    subgraph Resolve
+        Resolver[LocationResolver]
+        Coords[lat, long, region]
+    end
+
+    subgraph Service["FloodWatchService.chat()"]
+        subgraph Prefetch["PRE-FETCH (parallel)"]
+            F1[FloodForecastService]
+            F2[WeatherService]
+            F3[RiverLevelService]
+        end
+
+        subgraph LLMLoop["LLM LOOP (max 8 iterations)"]
+            OpenAI[OpenAI Chat]
+            Tools[GetFloodData, GetHighwaysIncidents,<br/>GetFloodForecast, GetRiverLevels,<br/>GetCorrelationSummary]
+        end
+    end
+
+    subgraph Result
+        Out[response, floods, incidents,<br/>forecast, weather, riverLevels]
+    end
+
+    subgraph Dashboard
+        UI[AI summary, flood list, road list,<br/>forecast, weather, map]
+    end
+
+    User --> Location
+    Location --> Resolver
+    Resolver --> Coords
+    Coords --> Service
+    Prefetch --> LLMLoop
+    LLMLoop --> Result
+    Result --> Dashboard
 ```
 
 ---
@@ -76,6 +89,34 @@ User → Location (postcode/place) → LocationResolver → lat, long, region
 | **GetCorrelationSummary** | severe_floods, flood_warnings, road_incidents, cross_references, predictive_warnings, key_routes | truncated to 8000 chars total |
 
 **No polygons** are sent to the LLM – they are stripped in `prepareToolResultForLlm()` to save tokens.
+
+---
+
+## 3.1 LLM Chat Sequence
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant S as FloodWatchService
+    participant O as OpenAI
+
+    U->>S: chat(location message)
+    S->>S: Pre-fetch: forecast, weather, river levels
+    S->>O: System prompt + user message + tools
+
+    loop Tool calls (max 8)
+        O->>S: tool_calls: GetFloodData, GetHighwaysIncidents, etc.
+        S->>S: Execute tools, accumulate floods/incidents
+        S->>S: Trim results for tokens
+        S->>O: tool results
+        O->>O: Decide: more tools or stop
+    end
+
+    alt finish_reason = stop
+        O->>S: Final response text
+        S->>U: { response, floods, incidents, forecast, weather, riverLevels }
+    end
+```
 
 ---
 

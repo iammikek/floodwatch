@@ -34,9 +34,36 @@ app/
 
 ## Data Flow
 
+```mermaid
+flowchart TB
+    User[User input] --> Resolver[LocationResolver]
+    Resolver --> Coords[coordinates + region]
+
+    subgraph Chat["FloodWatchService.chat()"]
+        Prefetch["Concurrency::run()"]
+        PF1[Forecast]
+        PF2[Weather]
+        PF3[River levels]
+        Prefetch --> PF1
+        Prefetch --> PF2
+        Prefetch --> PF3
+
+        LLM[OpenAI LLM]
+        Tools[GetFloodData, GetHighwaysIncidents,<br/>GetCorrelationSummary]
+        LLM --> Tools
+
+        Corr[RiskCorrelationService]
+        Tools --> Corr
+    end
+
+    Coords --> Chat
+    Corr --> Response[Response + floods/incidents/forecast]
+    Response --> Cache[(Cache)]
+```
+
 1. **User input** → LocationResolver (postcode/place) → coordinates + region
 2. **FloodWatchService.chat()** pre-fetches in parallel via `Concurrency::run()`: forecast, weather, river levels (flood alerts are not pre-fetched)
-3. **LLM** receives system prompt + tools; calls GetFloodData (flood alerts), GetHighwaysIncidents (road status), GetCorrelationSummary, etc. Tool calls are LLM-driven; when the LLM invokes multiple tools in one turn, they execute as the client processes the response
+3. **LLM** receives system prompt + tools; calls GetFloodData (flood alerts), GetHighwaysIncidents (road status), GetCorrelationSummary, etc. Tool calls are LLM-driven
 4. **RiskCorrelationService** applies deterministic rules (flood↔road pairs, predictive warnings)
 5. **Response** synthesized by LLM, cached, returned with floods/incidents/forecast
 

@@ -2,6 +2,21 @@
 
 Deployment runbook for the pilot on Railway.app.
 
+```mermaid
+flowchart TD
+    subgraph Setup["Initial Setup"]
+        A1[Create Railway project]
+        A2[Generate APP_KEY]
+        A3[Configure variables]
+        A4[Generate domain]
+        A5[Volume / DB]
+    end
+
+    A1 --> A2 --> A3 --> A4 --> A5
+    A5 --> Deploy[Deploy]
+    Deploy --> Push[Push to main]
+```
+
 ## Prerequisites
 
 - Railway account (railway.app)

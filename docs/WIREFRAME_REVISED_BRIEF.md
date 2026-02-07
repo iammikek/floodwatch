@@ -5,6 +5,34 @@
 
 ---
 
+## User Journey
+
+```mermaid
+flowchart LR
+    subgraph Entry
+        Open[Open app]
+        Location[Enter location]
+    end
+
+    subgraph View
+        Risk[View risk]
+        Route[Check route]
+        Advice[Read advice]
+    end
+
+    subgraph Actions
+        Act[Act: defend / avoid / evacuate]
+    end
+
+    Open --> Location
+    Location --> Risk
+    Risk --> Route
+    Route --> Advice
+    Advice --> Act
+```
+
+---
+
 ## Mobile (Condensed)
 
 ```

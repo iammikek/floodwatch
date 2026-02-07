@@ -10,6 +10,19 @@ Evolve Flood Watch from a **Search-First** utility to an **Operational Dashboard
 
 **Key principle**: The dashboard should feel "Always On"—providing background intelligence without requiring the user to click "Check status" each time.
 
+```mermaid
+flowchart LR
+    subgraph SearchFirst["Current: Search-First"]
+        S1[User clicks] --> S2[Fetch]
+        S2 --> S3[Show]
+    end
+
+    subgraph Operational["Proposed: Operational"]
+        O1[Leave open] --> O2[Auto-refresh 15 min]
+        O2 --> O3[Event-driven updates]
+    end
+```
+
 ### Access: Registered Users Only
 
 The Situational Awareness Dashboard should be built as an **enhanced, registered-user option**. It incurs higher costs:
@@ -45,6 +58,20 @@ The Situational Awareness Dashboard should be built as an **enhanced, registered
 - **Real-time updates**: Use Livewire `#[On]` attribute or Laravel Echo to push updates to the Activity Feed when events occur.
 
 **Logic**:
+
+```mermaid
+flowchart TD
+    Job[FetchLatestInfrastructureData] --> Fetch[Fetch EA, NH data]
+    Fetch --> Diff[Diff new vs cached]
+    Diff --> D1{Changes?}
+    D1 -->|New warning| E1[Emit InfrastructureStatusChanged]
+    D1 -->|Road closed| E2[Emit InfrastructureStatusChanged]
+    D1 -->|Road opened| E2
+    D1 -->|No change| Skip[Skip]
+    E1 --> Feed[Activity Feed appends]
+    E2 --> Feed
+```
+
 - Cache previous state in Redis (keyed by data type: floods, incidents, river levels).
 - On each fetch, diff new vs. cached. Detect: new warnings, removed warnings, road closures, road reopenings.
 - Emit events for each change; Activity Feed subscribes and appends new entries.
@@ -64,6 +91,37 @@ The Situational Awareness Dashboard should be built as an **enhanced, registered
 - **Standardized JSON:API output** for internal risk metrics.
 
 **Formula (draft)**:
+
+```mermaid
+flowchart LR
+    subgraph Inputs
+        F[Floods]
+        I[Incidents]
+        R[River levels]
+        P[Precipitation]
+    end
+
+    subgraph Weights
+        W1[Severe: +25]
+        W2[Warning: +10]
+        W3[Closure: +5]
+        W4[Elevated: +2]
+        W5[Precip: +1]
+    end
+
+    F --> W1
+    F --> W2
+    I --> W3
+    R --> W4
+    P --> W5
+    W1 --> Sum[Sum]
+    W2 --> Sum
+    W3 --> Sum
+    W4 --> Sum
+    W5 --> Sum
+    Sum --> Norm[Normalise 0-100]
+```
+
 - Severe flood warning: +25 each (capped).
 - Flood warning: +10 each.
 - A-road closure: +5 each.

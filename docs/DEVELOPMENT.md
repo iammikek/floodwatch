@@ -29,6 +29,15 @@ Backlog, milestones, and future work for the Flood Watch project.
 
 ## Milestones
 
+```mermaid
+flowchart LR
+    V1[v1.0 Done] --> V2[v1.1 Done]
+    V2 --> V3[v1.2 Pending]
+    V1 -.- SW[South West, 4 regions, map]
+    V2 -.- CF[Concurrency pre-fetch]
+    V3 -.- Q[Queue async]
+```
+
 1. **v1.0** – South West coverage, all four regions, map with incident markers (done)
 2. **v1.1** – Pre-fetch parallelization via `Concurrency::run()` (done)
 3. **v1.2** – Optional queue-based async for high-traffic deployments

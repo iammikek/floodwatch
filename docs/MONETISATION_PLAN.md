@@ -7,6 +7,21 @@
 
 ## User Model (Current)
 
+```mermaid
+flowchart LR
+    subgraph Guest["Guest"]
+        G1[Search-first]
+        G2[Map after search]
+        G3[1 search / 15 min]
+    end
+
+    subgraph Registered["Registered"]
+        R1[Unlimited]
+        R2[Auto-refresh future]
+        R3[Situational Awareness future]
+    end
+```
+
 | Tier | Access | Limits |
 |------|--------|--------|
 | **Guest** | Search-first dashboard, map after search | 1 search per 15 min |

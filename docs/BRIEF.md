@@ -28,6 +28,20 @@ I am an app developer and want to build an app that uses OpenAI to process data 
 
 The app must help users make these decisions quickly and clearly.
 
+```mermaid
+flowchart TD
+    User[User] --> Q1{House at risk?}
+    User --> Q2{Car at risk?}
+
+    Q1 -->|Possible flooding| A1[Stay & deploy defences]
+    Q1 -->|Danger to life| A3[Evacuate]
+    Q2 -->|Roads at risk| A2[Avoid driving]
+
+    A1 --> Out[Clear guidance]
+    A2 --> Out
+    A3 --> Out
+```
+
 ---
 
 ## 3. Location
@@ -64,6 +78,38 @@ The app must **remember the user's previous location** so that returning users s
 
 The app computes the route, overlays incidents and flood areas, and provides a clear summary with alternatives when applicable.
 
+```mermaid
+flowchart LR
+    subgraph Input
+        From[From: postcode/address/W3W]
+        To[To: postcode/address/W3W]
+    end
+
+    subgraph Process
+        Geo[Geocode both]
+        Route[Compute route]
+        Overlay[Overlay incidents + flood areas]
+        Summary[Generate summary]
+    end
+
+    subgraph Output
+        Clear[Clear]
+        Blocked[Blocked + alternative]
+        AtRisk[At risk]
+        Delays[Delays]
+    end
+
+    From --> Geo
+    To --> Geo
+    Geo --> Route
+    Route --> Overlay
+    Overlay --> Summary
+    Summary --> Clear
+    Summary --> Blocked
+    Summary --> AtRisk
+    Summary --> Delays
+```
+
 ---
 
 ## 5. Data Architecture
@@ -82,9 +128,56 @@ API data is **polled and stored by the backend**, not fetched on each user reque
 
 Scheduled jobs fetch from APIs and write to a shared store. User requests read from the store.
 
+```mermaid
+flowchart TB
+    subgraph Backend["Scheduled Jobs (every 15 min)"]
+        Job[Fetch APIs]
+        Store[(Redis / DB)]
+    end
+
+    subgraph APIs["External APIs"]
+        EA[Environment Agency]
+        NH[National Highways]
+        FFC[Flood Forecast]
+        Wx[Weather]
+    end
+
+    subgraph Users["User Requests"]
+        Req[Request]
+        Cache[Read from store]
+    end
+
+    Job --> EA
+    Job --> NH
+    Job --> FFC
+    Job --> Wx
+    Job --> Store
+    Req --> Cache
+    Store --> Cache
+```
+
 ### 5.2 Geographic Caching
 
 Data is cached by **geographic area** so users in similar locations share the same cache:
+
+```mermaid
+flowchart LR
+    subgraph Users["Users in same area"]
+        U1[User A: Langport]
+        U2[User B: TA10 9]
+    end
+
+    subgraph Cache["Shared cache keys"]
+        C1[Grid 51.04,-2.83<br/>floods, river, weather]
+        C2[Region: SW<br/>road incidents]
+        C3[England<br/>forecast]
+    end
+
+    U1 --> C1
+    U2 --> C1
+    U1 --> C2
+    U2 --> C2
+```
 
 - Floods, river levels, weather: cache by grid cell or postcode sector
 - Road incidents: single region-wide cache (shared by all)

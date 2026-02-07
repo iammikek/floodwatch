@@ -2,6 +2,28 @@
 
 Consolidated development plan based on planning work (Feb 2026).
 
+```mermaid
+flowchart LR
+    subgraph Road["Road Data"]
+        R1[Relevance filtering]
+        R2[Cascading impact]
+        R3[Predictive rules]
+    end
+
+    subgraph Rail["Rail"]
+        N1[National Rail sign-up]
+        N2[GetRailDisruption tool]
+    end
+
+    subgraph Backlog["Backlog"]
+        B1[Queue async]
+        B2[Polygon tuning]
+    end
+
+    R1 --> R2
+    R2 --> R3
+```
+
 ## 1. Road Data Strategy
 
 **Ref**: `docs/ROAD_DATA_STRATEGY.md`

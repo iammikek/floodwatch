@@ -5,6 +5,36 @@
 
 ---
 
+## Layout Structure
+
+```mermaid
+flowchart TB
+    subgraph Header
+        H1[Flood Watch]
+        H2[Location selector]
+        H3[Check location]
+    end
+
+    subgraph Risk
+        Gauge[Regional Risk Gauge]
+    end
+
+    subgraph Main
+        Grid[Status Grid]
+        Activity[Live Activity Feed]
+    end
+
+    subgraph Map
+        Leaflet[Leaflet Map]
+    end
+
+    Header --> Risk
+    Risk --> Main
+    Main --> Map
+```
+
+---
+
 ## Desktop Layout (Registered User)
 
 ```

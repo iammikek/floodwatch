@@ -135,6 +135,26 @@ Search: https://data.gov.uk/search?q=flood
 
 ## Summary: Can We Get Info from National Rail / Emergency Services?
 
+```mermaid
+flowchart LR
+    subgraph High["High feasibility"]
+        NR[National Rail<br/>Darwin/LDB]
+    end
+
+    subgraph Low["Low / not useful"]
+        P[Police]
+        F[Fire & Rescue]
+        A[Ambulance]
+        C[Coastguard]
+    end
+
+    NR --> |Real-time, flood-relevant| Use[Use for rail disruption]
+    P --> Skip[No real-time API]
+    F --> Skip
+    A --> Skip
+    C --> Skip
+```
+
 | Source | Real-time API? | Flood-relevant? | Feasibility |
 |--------|----------------|-----------------|-------------|
 | **National Rail (Darwin/LDB)** | Yes | Yes (rail disruption near floods) | **High** – free tier, sign-up via Rail Data Marketplace |
@@ -148,6 +168,15 @@ Search: https://data.gov.uk/search?q=flood
 ---
 
 ## Implementation Considerations (National Rail)
+
+```mermaid
+flowchart TD
+    SignUp[Sign up Rail Data Marketplace] --> Config[Config: rail_stations per region]
+    Config --> Service[NationalRailService]
+    Service --> Tool[GetRailDisruption tool]
+    Tool --> LLM[LLM references in summary]
+    Service --> UI[Rail Status section in UI]
+```
 
 1. **Sign-up**: Register at https://raildata.org.uk/ for LDB or Darwin access
 2. **Station mapping**: Map South West stations to flood areas (e.g. Exeter St Davids ↔ River Exe, Dawlish ↔ coastal)

@@ -34,6 +34,13 @@ Architectural decisions for map display performance, trend storage, and geograph
 
 **Approach**:
 
+```mermaid
+flowchart LR
+    Viewport[Viewport changes] --> Cells[Compute visible grid cells]
+    Cells --> Fetch[Fetch/filter for those cells]
+    Fetch --> Render[Render only visible markers/polygons]
+```
+
 - Divide the map into a **grid** (e.g. 0.1° × 0.1° cells, or zoom-level–dependent tiles).
 - When the map viewport changes (pan/zoom), compute which grid cells intersect the visible bounds.
 - Fetch or filter data only for those cells.
@@ -83,22 +90,20 @@ User B (Muchelney): bounds 51.02,-2.84,51.06,-2.79 → same rounded key → cach
 
 ## 4. Data Flow (Proposed)
 
-```
-Client (map loads or viewport changes)
-    │
-    ├─ Send bounds (minLat, maxLat, minLng, maxLng)
-    │
-    ▼
-Server: getMapData(bounds)
-    │
-    ├─ Round bounds for cache key
-    ├─ Check cache: flood-watch:map:{key}
-    │   └─ Hit → return cached
-    │
-    ├─ Miss → fetch from APIs (floods, incidents, river levels)
-    ├─ Filter results to bounds
-    ├─ Store in cache (TTL 15 min)
-    └─ Return filtered data
+```mermaid
+flowchart TD
+    Client[Client: map loads or viewport changes]
+    Client --> Send[Send bounds minLat, maxLat, minLng, maxLng]
+
+    Send --> Server[Server: getMapData bounds]
+
+    Server --> Round[Round bounds for cache key]
+    Round --> Check{Cache hit?}
+    Check -->|Yes| Return[Return cached]
+    Check -->|No| Fetch[Fetch from APIs]
+    Fetch --> Filter[Filter results to bounds]
+    Filter --> Store[Store in cache TTL 15 min]
+    Store --> Return
 ```
 
 ---

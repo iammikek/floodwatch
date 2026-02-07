@@ -2,6 +2,29 @@
 
 Success checklist for Flood Watch per `docs/BRIEF.md`. Criteria are phrased so they can be verified or tested.
 
+```mermaid
+flowchart TD
+    subgraph Criteria["Acceptance Criteria"]
+        C1[User Decision Support]
+        C2[Location]
+        C3[Route Check]
+        C4[Data Architecture]
+        C5[LLM Cost Control]
+        C6[Display]
+        C7[Resilience]
+        C8[Attribution]
+    end
+
+    C1 --> V[Verification]
+    C2 --> V
+    C3 --> V
+    C4 --> V
+    C5 --> V
+    C6 --> V
+    C7 --> V
+    C8 --> V
+```
+
 ---
 
 ## 1. User Decision Support
