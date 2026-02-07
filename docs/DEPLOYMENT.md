@@ -2,11 +2,38 @@
 
 Deployment runbook for the pilot on Railway.app.
 
+```mermaid
+flowchart TD
+    subgraph Setup["Initial Setup"]
+        A1[Create Railway project]
+        A2[Generate APP_KEY]
+        A3[Configure variables]
+        A4[Generate domain]
+        A5[Volume / DB]
+    end
+
+    A1 --> A2 --> A3 --> A4 --> A5
+    A5 --> Deploy[Deploy]
+    Deploy --> Push[Push to main]
+```
+
 ## Prerequisites
 
 - Railway account (railway.app)
 - GitHub repo connected
 - OpenAI API key
+
+## Pre-deployment Checklist
+
+- [ ] All acceptance criteria met (`docs/ACCEPTANCE_CRITERIA.md`)
+- [ ] QA: `sail test --coverage` >80%; see `docs/PLAN.md` Quality Assurance
+- [ ] Verify `OPENAI_API_KEY` works: `php artisan flood-watch:test-openai`
+- [ ] Verify `NATIONAL_HIGHWAYS_API_KEY` is valid
+- [ ] Run `sail test --coverage` and confirm >80% coverage
+- [ ] Load test: 100 concurrent requests, cache TTL 15 min
+- [ ] Manual test: Disable NH key, verify EA data still shows
+- [ ] Test all 4 regions: Somerset (BA), Bristol (BS), Devon (EX), Cornwall (TR)
+- [ ] Run `flood-watch:warm-cache` and monitor Redis memory
 
 ## Initial Setup
 
@@ -42,12 +69,15 @@ In Railway → Your Service → Variables, add:
 | `CACHE_STORE` | `file` |
 | `FLOOD_WATCH_CACHE_STORE` | `flood-watch-array` |
 | `FLOOD_WATCH_CACHE_TTL_MINUTES` | `15` |
+| `CONCURRENCY_DRIVER` | `process` (production). Use `sync` for testing. |
 
 Optional (for road closure data):
 
 | Variable | Value |
 |----------|-------|
 | `NATIONAL_HIGHWAYS_API_KEY` | From [developer.data.nationalhighways.co.uk](https://developer.data.nationalhighways.co.uk/) |
+
+**Deployment checklist**: If road status is required, verify `NATIONAL_HIGHWAYS_API_KEY` is set. Without it, incidents return empty; `/health` reports National Highways as "skipped".
 
 ### 4. Generate Domain
 
@@ -127,4 +157,7 @@ Railway automatically builds and deploys. No manual steps.
 ## Cost (Pilot)
 
 - **Railway free tier:** $5 credits for 30 days, then $1/month
-- **OpenAI:** Pay-per-use (gpt-4o-mini ~$0.01–0.10 per request)
+- **OpenAI:** Pay-per-use (gpt-4o-mini ~$0.01–0.10 per request). Monitor via admin dashboard when implemented. Many unique postcodes = more cache misses = higher cost.
+- **Real-time (planned):** Laravel Reverb adds minimal compute; push notifications (FCM) are free. See `docs/PLAN.md`.
+
+See `docs/CONSIDERATIONS.md` for API dependency, regional scope, and cost risks.

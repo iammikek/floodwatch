@@ -4,6 +4,19 @@
 
 Use National Highways road data **only where it is relevant** to flooding and bad weather. The goal is to:
 
+```mermaid
+flowchart TD
+    subgraph Goals
+        G1[Surface sudden changes]
+        G2[Warn about cascading impact]
+        G3[Filter noise]
+    end
+
+    G1 --> C1[Flood + road closure = causal link]
+    G2 --> C2[Diversion congestion, emergency access, isolation]
+    G3 --> C3[Exclude unrelated incidents when flood context]
+```
+
 1. **Surface sudden changes** – A flood creates a road closure; when both appear together, highlight the causal link
 2. **Warn about cascading impact** – A road closure near a flood site can cause more issues in surrounding areas (diversion congestion, emergency access blocked, secondary flooding from traffic)
 3. **Filter noise** – Exclude road incidents that are unrelated to weather (e.g. routine roadworks, non-flood accidents) when the user cares about flood viability
@@ -22,6 +35,24 @@ Use National Highways road data **only where it is relevant** to flooding and ba
 ## Concepts to Explore
 
 ### 1. Relevance Filtering
+
+```mermaid
+flowchart LR
+    subgraph Show["Always show"]
+        A1[Flood-related incidents]
+        A2[Incidents on paired roads<br/>when flood area has warning]
+    end
+
+    subgraph Conditional["Conditionally show"]
+        B1[Incidents within N km<br/>of flood polygon]
+        B2[Incidents when heavy rain<br/>forecast]
+    end
+
+    subgraph Exclude["Exclude"]
+        C1[Routine roadworks]
+        C2[Non-weather accidents<br/>when no flood context]
+    end
+```
 
 **When to show road data**:
 - Flood-related incidents (isFloodRelated) – always relevant
@@ -50,6 +81,15 @@ Use National Highways road data **only where it is relevant** to flooding and ba
 ### 3. Cascading Impact Warnings
 
 **Idea**: A road closure near a flood site doesn’t just block that road – it affects surrounding areas.
+
+```mermaid
+flowchart TD
+    Flood[Flood warning] --> Road[Road closure]
+    Road --> D1[Diversion congestion]
+    Road --> D2[Emergency access blocked]
+    Road --> D3[Secondary flooding from traffic]
+    Road --> D4[Isolation - e.g. Muchelney]
+```
 
 **Potential impacts**:
 - **Diversion congestion** – Traffic diverted onto other routes; those routes may also be at flood risk

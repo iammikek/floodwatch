@@ -11,16 +11,25 @@ Architectural plan to split map data from AI summary so the Leaflet map can rend
 
 ## Current Data Flow
 
-```
-User clicks "Check status"
-    → Livewire calls FloodWatchService.chat()
-    → Service fetches forecast, weather, riverLevels (parallel)
-    → Service calls OpenAI with tools
-    → AI loop: AI requests GetFloodData, GetHighwaysIncidents
-    → Service fetches floods, incidents from APIs
-    → AI returns final response
-    → Service returns full result to Livewire
-    → User sees map + summary (10-20 seconds later)
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant L as Livewire
+    participant S as FloodWatchService
+    participant O as OpenAI
+
+    U->>L: Check status
+    L->>S: chat()
+    S->>S: Fetch forecast, weather, riverLevels (parallel)
+    S->>O: System + tools
+    loop AI tool loop
+        O->>S: GetFloodData, GetHighwaysIncidents
+        S->>S: Fetch floods, incidents
+        S->>O: Tool results
+    end
+    O->>S: Final response
+    S->>L: Full result
+    L->>U: Map + summary (10-20 sec)
 ```
 
 **Bottleneck**: Map data (floods, incidents) is only available after the AI finishes its tool loop. River levels are already fetched at the start but not used for the map until the end.
@@ -57,6 +66,26 @@ Floods and incidents use fixed/sensible params: `getFloods(lat, long, 15)` and `
 **Idea**: Split into two Livewire actions. First fetches and returns map data only. Second runs the AI. The client orchestrates: call phase 1, render map when it returns, then call phase 2 for the summary.
 
 ### Flow
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant L as Livewire
+    participant S as FloodWatchService
+    participant O as OpenAI
+
+    U->>L: Check status
+    L->>S: fetchMapData() → getMapData()
+    S->>S: Fetch floods, incidents, river, forecast, weather (parallel)
+    S->>L: Map data (2-5 sec)
+    L->>U: Map visible
+    L->>L: Dispatch map-ready
+    L->>S: fetchSummary() → chat(preFetched)
+    S->>O: AI with pre-fetched tool data
+    O->>S: Summary
+    S->>L: assistantResponse
+    L->>U: Summary appears
+```
 
 1. User clicks "Check status"
 2. Livewire calls `fetchMapData()` → FloodWatchService.getMapData()
