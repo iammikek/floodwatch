@@ -57,13 +57,12 @@ return [
     | Default Coordinates (Langport, South West)
     |--------------------------------------------------------------------------
     |
-    | FLOOD_WATCH_LNG (or FLOOD_WATCH_LONG for backward compat) for longitude.
+    | FLOOD_WATCH_LAT and FLOOD_WATCH_LNG for the default map center.
     |
     */
 
     'default_lat' => (float) env('FLOOD_WATCH_LAT', 51.0358),
-    'default_lng' => (float) ($defaultLng = env('FLOOD_WATCH_LNG') ?? env('FLOOD_WATCH_LONG', -2.8318)),
-    'default_long' => (float) $defaultLng, // deprecated alias, use default_lng
+    'default_lng' => (float) env('FLOOD_WATCH_LNG', -2.8318),
     'default_radius_km' => (int) env('FLOOD_WATCH_RADIUS_KM', 15),
 
     /*

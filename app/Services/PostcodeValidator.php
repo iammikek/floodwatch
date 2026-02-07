@@ -26,7 +26,7 @@ class PostcodeValidator
     /**
      * Validate and optionally geocode a UK postcode for the South West.
      *
-     * @return array{valid: bool, in_area: bool, error?: string, lat?: float, lng?: float, outcode?: string}
+     * @return array{valid: bool, in_area: bool, error?: string, lat?: float, lng?: float, outcode?: string, region?: string|null}
      */
     public function validate(string $postcode, bool $geocode = true): array
     {
