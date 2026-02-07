@@ -61,7 +61,7 @@ flowchart TD
 
 ### 2.1 Lookup Methods
 
-**Criterion**: Users can enter location via postcode, address, or What3Words.
+**Criterion**: Users can enter location via postcode, address, What3Words, or **Use my location** (phone GPS).
 
 **Verification**:
 
@@ -70,12 +70,21 @@ flowchart TD
 | Postcode | Required |
 | Address | Required |
 | What3Words | Required |
+| Use my location (GPS) | Planned |
 
-All resolve to coordinates used for flood, road, and forecast checks.
+All resolve to coordinates used for flood, road, and forecast checks. **Use my location** uses browser Geolocation API (HTTPS required).
 
 ---
 
-### 2.2 Persistence
+### 2.2 Search History (Database)
+
+**Criterion**: Searched locations are stored in a database. Guests: session-based; registered: associated with user. Feeds "Recent searches" quick-pick and admin metrics.
+
+**Verification**: Schema includes user_id (nullable), location, lat, long, region, searched_at. Retention policy defined.
+
+---
+
+### 2.3 Persistence
 
 **Criterion**: The app remembers the user's previous location. **Registered users** can bookmark more than one location and switch between them.
 

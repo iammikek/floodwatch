@@ -22,14 +22,16 @@ flowchart LR
 
 **Guest**: `[Login] [Register]` · **Logged in**: `[Location ▼] [👤]`
 
-- Location at top; bookmarks dropdown for registered
+- Location at top; **Use my location** button (GPS) next to input; bookmarks dropdown for registered
+- Recent searches (from DB) shown as quick-pick when changing location
 - Risk → Action steps → Route check
 - Danger to life: 999, Floodline 0345 988 1188, evacuation instructions
 
 ### Desktop
 
 - Risk + Route check side by side; map; flood/road lists
-- Profile: default location, bookmarks
+- **Use my location** (GPS) button next to location input
+- Profile: default location, bookmarks; recent searches from DB
 - Admin: API health, LLM cost, user metrics
 
 ### Danger to Life
@@ -44,6 +46,13 @@ flowchart LR
 - **API health**: EA, Flood Forecast, Weather, National Highways, Cache
 - **LLM cost**: Requests today/month, est. spend, budget alert
 - **User metrics**: Total users, active (7d), searches, default locations, top regions/postcodes
+- **Analytics / Reports**: Time-series (searches/day, cost/day), top regions/postcodes, CSV export; see `docs/PLAN.md` Analytics Layer
+
+### Support (Donations)
+
+- **Footer**: "Support Flood Watch" link → Ko-fi / PayPal / Buy Me a Coffee
+- **Profile** (optional): "Support this project" for registered users
+- Non-intrusive; app remains free
 
 ---
 

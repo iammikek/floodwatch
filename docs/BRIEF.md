@@ -93,16 +93,28 @@ Users can enter their location via:
 | **Postcode** | TA10 9 |
 | **Address** | High Street, Langport |
 | **What3Words** | ///word.word.word |
+| **Use my location** | Phone GPS – browser geolocation; resolves to coordinates |
 
-All resolve to coordinates for flood, road, and forecast checks.
+All resolve to coordinates for flood, road, and forecast checks. **"Use my location"** uses the browser Geolocation API (requires HTTPS); useful on mobile when out in the Levels.
 
-### 3.2 Persistence
+### 3.2 Search History (Database)
+
+The app stores **searched locations** in a database:
+
+| User type | Storage |
+|-----------|---------|
+| **Guest** | Session; last N searches (e.g. 5) in DB with nullable user_id |
+| **Registered** | Same table, user_id set; feeds "Recent searches" and optionally bookmarks |
+
+**Purpose**: Quick re-search, analytics, admin metrics (top regions/postcodes). Schema: `search_locations` or `user_searches` – user_id (nullable), location, lat, long, region, searched_at. Retention policy TBD (e.g. 90 days).
+
+### 3.3 Persistence
 
 The app must **remember the user's previous location** so that returning users see their area immediately without re-entering.
 
 | User type | Storage |
 |-----------|---------|
-| **Guest** | Browser storage (localStorage) – last location only |
+| **Guest** | Browser storage (localStorage) – last location only; DB for recent searches |
 | **Registered** | Profile default location + bookmarks – multiple locations; quick switch between home, work, relatives, etc. |
 
 Registered users can **bookmark more than one location** and switch between them. A **default location** is stored in the user's profile and pre-loaded on app open. Example: home (Langport), parents (Muchelney), work (Taunton). Each bookmark stores the resolved coordinates and label (postcode or place name). Default locations feed user metrics for the admin dashboard.
@@ -260,7 +272,21 @@ We must always consider LLM cost:
 
 ---
 
-## 8. Summary
+## 8. Support (Donations)
+
+Users can **support the project** via donations. The app remains free; donations help cover API costs (OpenAI, National Highways) and hosting.
+
+| Approach | Notes |
+|----------|-------|
+| **Donation link** | Link to Ko-fi, Buy Me a Coffee, or PayPal in footer / profile |
+| **Placement** | Footer: "Support Flood Watch" · Profile: "Support this project" |
+| **No account required** | Guests and registered users can donate; no sign-up for the donation itself |
+
+Donations are **optional** and **non-intrusive** – a soft ask that fits the "keep it free" ethos. See `docs/archive/MONETISATION_PLAN.md` for platform options (Ko-fi, Patreon, PayPal).
+
+---
+
+## 9. Summary
 
 Flood Watch helps locals in flood-prone areas decide:
 

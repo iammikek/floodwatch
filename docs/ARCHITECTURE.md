@@ -4,7 +4,9 @@
 
 Flood Watch correlates Environment Agency flood data with National Highways road status to provide a single source of truth for flood and road viability in the South West (Bristol, Somerset, Devon, Cornwall).
 
-**Product brief**: See `docs/BRIEF.md` for the revised scope – user decision support (house/car at risk), location lookup (postcode, address, What3Words), route check, backend polling, and LLM cost control.
+**Product brief**: See `docs/BRIEF.md` for the revised scope – user decision support (house/car at risk), location lookup (postcode, address, What3Words, **Use my location** via GPS), route check, backend polling, and LLM cost control.
+
+**Planned**: Search history in `user_searches`; bookmarks in `location_bookmarks`. See **`docs/SCHEMA.md`** for full schema and object map.
 
 **Connectivity constraint**: Users may check at home then go to the Levels with limited data. The app must be fast to load, cache aggressively, and persist to localStorage so last-known state is available when offline or connectivity is poor.
 
@@ -120,11 +122,13 @@ See `docs/CONSIDERATIONS.md` for API dependency risks and expansion guidance.
 
 ### Cache Pre-warming
 
-Run `php artisan flood-watch:warm-cache` to pre-populate the cache for common locations. Schedule in `routes/console.php`:
+Run `php artisan flood-watch:warm-cache` to pre-populate the cache for common locations. Schedule in `routes/console.php` (planned: `--regions=` option for region-based warming):
 
 ```php
-Schedule::command('flood-watch:warm-cache --locations=Langport,TA10,Bristol')->hourly();
+Schedule::command('flood-watch:warm-cache --locations=Langport,TA10,Bristol')->everyFifteenMinutes();
 ```
+
+**Plan**: `docs/PLAN.md` – region-based cache warming (config per region, schedule every 15 min).
 
 ### Background Refresh
 
@@ -149,6 +153,16 @@ The main `chat()` flow is synchronous. For high traffic, consider:
 ## LLM and Data Flow
 
 See **`docs/LLM_DATA_FLOW.md`** for a detailed description of how data flows to the LLM, which tools are available, what the LLM receives (and its limits), and how correlation works.
+
+## Data Schema
+
+See **`docs/SCHEMA.md`** for table definitions, object map diagram, and entity relationships.
+
+## Analytics (Planned)
+
+An **analytics layer** is planned for reporting. See `docs/PLAN.md` – Analytics Layer. Data: `user_searches` (search volume, top regions/postcodes), optional event tables (API calls, cache hits, errors), optional API snapshots for historical trend charts. Outputs: admin dashboard reports, CSV export, alerts.
+
+---
 
 ## Key Files
 
