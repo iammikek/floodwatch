@@ -62,6 +62,31 @@ test('location_bookmarks table exists and model can be created', function () {
         ->and($bookmark->is_default)->toBeTrue();
 });
 
+test('creating new bookmark with is_default clears other defaults for user', function () {
+    $user = User::factory()->create();
+
+    $first = LocationBookmark::create([
+        'user_id' => $user->id,
+        'label' => 'Home',
+        'location' => 'Langport',
+        'lat' => 51.04,
+        'lng' => -2.83,
+        'is_default' => true,
+    ]);
+
+    $second = LocationBookmark::create([
+        'user_id' => $user->id,
+        'label' => 'Work',
+        'location' => 'Bristol',
+        'lat' => 51.45,
+        'lng' => -2.58,
+        'is_default' => true,
+    ]);
+
+    expect($first->fresh()->is_default)->toBeFalse()
+        ->and($second->fresh()->is_default)->toBeTrue();
+});
+
 test('user has userSearches and locationBookmarks relationships', function () {
     $user = User::factory()->create();
 

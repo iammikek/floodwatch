@@ -45,7 +45,7 @@ sail artisan make:model LocationBookmark -f
 
 **Factories**: UserSearch, LocationBookmark – minimal fields for tests.
 
-**Enums for mappers**: Use `Region::warmCacheLocation()`, `IncidentType::icon()`, `IncidentStatus::label()` instead of config arrays. See `AGENTS.md` conventions.
+**Enums for mappers**: Use `Region::warmCacheLocation()`, `IncidentType::icon()`, `IncidentStatus::label()` instead of config arrays. See `agents.md` conventions.
 
 ---
 

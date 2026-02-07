@@ -53,7 +53,7 @@ flowchart LR
 
 - Architecture: `docs/ARCHITECTURE.md`
 - Case study: `CASE_STUDY.md`
-- AI agents: `AGENTS.md`
+- AI agents: `agents.md`
 - **Acceptance criteria**: `docs/ACCEPTANCE_CRITERIA.md`
 - Next steps: `docs/NEXT_STEPS.md`
 - Road data strategy: `docs/ROAD_DATA_STRATEGY.md`

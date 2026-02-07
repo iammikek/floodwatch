@@ -30,6 +30,6 @@ class AppServiceProvider extends ServiceProvider
             return $user !== null && $user->isAdmin();
         });
 
-        Gate::define('accessAdmin', fn (User $user): bool => $user->isAdmin());
+        Gate::define('accessAdmin', fn (?User $user): bool => $user !== null && $user->isAdmin());
     }
 }

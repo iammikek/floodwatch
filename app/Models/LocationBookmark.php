@@ -34,7 +34,7 @@ class LocationBookmark extends Model
             // When setting is_default=true, clear other defaults so only one per user.
             if ($bookmark->is_default && $bookmark->user_id) {
                 static::where('user_id', $bookmark->user_id)
-                    ->where('id', '!=', $bookmark->id)
+                    ->where('id', '!=', $bookmark->getKey() ?? 0)
                     ->update(['is_default' => false]);
             }
         });

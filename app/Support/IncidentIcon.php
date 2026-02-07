@@ -32,11 +32,13 @@ class IncidentIcon
 
     /**
      * Resolve an emoji icon for a road incident based on incidentType and managementType.
-     * Uses IncidentType enum for known types; falls back to config for API-specific values.
+     * Uses IncidentType enum for known types; falls back to config key-matching for API-specific values.
      */
     public static function forIncident(?string $incidentType, ?string $managementType = null): string
     {
         $search = array_filter([$incidentType, $managementType]);
+        $icons = config('flood-watch.incident_icons', []);
+        $default = $icons['default'] ?? '🛣️';
 
         foreach ($search as $value) {
             if ($value === '' || $value === null) {
@@ -46,11 +48,18 @@ class IncidentIcon
             if ($enum !== null) {
                 return $enum->icon();
             }
+            $lower = strtolower($value);
+            foreach ($icons as $key => $icon) {
+                if ($key === 'default') {
+                    continue;
+                }
+                if (strtolower($key) === $lower || str_contains($lower, strtolower($key))) {
+                    return $icon;
+                }
+            }
         }
 
-        $icons = config('flood-watch.incident_icons', []);
-
-        return $icons['default'] ?? '🛣️';
+        return $default;
     }
 
     private static function splitCamelCase(string $value): string
