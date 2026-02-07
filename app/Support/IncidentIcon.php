@@ -65,7 +65,8 @@ class IncidentIcon
 
     /**
      * Resolve an emoji icon for a road incident based on incidentType and managementType.
-     * Uses IncidentType enum for known types; falls back to config key-matching for API-specific values.
+     * Config (flood-watch.incident_icons) is the source of truth for customization; falls back
+     * to IncidentType enum for known types when no config match exists.
      */
     public static function forIncident(?string $incidentType, ?string $managementType = null): string
     {
@@ -77,10 +78,6 @@ class IncidentIcon
             if ($value === '' || $value === null) {
                 continue;
             }
-            $enum = IncidentType::tryFromString($value);
-            if ($enum !== null) {
-                return $enum->icon();
-            }
             $lower = strtolower($value);
             foreach ($icons as $key => $icon) {
                 if ($key === 'default') {
@@ -89,6 +86,10 @@ class IncidentIcon
                 if (strtolower($key) === $lower || str_contains($lower, strtolower($key))) {
                     return $icon;
                 }
+            }
+            $enum = IncidentType::tryFromString($value);
+            if ($enum !== null) {
+                return $enum->icon();
             }
         }
 
