@@ -132,8 +132,6 @@ sail artisan migrate
 sail test
 ```
 
-If upgrading from an earlier version that used `long` then a rename migration, run `sail artisan migrate:fresh` to apply the combined schema (creates `lng` directly).
-
 - All migrations run
 - UserSearch and LocationBookmark models exist with relationships
 - Config keys `donation_url`, `warm_cache_locations` exist
