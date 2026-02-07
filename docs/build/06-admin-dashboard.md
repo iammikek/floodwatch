@@ -10,14 +10,14 @@ API health, LLM cost, user metrics, budget alerts. Restricted to admin users. **
 
 ## Acceptance Criteria
 
-- [ ] Route `/admin` (or `/admin-dashboard`) exists and requires auth
-- [ ] Non-admin users receive 403 when visiting `/admin`
-- [ ] Admin users can access `/admin` and see dashboard
-- [ ] API Health section displays: EA, Flood Forecast, Weather, National Highways, Cache status (from `/health` or equivalent)
-- [ ] User Metrics section displays: total users; active (7d) if derivable; placeholder for searches until UserSearch built
-- [ ] LLM Cost section displays: requests today/month or placeholder; budget alert at 80% if configured
-- [ ] Layout matches wireframe (`docs/WIREFRAMES.md`); Tailwind styling
-- [ ] Feature test: guest and user get 403; admin gets 200
+- [x] Route `/admin` (or `/admin-dashboard`) exists and requires auth
+- [x] Non-admin users receive 403 when visiting `/admin`
+- [x] Admin users can access `/admin` and see dashboard
+- [x] API Health section displays: EA, Flood Forecast, Weather, National Highways, Cache status (from `/health` or equivalent)
+- [x] User Metrics section displays: total users; active (7d) if derivable; placeholder for searches until UserSearch built
+- [x] LLM Cost section displays: requests today/month or placeholder; budget alert at 80% if configured
+- [x] Layout matches wireframe (`docs/WIREFRAMES.md`); Tailwind styling
+- [x] Feature test: guest and user get 403; admin gets 200
 
 ---
 

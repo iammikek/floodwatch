@@ -39,6 +39,9 @@
                         </x-dropdown-link>
 
                         @if (Auth::user()->isAdmin())
+                            <x-dropdown-link :href="route('admin.dashboard')">
+                                {{ __('Admin') }}
+                            </x-dropdown-link>
                             <x-dropdown-link :href="url('/pulse')">
                                 {{ __('Pulse') }}
                             </x-dropdown-link>
@@ -91,6 +94,9 @@
                 </x-responsive-nav-link>
 
                 @if (Auth::user()->isAdmin())
+                    <x-responsive-nav-link :href="route('admin.dashboard')">
+                        {{ __('Admin') }}
+                    </x-responsive-nav-link>
                     <x-responsive-nav-link :href="url('/pulse')">
                         {{ __('Pulse') }}
                     </x-responsive-nav-link>

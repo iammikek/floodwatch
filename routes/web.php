@@ -10,6 +10,8 @@ Route::livewire('/', 'flood-watch-dashboard');
 
 Route::redirect('/dashboard', '/')->name('dashboard');
 
+Route::get('/admin', App\Http\Controllers\Admin\DashboardController::class)->name('admin.dashboard');
+
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
