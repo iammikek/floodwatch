@@ -64,7 +64,7 @@ class FloodWatchService
         };
 
         $lat = $userLat ?? config('flood-watch.default_lat');
-        $long = $userLong ?? config('flood-watch.default_long');
+        $long = $userLong ?? config('flood-watch.default_lng');
 
         $report(__('flood-watch.progress.fetching_prefetch'));
         [$forecast, $weather, $riverLevels] = Concurrency::run([

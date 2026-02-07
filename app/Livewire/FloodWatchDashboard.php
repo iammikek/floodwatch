@@ -139,7 +139,7 @@ class FloodWatchDashboard extends Component
             $this->weather = $result['weather'] ?? [];
             $this->riverLevels = $result['riverLevels'] ?? [];
             $lat = $userLat ?? config('flood-watch.default_lat');
-            $lng = $userLong ?? config('flood-watch.default_long');
+            $lng = $userLong ?? config('flood-watch.default_lng');
             $this->mapCenter = ['lat' => $lat, 'lng' => $lng];
             $this->hasUserLocation = $userLat !== null && $userLong !== null;
             $this->lastChecked = $result['lastChecked'] ?? null;

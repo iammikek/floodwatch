@@ -59,7 +59,7 @@ class EnvironmentAgencyFloodService
         ?int $radiusKm
     ): array {
         $lat ??= config('flood-watch.default_lat');
-        $long ??= config('flood-watch.default_long');
+        $long ??= config('flood-watch.default_lng');
         $radiusKm ??= config('flood-watch.default_radius_km');
 
         $baseUrl = config('flood-watch.environment_agency.base_url');

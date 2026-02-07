@@ -48,15 +48,16 @@ class CoordinateMapper
 
     /**
      * Map [lat, lng] or [lat, long] array (e.g. from posList) to our schema.
+     * Returns null for missing indices to avoid invalid defaults (0,0).
      *
-     * @param  array{0: float, 1: float}  $point
-     * @return array{lat: float, lng: float}
+     * @param  array{0?: float, 1?: float}  $point
+     * @return array{lat: ?float, lng: ?float}
      */
     public static function fromPointArray(array $point): array
     {
         return [
-            'lat' => (float) ($point[0] ?? 0),
-            'lng' => (float) ($point[1] ?? 0),
+            'lat' => isset($point[0]) ? (float) $point[0] : null,
+            'lng' => isset($point[1]) ? (float) $point[1] : null,
         ];
     }
 }
