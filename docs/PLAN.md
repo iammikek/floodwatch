@@ -122,3 +122,5 @@ Reverb as second service or process; Redis if scaling. Alternative: Pusher (free
 | `docs/DEPLOYMENT.md` | Railway runbook, pre-launch checklist |
 | `docs/TROUBLESHOOTING.md` | LLM timeout, circuit breaker, cache |
 | `docs/CONSIDERATIONS.md` | Risks, API dependency, regional scope, costs |
+| `docs/DATA_SOURCES.md` | Current + planned APIs; National Rail implementation plan |
+| `docs/NEXT_STEPS.md` | Success metrics, extended next steps |

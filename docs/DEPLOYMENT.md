@@ -23,14 +23,16 @@ flowchart TD
 - GitHub repo connected
 - OpenAI API key
 
-## Pre-Launch Checklist
+## Pre-deployment Checklist
 
-- [ ] Verify `OPENAI_API_KEY` is set and can call GPT-4
+- [ ] All acceptance criteria met (`docs/ACCEPTANCE_CRITERIA.md`)
+- [ ] Verify `OPENAI_API_KEY` works: `php artisan flood-watch:test-openai`
 - [ ] Verify `NATIONAL_HIGHWAYS_API_KEY` is valid
 - [ ] Run `sail test --coverage` and confirm >80% coverage
-- [ ] Test graceful failure: disable NH key, verify assistant still returns flood data
-- [ ] Load test: run `flood-watch:warm-cache` and monitor Redis memory
-- [ ] Regional test: Query Somerset (BA postcode), Bristol (BS), Devon (EX), Cornwall (TR)
+- [ ] Load test: 100 concurrent requests, cache TTL 15 min
+- [ ] Manual test: Disable NH key, verify EA data still shows
+- [ ] Test all 4 regions: Somerset (BA), Bristol (BS), Devon (EX), Cornwall (TR)
+- [ ] Run `flood-watch:warm-cache` and monitor Redis memory
 
 ## Initial Setup
 

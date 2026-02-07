@@ -43,6 +43,12 @@ Primary dev environment. All commands run via Sail. Use `./vendor/bin/sail` or c
 - **Database**: Tests use `RefreshDatabase`; `.env.testing` for test env
 - **Coverage**: Use `--coverage` when needed
 
+## Cursor Skills & Rules
+
+- **Enabled**: `.cursor/skills/` (livewire, pest-testing, tailwindcss)
+- **Rules file**: `.cursor/rules/laravel-boost.mdc`
+- **Enable in Cursor**: Command Palette → "MCP: Open Settings" → `laravel-boost`
+
 ## Laravel AI / LLM
 
 - **Laravel Boost** (dev, required): MCP server, AI guidelines, and documentation API for Cursor. Config: `.cursor/mcp.json`. Enable in Cursor: Command Palette → "MCP: Open Settings" → toggle `laravel-boost` on.
