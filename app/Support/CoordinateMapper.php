@@ -35,7 +35,7 @@ class CoordinateMapper
     {
         $value = $data['lat'] ?? $data['latitude'] ?? null;
 
-        return $value !== null ? (float) $value : null;
+        return self::parseCoord($value);
     }
 
     /**
@@ -45,7 +45,28 @@ class CoordinateMapper
     {
         $value = $data['lng'] ?? $data['long'] ?? $data['lon'] ?? $data['longitude'] ?? null;
 
-        return $value !== null ? (float) $value : null;
+        return self::parseCoord($value);
+    }
+
+    /**
+     * Parse a coordinate value to float, treating empty/whitespace/non-numeric as null.
+     */
+    private static function parseCoord(mixed $value): ?float
+    {
+        if ($value === null) {
+            return null;
+        }
+        if (is_string($value)) {
+            $value = trim($value);
+            if ($value === '') {
+                return null;
+            }
+        }
+        if (! is_numeric($value)) {
+            return null;
+        }
+
+        return (float) $value;
     }
 
     /**
