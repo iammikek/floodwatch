@@ -178,7 +178,7 @@ class FloodWatchServiceTest extends TestCase
                                     'name' => 'GetFloodData',
                                     'arguments' => json_encode([
                                         'lat' => 52.1,
-                                        'long' => -1.2,
+                                        'lng' => -1.2,
                                         'radius_km' => 20,
                                     ]),
                                 ],

@@ -453,7 +453,7 @@ class FloodWatchDashboardTest extends TestCase
                             [
                                 'id' => 'call_1',
                                 'type' => 'function',
-                                'function' => ['name' => 'GetFloodData', 'arguments' => json_encode(['lat' => 51.0358, 'long' => -2.8318])],
+                                'function' => ['name' => 'GetFloodData', 'arguments' => json_encode(['lat' => 51.0358, 'lng' => -2.8318])],
                             ],
                             [
                                 'id' => 'call_2',
