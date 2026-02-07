@@ -122,7 +122,7 @@ class FloodWatchDashboard extends Component
         $message = $this->buildMessage($locationTrimmed, $validation);
         $cacheKey = $locationTrimmed !== '' ? $locationTrimmed : null;
         $userLat = $validation['lat'] ?? null;
-        $userLong = $validation['long'] ?? null;
+        $userLong = $validation['lng'] ?? null;
         $region = $validation['region'] ?? ($validation === null ? 'somerset' : null);
 
         try {
@@ -139,8 +139,8 @@ class FloodWatchDashboard extends Component
             $this->weather = $result['weather'] ?? [];
             $this->riverLevels = $result['riverLevels'] ?? [];
             $lat = $userLat ?? config('flood-watch.default_lat');
-            $long = $userLong ?? config('flood-watch.default_long');
-            $this->mapCenter = ['lat' => $lat, 'long' => $long];
+            $lng = $userLong ?? config('flood-watch.default_long');
+            $this->mapCenter = ['lat' => $lat, 'lng' => $lng];
             $this->hasUserLocation = $userLat !== null && $userLong !== null;
             $this->lastChecked = $result['lastChecked'] ?? null;
 
@@ -179,10 +179,10 @@ class FloodWatchDashboard extends Component
 
         $enriched = array_map(function (array $flood) use ($userLat, $userLong, $hasCenter) {
             $floodLat = $flood['lat'] ?? null;
-            $floodLong = $flood['long'] ?? null;
+            $floodLng = $flood['lng'] ?? null;
             $flood['distanceKm'] = null;
-            if ($hasCenter && $floodLat !== null && $floodLong !== null) {
-                $flood['distanceKm'] = round($this->haversineDistanceKm($userLat, $userLong, (float) $floodLat, (float) $floodLong), 1);
+            if ($hasCenter && $floodLat !== null && $floodLng !== null) {
+                $flood['distanceKm'] = round($this->haversineDistanceKm($userLat, $userLong, (float) $floodLat, (float) $floodLng), 1);
             }
 
             return $flood;
@@ -289,7 +289,7 @@ class FloodWatchDashboard extends Component
     }
 
     /**
-     * @param  array{lat?: float, long?: float, outcode?: string, display_name?: string}|null  $validation
+     * @param  array{lat?: float, lng?: float, outcode?: string, display_name?: string}|null  $validation
      */
     private function buildMessage(string $location, ?array $validation): string
     {
@@ -299,8 +299,8 @@ class FloodWatchDashboard extends Component
 
         $label = $validation['display_name'] ?? $location;
         $coords = '';
-        if ($validation !== null && isset($validation['lat'], $validation['long'])) {
-            $coords = sprintf(' (lat: %.4f, long: %.4f)', $validation['lat'], $validation['long']);
+        if ($validation !== null && isset($validation['lat'], $validation['lng'])) {
+            $coords = sprintf(' (lat: %.4f, lng: %.4f)', $validation['lat'], $validation['lng']);
         }
 
         return __('flood-watch.message.check_status_location', ['label' => $label, 'coords' => $coords]);

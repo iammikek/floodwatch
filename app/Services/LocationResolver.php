@@ -30,7 +30,7 @@ class LocationResolver
     /**
      * Resolve a location string (postcode or place name) to coordinates and region.
      *
-     * @return array{valid: bool, in_area: bool, error?: string, lat?: float, long?: float, region?: string, outcode?: string, display_name?: string}
+     * @return array{valid: bool, in_area: bool, error?: string, lat?: float, lng?: float, region?: string, outcode?: string, display_name?: string}
      */
     public function resolve(string $input): array
     {
@@ -55,7 +55,7 @@ class LocationResolver
     /**
      * Geocode a place name via Nominatim (OpenStreetMap).
      *
-     * @return array{valid: bool, in_area: bool, error?: string, lat?: float, long?: float, region?: string, display_name?: string}
+     * @return array{valid: bool, in_area: bool, error?: string, lat?: float, lng?: float, region?: string, display_name?: string}
      */
     private function geocodePlaceName(string $placeName): array
     {
@@ -124,7 +124,7 @@ class LocationResolver
                     'in_area' => false,
                     'error' => 'That location is outside the South West. Flood Watch covers Bristol, Somerset, Devon and Cornwall.',
                     'lat' => $lat,
-                    'long' => $lon,
+                    'lng' => $lon,
                     'display_name' => $displayName,
                 ];
             }
@@ -133,7 +133,7 @@ class LocationResolver
                 'valid' => true,
                 'in_area' => true,
                 'lat' => $lat,
-                'long' => $lon,
+                'lng' => $lon,
                 'region' => $region,
                 'display_name' => $displayName,
             ];

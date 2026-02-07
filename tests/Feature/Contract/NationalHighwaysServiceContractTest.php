@@ -35,9 +35,9 @@ class NationalHighwaysServiceContractTest extends TestCase
         $this->assertSame('flooding', $result[0]['incidentType']);
         $this->assertSame('A361 closed due to flooding - 30 minutes delay', $result[0]['delayTime']);
         $this->assertArrayHasKey('lat', $result[0]);
-        $this->assertArrayHasKey('long', $result[0]);
+        $this->assertArrayHasKey('lng', $result[0]);
         $this->assertEqualsWithDelta(51.04, $result[0]['lat'], 0.01);
-        $this->assertEqualsWithDelta(-2.83, $result[0]['long'], 0.01);
+        $this->assertEqualsWithDelta(-2.83, $result[0]['lng'], 0.01);
         $this->assertSame('2025-03-14T08:00:00.0000000+00:00', $result[0]['startTime']);
         $this->assertSame('2025-03-15T06:00:00.0000000+00:00', $result[0]['endTime']);
         $this->assertSame('roadClosed', $result[0]['managementType']);
@@ -48,9 +48,9 @@ class NationalHighwaysServiceContractTest extends TestCase
         $this->assertSame('laneClosures', $result[1]['incidentType']);
         $this->assertSame('15 mins delay', $result[1]['delayTime']);
         $this->assertArrayHasKey('lat', $result[1]);
-        $this->assertArrayHasKey('long', $result[1]);
+        $this->assertArrayHasKey('lng', $result[1]);
         $this->assertEqualsWithDelta(52.77, $result[1]['lat'], 0.01);
-        $this->assertEqualsWithDelta(-2.11, $result[1]['long'], 0.01);
+        $this->assertEqualsWithDelta(-2.11, $result[1]['lng'], 0.01);
         $this->assertSame('2025-03-21T06:01:57.0000000+00:00', $result[1]['startTime']);
         $this->assertSame('2025-03-21T06:16:57.0000000+00:00', $result[1]['endTime']);
         $this->assertSame('M5 southbound between J14 and J13', $result[1]['locationDescription']);

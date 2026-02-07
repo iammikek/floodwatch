@@ -3,6 +3,7 @@
 namespace App\Flood\DTOs;
 
 use App\Flood\Enums\SeverityLevel;
+use App\Support\CoordinateMapper;
 use Carbon\CarbonImmutable;
 
 final readonly class FloodWarning
@@ -17,13 +18,15 @@ final readonly class FloodWarning
         public ?CarbonImmutable $timeMessageChanged,
         public ?CarbonImmutable $timeSeverityChanged,
         public ?float $lat,
-        public ?float $long,
+        public ?float $lng,
         public ?array $polygon = null,
         public ?float $distanceKm = null,
     ) {}
 
     public static function fromArray(array $data): self
     {
+        $coords = CoordinateMapper::normalize($data);
+
         return new self(
             description: $data['description'] ?? '',
             severity: $data['severity'] ?? '',
@@ -33,8 +36,8 @@ final readonly class FloodWarning
             timeRaised: self::parseDateTime($data['timeRaised'] ?? null),
             timeMessageChanged: self::parseDateTime($data['timeMessageChanged'] ?? null),
             timeSeverityChanged: self::parseDateTime($data['timeSeverityChanged'] ?? null),
-            lat: isset($data['lat']) ? (float) $data['lat'] : null,
-            long: isset($data['long']) ? (float) $data['long'] : null,
+            lat: $coords['lat'],
+            lng: $coords['lng'],
             polygon: $data['polygon'] ?? null,
             distanceKm: isset($data['distanceKm']) ? (float) $data['distanceKm'] : null,
         );
@@ -52,7 +55,7 @@ final readonly class FloodWarning
             'timeMessageChanged' => $this->timeMessageChanged?->toIso8601String(),
             'timeSeverityChanged' => $this->timeSeverityChanged?->toIso8601String(),
             'lat' => $this->lat,
-            'long' => $this->long,
+            'lng' => $this->lng,
         ];
         if ($this->polygon !== null) {
             $arr['polygon'] = $this->polygon;
@@ -76,7 +79,7 @@ final readonly class FloodWarning
             timeMessageChanged: $this->timeMessageChanged,
             timeSeverityChanged: $this->timeSeverityChanged,
             lat: $this->lat,
-            long: $this->long,
+            lng: $this->lng,
             polygon: null,
             distanceKm: $this->distanceKm,
         );

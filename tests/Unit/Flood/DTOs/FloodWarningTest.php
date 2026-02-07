@@ -22,7 +22,7 @@ test('fromArray creates FloodWarning from api response', function () {
     expect($flood->severityLevel)->toBe(SeverityLevel::Warning);
     expect($flood->floodAreaId)->toBe('123');
     expect($flood->lat)->toBe(51.0);
-    expect($flood->long)->toBe(-2.8);
+    expect($flood->lng)->toBe(-2.8);
 });
 
 test('fromArray handles empty and partial data', function () {
@@ -36,7 +36,7 @@ test('fromArray handles empty and partial data', function () {
     expect($flood->timeRaised)->toBeNull();
     expect($flood->timeMessageChanged)->toBeNull();
     expect($flood->lat)->toBeNull();
-    expect($flood->long)->toBeNull();
+    expect($flood->lng)->toBeNull();
     expect($flood->polygon)->toBeNull();
     expect($flood->distanceKm)->toBeNull();
 });

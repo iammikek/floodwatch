@@ -300,7 +300,7 @@ class FloodWatchService
         return match ($name) {
             'GetFloodData' => $this->floodService->getFloods(
                 $args['lat'] ?? null,
-                $args['long'] ?? null,
+                $args['lng'] ?? $args['long'] ?? null,
                 $args['radius_km'] ?? null
             ),
             'GetHighwaysIncidents' => $this->sortIncidentsByPriority(
@@ -312,7 +312,7 @@ class FloodWatchService
             'GetFloodForecast' => $this->forecastService->getForecast(),
             'GetRiverLevels' => $this->riverLevelService->getLevels(
                 $args['lat'] ?? null,
-                $args['long'] ?? null,
+                $args['lng'] ?? $args['long'] ?? null,
                 $args['radius_km'] ?? null
             ),
             default => ['error' => "Unknown tool: {$name}"],

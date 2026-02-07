@@ -22,7 +22,7 @@ class LocationResolverTest extends TestCase
         $this->assertTrue($result['valid']);
         $this->assertTrue($result['in_area']);
         $this->assertSame(51.0358, $result['lat']);
-        $this->assertSame(-2.8318, $result['long']);
+        $this->assertSame(-2.8318, $result['lng']);
     }
 
     public function test_resolves_place_name_via_nominatim(): void
@@ -48,7 +48,7 @@ class LocationResolverTest extends TestCase
         $this->assertTrue($result['valid']);
         $this->assertTrue($result['in_area']);
         $this->assertSame(51.0358, $result['lat']);
-        $this->assertSame(-2.8318, $result['long']);
+        $this->assertSame(-2.8318, $result['lng']);
         $this->assertSame('somerset', $result['region']);
         $this->assertStringContainsString('Langport', $result['display_name']);
     }

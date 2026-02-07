@@ -5,6 +5,7 @@ namespace App\Flood\Services;
 use App\Flood\DTOs\FloodWarning;
 use App\Support\CircuitBreaker;
 use App\Support\CircuitOpenException;
+use App\Support\CoordinateMapper;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Cache;
@@ -80,6 +81,7 @@ class EnvironmentAgencyFloodService
             $areaId = $item['floodAreaID'] ?? '';
             $centroid = $areaCentroids[$areaId] ?? null;
 
+            $coords = CoordinateMapper::normalize($centroid ?? []);
             $raw = [
                 'description' => $item['description'] ?? '',
                 'severity' => $item['severity'] ?? '',
@@ -89,8 +91,8 @@ class EnvironmentAgencyFloodService
                 'timeRaised' => $item['timeRaised'] ?? null,
                 'timeMessageChanged' => $item['timeMessageChanged'] ?? null,
                 'timeSeverityChanged' => $item['timeSeverityChanged'] ?? null,
-                'lat' => $centroid['lat'] ?? null,
-                'long' => $centroid['long'] ?? null,
+                'lat' => $coords['lat'],
+                'lng' => $coords['lng'],
             ];
             if (isset($polygons[$areaId])) {
                 $raw['polygon'] = $polygons[$areaId];
@@ -105,7 +107,7 @@ class EnvironmentAgencyFloodService
     /**
      * Fetch flood area centroids for cross-referencing with location.
      *
-     * @return array<string, array{lat: float, long: float}>
+     * @return array<string, array{lat: float, lng: float}>
      */
     private function fetchFloodAreaCentroids(string $baseUrl, int $timeout, float $lat, float $long, int $radiusKm): array
     {
@@ -125,13 +127,9 @@ class EnvironmentAgencyFloodService
         $centroids = [];
         foreach ($items as $item) {
             $notation = $item['notation'] ?? $item['fwdCode'] ?? null;
-            $itemLat = $item['lat'] ?? null;
-            $itemLong = $item['long'] ?? null;
-            if ($notation !== null && $notation !== '' && $itemLat !== null && $itemLong !== null) {
-                $centroids[(string) $notation] = [
-                    'lat' => (float) $itemLat,
-                    'long' => (float) $itemLong,
-                ];
+            $coords = CoordinateMapper::normalize($item);
+            if ($notation !== null && $notation !== '' && $coords['lat'] !== null && $coords['lng'] !== null) {
+                $centroids[(string) $notation] = $coords;
             }
         }
 

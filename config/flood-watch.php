@@ -247,7 +247,7 @@ return [
     |
     | When the National Highways API does not return geometry (posList), use
     | these approximate center points for South West roads so incidents still
-    | appear on the map. Format: road => [lat, long].
+    | appear on the map. Format: road => [lat, lng].
     |
     */
 

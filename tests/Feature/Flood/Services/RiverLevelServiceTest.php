@@ -57,7 +57,7 @@ class RiverLevelServiceTest extends TestCase
         $this->assertSame(2.45, $result[0]['value']);
         $this->assertSame('2026-02-04T12:00:00Z', $result[0]['dateTime']);
         $this->assertSame(50.976043, $result[0]['lat']);
-        $this->assertSame(-2.793549, $result[0]['long']);
+        $this->assertSame(-2.793549, $result[0]['lng']);
         $this->assertSame('river_gauge', $result[0]['stationType']);
         $this->assertSame('expected', $result[0]['levelStatus']);
         $this->assertSame(1.5, $result[0]['typicalRangeLow']);

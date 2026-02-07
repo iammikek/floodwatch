@@ -4,6 +4,7 @@ namespace App\Flood\Services;
 
 use App\Support\CircuitBreaker;
 use App\Support\CircuitOpenException;
+use App\Support\CoordinateMapper;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
@@ -61,7 +62,7 @@ class RiverLevelService
     }
 
     /**
-     * @return array<int, array{notation: string, label: string, riverName: string, town: string, lat: float, long: float, stationType: string, typicalRangeLow?: float, typicalRangeHigh?: float}>
+     * @return array<int, array{notation: string, label: string, riverName: string, town: string, lat: float, lng: float, stationType: string, typicalRangeLow?: float, typicalRangeHigh?: float}>
      */
     private function fetchStations(string $baseUrl, int $timeout, float $lat, float $long, int $radiusKm): array
     {
@@ -84,9 +85,8 @@ class RiverLevelService
             if (empty($notation)) {
                 continue;
             }
-            $itemLat = $item['lat'] ?? null;
-            $itemLong = $item['long'] ?? null;
-            if ($itemLat === null || $itemLong === null) {
+            $coords = CoordinateMapper::normalize($item);
+            if ($coords['lat'] === null || $coords['lng'] === null) {
                 continue;
             }
             $label = $item['label'] ?? '';
@@ -100,8 +100,8 @@ class RiverLevelService
                 'label' => $label,
                 'riverName' => $item['riverName'] ?? '',
                 'town' => $item['town'] ?? '',
-                'lat' => (float) $itemLat,
-                'long' => (float) $itemLong,
+                'lat' => $coords['lat'],
+                'lng' => $coords['lng'],
                 'stationType' => $stationType,
                 'typicalRangeLow' => $typicalLow,
                 'typicalRangeHigh' => $typicalHigh,
@@ -139,7 +139,7 @@ class RiverLevelService
     }
 
     /**
-     * @param  array<int, array{notation: string, label: string, riverName: string, town: string, lat: float, long: float}>  $stations
+     * @param  array<int, array{notation: string, label: string, riverName: string, town: string, lat: float, lng: float}>  $stations
      * @return array<string, array{value: float, unitName: string, dateTime: string}>
      */
     private function fetchReadings(string $baseUrl, int $timeout, array $stations): array
@@ -194,9 +194,9 @@ class RiverLevelService
     }
 
     /**
-     * @param  array<int, array{notation: string, label: string, riverName: string, town: string, lat: float, long: float, stationType: string, typicalRangeLow?: float|null, typicalRangeHigh?: float|null}>  $stations
+     * @param  array<int, array{notation: string, label: string, riverName: string, town: string, lat: float, lng: float, stationType: string, typicalRangeLow?: float|null, typicalRangeHigh?: float|null}>  $stations
      * @param  array<string, array{value: float, unitName: string, dateTime: string}>  $readings
-     * @return array<int, array{station: string, river: string, town: string, value: float, unit: string, unitName: string, dateTime: string, lat: float, long: float, stationType: string, levelStatus: string, typicalRangeLow?: float, typicalRangeHigh?: float}>
+     * @return array<int, array{station: string, river: string, town: string, value: float, unit: string, unitName: string, dateTime: string, lat: float, lng: float, stationType: string, levelStatus: string, typicalRangeLow?: float, typicalRangeHigh?: float}>
      */
     private function mergeStationsWithReadings(array $stations, array $readings): array
     {
@@ -224,7 +224,7 @@ class RiverLevelService
                 'unitName' => $reading['unitName'],
                 'dateTime' => $reading['dateTime'],
                 'lat' => $station['lat'],
-                'long' => $station['long'],
+                'lng' => $station['lng'],
                 'stationType' => $station['stationType'],
                 'levelStatus' => $levelStatus,
             ];

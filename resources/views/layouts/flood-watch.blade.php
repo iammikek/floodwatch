@@ -143,16 +143,19 @@
                 },
                 init() {
                     if (!this.center) return;
+                    const lng = this.center.lng ?? this.center.long;
+                    if (lng == null) return;
                     const addMarkers = (L) => {
                         if (this.hasUser) {
                             const loc = this.t?.your_location || 'Your location';
-                            L.marker([this.center.lat, this.center.long], { icon: this.userIcon() })
+                            L.marker([this.center.lat, lng], { icon: this.userIcon() })
                                 .addTo(this.map)
                                 .bindPopup('<b>' + loc.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</b>');
                         }
                         (this.stations || []).forEach(s => {
-                            if (s.lat != null && s.long != null) {
-                                L.marker([s.lat, s.long], { icon: this.stationIcon(s) })
+                            const slng = s.lng ?? s.long;
+                            if (s.lat != null && slng != null) {
+                                L.marker([s.lat, slng], { icon: this.stationIcon(s) })
                                     .addTo(this.map)
                                     .bindPopup(this.stationPopup(s));
                             }
@@ -167,15 +170,17 @@
                                     }
                                 }).addTo(this.map);
                             }
-                            if (f.lat != null && f.long != null) {
-                                L.marker([f.lat, f.long], { icon: this.floodIcon(f) })
+                            const flng = f.lng ?? f.long;
+                            if (f.lat != null && flng != null) {
+                                L.marker([f.lat, flng], { icon: this.floodIcon(f) })
                                     .addTo(this.map)
                                     .bindPopup(this.floodPopup(f));
                             }
                         });
                         (this.incidents || []).forEach(i => {
-                            if (i.lat != null && i.long != null) {
-                                L.marker([i.lat, i.long], { icon: this.incidentIcon(i) })
+                            const ilng = i.lng ?? i.long;
+                            if (i.lat != null && ilng != null) {
+                                L.marker([i.lat, ilng], { icon: this.incidentIcon(i) })
                                     .addTo(this.map)
                                     .bindPopup(this.incidentPopup(i));
                             }
@@ -190,7 +195,7 @@
                                 this.map.remove();
                                 this.map = null;
                             }
-                            this.map = L.map('flood-map').setView([this.center.lat, this.center.long], 11);
+                            this.map = L.map('flood-map').setView([this.center.lat, lng], 11);
                             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                             }).addTo(this.map);

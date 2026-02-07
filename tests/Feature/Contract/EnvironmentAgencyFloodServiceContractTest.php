@@ -41,12 +41,12 @@ class EnvironmentAgencyFloodServiceContractTest extends TestCase
         $this->assertSame(2, $result[0]['severityLevel']);
         $this->assertSame('123WAC', $result[0]['floodAreaID']);
         $this->assertSame(51.04, $result[0]['lat']);
-        $this->assertSame(-2.82, $result[0]['long']);
+        $this->assertSame(-2.82, $result[0]['lng']);
 
         $this->assertSame('River Parrett at Langport', $result[1]['description']);
         $this->assertSame('Severe Flood Warning', $result[1]['severity']);
         $this->assertSame(1, $result[1]['severityLevel']);
         $this->assertSame(51.035, $result[1]['lat']);
-        $this->assertSame(-2.831, $result[1]['long']);
+        $this->assertSame(-2.831, $result[1]['lng']);
     }
 }

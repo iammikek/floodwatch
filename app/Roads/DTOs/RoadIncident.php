@@ -2,6 +2,8 @@
 
 namespace App\Roads\DTOs;
 
+use App\Support\CoordinateMapper;
+
 final readonly class RoadIncident
 {
     public function __construct(
@@ -10,7 +12,7 @@ final readonly class RoadIncident
         public string $incidentType,
         public string $delayTime,
         public ?float $lat = null,
-        public ?float $long = null,
+        public ?float $lng = null,
         public ?string $startTime = null,
         public ?string $endTime = null,
         public ?string $locationDescription = null,
@@ -20,8 +22,7 @@ final readonly class RoadIncident
 
     public static function fromArray(array $data): self
     {
-        $lat = isset($data['lat']) ? (float) $data['lat'] : null;
-        $long = isset($data['long']) ? (float) $data['long'] : null;
+        $coords = CoordinateMapper::normalize($data);
         $startTime = isset($data['startTime']) ? (string) $data['startTime'] : null;
         $endTime = isset($data['endTime']) ? (string) $data['endTime'] : null;
         $locationDescription = isset($data['locationDescription']) ? (string) $data['locationDescription'] : null;
@@ -33,8 +34,8 @@ final readonly class RoadIncident
             status: $data['status'] ?? $data['closureStatus'] ?? '',
             incidentType: $data['incidentType'] ?? $data['type'] ?? '',
             delayTime: $data['delayTime'] ?? $data['delay'] ?? '',
-            lat: $lat,
-            long: $long,
+            lat: $coords['lat'],
+            lng: $coords['lng'],
             startTime: $startTime !== '' ? $startTime : null,
             endTime: $endTime !== '' ? $endTime : null,
             locationDescription: $locationDescription !== '' ? $locationDescription : null,
@@ -51,9 +52,9 @@ final readonly class RoadIncident
             'incidentType' => $this->incidentType,
             'delayTime' => $this->delayTime,
         ];
-        if ($this->lat !== null && $this->long !== null) {
+        if ($this->lat !== null && $this->lng !== null) {
             $arr['lat'] = $this->lat;
-            $arr['long'] = $this->long;
+            $arr['lng'] = $this->lng;
         }
         if ($this->startTime !== null) {
             $arr['startTime'] = $this->startTime;
