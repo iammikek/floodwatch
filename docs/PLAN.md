@@ -7,25 +7,40 @@ Single development plan consolidating roadmap, backlog, data sources, and implem
 
 ---
 
-## Current State
+## MVP (Shipped)
 
-- **LLM tools**: GetFloodData, GetHighwaysIncidents, GetFloodForecast, GetRiverLevels
-- **Regions**: Somerset (BA, TA), Bristol (BS), Devon (EX, TQ, PL), Cornwall (TR)
-- **Resilience**: Circuit breaker, retry, Redis cache, graceful degradation
-- **Dashboard**: Flood warnings, road status, map, 5-day forecast, weather
-- **Tooling**: Yarn, CI via `.github/workflows/tests.yml`
+What's **built and in the codebase** today:
+
+| Feature | Status |
+|---------|--------|
+| Postcode / place lookup | Done |
+| Dashboard (floods, roads, map, forecast, weather) | Done |
+| LLM correlation (flood–road advice) | Done |
+| Graceful degradation (partial data when API fails) | Done |
+| Danger to life (emergency numbers, instructions) | Done |
+| Registration flow (rate limit guests; unlimited for registered) | Done |
+| Circuit breaker, retry, Redis cache | Done |
+
+**LLM tools**: GetFloodData, GetHighwaysIncidents, GetFloodForecast, GetRiverLevels  
+**Regions**: Somerset (BA, TA), Bristol (BS), Devon (EX, TQ, PL), Cornwall (TR)  
+**Tooling**: Yarn, CI via `.github/workflows/tests.yml`
 
 ---
 
-## Phase 1: MVP (Current Focus)
+## Phase 1 (Next Sprint)
 
-| Item | Status | Notes |
-|------|--------|-------|
-| Location bookmarks | Planned | Multiple locations per registered user; profile default |
-| Profile default location | Planned | Pre-loaded on open; feeds admin metrics |
-| Admin dashboard | Planned | API health, LLM cost, user metrics |
-| Danger to life | Done | Emergency numbers + instructions in prompt |
-| Registration flow | Done | Rate limit guests; unlimited for registered |
+Planned features that are **not** in the current codebase:
+
+| Item | Notes |
+|------|-------|
+| Location bookmarks | Multiple locations per registered user; profile default |
+| Profile default location | Pre-loaded on app open; feeds admin metrics |
+| **Route check (From/To)** | Geocode From + To; overlay incidents/floods on route; Clear / Blocked / At risk / Delays summary |
+| Search history (DB) | Store searched locations; recent searches UI |
+| Use my location (GPS) | Browser geolocation; "Use my location" button |
+| Admin dashboard | API health, LLM cost, user metrics, budget alerts |
+| Backend polling | Scheduled job fetches APIs; required before geographic caching can work |
+| Donations | "Support Flood Watch" link in footer |
 
 ---
 
@@ -49,9 +64,19 @@ Single development plan consolidating roadmap, backlog, data sources, and implem
 
 ```mermaid
 flowchart LR
-    subgraph P1["Phase 1"]
+    subgraph MVP["MVP (shipped)"]
+        M1[Postcode lookup]
+        M2[Dashboard]
+        M3[LLM correlation]
+    end
+
+    subgraph P1["Phase 1 (Next Sprint)"]
         B1[Bookmarks]
+        RC[Route check]
+        SH[Search history]
+        GPS[Use my location]
         A1[Admin dashboard]
+        BP[Backend polling]
     end
 
     subgraph P2["Phase 2"]
@@ -60,12 +85,7 @@ flowchart LR
         SA[Situational Awareness]
     end
 
-    subgraph Backlog
-        Rail[National Rail]
-        Road[Road relevance]
-    end
-
-    B1 --> A1
+    MVP --> P1
     A1 --> R1
     R1 --> P2a
     P2a --> SA
@@ -80,7 +100,9 @@ flowchart LR
 | High | Location bookmarks + profile default | Model, migration, UI |
 | High | Search history (DB) | Store searched locations; schema below |
 | High | Use my location (GPS) | Browser geolocation; "Use my location" button in UI |
-| High | Admin dashboard | API health, LLM cost, user metrics |
+| High | Route check (From/To) | Geocode both; overlay incidents/floods; Clear/Blocked/At risk summary |
+| High | Admin dashboard | API health, LLM cost, user metrics, budget alerts |
+| High | Backend polling | Scheduled job (15 min); required for geographic caching |
 | High | National Rail | LDB API, GetRailDisruption tool, Rail Status section |
 | Medium | Road data relevance | Filter flood-related; cascading prompt |
 | Medium | Expand predictive rules | Curry Moor, Salt Moor, Thorney, Devon cut-off |
@@ -179,6 +201,42 @@ Build an **analytics layer** to support reporting and operational insights.
 **Storage**: Database tables for events/snapshots; aggregate views or scheduled jobs for reports. Laravel Pulse may cover some metrics; custom tables for business-specific analytics.
 
 **Effort**: ~1–2 sprints depending on scope.
+
+---
+
+## Geographic Cache Keys
+
+Define granularity for cache key scoping:
+
+| Type | Granularity | Example | Notes |
+|------|-------------|---------|-------|
+| **Postcode sector** | Outcode + first digit of incode | `TA10 0`, `BS3 2` | Full postcode `TA10 0DP` → key `TA10 0`; ~2–3 km radius |
+| **Grid cell (lat/long)** | 2 decimal places ≈ 1.1 km | `51.04,-2.83` | Place names (Langport, Bristol); rounded bounds |
+| **Region** | somerset, bristol, devon, cornwall | `somerset` | For region-wide data (road incidents) |
+
+**Cache key format**: `{prefix}:{type}:{region}:{sector_or_cell}` e.g. `flood-watch:chat:somerset:TA10 0`. Backend polling must populate the store before geographic caching is effective.
+
+---
+
+## Admin Dashboard – Cost & Budget
+
+| Element | Detail |
+|---------|--------|
+| **LLM cost** | Requests today/month; est. spend (gpt-4o-mini ~$0.01–0.10/request) |
+| **Budget alert** | Threshold configurable (e.g. $20/month); warn when approaching limit |
+| **Threshold logic** | Alert at 80% of budget; hard stop optional (e.g. disable LLM at 100%) |
+| **Source** | Track via OpenAI usage API or infer from request count × avg tokens |
+
+---
+
+## Quality Assurance
+
+| Area | Target | Notes |
+|------|--------|-------|
+| **Test coverage** | >80% | Run `sail test --coverage`; critical paths: FloodWatchService, RiskCorrelationService, LocationResolver |
+| **CI** | `.github/workflows/tests.yml` | Build frontend, run Pest on push/PR |
+| **Deployment verification** | Pre-deploy checklist | See `docs/DEPLOYMENT.md` – API keys, coverage, graceful failure, regional test |
+| **Critical paths** | Documented | FloodWatchService (tool calling, cache), RiskCorrelationService, circuit breaker |
 
 ---
 

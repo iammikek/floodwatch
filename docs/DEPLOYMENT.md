@@ -26,6 +26,7 @@ flowchart TD
 ## Pre-deployment Checklist
 
 - [ ] All acceptance criteria met (`docs/ACCEPTANCE_CRITERIA.md`)
+- [ ] QA: `sail test --coverage` >80%; see `docs/PLAN.md` Quality Assurance
 - [ ] Verify `OPENAI_API_KEY` works: `php artisan flood-watch:test-openai`
 - [ ] Verify `NATIONAL_HIGHWAYS_API_KEY` is valid
 - [ ] Run `sail test --coverage` and confirm >80% coverage
