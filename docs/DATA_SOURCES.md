@@ -26,7 +26,7 @@ Overview of current and planned APIs. Full research (National Rail, emergency se
 - **Tool**: `GetRailDisruption` – LLM can call when region has rail
 - **UI**: Dedicated "Rail Status" section (mirror Road Status pattern)
 
-**Estimated effort**: ~2–3 sprints for rails v1.
+**Estimated effort**: ~2–3 days for rails v1 (agentic).
 
 ---
 

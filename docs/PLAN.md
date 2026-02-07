@@ -9,7 +9,7 @@ Single development plan consolidating roadmap, backlog, data sources, and implem
 
 ## Cursor Agentic Build (Build Today)
 
-Effort estimates assume **Cursor agentic** (AI-assisted development). Phase 1 items can be built in **hours–days** rather than sprints when using agentic workflows.
+Effort estimates assume **Cursor agentic** (AI-assisted development). Phase 1 items can be built in **hours–days**.
 
 **Build order** (see `docs/build/README.md`):
 
@@ -48,7 +48,7 @@ What's **built and in the codebase** today. Verified against current implementat
 
 ---
 
-## Phase 1 (Next Sprint)
+## Phase 1 (Next)
 
 Planned features that are **not** in the current codebase:
 
@@ -91,7 +91,7 @@ flowchart LR
         M3[LLM correlation]
     end
 
-    subgraph P1["Phase 1 (Next Sprint)"]
+    subgraph P1["Phase 1 (Next)"]
         B1[Bookmarks]
         RC[Route check]
         SH[Search history]
@@ -166,7 +166,7 @@ Use scheduled cache warming to improve first-request latency and reduce cold-cac
 3. **Schedule**: Run every 15 min in `routes/console.php` (align with cache TTL).
 4. **Region-scoping**: Warm by region so Somerset users hit Somerset cache; no cross-region pollution.
 
-**Effort**: ~1 sprint.
+**Effort**: ~1–2 h (agentic).
 
 ---
 
@@ -180,7 +180,7 @@ Store locations users have searched in a database for quick re-search, analytics
 - **Registered**: Associate with `user_id`; show "Recent searches" in UI (dropdown or quick-pick)
 - **Admin**: Top regions, top postcodes, search volume over time
 
-**Effort**: ~1 sprint.
+**Effort**: ~1–2 h (agentic).
 
 ---
 
@@ -196,7 +196,7 @@ Allow users to use phone GPS for instant location lookup.
 4. **Fallback**: If denied or error, show message: "Could not get location. Try entering a postcode."
 5. **Display**: Show "📍 Current location" or resolved place name (e.g. "Near Langport").
 
-**Effort**: ~0.5 sprint.
+**Effort**: ~30 min (agentic).
 
 ---
 
@@ -221,7 +221,7 @@ Build an **analytics layer** to support reporting and operational insights.
 
 **Storage**: Database tables for events/snapshots; aggregate views or scheduled jobs for reports. Laravel Pulse may cover some metrics; custom tables for business-specific analytics.
 
-**Effort**: ~1–2 sprints depending on scope.
+**Effort**: ~1–2 days depending on scope (agentic).
 
 ---
 
