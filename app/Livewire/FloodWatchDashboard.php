@@ -180,7 +180,7 @@ class FloodWatchDashboard extends Component
 
         $enriched = array_map(function (array $flood) use ($userLat, $userLng, $hasCenter) {
             $floodLat = $flood['lat'] ?? null;
-            $floodLng = $flood['lng'] ?? null;
+            $floodLng = $flood['lng'] ?? $flood['long'] ?? null;
             $flood['distanceKm'] = null;
             if ($hasCenter && $floodLat !== null && $floodLng !== null) {
                 $flood['distanceKm'] = round($this->haversineDistanceKm($userLat, $userLng, (float) $floodLat, (float) $floodLng), 1);
