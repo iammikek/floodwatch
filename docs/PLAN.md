@@ -9,17 +9,23 @@ Single development plan consolidating roadmap, backlog, data sources, and implem
 
 ## MVP (Shipped)
 
-What's **built and in the codebase** today:
+What's **built and in the codebase** today. Verified against current implementation.
 
-| Feature | Status |
-|---------|--------|
-| Postcode / place lookup | Done |
-| Dashboard (floods, roads, map, forecast, weather) | Done |
-| LLM correlation (flood–road advice) | Done |
-| Graceful degradation (partial data when API fails) | Done |
-| Danger to life (emergency numbers, instructions) | Done |
-| Registration flow (rate limit guests; unlimited for registered) | Done |
-| Circuit breaker, retry, Redis cache | Done |
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Postcode lookup | Done | postcodes.io |
+| Place name lookup | Done | Nominatim (no What3Words) |
+| Dashboard (floods, roads, map, forecast, weather, river levels) | Done | Livewire, map-data API |
+| LLM correlation (flood–road advice) | Done | FloodWatchService + tools |
+| Graceful degradation | Done | Partial data when API fails |
+| Danger to life (emergency numbers, instructions) | Done | In prompt + config |
+| Registration / login | Done | Laravel auth |
+| Guest rate limit | Done | 1 search per 15 min; registered unlimited |
+| Circuit breaker, retry | Done | Per-service |
+| Cache layer | Done | TTL configurable; default 0 (disabled) |
+| localStorage persistence | Done | Last location + results for offline |
+
+**Data flow**: On-demand fetch per search (no scheduled backend polling). Cache reduces API/LLM calls when TTL > 0.
 
 **LLM tools**: GetFloodData, GetHighwaysIncidents, GetFloodForecast, GetRiverLevels  
 **Regions**: Somerset (BA, TA), Bristol (BS), Devon (EX, TQ, PL), Cornwall (TR)  
