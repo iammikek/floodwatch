@@ -104,6 +104,9 @@ tests/
 
 - `docs/PLAN.md` - Development plan (backlog, roadmap)
 - `docs/ACCEPTANCE_CRITERIA.md` - Success checklist
+- `docs/CONSIDERATIONS.md` - Risks, API dependency, regional scope, costs
+
+**Critical-path tests**: `FloodWatchServiceTest`, `FloodWatchDashboardTest`, `RiskCorrelationServiceTest`, `CircuitBreakerIntegrationTest`, `LocationResolverTest`. Run `sail test --coverage` for coverage.
 - `compose.yaml` - Sail Docker config
 - `phpunit.xml` - Test config
 - `routes/web.php`, `routes/api.php` - Routes

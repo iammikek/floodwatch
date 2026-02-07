@@ -81,6 +81,7 @@ flowchart TB
 
 - **Config**: `config/flood-watch.regions` – prompt snippets per region
 - **Correlation**: `config/flood-watch.correlation` – flood_area_road_pairs, predictive_rules (river_pattern + flood_pattern), key_routes. Muchelney rule: triggers when River Parrett is elevated or when Langport has flood warnings; region defaults to somerset for default Langport coordinates.
+- **Expanding regions**: Add region to `regions`, correlation rules to `correlation.{region}`, key routes to `incident_allowed_roads`, road coordinates to `incident_road_coordinates`. See `docs/CONSIDERATIONS.md`.
 
 ### External APIs
 
@@ -99,7 +100,10 @@ flowchart TB
 
 - **Retry**: All HTTP calls use `retry(times, sleepMs, null, false)` – configurable per service
 - **Circuit breaker**: Wired into all external API services (Environment Agency, Flood Forecast, River Level, National Highways, Weather). After N consecutive failures, the circuit opens and requests return empty until cooldown expires. Config: `flood-watch.circuit_breaker` (enabled, failure_threshold, cooldown_seconds). Set `FLOOD_WATCH_CIRCUIT_BREAKER_ENABLED=false` to disable.
+- **Graceful degradation**: When one API fails, app returns partial summary with available data and clear indication of missing data (see ACCEPTANCE_CRITERIA). No cached-data fallback when circuit is open – consider serving last-known cache per area.
 - **Cache**: `flood-watch.cache_key_prefix` ensures distinct keys across services
+
+See `docs/CONSIDERATIONS.md` for API dependency risks and expansion guidance.
 
 ### LLM Token Limits
 

@@ -85,7 +85,8 @@ flowchart LR
 | Medium | Real-time & push | Laravel Reverb + FCM; see Phase 2 |
 | Medium | Queue-based async | For high-traffic; poll for results |
 | Low | Polygon limit tuning | `max_polygons_per_request` |
-| Low | Additional regions | Beyond South West |
+| Low | Additional regions | Beyond South West; see `docs/CONSIDERATIONS.md` |
+| Low | Test coverage visibility | Document critical paths; consider `--coverage` in CI |
 
 ---
 
@@ -118,3 +119,4 @@ Reverb as second service or process; Redis if scaling. Alternative: Pusher (free
 | `docs/ARCHITECTURE.md` | System structure, data flow |
 | `docs/LLM_DATA_FLOW.md` | How LLM consumes data |
 | `docs/DEPLOYMENT.md` | Railway runbook |
+| `docs/CONSIDERATIONS.md` | Risks, API dependency, regional scope, costs |

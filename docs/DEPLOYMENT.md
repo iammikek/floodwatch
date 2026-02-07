@@ -64,6 +64,8 @@ Optional (for road closure data):
 |----------|-------|
 | `NATIONAL_HIGHWAYS_API_KEY` | From [developer.data.nationalhighways.co.uk](https://developer.data.nationalhighways.co.uk/) |
 
+**Deployment checklist**: If road status is required, verify `NATIONAL_HIGHWAYS_API_KEY` is set. Without it, incidents return empty; `/health` reports National Highways as "skipped".
+
 ### 4. Generate Domain
 
 Railway → Settings → Networking → Generate Domain. Use the provided `*.up.railway.app` URL and set `APP_URL` to match (with `https://`).
@@ -142,5 +144,7 @@ Railway automatically builds and deploys. No manual steps.
 ## Cost (Pilot)
 
 - **Railway free tier:** $5 credits for 30 days, then $1/month
-- **OpenAI:** Pay-per-use (gpt-4o-mini ~$0.01–0.10 per request)
+- **OpenAI:** Pay-per-use (gpt-4o-mini ~$0.01–0.10 per request). Monitor via admin dashboard when implemented. Many unique postcodes = more cache misses = higher cost.
 - **Real-time (planned):** Laravel Reverb adds minimal compute; push notifications (FCM) are free. See `docs/PLAN.md`.
+
+See `docs/CONSIDERATIONS.md` for API dependency, regional scope, and cost risks.
