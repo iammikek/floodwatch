@@ -89,7 +89,7 @@ test('fromArray and toArray include lat and long when present', function () {
     $arr = $incident->toArray();
 
     expect($arr['lat'])->toBe(51.04);
-    expect($arr['long'])->toBe(-2.83);
+    expect($arr['lng'])->toBe(-2.83);
 });
 
 test('round trip fromArray toArray preserves data', function () {

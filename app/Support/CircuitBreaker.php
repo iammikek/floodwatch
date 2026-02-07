@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use Illuminate\Support\Facades\Cache;
+use Throwable;
 
 /**
  * Simple cache-based circuit breaker. Opens after N failures, stays open for a cooldown period.
@@ -69,7 +70,7 @@ class CircuitBreaker
             $this->recordSuccess();
 
             return $result;
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $this->recordFailure();
             throw $e;
         }

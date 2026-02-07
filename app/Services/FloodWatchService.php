@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Concurrency;
 use Illuminate\Support\Facades\Log;
 use OpenAI\Laravel\Facades\OpenAI;
+use Throwable;
 
 class FloodWatchService
 {
@@ -33,7 +34,7 @@ class FloodWatchService
      * @param  callable(string): void|null  $onProgress  Optional callback for progress updates (e.g. for streaming to UI)
      * @return array{response: string, floods: array, incidents: array, forecast: array, weather: array, lastChecked: string}
      */
-    public function chat(string $userMessage, array $conversation = [], ?string $cacheKey = null, ?float $userLat = null, ?float $userLong = null, ?string $region = null, ?callable $onProgress = null): array
+    public function chat(string $userMessage, array $conversation = [], ?string $cacheKey = null, ?float $userLat = null, ?float $userLng = null, ?string $region = null, ?callable $onProgress = null): array
     {
         $emptyResult = fn (string $response, ?string $lastChecked = null): array => [
             'response' => $response,
@@ -64,13 +65,13 @@ class FloodWatchService
         };
 
         $lat = $userLat ?? config('flood-watch.default_lat');
-        $long = $userLong ?? config('flood-watch.default_long');
+        $lng = $userLng ?? config('flood-watch.default_lng');
 
         $report(__('flood-watch.progress.fetching_prefetch'));
         [$forecast, $weather, $riverLevels] = Concurrency::run([
             fn () => app(FloodForecastService::class)->getForecast(),
-            fn () => app(WeatherService::class)->getForecast($lat, $long),
-            fn () => app(RiverLevelService::class)->getLevels($lat, $long),
+            fn () => app(WeatherService::class)->getForecast($lat, $lng),
+            fn () => app(RiverLevelService::class)->getLevels($lat, $lng),
         ]);
 
         $report(__('flood-watch.progress.calling_assistant'));
@@ -241,7 +242,7 @@ class FloodWatchService
     {
         try {
             return Cache::store($store)->get($key);
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return null;
         }
     }
@@ -250,7 +251,7 @@ class FloodWatchService
     {
         try {
             Cache::store($store)->put($key, $value, $ttl);
-        } catch (\Throwable) {
+        } catch (Throwable) {
             // Silently skip cache write on Redis failure
         }
     }
@@ -300,7 +301,7 @@ class FloodWatchService
         return match ($name) {
             'GetFloodData' => $this->floodService->getFloods(
                 $args['lat'] ?? null,
-                $args['long'] ?? null,
+                $args['lng'] ?? null,
                 $args['radius_km'] ?? null
             ),
             'GetHighwaysIncidents' => $this->sortIncidentsByPriority(
@@ -312,7 +313,7 @@ class FloodWatchService
             'GetFloodForecast' => $this->forecastService->getForecast(),
             'GetRiverLevels' => $this->riverLevelService->getLevels(
                 $args['lat'] ?? null,
-                $args['long'] ?? null,
+                $args['lng'] ?? null,
                 $args['radius_km'] ?? null
             ),
             default => ['error' => "Unknown tool: {$name}"],
@@ -384,7 +385,7 @@ class FloodWatchService
             $stripFlood = function (array $f) use ($maxMsgChars): array {
                 try {
                     $arr = FloodWarning::fromArray($f)->withoutPolygon()->toArray();
-                } catch (\Throwable) {
+                } catch (Throwable) {
                     return ['description' => $f['description'] ?? '', 'severity' => $f['severity'] ?? '', 'message' => substr((string) ($f['message'] ?? ''), 0, $maxMsgChars)];
                 }
                 if (isset($arr['message']) && strlen($arr['message']) > $maxMsgChars) {

@@ -2,11 +2,16 @@
 
 namespace App\Support;
 
+use App\Enums\IncidentStatus;
+use App\Enums\IncidentType;
 use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Str;
 
 class IncidentIcon
 {
+    /**
+     * Resolve status label, preferring translation keys over enum hard-coded labels.
+     */
     public static function statusLabel(?string $status): string
     {
         if ($status === null || $status === '') {
@@ -14,10 +19,26 @@ class IncidentIcon
         }
 
         $key = 'flood-watch.incident_status.'.$status;
+        if (Lang::has($key)) {
+            return __($key);
+        }
 
-        return Lang::has($key) ? __($key) : Str::title(self::splitCamelCase($status));
+        $enum = IncidentStatus::tryFromString($status);
+        if ($enum !== null) {
+            $enumKey = 'flood-watch.incident_status.'.$enum->value;
+            if (Lang::has($enumKey)) {
+                return __($enumKey);
+            }
+
+            return $enum->label();
+        }
+
+        return Str::title(self::splitCamelCase($status));
     }
 
+    /**
+     * Resolve type label, preferring translation keys over enum hard-coded labels.
+     */
     public static function typeLabel(?string $type): string
     {
         if ($type === null || $type === '') {
@@ -25,24 +46,33 @@ class IncidentIcon
         }
 
         $key = 'flood-watch.incident_type.'.$type;
+        if (Lang::has($key)) {
+            return __($key);
+        }
 
-        return Lang::has($key) ? __($key) : Str::title(self::splitCamelCase($type));
+        $enum = IncidentType::tryFromString($type);
+        if ($enum !== null) {
+            $enumKey = 'flood-watch.incident_type.'.$enum->value;
+            if (Lang::has($enumKey)) {
+                return __($enumKey);
+            }
+
+            return $enum->label();
+        }
+
+        return Str::title(self::splitCamelCase($type));
     }
 
     /**
      * Resolve an emoji icon for a road incident based on incidentType and managementType.
-     * Matches DATEX II values (constructionWork, sweepingOfRoad, flooding, etc.)
-     * and UK road sign equivalents (🚧 road works, 🚫 closed).
+     * Config (flood-watch.incident_icons) is the source of truth for customization; falls back
+     * to IncidentType enum for known types when no config match exists.
      */
     public static function forIncident(?string $incidentType, ?string $managementType = null): string
     {
+        $search = array_filter([$incidentType, $managementType]);
         $icons = config('flood-watch.incident_icons', []);
         $default = $icons['default'] ?? '🛣️';
-
-        $search = array_filter([
-            $incidentType,
-            $managementType,
-        ]);
 
         foreach ($search as $value) {
             if ($value === '' || $value === null) {
@@ -56,6 +86,10 @@ class IncidentIcon
                 if (strtolower($key) === $lower || str_contains($lower, strtolower($key))) {
                     return $icon;
                 }
+            }
+            $enum = IncidentType::tryFromString($value);
+            if ($enum !== null) {
+                return $enum->icon();
             }
         }
 

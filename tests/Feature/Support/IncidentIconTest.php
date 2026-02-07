@@ -59,6 +59,25 @@ class IncidentIconTest extends TestCase
         $this->assertSame('🌊', IncidentIcon::forIncident('FLOODING'));
     }
 
+    public function test_config_overrides_enum_icon_for_known_type(): void
+    {
+        Config::set('flood-watch.incident_icons', [
+            'flooding' => '🔥',
+            'default' => '🛣️',
+        ]);
+
+        $this->assertSame('🔥', IncidentIcon::forIncident('flooding'));
+    }
+
+    public function test_falls_back_to_enum_when_config_has_no_match(): void
+    {
+        Config::set('flood-watch.incident_icons', [
+            'default' => '🛣️',
+        ]);
+
+        $this->assertSame('🚗', IncidentIcon::forIncident('accident'));
+    }
+
     public function test_returns_default_icon_when_no_match(): void
     {
         $this->assertSame('🛣️', IncidentIcon::forIncident('unknownType'));

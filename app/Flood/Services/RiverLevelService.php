@@ -4,9 +4,11 @@ namespace App\Flood\Services;
 
 use App\Support\CircuitBreaker;
 use App\Support\CircuitOpenException;
+use App\Support\CoordinateMapper;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
+use Throwable;
 
 /**
  * Fetches river and sea level data from the Environment Agency Real-Time API.
@@ -29,19 +31,19 @@ class RiverLevelService
      */
     public function getLevels(
         ?float $lat = null,
-        ?float $long = null,
+        ?float $lng = null,
         ?int $radiusKm = null
     ): array {
         try {
-            return $this->circuitBreaker->execute(function () use ($lat, $long, $radiusKm) {
+            return $this->circuitBreaker->execute(function () use ($lat, $lng, $radiusKm) {
                 $lat ??= config('flood-watch.default_lat');
-                $long ??= config('flood-watch.default_long');
+                $lng ??= config('flood-watch.default_lng');
                 $radiusKm ??= config('flood-watch.default_radius_km');
 
                 $baseUrl = config('flood-watch.environment_agency.base_url');
                 $timeout = config('flood-watch.environment_agency.timeout');
 
-                $stations = $this->fetchStations($baseUrl, $timeout, $lat, $long, $radiusKm);
+                $stations = $this->fetchStations($baseUrl, $timeout, $lat, $lng, $radiusKm);
                 if (empty($stations)) {
                     return [];
                 }
@@ -61,11 +63,11 @@ class RiverLevelService
     }
 
     /**
-     * @return array<int, array{notation: string, label: string, riverName: string, town: string, lat: float, long: float, stationType: string, typicalRangeLow?: float, typicalRangeHigh?: float}>
+     * @return array<int, array{notation: string, label: string, riverName: string, town: string, lat: float, lng: float, stationType: string, typicalRangeLow?: float, typicalRangeHigh?: float}>
      */
-    private function fetchStations(string $baseUrl, int $timeout, float $lat, float $long, int $radiusKm): array
+    private function fetchStations(string $baseUrl, int $timeout, float $lat, float $lng, int $radiusKm): array
     {
-        $url = "{$baseUrl}/id/stations?lat={$lat}&long={$long}&dist={$radiusKm}&_view=full";
+        $url = "{$baseUrl}/id/stations?lat={$lat}&long={$lng}&dist={$radiusKm}&_view=full";
 
         $retryTimes = config('flood-watch.environment_agency.retry_times', 3);
         $retrySleep = config('flood-watch.environment_agency.retry_sleep_ms', 100);
@@ -84,9 +86,8 @@ class RiverLevelService
             if (empty($notation)) {
                 continue;
             }
-            $itemLat = $item['lat'] ?? null;
-            $itemLong = $item['long'] ?? null;
-            if ($itemLat === null || $itemLong === null) {
+            $coords = CoordinateMapper::normalize($item);
+            if ($coords['lat'] === null || $coords['lng'] === null) {
                 continue;
             }
             $label = $item['label'] ?? '';
@@ -100,8 +101,8 @@ class RiverLevelService
                 'label' => $label,
                 'riverName' => $item['riverName'] ?? '',
                 'town' => $item['town'] ?? '',
-                'lat' => (float) $itemLat,
-                'long' => (float) $itemLong,
+                'lat' => $coords['lat'],
+                'lng' => $coords['lng'],
                 'stationType' => $stationType,
                 'typicalRangeLow' => $typicalLow,
                 'typicalRangeHigh' => $typicalHigh,
@@ -139,7 +140,7 @@ class RiverLevelService
     }
 
     /**
-     * @param  array<int, array{notation: string, label: string, riverName: string, town: string, lat: float, long: float}>  $stations
+     * @param  array<int, array{notation: string, label: string, riverName: string, town: string, lat: float, lng: float}>  $stations
      * @return array<string, array{value: float, unitName: string, dateTime: string}>
      */
     private function fetchReadings(string $baseUrl, int $timeout, array $stations): array
@@ -158,7 +159,7 @@ class RiverLevelService
 
         $readings = [];
         foreach ($responses as $notation => $response) {
-            if ($response instanceof \Throwable || ! $response->successful()) {
+            if ($response instanceof Throwable || ! $response->successful()) {
                 continue;
             }
 
@@ -194,9 +195,9 @@ class RiverLevelService
     }
 
     /**
-     * @param  array<int, array{notation: string, label: string, riverName: string, town: string, lat: float, long: float, stationType: string, typicalRangeLow?: float|null, typicalRangeHigh?: float|null}>  $stations
+     * @param  array<int, array{notation: string, label: string, riverName: string, town: string, lat: float, lng: float, stationType: string, typicalRangeLow?: float|null, typicalRangeHigh?: float|null}>  $stations
      * @param  array<string, array{value: float, unitName: string, dateTime: string}>  $readings
-     * @return array<int, array{station: string, river: string, town: string, value: float, unit: string, unitName: string, dateTime: string, lat: float, long: float, stationType: string, levelStatus: string, typicalRangeLow?: float, typicalRangeHigh?: float}>
+     * @return array<int, array{station: string, river: string, town: string, value: float, unit: string, unitName: string, dateTime: string, lat: float, lng: float, stationType: string, levelStatus: string, typicalRangeLow?: float, typicalRangeHigh?: float}>
      */
     private function mergeStationsWithReadings(array $stations, array $readings): array
     {
@@ -224,7 +225,7 @@ class RiverLevelService
                 'unitName' => $reading['unitName'],
                 'dateTime' => $reading['dateTime'],
                 'lat' => $station['lat'],
-                'long' => $station['long'],
+                'lng' => $station['lng'],
                 'stationType' => $station['stationType'],
                 'levelStatus' => $levelStatus,
             ];

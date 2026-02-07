@@ -15,6 +15,7 @@ use Livewire\Component;
 use OpenAI\Exceptions\ErrorException;
 use OpenAI\Exceptions\RateLimitException;
 use Psr\Http\Message\ResponseInterface;
+use Throwable;
 
 #[Layout('layouts.flood-watch')]
 class FloodWatchDashboard extends Component
@@ -121,33 +122,33 @@ class FloodWatchDashboard extends Component
 
         $message = $this->buildMessage($locationTrimmed, $validation);
         $cacheKey = $locationTrimmed !== '' ? $locationTrimmed : null;
-        $userLat = $validation['lat'] ?? null;
-        $userLong = $validation['long'] ?? null;
-        $region = $validation['region'] ?? ($validation === null ? 'somerset' : null);
+        $userLat = data_get($validation, 'lat');
+        $userLng = data_get($validation, 'lng');
+        $region = $validation === null ? 'somerset' : data_get($validation, 'region');
 
         try {
             $onProgress = fn (string $status) => $streamStatus($status);
-            $result = $assistant->chat($message, [], $cacheKey, $userLat, $userLong, $region, $onProgress);
+            $result = $assistant->chat($message, [], $cacheKey, $userLat, $userLng, $region, $onProgress);
             $this->assistantResponse = $result['response'];
             $this->floods = $this->enrichFloodsWithDistance(
                 $result['floods'],
                 $userLat,
-                $userLong
+                $userLng
             );
             $this->incidents = $this->enrichIncidentsWithIcons($result['incidents']);
             $this->forecast = $result['forecast'] ?? [];
             $this->weather = $result['weather'] ?? [];
             $this->riverLevels = $result['riverLevels'] ?? [];
             $lat = $userLat ?? config('flood-watch.default_lat');
-            $long = $userLong ?? config('flood-watch.default_long');
-            $this->mapCenter = ['lat' => $lat, 'long' => $long];
-            $this->hasUserLocation = $userLat !== null && $userLong !== null;
+            $lng = $userLng ?? config('flood-watch.default_lng');
+            $this->mapCenter = ['lat' => $lat, 'lng' => $lng];
+            $this->hasUserLocation = $userLat !== null && $userLng !== null;
             $this->lastChecked = $result['lastChecked'] ?? null;
 
             $trendService->record(
                 $locationTrimmed !== '' ? $locationTrimmed : null,
                 $userLat,
-                $userLong,
+                $userLng,
                 $region,
                 count($this->floods),
                 count($this->incidents),
@@ -155,7 +156,7 @@ class FloodWatchDashboard extends Component
             );
 
             $this->dispatch('search-completed');
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             report($e);
             if ($this->isAiRateLimitError($e)) {
                 $this->logOpenAiRateLimit($e);
@@ -173,16 +174,16 @@ class FloodWatchDashboard extends Component
      * @param  array<int, array<string, mixed>>  $floods
      * @return array<int, array<string, mixed>>
      */
-    private function enrichFloodsWithDistance(array $floods, ?float $userLat, ?float $userLong): array
+    private function enrichFloodsWithDistance(array $floods, ?float $userLat, ?float $userLng): array
     {
-        $hasCenter = $userLat !== null && $userLong !== null;
+        $hasCenter = $userLat !== null && $userLng !== null;
 
-        $enriched = array_map(function (array $flood) use ($userLat, $userLong, $hasCenter) {
+        $enriched = array_map(function (array $flood) use ($userLat, $userLng, $hasCenter) {
             $floodLat = $flood['lat'] ?? null;
-            $floodLong = $flood['long'] ?? null;
+            $floodLng = $flood['lng'] ?? $flood['long'] ?? null;
             $flood['distanceKm'] = null;
-            if ($hasCenter && $floodLat !== null && $floodLong !== null) {
-                $flood['distanceKm'] = round($this->haversineDistanceKm($userLat, $userLong, (float) $floodLat, (float) $floodLong), 1);
+            if ($hasCenter && $floodLat !== null && $floodLng !== null) {
+                $flood['distanceKm'] = round($this->haversineDistanceKm($userLat, $userLng, (float) $floodLat, (float) $floodLng), 1);
             }
 
             return $flood;
@@ -201,19 +202,19 @@ class FloodWatchDashboard extends Component
             ->all();
     }
 
-    private function haversineDistanceKm(float $lat1, float $long1, float $lat2, float $long2): float
+    private function haversineDistanceKm(float $lat1, float $lng1, float $lat2, float $lng2): float
     {
         $earthRadiusKm = 6371.0;
         $dLat = deg2rad($lat2 - $lat1);
-        $dLong = deg2rad($long2 - $long1);
+        $dLng = deg2rad($lng2 - $lng1);
         $a = sin($dLat / 2) ** 2
-            + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLong / 2) ** 2;
+            + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLng / 2) ** 2;
         $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
 
         return $earthRadiusKm * $c;
     }
 
-    private function logOpenAiRateLimit(\Throwable $e): void
+    private function logOpenAiRateLimit(Throwable $e): void
     {
         $response = null;
         if ($e instanceof RateLimitException) {
@@ -237,7 +238,7 @@ class FloodWatchDashboard extends Component
                 if ($body !== '') {
                     $context['response_body'] = LogMasker::maskResponseBody($body);
                 }
-            } catch (\Throwable) {
+            } catch (Throwable) {
                 // Stream may already be consumed
             }
         }
@@ -262,14 +263,14 @@ class FloodWatchDashboard extends Component
         return array_filter($headers, fn (string $v) => $v !== '');
     }
 
-    private function isAiRateLimitError(\Throwable $e): bool
+    private function isAiRateLimitError(Throwable $e): bool
     {
         $message = strtolower($e->getMessage());
 
         return str_contains($message, 'rate limit') || str_contains($message, '429');
     }
 
-    private function formatErrorMessage(\Throwable $e): string
+    private function formatErrorMessage(Throwable $e): string
     {
         $message = $e->getMessage();
         if (str_contains(strtolower($message), 'rate limit') || str_contains(strtolower($message), '429')) {
@@ -289,7 +290,7 @@ class FloodWatchDashboard extends Component
     }
 
     /**
-     * @param  array{lat?: float, long?: float, outcode?: string, display_name?: string}|null  $validation
+     * @param  array{lat?: float, lng?: float, outcode?: string, display_name?: string}|null  $validation
      */
     private function buildMessage(string $location, ?array $validation): string
     {
@@ -299,8 +300,8 @@ class FloodWatchDashboard extends Component
 
         $label = $validation['display_name'] ?? $location;
         $coords = '';
-        if ($validation !== null && isset($validation['lat'], $validation['long'])) {
-            $coords = sprintf(' (lat: %.4f, long: %.4f)', $validation['lat'], $validation['long']);
+        if ($validation !== null && isset($validation['lat'], $validation['lng'])) {
+            $coords = sprintf(' (lat: %.4f, lng: %.4f)', $validation['lat'], $validation['lng']);
         }
 
         return __('flood-watch.message.check_status_location', ['label' => $label, 'coords' => $coords]);

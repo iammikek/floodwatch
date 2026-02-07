@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\Region;
+
 return [
 
     /*
@@ -26,6 +28,12 @@ return [
 
     'admin_email' => env('ADMIN_EMAIL', 'mike@automica.io'),
 
+    'donation_url' => env('FLOOD_WATCH_DONATION_URL', ''),
+
+    'warm_cache_locations' => collect(Region::cases())
+        ->mapWithKeys(fn (Region $r) => [$r->value => $r->warmCacheLocation()])
+        ->all(),
+
     /*
     |--------------------------------------------------------------------------
     | LLM Token Limits
@@ -48,10 +56,13 @@ return [
     |--------------------------------------------------------------------------
     | Default Coordinates (Langport, South West)
     |--------------------------------------------------------------------------
+    |
+    | FLOOD_WATCH_LAT and FLOOD_WATCH_LNG for the default map center.
+    |
     */
 
     'default_lat' => (float) env('FLOOD_WATCH_LAT', 51.0358),
-    'default_long' => (float) env('FLOOD_WATCH_LONG', -2.8318),
+    'default_lng' => (float) env('FLOOD_WATCH_LNG', -2.8318),
     'default_radius_km' => (int) env('FLOOD_WATCH_RADIUS_KM', 15),
 
     /*
@@ -239,7 +250,7 @@ return [
     |
     | When the National Highways API does not return geometry (posList), use
     | these approximate center points for South West roads so incidents still
-    | appear on the map. Format: road => [lat, long].
+    | appear on the map. Format: road => [lat, lng].
     |
     */
 

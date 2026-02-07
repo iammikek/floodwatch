@@ -80,7 +80,7 @@ All resolve to coordinates used for flood, road, and forecast checks. **Use my l
 
 **Criterion**: Searched locations are stored in a database. Guests: session-based; registered: associated with user. Feeds "Recent searches" quick-pick and admin metrics.
 
-**Verification**: Schema includes user_id (nullable), location, lat, long, region, searched_at. Retention policy defined.
+**Verification**: Schema includes user_id (nullable), location, lat, lng, region, searched_at. Retention policy defined.
 
 ---
 

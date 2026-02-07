@@ -16,11 +16,11 @@ sail artisan make:migration create_location_bookmarks_table
 ```
 
 **user_searches** (see `docs/SCHEMA.md`):
-- `user_id` (nullable FK), `session_id` (nullable), `location`, `lat`, `long`, `region` (nullable), `searched_at`
+- `user_id` (nullable FK), `session_id` (nullable), `location`, `lat`, `lng`, `region` (nullable), `searched_at`
 - Indexes: `user_id`, `session_id`, `searched_at`
 
 **location_bookmarks**:
-- `user_id` (FK), `label`, `location`, `lat`, `long`, `region` (nullable), `is_default` (default false)
+- `user_id` (FK), `label`, `location`, `lat`, `lng`, `region` (nullable), `is_default` (default false)
 - Indexes: `user_id`
 - Unique: only one `is_default = true` per user (use migration or model observer)
 
@@ -37,13 +37,15 @@ sail artisan make:model UserSearch -f
 sail artisan make:model LocationBookmark -f
 ```
 
-**UserSearch**: `belongsTo(User::class)`. Fillable: `user_id`, `session_id`, `location`, `lat`, `long`, `region`, `searched_at`. Cast `searched_at` as datetime.
+**UserSearch**: `belongsTo(User::class)`. Fillable: `user_id`, `session_id`, `location`, `lat`, `lng`, `region`, `searched_at`. Cast `searched_at` as datetime.
 
-**LocationBookmark**: `belongsTo(User::class)`. Fillable: `user_id`, `label`, `location`, `lat`, `long`, `region`, `is_default`. When `is_default = true`, clear other defaults for user (use `saving` observer or in service).
+**LocationBookmark**: `belongsTo(User::class)`. Fillable: `user_id`, `label`, `location`, `lat`, `lng`, `region`, `is_default`. When `is_default = true`, clear other defaults for user (use `saving` observer or in service).
 
 **User**: Add `hasMany(UserSearch::class)`, `hasMany(LocationBookmark::class)`.
 
 **Factories**: UserSearch, LocationBookmark – minimal fields for tests.
+
+**Enums for mappers**: Use `Region::warmCacheLocation()`, `IncidentType::icon()`, `IncidentStatus::label()` instead of config arrays. See `agents.md` conventions.
 
 ---
 
@@ -108,14 +110,16 @@ Add to `lang/en/flood-watch.php`:
 
 ## Acceptance Criteria
 
-- [ ] `user_searches` and `location_bookmarks` tables exist; migrations run cleanly
-- [ ] `UserSearch` and `LocationBookmark` models exist with factories; `User` has `userSearches()` and `locationBookmarks()` relationships
-- [ ] `config('flood-watch.donation_url')` and `config('flood-watch.warm_cache_locations')` return expected values
-- [ ] `Gate::allows('accessAdmin', $adminUser)` is true; `Gate::allows('accessAdmin', $regularUser)` is false
-- [ ] `LocationResolver::reverseFromCoords(51.04, -2.83)` returns valid South West location (or mocked in test)
-- [ ] Lang keys `flood-watch.dashboard.use_my_location`, `recent_searches`, `gps_error` exist
-- [ ] `User::factory()->admin()->create()` produces admin user (add state if needed)
-- [ ] `sail test` passes
+- [x] `user_searches` and `location_bookmarks` tables exist; migrations run cleanly
+- [x] `UserSearch` and `LocationBookmark` models exist with factories; `User` has `userSearches()` and `locationBookmarks()` relationships
+- [x] `config('flood-watch.donation_url')` and `config('flood-watch.warm_cache_locations')` return expected values
+- [x] `Gate::forUser($admin)->allows('accessAdmin')` is true; `Gate::forUser($user)->allows('accessAdmin')` is false
+- [x] `LocationResolver::reverseFromCoords(51.04, -2.83)` returns valid South West location (or mocked in test)
+- [x] Lang keys `flood-watch.dashboard.use_my_location`, `recent_searches`, `gps_error` exist
+- [x] `User::factory()->admin()->create()` produces admin user (add state if needed)
+- [x] Enums used for mappers: `Region::warmCacheLocation()`, `IncidentType::icon()`, `IncidentStatus::label()`
+- [x] Schema uses `lat`, `lng` (not `long`) for longitude
+- [x] `sail test` passes
 
 ---
 

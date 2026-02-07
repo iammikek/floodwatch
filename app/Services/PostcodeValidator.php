@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\ValueObjects\Postcode;
 use Illuminate\Support\Facades\Http;
+use Throwable;
 
 class PostcodeValidator
 {
@@ -25,7 +26,7 @@ class PostcodeValidator
     /**
      * Validate and optionally geocode a UK postcode for the South West.
      *
-     * @return array{valid: bool, in_area: bool, error?: string, lat?: float, long?: float, outcode?: string}
+     * @return array{valid: bool, in_area: bool, error?: string, lat?: float, lng?: float, outcode?: string, region?: string|null}
      */
     public function validate(string $postcode, bool $geocode = true): array
     {
@@ -73,9 +74,9 @@ class PostcodeValidator
                     'error' => $coords['error'],
                 ];
             }
-            if ($coords !== null && isset($coords['lat'], $coords['long'])) {
+            if ($coords !== null && isset($coords['lat'], $coords['lng'])) {
                 $result['lat'] = $coords['lat'];
-                $result['long'] = $coords['long'];
+                $result['lng'] = $coords['lng'];
             }
         }
 
@@ -132,7 +133,7 @@ class PostcodeValidator
     /**
      * Geocode postcode via postcodes.io (free, no API key).
      *
-     * @return array{lat: float, long: float}|array{error: string}|null
+     * @return array{lat: float, lng: float}|array{error: string}|null
      */
     public function geocode(string $postcode): ?array
     {
@@ -159,9 +160,9 @@ class PostcodeValidator
 
             return [
                 'lat' => (float) $result['latitude'],
-                'long' => (float) $result['longitude'],
+                'lng' => (float) $result['longitude'],
             ];
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return null;
         }
     }

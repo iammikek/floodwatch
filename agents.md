@@ -94,12 +94,24 @@ tests/
 | `sail artisan make:test X` | Create feature test |
 | `sail artisan make:test X --unit` | Create unit test |
 | `sail artisan make:controller X` | Create controller |
-| `sail artisan make:model X -m` | Create model + migration |
+| `sail artisan make:model X -mf -s` | Create model + migration + factory + seeder |
 | `sail artisan boost:install` | Install Laravel Boost (after `composer require laravel/boost --dev`) |
 | `sail artisan boost:update` | Refresh Boost guidelines and resources |
 
+## API / OpenAPI
+
+- **Spec**: All API endpoints must follow **OpenAPI** and **JSON:API** spec. Each endpoint must be accompanied by an API spec.
+- **Docblocks**: Controllers must have OpenAPI annotations in their docblocks; these are used to generate the API documentation.
+- **Validation in tests**: API responses must be validated against the OpenAPI spec when testing. Use a Laravel package (e.g. `league/openapi-psr7-validator` or `darkaonline/l5-swagger` with validation middleware) – see project docs for chosen package.
+- **Workflow**: Write OpenAPI spec (or docblock annotations) first; validate responses in feature tests against that spec.
+
 ## Conventions
 
+- **Models**: When creating models, also create a factory and seeder (e.g. `sail artisan make:model X -mf -s`).
+- **Coordinates**: `UserSearch`, `LocationBookmark`, services, and DTOs (LocationResolver, PostcodeValidator, API responses) use `lat`, `lng` consistently.
+- **CoordinateMapper**: Use `App\Support\CoordinateMapper` when ingesting external API data. Maps `lat`/`lon`/`long`/`latitude`/`longitude` to our schema (`lat`, `lng`). Keeps internal schema consistent.
+- **Mappers**: Use enums for key→value mappings (e.g. region→location, incidentType→icon). Add mapper methods on the enum (e.g. `Region::warmCacheLocation()`, `IncidentType::icon()`) instead of config arrays.
+- **Imports**: Prefer `use` statements and imported class names over fully qualified names (FQN). Use `@use` in PHPDoc when referencing generics.
 - TDD: No production code without a failing test first
 - Prefer Pest syntax when using Pest
 - Use Form Requests for validation

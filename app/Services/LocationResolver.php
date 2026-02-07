@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
+use Throwable;
 
 /**
  * Resolves location strings (postcodes or place names) to coordinates and region.
@@ -30,7 +31,7 @@ class LocationResolver
     /**
      * Resolve a location string (postcode or place name) to coordinates and region.
      *
-     * @return array{valid: bool, in_area: bool, error?: string, lat?: float, long?: float, region?: string, outcode?: string, display_name?: string}
+     * @return array{valid: bool, in_area: bool, error?: string, lat?: float, lng?: float, region?: string, outcode?: string, display_name?: string}
      */
     public function resolve(string $input): array
     {
@@ -55,7 +56,7 @@ class LocationResolver
     /**
      * Geocode a place name via Nominatim (OpenStreetMap).
      *
-     * @return array{valid: bool, in_area: bool, error?: string, lat?: float, long?: float, region?: string, display_name?: string}
+     * @return array{valid: bool, in_area: bool, error?: string, lat?: float, lng?: float, region?: string, display_name?: string}
      */
     private function geocodePlaceName(string $placeName): array
     {
@@ -124,7 +125,7 @@ class LocationResolver
                     'in_area' => false,
                     'error' => 'That location is outside the South West. Flood Watch covers Bristol, Somerset, Devon and Cornwall.',
                     'lat' => $lat,
-                    'long' => $lon,
+                    'lng' => $lon,
                     'display_name' => $displayName,
                 ];
             }
@@ -133,11 +134,11 @@ class LocationResolver
                 'valid' => true,
                 'in_area' => true,
                 'lat' => $lat,
-                'long' => $lon,
+                'lng' => $lon,
                 'region' => $region,
                 'display_name' => $displayName,
             ];
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             report($e);
 
             return [
@@ -173,6 +174,86 @@ class LocationResolver
         }
 
         return false;
+    }
+
+    /**
+     * Reverse geocode coordinates to a location string and region.
+     *
+     * @return array{valid: bool, in_area: bool, location: string, region: ?string, error: ?string}
+     */
+    public function reverseFromCoords(float $lat, float $lng): array
+    {
+        $url = 'https://nominatim.openstreetmap.org/reverse';
+        $params = [
+            'lat' => $lat,
+            'lon' => $lng,
+            'format' => 'json',
+            'addressdetails' => 1,
+        ];
+
+        try {
+            $response = Http::timeout(10)
+                ->withHeaders(['User-Agent' => config('app.name').'/1.0'])
+                ->get($url, $params);
+
+            if ($response->tooManyRequests()) {
+                return [
+                    'valid' => false,
+                    'in_area' => false,
+                    'location' => '',
+                    'region' => null,
+                    'error' => 'Location lookup rate limit exceeded. Please wait a minute and try again.',
+                ];
+            }
+
+            if (! $response->successful()) {
+                return [
+                    'valid' => false,
+                    'in_area' => false,
+                    'location' => '',
+                    'region' => null,
+                    'error' => 'Could not get location. Try entering a postcode.',
+                ];
+            }
+
+            $data = $response->json();
+            $address = $data['address'] ?? [];
+            $displayName = $data['display_name'] ?? '';
+
+            if ($displayName === '') {
+                return [
+                    'valid' => false,
+                    'in_area' => false,
+                    'location' => '',
+                    'region' => null,
+                    'error' => 'Could not get location. Try entering a postcode.',
+                ];
+            }
+
+            $inArea = $this->isInSouthWest($lat, $lng, $address);
+            $region = $this->getRegionFromAddress($address);
+
+            /** @var string $location */
+            $location = $address['town'] ?? $address['city'] ?? $address['village'] ?? $address['county'] ?? $displayName;
+
+            return [
+                'valid' => true,
+                'in_area' => $inArea,
+                'location' => $location,
+                'region' => $region,
+                'error' => null,
+            ];
+        } catch (Throwable $e) {
+            report($e);
+
+            return [
+                'valid' => false,
+                'in_area' => false,
+                'location' => '',
+                'region' => null,
+                'error' => 'Could not get location. Try entering a postcode.',
+            ];
+        }
     }
 
     private function getRegionFromAddress(array $address): ?string

@@ -48,7 +48,7 @@ class PostcodeValidatorTest extends TestCase
         $this->assertTrue($result['valid']);
         $this->assertTrue($result['in_area']);
         $this->assertSame(51.0358, $result['lat']);
-        $this->assertSame(-2.8318, $result['long']);
+        $this->assertSame(-2.8318, $result['lng']);
     }
 
     public function test_out_of_area_postcode_is_rejected(): void

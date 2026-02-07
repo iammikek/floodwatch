@@ -5,6 +5,7 @@ namespace App\Roads\Services;
 use App\Roads\DTOs\RoadIncident;
 use App\Support\CircuitBreaker;
 use App\Support\CircuitOpenException;
+use App\Support\CoordinateMapper;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
@@ -136,7 +137,7 @@ class NationalHighwaysService
      * Extract flat incident data from a sitRoadOrCarriagewayOrLaneManagement record.
      *
      * @param  array<string, mixed>  $sit
-     * @return array{road: string, status: string, incidentType: string, delayTime: string, lat?: float, long?: float, startTime?: string, endTime?: string, locationDescription?: string, managementType?: string, isFloodRelated?: bool}
+     * @return array{road: string, status: string, incidentType: string, delayTime: string, lat?: float, lng?: float, startTime?: string, endTime?: string, locationDescription?: string, managementType?: string, isFloodRelated?: bool}
      */
     private function extractIncidentFromDatexRecord(array $sit): array
     {
@@ -162,8 +163,9 @@ class NationalHighwaysService
             'delayTime' => is_string($delayTime) ? $delayTime : '',
         ];
         if ($coords !== null) {
-            $flat['lat'] = $coords[0];
-            $flat['long'] = $coords[1];
+            $mapped = CoordinateMapper::fromPointArray($coords);
+            $flat['lat'] = $mapped['lat'];
+            $flat['lng'] = $mapped['lng'];
         }
         if (is_string($startTime) && $startTime !== '') {
             $flat['startTime'] = $startTime;

@@ -93,4 +93,4 @@ Review findings and recommendations for production readiness.
 **Recommendation**:
 - Run `sail test --coverage` periodically; add coverage report to CI if feasible
 - Ensure critical paths covered: `FloodWatchService` (tool calling, cache hit/miss), `RiskCorrelationService`, `LocationResolver`, circuit breaker behaviour
-- Document test layout in ARCHITECTURE or AGENTS.md
+- Document test layout in ARCHITECTURE or agents.md

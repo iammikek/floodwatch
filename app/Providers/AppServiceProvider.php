@@ -29,5 +29,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('viewPulse', function (?User $user): bool {
             return $user !== null && $user->isAdmin();
         });
+
+        Gate::define('accessAdmin', fn (?User $user): bool => $user !== null && $user->isAdmin());
     }
 }

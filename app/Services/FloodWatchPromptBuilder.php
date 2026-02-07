@@ -57,7 +57,7 @@ class FloodWatchPromptBuilder
                                 'type' => 'number',
                                 'description' => 'Latitude (default: 51.0358 for Langport)',
                             ],
-                            'long' => [
+                            'lng' => [
                                 'type' => 'number',
                                 'description' => 'Longitude (default: -2.8318 for Langport)',
                             ],
@@ -103,7 +103,7 @@ class FloodWatchPromptBuilder
                                 'type' => 'number',
                                 'description' => 'Latitude (default: 51.0358 for Langport)',
                             ],
-                            'long' => [
+                            'lng' => [
                                 'type' => 'number',
                                 'description' => 'Longitude (default: -2.8318 for Langport)',
                             ],
