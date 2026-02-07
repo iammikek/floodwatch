@@ -122,9 +122,9 @@ class FloodWatchDashboard extends Component
 
         $message = $this->buildMessage($locationTrimmed, $validation);
         $cacheKey = $locationTrimmed !== '' ? $locationTrimmed : null;
-        $userLat = $validation['lat'] ?? null;
-        $userLng = $validation['lng'] ?? null;
-        $region = $validation['region'] ?? ($validation === null ? 'somerset' : null);
+        $userLat = data_get($validation, 'lat');
+        $userLng = data_get($validation, 'lng');
+        $region = $validation === null ? 'somerset' : data_get($validation, 'region');
 
         try {
             $onProgress = fn (string $status) => $streamStatus($status);
