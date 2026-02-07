@@ -16,7 +16,7 @@ class LocationBookmark extends Model
         'label',
         'location',
         'lat',
-        'long',
+        'lng',
         'region',
         'is_default',
     ];

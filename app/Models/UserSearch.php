@@ -16,7 +16,7 @@ class UserSearch extends Model
         'session_id',
         'location',
         'lat',
-        'long',
+        'lng',
         'region',
         'searched_at',
     ];

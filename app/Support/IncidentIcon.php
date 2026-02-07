@@ -2,7 +2,8 @@
 
 namespace App\Support;
 
-use Illuminate\Support\Facades\Lang;
+use App\Enums\IncidentStatus;
+use App\Enums\IncidentType;
 use Illuminate\Support\Str;
 
 class IncidentIcon
@@ -13,9 +14,9 @@ class IncidentIcon
             return '';
         }
 
-        $key = 'flood-watch.incident_status.'.$status;
+        $enum = IncidentStatus::tryFromString($status);
 
-        return Lang::has($key) ? __($key) : Str::title(self::splitCamelCase($status));
+        return $enum !== null ? $enum->label() : Str::title(self::splitCamelCase($status));
     }
 
     public static function typeLabel(?string $type): string
@@ -24,42 +25,32 @@ class IncidentIcon
             return '';
         }
 
-        $key = 'flood-watch.incident_type.'.$type;
+        $enum = IncidentType::tryFromString($type);
 
-        return Lang::has($key) ? __($key) : Str::title(self::splitCamelCase($type));
+        return $enum !== null ? $enum->label() : Str::title(self::splitCamelCase($type));
     }
 
     /**
      * Resolve an emoji icon for a road incident based on incidentType and managementType.
-     * Matches DATEX II values (constructionWork, sweepingOfRoad, flooding, etc.)
-     * and UK road sign equivalents (🚧 road works, 🚫 closed).
+     * Uses IncidentType enum for known types; falls back to config for API-specific values.
      */
     public static function forIncident(?string $incidentType, ?string $managementType = null): string
     {
-        $icons = config('flood-watch.incident_icons', []);
-        $default = $icons['default'] ?? '🛣️';
-
-        $search = array_filter([
-            $incidentType,
-            $managementType,
-        ]);
+        $search = array_filter([$incidentType, $managementType]);
 
         foreach ($search as $value) {
             if ($value === '' || $value === null) {
                 continue;
             }
-            $lower = strtolower($value);
-            foreach ($icons as $key => $icon) {
-                if ($key === 'default') {
-                    continue;
-                }
-                if (strtolower($key) === $lower || str_contains($lower, strtolower($key))) {
-                    return $icon;
-                }
+            $enum = IncidentType::tryFromString($value);
+            if ($enum !== null) {
+                return $enum->icon();
             }
         }
 
-        return $default;
+        $icons = config('flood-watch.incident_icons', []);
+
+        return $icons['default'] ?? '🛣️';
     }
 
     private static function splitCamelCase(string $value): string

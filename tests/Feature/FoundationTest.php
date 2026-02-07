@@ -18,7 +18,7 @@ test('user_searches table exists and model can be created', function () {
         'user_id' => $user->id,
         'location' => 'Langport',
         'lat' => 51.0358,
-        'long' => -2.8318,
+        'lng' => -2.8318,
         'region' => 'somerset',
         'searched_at' => now(),
     ]);
@@ -35,7 +35,7 @@ test('user_search can be created for guest with session_id', function () {
         'session_id' => 'test-session-123',
         'location' => 'TA10 0',
         'lat' => 51.0358,
-        'long' => -2.8318,
+        'lng' => -2.8318,
         'region' => 'somerset',
         'searched_at' => now(),
     ]);
@@ -52,7 +52,7 @@ test('location_bookmarks table exists and model can be created', function () {
         'label' => 'Home',
         'location' => 'Langport',
         'lat' => 51.0358,
-        'long' => -2.8318,
+        'lng' => -2.8318,
         'region' => 'somerset',
         'is_default' => true,
     ]);
@@ -69,7 +69,7 @@ test('user has userSearches and locationBookmarks relationships', function () {
         'user_id' => $user->id,
         'location' => 'Langport',
         'lat' => 51.04,
-        'long' => -2.83,
+        'lng' => -2.83,
         'searched_at' => now(),
     ]);
 

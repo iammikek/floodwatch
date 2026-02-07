@@ -22,7 +22,7 @@ class LocationBookmarkFactory extends Factory
             'label' => fake()->word(),
             'location' => fake()->city(),
             'lat' => 51.0358,
-            'long' => -2.8318,
+            'lng' => -2.8318,
             'region' => 'somerset',
             'is_default' => false,
         ];

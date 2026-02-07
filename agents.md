@@ -94,7 +94,7 @@ tests/
 | `sail artisan make:test X` | Create feature test |
 | `sail artisan make:test X --unit` | Create unit test |
 | `sail artisan make:controller X` | Create controller |
-| `sail artisan make:model X -m` | Create model + migration |
+| `sail artisan make:model X -mf -s` | Create model + migration + factory + seeder |
 | `sail artisan boost:install` | Install Laravel Boost (after `composer require laravel/boost --dev`) |
 | `sail artisan boost:update` | Refresh Boost guidelines and resources |
 
@@ -107,6 +107,8 @@ tests/
 
 ## Conventions
 
+- **Models**: When creating models, also create a factory and seeder (e.g. `sail artisan make:model X -mf -s`).
+- **Mappers**: Use enums for key→value mappings (e.g. region→location, incidentType→icon). Add mapper methods on the enum (e.g. `Region::warmCacheLocation()`, `IncidentType::icon()`) instead of config arrays.
 - TDD: No production code without a failing test first
 - Prefer Pest syntax when using Pest
 - Use Form Requests for validation

@@ -21,7 +21,7 @@ class UserSearchFactory extends Factory
             'user_id' => User::factory(),
             'location' => fake()->city(),
             'lat' => 51.0358,
-            'long' => -2.8318,
+            'lng' => -2.8318,
             'region' => 'somerset',
             'searched_at' => now(),
         ];

@@ -28,7 +28,7 @@ erDiagram
         string session_id "nullable"
         string location
         float lat
-        float long
+        float lng
         string region "nullable"
         timestamp searched_at
         timestamps created_at updated_at
@@ -39,7 +39,7 @@ erDiagram
         string label
         string location
         float lat
-        float long
+        float lng
         string region "nullable"
         boolean is_default
         timestamps created_at updated_at
@@ -99,7 +99,7 @@ Stores locations users have searched. Guests: `user_id = null`, `session_id` set
 | session_id | string nullable | For guests; deduplication |
 | location | string | Postcode, place name, or "Current location" |
 | lat | float | Resolved latitude |
-| long | float | Resolved longitude |
+| lng | float | Resolved longitude |
 | region | string nullable | somerset, bristol, devon, cornwall |
 | searched_at | timestamp | When the search ran |
 | created_at | timestamp | |
@@ -122,7 +122,7 @@ Registered users can bookmark multiple locations (home, work, parents). One per 
 | label | string | e.g. "Home", "Work", "Parents" |
 | location | string | Postcode or place name |
 | lat | float | Resolved latitude |
-| long | float | Resolved longitude |
+| lng | float | Resolved longitude |
 | region | string nullable | somerset, bristol, devon, cornwall |
 | is_default | boolean | default false; one per user |
 | created_at | timestamp | |
