@@ -102,7 +102,8 @@ tests/
 
 ## Key Files
 
-- `docs/ACCEPTANCE_CRITERIA.md` - Success checklist: latency, correlation, graceful failure, attribution
+- `docs/PLAN.md` - Development plan (backlog, roadmap)
+- `docs/ACCEPTANCE_CRITERIA.md` - Success checklist
 - `compose.yaml` - Sail Docker config
 - `phpunit.xml` - Test config
 - `routes/web.php`, `routes/api.php` - Routes

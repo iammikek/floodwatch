@@ -155,4 +155,4 @@ See **`docs/LLM_DATA_FLOW.md`** for a detailed description of how data flows to 
 | Correlation rules | `RiskCorrelationService` + config |
 | Prompts | `FloodWatchPromptBuilder` + `resources/prompts/` |
 | Cache warm | `flood-watch:warm-cache` command |
-| Development plan | `docs/DEVELOPMENT.md` |
+| Development plan | `docs/PLAN.md` |

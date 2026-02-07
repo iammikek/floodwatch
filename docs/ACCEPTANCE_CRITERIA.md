@@ -217,5 +217,7 @@ All resolve to coordinates used for flood, road, and forecast checks.
 ## Reference
 
 - **Brief**: `docs/BRIEF.md`
+- **Plan**: `docs/PLAN.md`
+- **Wireframes**: `docs/WIREFRAMES.md`
 - **Architecture**: `docs/ARCHITECTURE.md`
 - **LLM data flow**: `docs/LLM_DATA_FLOW.md`

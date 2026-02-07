@@ -101,7 +101,7 @@ sail test           # Run tests
 sail artisan ...    # Artisan commands
 ```
 
-Development plan (backlog, milestones): `docs/DEVELOPMENT.md`
+Development plan (backlog, roadmap): `docs/PLAN.md`
 
 ## Build Pipeline
 
