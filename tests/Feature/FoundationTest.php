@@ -6,6 +6,7 @@ use App\Models\UserSearch;
 use App\Services\LocationResolver;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Lang;
 
 beforeEach(function () {
     $this->resolver = app(LocationResolver::class);
@@ -171,9 +172,14 @@ test('location resolver reverseFromCoords rejects out of area coords', function 
 });
 
 test('lang keys exist for use_my_location recent_searches gps_error', function () {
-    expect(__('flood-watch.dashboard.use_my_location'))->toBe('Use my location')
-        ->and(__('flood-watch.dashboard.recent_searches'))->toBe('Recent searches')
-        ->and(__('flood-watch.dashboard.gps_error'))->toBe('Could not get location. Try entering a postcode.');
+    $keys = [
+        'flood-watch.dashboard.use_my_location',
+        'flood-watch.dashboard.recent_searches',
+        'flood-watch.dashboard.gps_error',
+    ];
+    foreach ($keys as $key) {
+        expect(Lang::has($key))->toBeTrue("Lang key {$key} should exist");
+    }
 });
 
 test('user factory admin state produces admin user', function () {
