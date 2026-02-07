@@ -65,9 +65,9 @@ class RiverLevelService
     /**
      * @return array<int, array{notation: string, label: string, riverName: string, town: string, lat: float, lng: float, stationType: string, typicalRangeLow?: float, typicalRangeHigh?: float}>
      */
-    private function fetchStations(string $baseUrl, int $timeout, float $lat, float $long, int $radiusKm): array
+    private function fetchStations(string $baseUrl, int $timeout, float $lat, float $lng, int $radiusKm): array
     {
-        $url = "{$baseUrl}/id/stations?lat={$lat}&long={$long}&dist={$radiusKm}&_view=full";
+        $url = "{$baseUrl}/id/stations?lat={$lat}&long={$lng}&dist={$radiusKm}&_view=full";
 
         $retryTimes = config('flood-watch.environment_agency.retry_times', 3);
         $retrySleep = config('flood-watch.environment_agency.retry_sleep_ms', 100);
