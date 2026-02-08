@@ -178,7 +178,7 @@ class FloodWatchDashboard extends Component
     {
         if (Auth::guest()) {
             $key = 'flood-watch-route-guest:'.request()->ip();
-            $decaySeconds = 900;
+            $decaySeconds = 1;
             if (RateLimiter::tooManyAttempts($key, 1)) {
                 $this->routeCheckResult = [
                     'verdict' => 'clear',
@@ -307,7 +307,7 @@ class FloodWatchDashboard extends Component
 
         if (Auth::guest()) {
             $key = 'flood-watch-guest:'.request()->ip();
-            $decaySeconds = 900;
+            $decaySeconds = 1;
 
             if (RateLimiter::tooManyAttempts($key, 1)) {
                 $seconds = RateLimiter::availableIn($key);

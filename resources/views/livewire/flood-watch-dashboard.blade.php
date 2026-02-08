@@ -74,6 +74,34 @@
             :route-check-result="$routeCheckResult"
         />
 
+        @php
+            $routeGeometry = $routeCheckResult['route_geometry'] ?? null;
+            $hasRouteGeometry = $routeGeometry && count($routeGeometry) > 0;
+            $mapCenterFromRoute = null;
+            if ($hasRouteGeometry && !$mapCenter) {
+                $lats = array_column($routeGeometry, 1);
+                $lngs = array_column($routeGeometry, 0);
+                $mapCenterFromRoute = ['lat' => (min($lats) + max($lats)) / 2, 'lng' => (min($lngs) + max($lngs)) / 2];
+            }
+            $mapCenterForRoute = $mapCenter ?? $mapCenterFromRoute;
+            $routeFloods = $hasRouteGeometry ? ($routeCheckResult['floods_on_route'] ?? []) : [];
+            $routeIncidents = $hasRouteGeometry ? ($routeCheckResult['incidents_on_route'] ?? []) : [];
+        @endphp
+
+        @if ($hasRouteGeometry && $mapCenterFromRoute && !$assistantResponse)
+            <div class="mt-6 lg:block hidden" wire:key="route-map-{{ md5(json_encode($routeGeometry)) }}">
+                <x-flood-watch.flood-map
+                    :map-center="$mapCenterFromRoute"
+                    :river-levels="[]"
+                    :floods="$routeFloods"
+                    :incidents="$routeIncidents"
+                    :has-user-location="false"
+                    :last-checked="null"
+                    :route-geometry="$routeGeometry"
+                />
+            </div>
+        @endif
+
         <x-flood-watch.error-banner
             :error="$error"
             :retry-after-timestamp="$retryAfterTimestamp"
@@ -101,6 +129,7 @@
                     :incidents="$incidents"
                     :has-user-location="$hasUserLocation"
                     :last-checked="$lastChecked"
+                    :route-geometry="$routeCheckResult['route_geometry'] ?? null"
                 />
 
                 <x-flood-watch.flood-risk
