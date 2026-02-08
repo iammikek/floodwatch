@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Models\LocationBookmark;
 use App\Models\UserSearch;
 use App\Services\FloodWatchService;
 use App\Services\FloodWatchTrendService;
@@ -52,6 +53,34 @@ class FloodWatchDashboard extends Component
     public bool $autoRefreshEnabled = false;
 
     /**
+     * User's location bookmarks (when logged in).
+     *
+     * @return array<int, array{id: int, label: string, location: string, lat: float, lng: float, region: ?string, is_default: bool}>
+     */
+    public function getBookmarksProperty(): array
+    {
+        if (Auth::guest()) {
+            return [];
+        }
+
+        return Auth::user()->locationBookmarks()
+            ->orderByDesc('is_default')
+            ->orderBy('label')
+            ->get()
+            ->map(fn (LocationBookmark $b) => [
+                'id' => $b->id,
+                'label' => $b->label,
+                'location' => $b->location,
+                'lat' => $b->lat,
+                'lng' => $b->lng,
+                'region' => $b->region,
+                'is_default' => $b->is_default,
+            ])
+            ->values()
+            ->all();
+    }
+
+    /**
      * Last 5 searches for the current user or session.
      *
      * @return array<int, array{location: string, lat: float, lng: float, region: ?string}>
@@ -90,6 +119,32 @@ class FloodWatchDashboard extends Component
         );
     }
 
+    public function selectBookmark(int $bookmarkId): void
+    {
+        $bookmark = Auth::user()?->locationBookmarks()->find($bookmarkId);
+        if ($bookmark === null) {
+            return;
+        }
+
+        $this->location = $bookmark->location;
+        $validation = [
+            'valid' => true,
+            'in_area' => true,
+            'lat' => $bookmark->lat,
+            'lng' => $bookmark->lng,
+            'region' => $bookmark->region,
+            'display_name' => $bookmark->location,
+        ];
+
+        $this->performSearch(
+            app(FloodWatchService::class),
+            app(LocationResolver::class),
+            app(FloodWatchTrendService::class),
+            app(UserSearchService::class),
+            $validation
+        );
+    }
+
     public function mount(): void
     {
         if (Auth::guest()) {
@@ -98,6 +153,11 @@ class FloodWatchDashboard extends Component
                 $seconds = RateLimiter::availableIn($key);
                 $this->error = __('flood-watch.error.guest_rate_limit');
                 $this->retryAfterTimestamp = time() + $seconds;
+            }
+        } elseif (Auth::user()->locationBookmarks()->where('is_default', true)->exists()) {
+            $default = Auth::user()->locationBookmarks()->where('is_default', true)->first();
+            if ($default !== null && $this->location === '') {
+                $this->location = $default->location;
             }
         }
     }

@@ -798,4 +798,99 @@ class FloodWatchDashboardTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Use my location', false);
     }
+
+    public function test_dashboard_pre_loads_default_bookmark_when_logged_in(): void
+    {
+        $user = User::factory()->create();
+        $user->locationBookmarks()->create([
+            'label' => 'Home',
+            'location' => 'Langport',
+            'lat' => 51.0358,
+            'lng' => -2.8318,
+            'region' => 'somerset',
+            'is_default' => true,
+        ]);
+
+        Livewire::actingAs($user)
+            ->test('flood-watch-dashboard')
+            ->assertSet('location', 'Langport');
+    }
+
+    public function test_dashboard_shows_bookmarks_when_logged_in(): void
+    {
+        $user = User::factory()->create();
+        $user->locationBookmarks()->create([
+            'label' => 'Home',
+            'location' => 'Langport',
+            'lat' => 51.0358,
+            'lng' => -2.8318,
+            'region' => 'somerset',
+            'is_default' => true,
+        ]);
+
+        Livewire::actingAs($user)
+            ->test('flood-watch-dashboard')
+            ->assertSee('Home', false)
+            ->assertSee('Langport', false);
+    }
+
+    public function test_select_bookmark_by_id_runs_search_and_shows_results(): void
+    {
+        Config::set('openai.api_key', 'test-key');
+        Config::set('flood-watch.national_highways.api_key', 'test-key');
+        Config::set('flood-watch.national_highways.base_url', 'https://api.example.com');
+
+        Http::fake(function ($request) {
+            if (str_contains($request->url(), 'environment.data.gov.uk')) {
+                return Http::response(['items' => []], 200);
+            }
+            if (str_contains($request->url(), 'api.example.com')) {
+                return Http::response(['D2Payload' => ['situation' => []]], 200);
+            }
+            if (str_contains($request->url(), 'fgs.metoffice.gov.uk')) {
+                return Http::response(['statement' => []], 200);
+            }
+            if (str_contains($request->url(), 'open-meteo.com')) {
+                return Http::response(['daily' => ['time' => [], 'weathercode' => [], 'temperature_2m_max' => [], 'temperature_2m_min' => [], 'precipitation_sum' => []]], 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
+        $finalResponse = CreateResponse::fake([
+            'choices' => [
+                [
+                    'index' => 0,
+                    'message' => [
+                        'role' => 'assistant',
+                        'content' => 'Bookmark search for Langport complete.',
+                        'tool_calls' => [],
+                    ],
+                    'logprobs' => null,
+                    'finish_reason' => 'stop',
+                ],
+            ],
+        ]);
+
+        OpenAI::fake([$finalResponse]);
+
+        $user = User::factory()->create();
+        $bookmark = $user->locationBookmarks()->create([
+            'label' => 'Home',
+            'location' => 'Langport',
+            'lat' => 51.0358,
+            'lng' => -2.8318,
+            'region' => 'somerset',
+            'is_default' => true,
+        ]);
+
+        Livewire::actingAs($user)
+            ->test('flood-watch-dashboard')
+            ->call('selectBookmark', $bookmark->id)
+            ->assertSet('location', 'Langport')
+            ->assertSet('assistantResponse', 'Bookmark search for Langport complete.')
+            ->assertSet('mapCenter', ['lat' => 51.0358, 'lng' => -2.8318])
+            ->assertSet('hasUserLocation', true)
+            ->assertSet('error', null);
+    }
 }

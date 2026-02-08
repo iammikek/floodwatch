@@ -2,49 +2,53 @@
 
 Registered users can bookmark multiple locations (home, work, parents). One can be the default (pre-loaded on app open).
 
+**Status**: ✅ Complete
+
 **Prerequisite**: [00-foundation.md](00-foundation.md) – migration and model already exist.
 
 **Schema**: `docs/SCHEMA.md` – `location_bookmarks` table
+
+**Key files**: `LocationBookmarkController`, `StoreLocationBookmarkRequest`, `UpdateLocationBookmarkRequest`, `profile/partials/bookmarks-form.blade.php`, `config/flood-watch.php` (`bookmarks_max_per_user`)
 
 ---
 
 ## Acceptance Criteria
 
-- [ ] Registered users can add, edit, delete bookmarks from profile
-- [ ] One bookmark per user can be "default"; setting default clears others
-- [ ] Location must resolve via LocationResolver and be in South West
-- [ ] Dashboard shows bookmark dropdown when logged in; selecting bookmark loads that location
-- [ ] Default bookmark pre-loads on app open (mount)
-- [ ] Max 10 bookmarks per user (configurable)
-- [ ] Feature tests: CRUD bookmarks; default uniqueness; dashboard loads default
-- [ ] `sail test` passes
+- [x] Registered users can add, edit, delete bookmarks from profile
+- [x] One bookmark per user can be "default"; setting default clears others
+- [x] Location must resolve via LocationResolver and be in South West
+- [x] Dashboard shows bookmark dropdown when logged in; selecting bookmark loads that location
+- [x] Default bookmark pre-loads on app open (mount)
+- [x] Max 10 bookmarks per user (configurable)
+- [x] Feature tests: CRUD bookmarks; default uniqueness; dashboard loads default
+- [x] `sail test` passes
 
 ---
 
 ## Profile UI
 
-**Location**: `resources/views/profile/edit.blade.php` (or create profile section for Flood Watch)
+**Location**: `resources/views/profile/edit.blade.php`, `resources/views/profile/partials/bookmarks-form.blade.php`
 
 - List bookmarks with Edit/Delete
 - Add bookmark: input label + location (reuse LocationResolver or postcode input)
 - "Set as default" – one per user
-- Wire to `ProfileController` or `LocationBookmarkController`
+- **Implemented**: `LocationBookmarkController` (store, update, destroy), routes under auth
 
-**Routes**: `Route::resource('bookmarks', LocationBookmarkController::class)` under auth, or add methods to ProfileController.
+**Routes**: `POST /bookmarks`, `PATCH /bookmarks/{bookmark}`, `DELETE /bookmarks/{bookmark}`
 
 ---
 
 ## Dashboard Integration
 
-- **Location dropdown**: When logged in, show bookmarks in header/dropdown (see wireframes)
-- **Default on mount**: If user has default bookmark, pre-fill `$location` and optionally auto-search
-- **FloodWatchDashboard**: Add `$bookmarks` property; load in `mount()` when auth; pass to view
+- **Bookmark buttons**: When logged in, bookmarks shown as quick-select buttons above recent searches; selecting one loads location and runs search
+- **Default on mount**: If user has default bookmark, pre-fill `$location` (no auto-search)
+- **FloodWatchDashboard**: `getBookmarksProperty()`, `selectBookmark()`, default pre-load in `mount()`
 
 ---
 
 ## Wireframe Placement (incremental UI)
 
-Place in revised wireframe position so changes are visible as you build:
+**Implemented**: Bookmark buttons above location input (same row as recent searches). Future: dropdown in header per wireframe.
 
 - **Header location bar** (logged in): `[Langport ▼] 📍 TA10 9 [Change] [Use my location] [Profile]`
   - Dropdown lists bookmarks; selecting one loads location and runs search
@@ -64,7 +68,6 @@ Place in revised wireframe position so changes are visible as you build:
 
 ## Tests
 
-- Create, update, delete bookmark
-- Set default clears other defaults
-- Dashboard shows bookmarks when logged in
-- Default pre-loads on mount
+- **LocationBookmarkControllerTest**: Guest rejection, create, first/second default, set default, delete, authorization, max limit
+- **FloodWatchDashboardTest**: Default pre-loads on mount, bookmarks shown when logged in
+- **LocationBookmarkTest** (model): Factory, casts, default uniqueness, DB constraint
