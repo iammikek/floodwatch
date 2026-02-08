@@ -197,7 +197,7 @@ class FloodWatchDashboard extends Component
             );
 
             $userSearchService->record(
-                $locationTrimmed !== '' ? $locationTrimmed : __('flood-watch.dashboard.default_location'),
+                $locationTrimmed !== '' ? $locationTrimmed : config('flood-watch.default_location_name'),
                 $userLat,
                 $userLng,
                 $region,

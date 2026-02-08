@@ -82,6 +82,12 @@ return [
     'default_radius_km' => (int) env('FLOOD_WATCH_RADIUS_KM', 15),
 
     /*
+    | Canonical label for default (no-location) searches. Stored in user_searches.
+    | Use locale-independent value; translate at display time via __('flood-watch.dashboard.default_location').
+    */
+    'default_location_name' => env('FLOOD_WATCH_DEFAULT_LOCATION_NAME', 'Somerset Levels'),
+
+    /*
     |--------------------------------------------------------------------------
     | Environment Agency API
     |--------------------------------------------------------------------------

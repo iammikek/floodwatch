@@ -86,12 +86,7 @@ test('admin dashboard displays top regions when user searches exist', function (
 
     $response->assertOk();
     $response->assertSee('Top regions by search count', false);
-    $response->assertSee('Somerset', false);
-    $response->assertSee('Bristol', false);
-    $response->assertSee('Devon', false);
-    $response->assertSee('3', false);
-    $response->assertSee('2', false);
-    $response->assertSee('1', false);
+    $response->assertSeeInOrder(['Somerset', '3', 'Bristol', '2', 'Devon', '1'], false);
 });
 
 test('admin dashboard displays llm cost section', function () {
