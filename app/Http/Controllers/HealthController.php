@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Concurrency;
 use Illuminate\Support\Facades\Http;
 use Throwable;
 
@@ -14,11 +15,18 @@ class HealthController extends Controller
 
     public function __invoke(Request $request): JsonResponse
     {
+        [$environmentAgency, $floodForecast, $weather, $nationalHighways] = Concurrency::run([
+            fn () => $this->checkEnvironmentAgency(),
+            fn () => $this->checkFloodForecast(),
+            fn () => $this->checkWeather(),
+            fn () => $this->checkNationalHighways(),
+        ]);
+
         $checks = [
-            'environment_agency' => $this->checkEnvironmentAgency(),
-            'flood_forecast' => $this->checkFloodForecast(),
-            'weather' => $this->checkWeather(),
-            'national_highways' => $this->checkNationalHighways(),
+            'environment_agency' => $environmentAgency,
+            'flood_forecast' => $floodForecast,
+            'weather' => $weather,
+            'national_highways' => $nationalHighways,
             'cache' => $this->checkCache(),
         ];
 

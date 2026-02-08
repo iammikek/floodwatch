@@ -31,10 +31,11 @@ class FloodWatchService
      * Results are cached to avoid hammering the APIs. Use $cacheKey to scope the cache (e.g. postcode).
      *
      * @param  array<int, array{role: string, content: string}>  $conversation  Previous messages (optional)
+     * @param  int|null  $userId  User ID for LLM request recording (optional)
      * @param  callable(string): void|null  $onProgress  Optional callback for progress updates (e.g. for streaming to UI)
-     * @return array{response: string, floods: array, incidents: array, forecast: array, weather: array, lastChecked: string}
+     * @return array{response: string, floods: array, incidents: array, forecast: array, weather: array, riverLevels: array, lastChecked: string}
      */
-    public function chat(string $userMessage, array $conversation = [], ?string $cacheKey = null, ?float $userLat = null, ?float $userLng = null, ?string $region = null, ?callable $onProgress = null): array
+    public function chat(string $userMessage, array $conversation = [], ?string $cacheKey = null, ?float $userLat = null, ?float $userLng = null, ?string $region = null, ?int $userId = null, ?callable $onProgress = null): array
     {
         $emptyResult = fn (string $response, ?string $lastChecked = null): array => [
             'response' => $response,
@@ -106,6 +107,8 @@ class FloodWatchService
             Log::debug('FloodWatch OpenAI payload content', ['payload' => LogMasker::maskOpenAiPayload($payload)]);
 
             $response = OpenAI::chat()->create($payload);
+
+            $this->dispatchRecordLlmRequest($response, $userId, $region);
 
             $choice = $response->choices[0] ?? null;
             if (! $choice) {
@@ -219,10 +222,10 @@ class FloodWatchService
     private function storeAndReturn(string $cacheKey, array $result): array
     {
         $result['lastChecked'] = now()->toIso8601String();
-        $ttl = config('flood-watch.cache_ttl_minutes', 15) * 60;
-        if ($ttl > 0) {
+        $cacheMinutes = config('flood-watch.cache_ttl_minutes', 15);
+        if ($cacheMinutes > 0) {
             $store = $this->resolveCacheStore();
-            $this->cachePut($store, $cacheKey, $result, $ttl);
+            $this->cachePut($store, $cacheKey, $result, now()->addMinutes($cacheMinutes));
         }
 
         return $result;
@@ -247,7 +250,7 @@ class FloodWatchService
         }
     }
 
-    private function cachePut(string $store, string $key, array $value, int $ttl): void
+    private function cachePut(string $store, string $key, array $value, \DateTimeInterface|int $ttl): void
     {
         try {
             Cache::store($store)->put($key, $value, $ttl);
@@ -585,5 +588,24 @@ class FloodWatchService
         }
 
         return '';
+    }
+
+    private function dispatchRecordLlmRequest(mixed $response, ?int $userId, ?string $region): void
+    {
+        try {
+            $usage = $response->usage;
+            $payload = [
+                'user_id' => $userId,
+                'model' => $response->model ?? null,
+                'input_tokens' => $usage?->promptTokens ?? 0,
+                'output_tokens' => $usage?->completionTokens ?? 0,
+                'openai_id' => $response->id ?? null,
+                'region' => $region,
+            ];
+
+            \App\Jobs\RecordLlmRequestJob::dispatch($payload);
+        } catch (Throwable $e) {
+            Log::warning('FloodWatch failed to record LLM request', ['error' => $e->getMessage()]);
+        }
     }
 }

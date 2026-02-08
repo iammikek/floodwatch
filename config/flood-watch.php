@@ -54,6 +54,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | LLM Cost Tracking (Admin Dashboard)
+    |--------------------------------------------------------------------------
+    |
+    | Uses OpenAI Usage API. Budget in USD; alert at 80%.
+    | Token pricing: gpt-4o-mini input $0.15/1M, output $0.60/1M.
+    | llm_budget_initial: prepaid credit (e.g. 10 for $10). Remaining = initial - spend.
+    |
+    */
+
+    'llm_cost_input_per_m' => (float) env('FLOOD_WATCH_LLM_COST_INPUT_PER_M', 0.15),
+    'llm_cost_output_per_m' => (float) env('FLOOD_WATCH_LLM_COST_OUTPUT_PER_M', 0.60),
+    'llm_budget_monthly' => (float) env('FLOOD_WATCH_LLM_BUDGET_MONTHLY', 0),
+    'llm_budget_initial' => (float) env('FLOOD_WATCH_LLM_BUDGET_INITIAL', 0),
+
+    /*
+    |--------------------------------------------------------------------------
     | Default Coordinates (Langport, South West)
     |--------------------------------------------------------------------------
     |
@@ -160,6 +176,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Health Check Cache (Admin Dashboard)
+    |--------------------------------------------------------------------------
+    |
+    | TTL in seconds for cached API health checks on the admin dashboard.
+    | Reduces load and latency when upstream APIs are slow.
+    |
+    */
+
+    'health_check_cache_ttl' => (int) env('FLOOD_WATCH_HEALTH_CHECK_CACHE_TTL', 60),
+
+    /*
+    |--------------------------------------------------------------------------
     | Circuit Breaker
     |--------------------------------------------------------------------------
     |
@@ -187,6 +215,17 @@ return [
     'trends_enabled' => env('FLOOD_WATCH_TRENDS_ENABLED', true),
     'trends_retention_days' => (int) env('FLOOD_WATCH_TRENDS_RETENTION_DAYS', 30),
     'trends_key' => env('FLOOD_WATCH_TRENDS_KEY', 'flood-watch:trends'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | LLM Requests Retention
+    |--------------------------------------------------------------------------
+    |
+    | Prune llm_requests older than this many days. Set to 0 to disable pruning.
+    |
+    */
+
+    'llm_requests_retention_days' => (int) env('FLOOD_WATCH_LLM_REQUESTS_RETENTION_DAYS', 90),
 
     /*
     |--------------------------------------------------------------------------

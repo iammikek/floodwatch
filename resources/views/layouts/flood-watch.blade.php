@@ -20,6 +20,7 @@
                     <div class="flex items-center gap-3">
                         <span class="text-sm text-slate-600">{{ Auth::user()->name }}</span>
                         @if (Auth::user()->isAdmin())
+                            <a href="{{ route('admin.dashboard') }}" class="text-sm text-blue-600 hover:text-blue-700">{{ __('Admin') }}</a>
                             <a href="{{ url('/pulse') }}" class="text-sm text-blue-600 hover:text-blue-700">{{ __('Pulse') }}</a>
                         @endif
                         <a href="{{ route('profile.edit') }}" class="text-sm text-slate-600 hover:text-slate-800">{{ __('Profile') }}</a>

@@ -17,6 +17,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | OpenAI Organization Admin Key (Usage API)
+    |--------------------------------------------------------------------------
+    |
+    | Optional. The Usage API (admin dashboard LLM cost) requires an Admin API key
+    | (sk-admin-...). Create at platform.openai.com/settings/organization/admin-keys.
+    | Supports OPENAI_ORG_ADMIN_KEY or OPENAI_ORG_API_KEY.
+    |
+    */
+
+    'org_api_key' => env('OPENAI_ORG_ADMIN_KEY') ?: env('OPENAI_ORG_API_KEY'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Default Model
     |--------------------------------------------------------------------------
     |

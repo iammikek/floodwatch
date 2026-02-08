@@ -299,6 +299,12 @@ class FloodWatchDashboardTest extends TestCase
         Config::set('openai.api_key', 'test-key');
         Config::set('app.debug', true);
 
+        Http::fake([
+            '*api.ffc-environment-agency.fgs.metoffice.gov.uk*' => Http::response(['statement' => []], 200),
+            '*api.open-meteo.com*' => Http::response(['daily' => ['time' => [], 'weathercode' => [], 'temperature_2m_max' => [], 'temperature_2m_min' => [], 'precipitation_sum' => []]], 200),
+            '*environment.data.gov.uk*' => Http::response(['items' => []], 200),
+        ]);
+
         OpenAI::fake([new \RuntimeException('OpenAI API rate limit exceeded')]);
 
         $component = Livewire::test('flood-watch-dashboard')
@@ -314,6 +320,12 @@ class FloodWatchDashboardTest extends TestCase
         Config::set('openai.api_key', 'test-key');
         Config::set('app.debug', false);
 
+        Http::fake([
+            '*api.ffc-environment-agency.fgs.metoffice.gov.uk*' => Http::response(['statement' => []], 200),
+            '*api.open-meteo.com*' => Http::response(['daily' => ['time' => [], 'weathercode' => [], 'temperature_2m_max' => [], 'temperature_2m_min' => [], 'precipitation_sum' => []]], 200),
+            '*environment.data.gov.uk*' => Http::response(['items' => []], 200),
+        ]);
+
         OpenAI::fake([new \RuntimeException('OpenAI API rate limit exceeded')]);
 
         $component = Livewire::test('flood-watch-dashboard')
@@ -327,6 +339,12 @@ class FloodWatchDashboardTest extends TestCase
     {
         Config::set('openai.api_key', 'test-key');
         Config::set('app.debug', true);
+
+        Http::fake([
+            '*api.ffc-environment-agency.fgs.metoffice.gov.uk*' => Http::response(['statement' => []], 200),
+            '*api.open-meteo.com*' => Http::response(['daily' => ['time' => [], 'weathercode' => [], 'temperature_2m_max' => [], 'temperature_2m_min' => [], 'precipitation_sum' => []]], 200),
+            '*environment.data.gov.uk*' => Http::response(['items' => []], 200),
+        ]);
 
         OpenAI::fake([
             new \RuntimeException('cURL error 28: Operation timed out after 30005 milliseconds with 0 bytes received'),
