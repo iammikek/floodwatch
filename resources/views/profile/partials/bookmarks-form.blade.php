@@ -106,7 +106,6 @@
                                 class="mt-1 block w-full"
                                 :value="old('location', $bookmark->location)"
                                 :placeholder="__('flood-watch.bookmarks.location_placeholder')"
-                                required
                                 maxlength="255"
                             />
                             <x-input-error class="mt-2" :messages="$errors->getBag('bookmark-update')->get('location')" />

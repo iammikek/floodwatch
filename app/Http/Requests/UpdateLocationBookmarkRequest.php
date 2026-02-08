@@ -39,30 +39,39 @@ class UpdateLocationBookmarkRequest extends FormRequest
         ];
 
         if ($this->filled('location')) {
-            $rules['location'] = [
-                'string',
-                'max:255',
-                function (string $attribute, mixed $value, \Closure $fail): void {
-                    $resolver = app(LocationResolver::class);
-                    $resolved = $resolver->resolve(trim($value));
-                    if (! $resolved['valid']) {
-                        $fail($resolved['error'] ?? __('flood-watch.error.invalid_location'));
+            $bookmark = $this->route('bookmark');
+            $locationTrimmed = trim($this->input('location', ''));
+            $locationUnchanged = $bookmark instanceof LocationBookmark
+                && trim($bookmark->location) === $locationTrimmed;
 
-                        return;
-                    }
-                    if (! $resolved['in_area']) {
-                        $fail($resolved['error'] ?? __('flood-watch.error.outside_area'));
+            if ($locationUnchanged) {
+                $rules['location'] = ['string', 'max:255'];
+            } else {
+                $rules['location'] = [
+                    'string',
+                    'max:255',
+                    function (string $attribute, mixed $value, \Closure $fail): void {
+                        $resolver = app(LocationResolver::class);
+                        $resolved = $resolver->resolve(trim($value));
+                        if (! $resolved['valid']) {
+                            $fail($resolved['error'] ?? __('flood-watch.error.invalid_location'));
 
-                        return;
-                    }
-                    if (! isset($resolved['lat'], $resolved['lng'])) {
-                        $fail(__('flood-watch.bookmarks.unable_to_resolve'));
+                            return;
+                        }
+                        if (! $resolved['in_area']) {
+                            $fail($resolved['error'] ?? __('flood-watch.error.outside_area'));
 
-                        return;
-                    }
-                    $this->resolvedLocation = $resolved;
-                },
-            ];
+                            return;
+                        }
+                        if (! isset($resolved['lat'], $resolved['lng'])) {
+                            $fail(__('flood-watch.bookmarks.unable_to_resolve'));
+
+                            return;
+                        }
+                        $this->resolvedLocation = $resolved;
+                    },
+                ];
+            }
         }
 
         return $rules;
