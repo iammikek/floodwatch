@@ -68,7 +68,7 @@ flowchart TB
 1. **User input** → LocationResolver (postcode/place) → coordinates + region
 2. **FloodWatchService.chat()** pre-fetches in parallel via `Concurrency::run()`: forecast, weather, river levels (flood alerts are not pre-fetched)
 3. **LLM** receives system prompt + tools; calls GetFloodData (flood alerts), GetHighwaysIncidents (road status), GetCorrelationSummary, etc. Tool calls are LLM-driven
-4. **RiskCorrelationService** applies deterministic rules (flood↔road pairs, predictive warnings)
+4. **RiskCorrelationService** applies deterministic rules (flood↔road pairs, predictive warnings). See **`docs/RISK_CORRELATION.md`** for full documentation.
 5. **Response** synthesized by LLM, cached, returned with floods/incidents/forecast
 
 ## Extension Points
