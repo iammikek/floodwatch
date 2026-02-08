@@ -128,7 +128,7 @@ class FloodWatchDashboard extends Component
 
         try {
             $onProgress = fn (string $status) => $streamStatus($status);
-            $result = $assistant->chat($message, [], $cacheKey, $userLat, $userLng, $region, $onProgress);
+            $result = $assistant->chat($message, [], $cacheKey, $userLat, $userLng, $region, auth()->id(), $onProgress);
             $this->assistantResponse = $result['response'];
             $this->floods = $this->enrichFloodsWithDistance(
                 $result['floods'],

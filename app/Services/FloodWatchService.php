@@ -6,6 +6,7 @@ use App\Flood\DTOs\FloodWarning;
 use App\Flood\Services\EnvironmentAgencyFloodService;
 use App\Flood\Services\FloodForecastService;
 use App\Flood\Services\RiverLevelService;
+use App\Models\LlmRequest;
 use App\Roads\Services\NationalHighwaysService;
 use App\Support\LogMasker;
 use Illuminate\Support\Facades\Cache;
@@ -34,7 +35,7 @@ class FloodWatchService
      * @param  callable(string): void|null  $onProgress  Optional callback for progress updates (e.g. for streaming to UI)
      * @return array{response: string, floods: array, incidents: array, forecast: array, weather: array, lastChecked: string}
      */
-    public function chat(string $userMessage, array $conversation = [], ?string $cacheKey = null, ?float $userLat = null, ?float $userLng = null, ?string $region = null, ?callable $onProgress = null): array
+    public function chat(string $userMessage, array $conversation = [], ?string $cacheKey = null, ?float $userLat = null, ?float $userLng = null, ?string $region = null, ?int $userId = null, ?callable $onProgress = null): array
     {
         $emptyResult = fn (string $response, ?string $lastChecked = null): array => [
             'response' => $response,
@@ -106,6 +107,8 @@ class FloodWatchService
             Log::debug('FloodWatch OpenAI payload content', ['payload' => LogMasker::maskOpenAiPayload($payload)]);
 
             $response = OpenAI::chat()->create($payload);
+
+            $this->recordLlmRequest($response, $userId, $region);
 
             $choice = $response->choices[0] ?? null;
             if (! $choice) {
@@ -585,5 +588,25 @@ class FloodWatchService
         }
 
         return '';
+    }
+
+    private function recordLlmRequest(mixed $response, ?int $userId, ?string $region): void
+    {
+        try {
+            $usage = $response->usage;
+            $inputTokens = $usage?->promptTokens ?? 0;
+            $outputTokens = $usage?->completionTokens ?? 0;
+
+            LlmRequest::query()->create([
+                'user_id' => $userId,
+                'model' => $response->model ?? null,
+                'input_tokens' => $inputTokens,
+                'output_tokens' => $outputTokens,
+                'openai_id' => $response->id ?? null,
+                'region' => $region,
+            ]);
+        } catch (Throwable $e) {
+            Log::warning('FloodWatch failed to record LLM request', ['error' => $e->getMessage()]);
+        }
     }
 }

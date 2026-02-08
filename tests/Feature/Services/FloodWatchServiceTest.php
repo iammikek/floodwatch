@@ -2,7 +2,10 @@
 
 namespace Tests\Feature\Services;
 
+use App\Models\LlmRequest;
+use App\Models\User;
 use App\Services\FloodWatchService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 use OpenAI\Laravel\Facades\OpenAI;
@@ -11,6 +14,8 @@ use Tests\TestCase;
 
 class FloodWatchServiceTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_returns_message_when_no_api_key(): void
     {
         Config::set('openai.api_key', '');
@@ -126,6 +131,49 @@ class FloodWatchServiceTest extends TestCase
         $this->assertSame('I can help. Please use the Check status button to fetch data.', $result['response']);
         $this->assertSame([], $result['floods']);
         $this->assertSame([], $result['incidents']);
+    }
+
+    public function test_chat_records_llm_request_with_usage_and_context(): void
+    {
+        Config::set('openai.api_key', 'test-key');
+
+        $directResponse = CreateResponse::fake([
+            'choices' => [
+                [
+                    'index' => 0,
+                    'message' => [
+                        'role' => 'assistant',
+                        'content' => 'Status.',
+                        'tool_calls' => [],
+                    ],
+                    'logprobs' => null,
+                    'finish_reason' => 'stop',
+                ],
+            ],
+            'usage' => [
+                'prompt_tokens' => 150,
+                'completion_tokens' => 25,
+                'total_tokens' => 175,
+            ],
+            'model' => 'gpt-4o-mini',
+            'id' => 'chatcmpl-record123',
+        ]);
+
+        OpenAI::fake([$directResponse]);
+
+        $user = User::factory()->create();
+
+        $service = app(FloodWatchService::class);
+        $service->chat('Check status', [], null, null, null, 'somerset', $user->id);
+
+        $record = LlmRequest::first();
+        $this->assertNotNull($record);
+        $this->assertSame((string) $user->id, (string) $record->user_id);
+        $this->assertSame(150, $record->input_tokens);
+        $this->assertSame(25, $record->output_tokens);
+        $this->assertSame('gpt-4o-mini', $record->model);
+        $this->assertSame('somerset', $record->region);
+        $this->assertSame('chatcmpl-record123', $record->openai_id);
     }
 
     public function test_execute_tool_passes_custom_coordinates_to_get_flood_data(): void

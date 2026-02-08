@@ -54,6 +54,22 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | LLM Cost Tracking (Admin Dashboard)
+    |--------------------------------------------------------------------------
+    |
+    | Uses OpenAI Usage API. Budget in USD; alert at 80%.
+    | Token pricing: gpt-4o-mini input $0.15/1M, output $0.60/1M.
+    | llm_budget_initial: prepaid credit (e.g. 10 for $10). Remaining = initial - spend.
+    |
+    */
+
+    'llm_cost_input_per_m' => (float) env('FLOOD_WATCH_LLM_COST_INPUT_PER_M', 0.15),
+    'llm_cost_output_per_m' => (float) env('FLOOD_WATCH_LLM_COST_OUTPUT_PER_M', 0.60),
+    'llm_budget_monthly' => (float) env('FLOOD_WATCH_LLM_BUDGET_MONTHLY', 0),
+    'llm_budget_initial' => (float) env('FLOOD_WATCH_LLM_BUDGET_INITIAL', 0),
+
+    /*
+    |--------------------------------------------------------------------------
     | Default Coordinates (Langport, South West)
     |--------------------------------------------------------------------------
     |

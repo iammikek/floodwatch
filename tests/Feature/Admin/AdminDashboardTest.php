@@ -1,14 +1,35 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 
 beforeEach(function () {
+    $usageResponse = [
+        'object' => 'page',
+        'data' => [
+            [
+                'object' => 'bucket',
+                'results' => [
+                    [
+                        'object' => 'organization.usage.completions.result',
+                        'num_model_requests' => 3,
+                        'input_tokens' => 1000,
+                        'output_tokens' => 200,
+                    ],
+                ],
+            ],
+        ],
+        'has_more' => false,
+        'next_page' => null,
+    ];
+
     Http::fake([
-        'environment.data.gov.uk/*' => Http::response(['items' => []], 200),
-        'api.ffc-environment-agency.fgs.metoffice.gov.uk/*' => Http::response([], 200),
-        'api.open-meteo.com/*' => Http::response([], 200),
-        'api.data.nationalhighways.co.uk/*' => Http::response([], 200),
+        'environment.data.gov.uk' => Http::response(['items' => []], 200),
+        'api.ffc-environment-agency.fgs.metoffice.gov.uk' => Http::response([], 200),
+        'api.open-meteo.com' => Http::response([], 200),
+        'api.data.nationalhighways.co.uk' => Http::response([], 200),
+        'api.openai.com/v1/organization/usage' => Http::response($usageResponse, 200),
     ]);
 });
 
@@ -59,4 +80,121 @@ test('admin dashboard displays llm cost section', function () {
 
     $response->assertOk();
     $response->assertSee('LLM Cost', false);
+});
+
+test('admin dashboard displays llm usage from openai api', function () {
+    Config::set('openai.api_key', 'test-key');
+    $admin = User::factory()->admin()->create();
+
+    Http::fake(function ($request) {
+        if (str_contains($request->url(), 'api.openai.com/v1/organization/usage')) {
+            return Http::response([
+                'object' => 'page',
+                'data' => [
+                    [
+                        'object' => 'bucket',
+                        'results' => [
+                            [
+                                'object' => 'organization.usage.completions.result',
+                                'num_model_requests' => 3,
+                                'input_tokens' => 1000,
+                                'output_tokens' => 200,
+                            ],
+                        ],
+                    ],
+                ],
+                'has_more' => false,
+                'next_page' => null,
+            ], 200);
+        }
+        if (str_contains($request->url(), 'environment.data.gov.uk')) {
+            return Http::response(['items' => []], 200);
+        }
+        if (str_contains($request->url(), 'api.ffc-environment-agency') || str_contains($request->url(), 'api.open-meteo.com') || str_contains($request->url(), 'api.data.nationalhighways.co.uk')) {
+            return Http::response([], 200);
+        }
+
+        return Http::response([], 404);
+    });
+
+    $response = $this->actingAs($admin)->get('/admin');
+
+    $response->assertOk();
+    $response->assertSee('Requests today', false);
+    $response->assertSee('Requests this month', false);
+    $response->assertSee('Est. cost this month', false);
+});
+
+test('admin dashboard displays recent llm requests section', function () {
+    $admin = User::factory()->admin()->create();
+
+    $response = $this->actingAs($admin)->get('/admin');
+
+    $response->assertOk();
+    $response->assertSee('Recent LLM Requests', false);
+});
+
+test('admin dashboard displays llm requests table when populated', function () {
+    if (! \Illuminate\Support\Facades\Schema::hasTable('llm_requests')) {
+        $this->markTestSkipped('llm_requests table not present');
+    }
+
+    $admin = User::factory()->admin()->create();
+    \App\Models\LlmRequest::factory()->create([
+        'model' => 'gpt-4o-mini',
+        'input_tokens' => 100,
+        'output_tokens' => 50,
+        'region' => 'somerset',
+    ]);
+
+    $response = $this->actingAs($admin)->get('/admin');
+
+    $response->assertOk();
+    $response->assertSee('Recent LLM Requests', false);
+    $response->assertSee('gpt-4o-mini', false);
+    $response->assertSee('100', false);
+    $response->assertSee('50', false);
+    $response->assertSee('somerset', false);
+});
+
+test('admin dashboard displays remaining budget when llm_budget_initial is set', function () {
+    Config::set('openai.api_key', 'test-key');
+    Config::set('flood-watch.llm_budget_initial', 10);
+    $admin = User::factory()->admin()->create();
+
+    Http::fake(function ($request) {
+        if (str_contains($request->url(), 'api.openai.com/v1/organization/usage')) {
+            return Http::response([
+                'object' => 'page',
+                'data' => [
+                    [
+                        'object' => 'bucket',
+                        'results' => [
+                            [
+                                'object' => 'organization.usage.completions.result',
+                                'num_model_requests' => 2,
+                                'input_tokens' => 500,
+                                'output_tokens' => 100,
+                            ],
+                        ],
+                    ],
+                ],
+                'has_more' => false,
+                'next_page' => null,
+            ], 200);
+        }
+        if (str_contains($request->url(), 'environment.data.gov.uk')) {
+            return Http::response(['items' => []], 200);
+        }
+        if (str_contains($request->url(), 'api.ffc-environment-agency') || str_contains($request->url(), 'api.open-meteo.com') || str_contains($request->url(), 'api.data.nationalhighways.co.uk')) {
+            return Http::response([], 200);
+        }
+
+        return Http::response([], 404);
+    });
+
+    $response = $this->actingAs($admin)->get('/admin');
+
+    $response->assertOk();
+    $response->assertSee('Remaining (est.)', false);
 });
