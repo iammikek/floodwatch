@@ -10,6 +10,8 @@ beforeEach(function () {
         'data' => [
             [
                 'object' => 'bucket',
+                'start_time' => now()->startOfMonth()->timestamp,
+                'end_time' => now()->timestamp,
                 'results' => [
                     [
                         'object' => 'organization.usage.completions.result',
@@ -93,6 +95,8 @@ test('admin dashboard displays llm usage from openai api', function () {
                 'data' => [
                     [
                         'object' => 'bucket',
+                        'start_time' => now()->startOfMonth()->timestamp,
+                        'end_time' => now()->timestamp,
                         'results' => [
                             [
                                 'object' => 'organization.usage.completions.result',
@@ -123,6 +127,8 @@ test('admin dashboard displays llm usage from openai api', function () {
     $response->assertSee('Requests today', false);
     $response->assertSee('Requests this month', false);
     $response->assertSee('Est. cost this month', false);
+    $response->assertSee('Usage this month', false);
+    $response->assertSee('llm-usage-chart', false);
 });
 
 test('admin dashboard displays recent llm requests section', function () {
@@ -165,6 +171,8 @@ test('admin dashboard displays remaining budget when llm_budget_initial is set',
                 'data' => [
                     [
                         'object' => 'bucket',
+                        'start_time' => now()->startOfMonth()->timestamp,
+                        'end_time' => now()->timestamp,
                         'results' => [
                             [
                                 'object' => 'organization.usage.completions.result',
