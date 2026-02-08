@@ -25,7 +25,7 @@ trap 'kill $WORKER_PID $SERVER_PID 2>/dev/null; exit 0' TERM INT
 trap 'kill $WORKER_PID $SERVER_PID 2>/dev/null' EXIT
 
 # Wait for either process to exit (triggers container restart).
-# Note: wait -n is bash-specific; this loop works with /bin/sh (busybox ash).
+# Uses POSIX-compatible loop; wait -n is bash-specific and not available in busybox ash.
 while kill -0 $WORKER_PID 2>/dev/null && kill -0 $SERVER_PID 2>/dev/null; do
     sleep 1
 done
