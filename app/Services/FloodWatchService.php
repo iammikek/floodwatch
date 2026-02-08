@@ -6,7 +6,6 @@ use App\Flood\DTOs\FloodWarning;
 use App\Flood\Services\EnvironmentAgencyFloodService;
 use App\Flood\Services\FloodForecastService;
 use App\Flood\Services\RiverLevelService;
-use App\Models\LlmRequest;
 use App\Roads\Services\NationalHighwaysService;
 use App\Support\LogMasker;
 use Illuminate\Support\Facades\Cache;
@@ -109,7 +108,7 @@ class FloodWatchService
 
             $response = OpenAI::chat()->create($payload);
 
-            $this->recordLlmRequest($response, $userId, $region);
+            $this->dispatchRecordLlmRequest($response, $userId, $region);
 
             $choice = $response->choices[0] ?? null;
             if (! $choice) {
@@ -223,10 +222,10 @@ class FloodWatchService
     private function storeAndReturn(string $cacheKey, array $result): array
     {
         $result['lastChecked'] = now()->toIso8601String();
-        $ttl = config('flood-watch.cache_ttl_minutes', 15) * 60;
-        if ($ttl > 0) {
+        $cacheMinutes = config('flood-watch.cache_ttl_minutes', 15);
+        if ($cacheMinutes > 0) {
             $store = $this->resolveCacheStore();
-            $this->cachePut($store, $cacheKey, $result, $ttl);
+            $this->cachePut($store, $cacheKey, $result, now()->addMinutes($cacheMinutes));
         }
 
         return $result;
@@ -251,7 +250,7 @@ class FloodWatchService
         }
     }
 
-    private function cachePut(string $store, string $key, array $value, int $ttl): void
+    private function cachePut(string $store, string $key, array $value, \DateTimeInterface|int $ttl): void
     {
         try {
             Cache::store($store)->put($key, $value, $ttl);
@@ -591,21 +590,20 @@ class FloodWatchService
         return '';
     }
 
-    private function recordLlmRequest(mixed $response, ?int $userId, ?string $region): void
+    private function dispatchRecordLlmRequest(mixed $response, ?int $userId, ?string $region): void
     {
         try {
             $usage = $response->usage;
-            $inputTokens = $usage?->promptTokens ?? 0;
-            $outputTokens = $usage?->completionTokens ?? 0;
-
-            LlmRequest::query()->create([
+            $payload = [
                 'user_id' => $userId,
                 'model' => $response->model ?? null,
-                'input_tokens' => $inputTokens,
-                'output_tokens' => $outputTokens,
+                'input_tokens' => $usage?->promptTokens ?? 0,
+                'output_tokens' => $usage?->completionTokens ?? 0,
                 'openai_id' => $response->id ?? null,
                 'region' => $region,
-            ]);
+            ];
+
+            \App\Jobs\RecordLlmRequestJob::dispatch($payload);
         } catch (Throwable $e) {
             Log::warning('FloodWatch failed to record LLM request', ['error' => $e->getMessage()]);
         }

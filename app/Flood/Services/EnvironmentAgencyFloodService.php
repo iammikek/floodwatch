@@ -190,7 +190,7 @@ class EnvironmentAgencyFloodService
             $geojson = $response->json();
             if (is_array($geojson) && isset($geojson['type'], $geojson['features'])) {
                 $result[$areaId] = $geojson;
-                Cache::put("{$cacheKeyPrefix}{$areaId}", $geojson, $cacheHours * 3600);
+                Cache::put("{$cacheKeyPrefix}{$areaId}", $geojson, now()->addHours($cacheHours));
             }
         }
 

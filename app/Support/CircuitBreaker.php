@@ -47,10 +47,10 @@ class CircuitBreaker
         $openKey = $this->openKey();
 
         $failures = (int) Cache::get($failureKey, 0) + 1;
-        Cache::put($failureKey, $failures, $this->cooldownSeconds * 2);
+        Cache::put($failureKey, $failures, now()->addSeconds($this->cooldownSeconds * 2));
 
         if ($failures >= $this->failureThreshold) {
-            Cache::put($openKey, true, $this->cooldownSeconds);
+            Cache::put($openKey, true, now()->addSeconds($this->cooldownSeconds));
             Cache::forget($failureKey);
         }
     }

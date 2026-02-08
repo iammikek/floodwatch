@@ -41,9 +41,8 @@ class OpenAiUsageService
         }
 
         $cacheKey = 'openai_usage:'.now()->format('Y-m-d');
-        $cacheMinutes = 5;
 
-        return Cache::remember($cacheKey, $cacheMinutes * 60, fn () => $this->fetchUsage($apiKey));
+        return Cache::remember($cacheKey, now()->addMinutes(5), fn () => $this->fetchUsage($apiKey));
     }
 
     /**

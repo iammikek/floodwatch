@@ -218,6 +218,17 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | LLM Requests Retention
+    |--------------------------------------------------------------------------
+    |
+    | Prune llm_requests older than this many days. Set to 0 to disable pruning.
+    |
+    */
+
+    'llm_requests_retention_days' => (int) env('FLOOD_WATCH_LLM_REQUESTS_RETENTION_DAYS', 90),
+
+    /*
+    |--------------------------------------------------------------------------
     | Region-Specific Prompts
     |--------------------------------------------------------------------------
     |

@@ -20,9 +20,9 @@ class DashboardController extends Controller
         Gate::authorize('accessAdmin');
 
         $cacheKey = config('flood-watch.cache_key_prefix', 'flood-watch').':admin:health:checks';
-        $cacheTtl = config('flood-watch.health_check_cache_ttl', 60);
+        $cacheExpiry = now()->addSeconds(config('flood-watch.health_check_cache_ttl', 60));
 
-        $checks = Cache::remember($cacheKey, $cacheTtl, function () use ($request) {
+        $checks = Cache::remember($cacheKey, $cacheExpiry, function () use ($request) {
             $healthResponse = app(HealthController::class)($request);
             $healthData = $healthResponse->getData(true);
 

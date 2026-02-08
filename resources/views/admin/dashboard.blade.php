@@ -15,11 +15,11 @@
                             <dt class="text-sm font-medium text-gray-700">{{ ucfirst(str_replace('_', ' ', $name)) }}</dt>
                             <dd class="flex items-center gap-2">
                                 @if (($check['status'] ?? '') === 'ok')
-                                    <span class="text-green-600">✓ ok</span>
+                                    <span class="text-green-600" aria-label="OK">✓ ok</span>
                                 @elseif (($check['status'] ?? '') === 'skipped')
-                                    <span class="text-gray-400">skipped</span>
+                                    <span class="text-gray-400" aria-label="Skipped">skipped</span>
                                 @else
-                                    <span class="text-red-600">✗ {{ $check['status'] ?? 'failed' }}</span>
+                                    <span class="text-red-600" aria-label="{{ $check['status'] ?? 'failed' }}">✗ {{ $check['status'] ?? 'failed' }}</span>
                                 @endif
                                 @if (!empty($check['message']))
                                     <span class="text-xs text-gray-500" title="{{ $check['message'] }}" aria-label="{{ $check['message'] }}">ⓘ</span>
