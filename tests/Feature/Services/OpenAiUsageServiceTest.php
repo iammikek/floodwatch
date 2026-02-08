@@ -36,13 +36,13 @@ class OpenAiUsageServiceTest extends TestCase
 
     public function test_returns_error_when_no_api_key(): void
     {
-        Config::set('openai.api_key', '');
         Config::set('openai.org_api_key', null);
 
         $service = app(OpenAiUsageService::class);
         $result = $service->getUsage();
 
-        $this->assertSame('OpenAI API key not configured', $result['error']);
+        $this->assertStringContainsString('Admin API key', $result['error']);
+        $this->assertStringContainsString('OPENAI_ORG_ADMIN_KEY', $result['error']);
         $this->assertSame(0, $result['requests_today']);
         $this->assertSame(0, $result['requests_this_month']);
         $this->assertSame([], $result['chart_daily']);
@@ -50,7 +50,7 @@ class OpenAiUsageServiceTest extends TestCase
 
     public function test_returns_usage_data_when_api_succeeds(): void
     {
-        Config::set('openai.api_key', 'sk-test-key');
+        Config::set('openai.org_api_key', 'sk-org-admin-key');
 
         $response = $this->usageResponse(5, 2000, 400);
         Http::fake(function ($request) use ($response) {
@@ -74,7 +74,7 @@ class OpenAiUsageServiceTest extends TestCase
 
     public function test_returns_403_error_message_when_admin_key_required(): void
     {
-        Config::set('openai.api_key', 'sk-regular-key');
+        Config::set('openai.org_api_key', 'sk-org-key');
 
         Http::fake(function ($request) {
             if (str_contains($request->url(), 'api.openai.com/v1/organization/usage')) {
@@ -94,7 +94,7 @@ class OpenAiUsageServiceTest extends TestCase
 
     public function test_returns_generic_error_message_on_other_api_failures(): void
     {
-        Config::set('openai.api_key', 'sk-test-key');
+        Config::set('openai.org_api_key', 'sk-org-admin-key');
 
         Http::fake(function ($request) {
             if (str_contains($request->url(), 'api.openai.com/v1/organization/usage')) {
@@ -113,7 +113,7 @@ class OpenAiUsageServiceTest extends TestCase
 
     public function test_caches_result_for_five_minutes(): void
     {
-        Config::set('openai.api_key', 'sk-test-key');
+        Config::set('openai.org_api_key', 'sk-org-admin-key');
 
         $response = $this->usageResponse(1, 100, 50);
         $callCount = 0;
@@ -138,7 +138,7 @@ class OpenAiUsageServiceTest extends TestCase
 
     public function test_remaining_budget_when_llm_budget_initial_set(): void
     {
-        Config::set('openai.api_key', 'sk-test-key');
+        Config::set('openai.org_api_key', 'sk-org-admin-key');
         Config::set('flood-watch.llm_budget_initial', 10);
 
         $response = $this->usageResponse(1, 1_000_000, 500_000);
@@ -161,7 +161,7 @@ class OpenAiUsageServiceTest extends TestCase
 
     public function test_chart_daily_includes_date_requests_and_cost(): void
     {
-        Config::set('openai.api_key', 'sk-test-key');
+        Config::set('openai.org_api_key', 'sk-org-admin-key');
 
         $response = $this->usageResponse(2, 500, 100);
         Http::fake(function ($request) use ($response) {
@@ -187,7 +187,6 @@ class OpenAiUsageServiceTest extends TestCase
 
     public function test_uses_org_api_key_when_configured(): void
     {
-        Config::set('openai.api_key', 'sk-default');
         Config::set('openai.org_api_key', 'sk-org-admin');
 
         $response = $this->usageResponse();
@@ -213,7 +212,7 @@ class OpenAiUsageServiceTest extends TestCase
 
     public function test_returns_fresh_data_when_cache_miss(): void
     {
-        Config::set('openai.api_key', 'sk-test-key');
+        Config::set('openai.org_api_key', 'sk-org-admin-key');
 
         $response = $this->usageResponse(1, 100, 50);
         Http::fake(function ($request) use ($response) {

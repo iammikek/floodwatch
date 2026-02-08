@@ -83,7 +83,7 @@ test('admin dashboard displays llm cost section', function () {
 });
 
 test('admin dashboard displays llm usage from openai api', function () {
-    Config::set('openai.api_key', 'test-key');
+    Config::set('openai.org_api_key', 'sk-org-admin-test');
     $admin = User::factory()->admin()->create();
 
     Http::fake(function ($request) {
@@ -154,7 +154,7 @@ test('admin dashboard displays llm requests table when populated', function () {
 });
 
 test('admin dashboard displays remaining budget when llm_budget_initial is set', function () {
-    Config::set('openai.api_key', 'test-key');
+    Config::set('openai.org_api_key', 'sk-org-admin-test');
     Config::set('flood-watch.llm_budget_initial', 10);
     $admin = User::factory()->admin()->create();
 

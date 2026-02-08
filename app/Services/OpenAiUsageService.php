@@ -24,7 +24,7 @@ class OpenAiUsageService
      */
     public function getUsage(): array
     {
-        $apiKey = config('openai.org_api_key') ?? config('openai.api_key');
+        $apiKey = config('openai.org_api_key');
 
         if (empty($apiKey)) {
             return [
@@ -35,7 +35,7 @@ class OpenAiUsageService
                 'cost_this_month' => null,
                 'remaining_budget' => null,
                 'chart_daily' => [],
-                'error' => 'OpenAI API key not configured',
+                'error' => 'Admin API key (OPENAI_ORG_ADMIN_KEY) not configured. Usage API requires an org admin key.',
             ];
         }
 
