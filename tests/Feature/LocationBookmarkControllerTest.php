@@ -145,7 +145,7 @@ test('user can delete bookmark', function () {
     $this->assertDatabaseMissing('location_bookmarks', ['id' => $bookmark->id]);
 });
 
-test('user cannot delete another users bookmark', function () {
+test("user cannot delete another user's bookmark", function () {
     $user = User::factory()->create();
     $other = User::factory()->create();
     $bookmark = LocationBookmark::factory()->create([
