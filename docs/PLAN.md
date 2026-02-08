@@ -280,6 +280,14 @@ Reverb as second service or process; Redis if scaling. Alternative: Pusher (free
 
 ---
 
+## Future Improvements
+
+| Item | Notes |
+|------|-------|
+| Nominatim rate limiting | Cache reverse geocode by rounded lat/lng for short periods so repeated GPS searches don't hit Nominatim every time (Use My Location). |
+
+---
+
 ## Reference
 
 | Doc | Purpose |
