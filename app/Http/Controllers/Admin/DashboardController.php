@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\UserSearch;
 use App\Services\OpenAiUsageService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
@@ -19,9 +20,15 @@ class DashboardController extends Controller
     {
         Gate::authorize('accessAdmin');
 
-        $healthResponse = app(HealthController::class)($request);
-        $healthData = $healthResponse->getData(true);
-        $checks = $healthData['checks'] ?? [];
+        $cacheKey = config('flood-watch.cache_key_prefix', 'flood-watch').':admin:health:checks';
+        $cacheTtl = config('flood-watch.health_check_cache_ttl', 60);
+
+        $checks = Cache::remember($cacheKey, $cacheTtl, function () use ($request) {
+            $healthResponse = app(HealthController::class)($request);
+            $healthData = $healthResponse->getData(true);
+
+            return $healthData['checks'] ?? [];
+        });
 
         $totalUsers = User::count();
         $totalSearches = UserSearch::count();

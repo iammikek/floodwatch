@@ -90,7 +90,12 @@ class OpenAiUsageService
                 'error' => null,
             ];
         } catch (Throwable $e) {
-            report($e);
+            $status = $e instanceof RequestException ? $e->response?->status() : null;
+            $isExpectedClientError = in_array($status, [401, 403, 429], true);
+
+            if (! $isExpectedClientError) {
+                report($e);
+            }
 
             return [
                 'requests_today' => 0,
@@ -100,7 +105,7 @@ class OpenAiUsageService
                 'cost_this_month' => null,
                 'remaining_budget' => null,
                 'chart_daily' => [],
-                'error' => $e instanceof RequestException && $e->response?->status() === 403
+                'error' => $status === 403
                     ? 'Usage API requires an Admin API key (sk-admin-...). Organization Owners: create one at platform.openai.com/settings/organization/admin-keys and set OPENAI_ORG_ADMIN_KEY or OPENAI_ORG_API_KEY.'
                     : $e->getMessage(),
             ];

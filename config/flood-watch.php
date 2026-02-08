@@ -176,6 +176,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Health Check Cache (Admin Dashboard)
+    |--------------------------------------------------------------------------
+    |
+    | TTL in seconds for cached API health checks on the admin dashboard.
+    | Reduces load and latency when upstream APIs are slow.
+    |
+    */
+
+    'health_check_cache_ttl' => (int) env('FLOOD_WATCH_HEALTH_CHECK_CACHE_TTL', 60),
+
+    /*
+    |--------------------------------------------------------------------------
     | Circuit Breaker
     |--------------------------------------------------------------------------
     |
