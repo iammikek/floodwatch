@@ -153,6 +153,7 @@
                         @click="getLocation(); window.__loadLeaflet && window.__loadLeaflet()"
                         :disabled="gpsLoading"
                         wire:loading.attr="disabled"
+                        wire:target="searchFromGps"
                         class="min-h-[44px] inline-flex items-center justify-center gap-2 px-4 py-3 sm:py-2 rounded-lg border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         aria-label="{{ __('flood-watch.dashboard.use_my_location') }}"
                     >
