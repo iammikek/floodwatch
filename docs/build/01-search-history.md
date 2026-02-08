@@ -50,4 +50,4 @@ Store searched locations in the database. Feeds "Recent searches" UI and admin m
 
 ## Retention
 
-Add scheduled job (or document): Prune rows older than 90 days. Can defer to later.
+Add scheduled job (or document): Prune rows older than 90 days. Can defer to later. See `docs/DATA_RETENTION.md` for future task.
