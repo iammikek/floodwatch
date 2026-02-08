@@ -22,7 +22,7 @@
                                     <span class="text-red-600">✗ {{ $check['status'] ?? 'failed' }}</span>
                                 @endif
                                 @if (!empty($check['message']))
-                                    <span class="text-xs text-gray-500" title="{{ $check['message'] }}">ⓘ</span>
+                                    <span class="text-xs text-gray-500" title="{{ $check['message'] }}" aria-label="{{ $check['message'] }}">ⓘ</span>
                                 @endif
                             </dd>
                         </div>
