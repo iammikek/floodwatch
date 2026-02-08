@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Carbon\Carbon;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
@@ -176,7 +177,9 @@ class OpenAiUsageService
             $cost = ($inputTokens / 1_000_000 * $inputCostPerM) + ($outputTokens / 1_000_000 * $outputCostPerM);
 
             $chart[] = [
-                'date' => date('M j', (int) ($bucket['start_time'] ?? 0)),
+                'date' => Carbon::createFromTimestamp((int) ($bucket['start_time'] ?? 0))
+                    ->timezone(config('app.timezone'))
+                    ->format('M j'),
                 'requests' => $requests,
                 'input_tokens' => $inputTokens,
                 'output_tokens' => $outputTokens,
@@ -229,15 +232,7 @@ class OpenAiUsageService
      */
     private function estimateCost(array $buckets): ?float
     {
-        $inputTokens = 0;
-        $outputTokens = 0;
-
-        foreach ($buckets as $bucket) {
-            foreach ($bucket['results'] ?? [] as $result) {
-                $inputTokens += (int) ($result['input_tokens'] ?? 0);
-                $outputTokens += (int) ($result['output_tokens'] ?? 0);
-            }
-        }
+        [$inputTokens, $outputTokens] = $this->sumTokens($buckets);
 
         if ($inputTokens === 0 && $outputTokens === 0) {
             return 0.0;
