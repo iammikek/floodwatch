@@ -111,6 +111,12 @@ return [
         'route_check_to' => 'To',
         'route_check_button' => 'Check route',
     ],
+    'donations' => [
+        'support_title' => 'Support Flood Watch',
+        'support_intro' => 'Help cover API and hosting costs. The app stays free.',
+        'donate' => 'Donate',
+    ],
+
     'bookmarks' => [
         'title' => 'Location bookmarks',
         'intro' => 'Save locations to quickly check flood and road status. Your default bookmark loads when you open Flood Watch.',

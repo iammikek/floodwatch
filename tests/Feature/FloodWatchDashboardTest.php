@@ -48,6 +48,17 @@ class FloodWatchDashboardTest extends TestCase
             ->assertSee('Check route', false);
     }
 
+    public function test_dashboard_footer_shows_donation_link_when_configured(): void
+    {
+        Config::set('flood-watch.donation_url', 'https://ko-fi.com/example');
+
+        $response = $this->get('/');
+
+        $response->assertStatus(200);
+        $response->assertSee('consider supporting development', false);
+        $response->assertSee('https://ko-fi.com/example');
+    }
+
     public function test_route_check_returns_verdict_when_valid_from_to(): void
     {
         $user = User::factory()->create();

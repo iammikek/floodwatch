@@ -1,8 +1,8 @@
 <footer class="mt-12 pt-6 border-t border-slate-200">
-    @if (config('app.donation_url'))
+    @if (config('flood-watch.donation_url'))
         <p class="text-xs text-slate-500 mb-2">
             {{ __('flood-watch.dashboard.free_to_use') }}
-            <a href="{{ config('app.donation_url') }}" target="_blank" rel="noopener" class="underline hover:text-slate-600">{{ __('flood-watch.dashboard.support_development') }}</a>.
+            <a href="{{ config('flood-watch.donation_url') }}" target="_blank" rel="noopener" class="underline hover:text-slate-600">{{ __('flood-watch.dashboard.support_development') }}</a>.
         </p>
     @endif
     <p class="text-xs text-slate-500">
