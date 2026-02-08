@@ -36,7 +36,7 @@ class OpenAiUsageService
                 'cost_this_month' => null,
                 'remaining_budget' => null,
                 'chart_daily' => [],
-                'error' => 'Admin API key (OPENAI_ORG_ADMIN_KEY) not configured. Usage API requires an org admin key.',
+                'error' => 'Admin API key not configured. Set OPENAI_ORG_API_KEY or OPENAI_ORG_ADMIN_KEY. Usage API requires an org admin key.',
             ];
         }
 
