@@ -19,7 +19,7 @@ API health, LLM cost, user metrics, budget alerts, recent LLM requests. Restrict
 - [x] LLM Cost section displays: requests today/month; input/output tokens; est. cost; budget alert at 80% if configured
 - [x] Recent LLM Requests section displays: last 10 requests (time, model, tokens, region, user)
 - [x] Layout matches wireframe (`docs/WIREFRAMES.md`); Tailwind styling
-- [x] Feature test: guest and user get 403; admin gets 200
+- [x] Feature test: guest redirect; non-admin 403; admin 200
 
 ---
 

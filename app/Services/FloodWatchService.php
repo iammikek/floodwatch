@@ -32,8 +32,9 @@ class FloodWatchService
      * Results are cached to avoid hammering the APIs. Use $cacheKey to scope the cache (e.g. postcode).
      *
      * @param  array<int, array{role: string, content: string}>  $conversation  Previous messages (optional)
+     * @param  int|null  $userId  User ID for LLM request recording (optional)
      * @param  callable(string): void|null  $onProgress  Optional callback for progress updates (e.g. for streaming to UI)
-     * @return array{response: string, floods: array, incidents: array, forecast: array, weather: array, lastChecked: string}
+     * @return array{response: string, floods: array, incidents: array, forecast: array, weather: array, riverLevels: array, lastChecked: string}
      */
     public function chat(string $userMessage, array $conversation = [], ?string $cacheKey = null, ?float $userLat = null, ?float $userLng = null, ?string $region = null, ?int $userId = null, ?callable $onProgress = null): array
     {
