@@ -128,12 +128,14 @@ class FloodWatchDashboard extends Component
             if (! $validation['valid']) {
                 $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
                 $this->error = $validation['error'] ?? __('flood-watch.error.invalid_location');
+                $this->loading = false;
 
                 return;
             }
             if (! $validation['in_area']) {
                 $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
                 $this->error = $validation['error'] ?? __('flood-watch.error.outside_area');
+                $this->loading = false;
 
                 return;
             }
@@ -150,6 +152,7 @@ class FloodWatchDashboard extends Component
         if (! $result['valid']) {
             $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
             $this->error = $result['error'] ?? __('flood-watch.dashboard.gps_error');
+            $this->loading = false;
 
             return;
         }
@@ -157,6 +160,7 @@ class FloodWatchDashboard extends Component
         if (! $result['in_area']) {
             $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
             $this->error = __('flood-watch.error.outside_area');
+            $this->loading = false;
 
             return;
         }
@@ -207,10 +211,6 @@ class FloodWatchDashboard extends Component
         $streamStatus = function (string $message): void {
             $this->stream(to: 'searchStatus', content: $message, replace: true);
         };
-
-        if ($locationTrimmed !== '') {
-            $streamStatus(__('flood-watch.progress.looking_up_location'));
-        }
 
         $message = $this->buildMessage($locationTrimmed, $validation);
         $cacheKey = $locationTrimmed !== '' ? $locationTrimmed : null;
