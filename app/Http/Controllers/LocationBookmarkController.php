@@ -6,6 +6,7 @@ use App\Http\Requests\StoreLocationBookmarkRequest;
 use App\Models\LocationBookmark;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class LocationBookmarkController extends Controller
 {
@@ -38,11 +39,13 @@ class LocationBookmarkController extends Controller
             abort(403);
         }
 
-        LocationBookmark::query()
-            ->where('user_id', Auth::id())
-            ->update(['is_default' => false]);
+        DB::transaction(function () use ($bookmark): void {
+            LocationBookmark::query()
+                ->where('user_id', $bookmark->user_id)
+                ->update(['is_default' => false]);
 
-        $bookmark->update(['is_default' => true]);
+            $bookmark->update(['is_default' => true]);
+        });
 
         return redirect()->route('profile.edit')
             ->with('status', 'bookmark-default-set');

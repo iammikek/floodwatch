@@ -2,6 +2,7 @@
 
 use App\Models\LocationBookmark;
 use App\Models\User;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 
 uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
@@ -151,6 +152,8 @@ test("user cannot delete another user's bookmark", function () {
 });
 
 test('max bookmarks reached prevents new bookmark', function () {
+    Config::set('flood-watch.bookmarks_max_per_user', 10);
+
     $user = User::factory()->create();
     LocationBookmark::factory()->count(10)->create(['user_id' => $user->id]);
 

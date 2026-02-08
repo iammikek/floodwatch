@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 
 uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
@@ -81,6 +82,8 @@ test('fails when location is missing', function () {
 });
 
 test('fails when max bookmarks reached', function () {
+    Config::set('flood-watch.bookmarks_max_per_user', 10);
+
     $user = User::factory()->create();
     $user->locationBookmarks()->create([
         'label' => 'Home',
