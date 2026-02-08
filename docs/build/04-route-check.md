@@ -8,14 +8,52 @@ Geocode From and To; compute route; overlay incidents/floods; produce summary: C
 
 ## Acceptance Criteria
 
-- [ ] Route check section visible in dashboard with From and To inputs
-- [ ] Both locations geocoded via LocationResolver; must be in South West
-- [ ] Route fetched from OSRM (or chosen engine); geometry obtained
-- [ ] Verdict returned: Clear / Blocked / At risk / Delays
-- [ ] Summary includes which floods/incidents affect route; alternatives when blocked
-- [ ] Outside-area From/To shows error
-- [ ] Feature test: valid From/To returns verdict; invalid shows error
-- [ ] `sail test` passes
+- [x] Route check section visible in dashboard with From and To inputs
+- [x] Both locations geocoded via LocationResolver; must be in South West
+- [x] Route fetched from OSRM (or chosen engine); geometry obtained
+- [x] Verdict returned: Clear / Blocked / At risk / Delays
+- [x] Summary includes which floods/incidents affect route; alternatives when blocked
+- [x] Outside-area From/To shows error
+- [x] Feature test: valid From/To returns verdict; invalid shows error
+- [x] `sail test` passes
+
+---
+
+## Gap Analysis: All Acceptance Criteria
+
+Mapping of `docs/ACCEPTANCE_CRITERIA.md` to Route Check build. **Met** = Route Check satisfies; **Partial** = partially satisfies; **N/A** = not applicable to Route Check; **Gap** = Route Check does not satisfy.
+
+| AC Section | Criterion | Route Check relevance | Status | Notes |
+|------------|-----------|------------------------|-------|-------|
+| **1.1** | House at flood risk | Route Check is about car/driving risk, not house. | N/A | Main search handles house risk. |
+| **1.2** | Car at risk | **Direct**. Route Check answers "could I get stuck?" | Met | Verdict + floods/incidents on route. |
+| **1.3** | Decision framework (Danger to Life → closures → alerts) | Verdict logic aligns. | Met | Blocked > At risk > Delays > Clear. |
+| **1.3** | Danger to Life: emergency numbers + instructions | Route Check summary does not include emergency block. | Partial | Deterministic summary only; no 🆘 block when severe flood on route. Build 08 adds this. |
+| **2.1** | Postcode + place name lookup | From/To use LocationResolver. | Met | Postcodes.io + Nominatim. |
+| **2.1** | Use my location (GPS) | From input has "Use my location". | Met | Geolocation populates From. |
+| **2.2** | Search history (DB) | Route Check does not persist route searches. | Gap | No `route_searches` table; no recent routes. |
+| **2.3** | Bookmarks, profile default | From pre-fills from default bookmark. | Met | When logged in. |
+| **3** | Route clear / blocked / at risk with alternatives | **Core criterion**. | Met | Verdict + alternatives when blocked. |
+| **3** | Real road incidents + flood areas along path | **Core criterion**. | Met | EA floods + NH incidents; bbox/proximity. |
+| **4.0** | Connectivity & offline | Route results not in localStorage. | Gap | Main search persists; route check does not. |
+| **4.1** | Backend polling | Route Check fetches on demand. | Partial | No pre-warmed route cache; warm-cache does location, not routes. |
+| **4.2** | Geographic caching | Route cache is per From/To coords. | Met | Same coords → cache hit. |
+| **4.3** | Poll intervals | N/A (on-demand). | N/A | TTL enforced via config. |
+| **5.1** | Response caching | Route results cached (From/To coords). | Met | 15 min TTL. |
+| **5.2** | Trivial case skip | Route Check is deterministic; no LLM. | Met | No LLM for route check. |
+| **6.1** | Mobile condensed | Route Check: text only on mobile; map omitted. | Met | Route-only map hidden (`lg:block hidden`). |
+| **6.2** | Desktop enhanced | Route Check + map polyline. | Met | Polyline on Leaflet; floods/incidents overlaid. |
+| **7** | Resilience | OSRM/EA/NH failure handling. | Met | Fallback message; partial data. |
+| **8** | Attribution | Route Check uses EA + NH data. | Met | Footer credits (shared). |
+
+### Gap Summary
+
+| Gap | Description | Mitigation |
+|-----|-------------|------------|
+| **Route search history** | No DB persistence of route checks; no "Recent routes". | Future: `route_searches` table; quick-pick From/To. |
+| **Route results in localStorage** | Route check results not persisted for offline. | Future: extend localStorage restore to include `routeCheckResult`. |
+| **Danger to Life block** | When severe flood on route, no dedicated 🆘 block. | Build 08: add Emergency block when `severityLevel === 1` in floods on route. |
+| **Backend route pre-warm** | No scheduled route warming. | Low priority; on-demand + cache sufficient for MVP. |
 
 ---
 
@@ -73,7 +111,7 @@ Geocode From and To; compute route; overlay incidents/floods; produce summary: C
 
 ## Rate Limiting & Cache
 
-- **Rate limit**: Same as main search. Guests: 1 route check per 15 min; registered: unlimited.
+- **Rate limit**: Same as main search. Guests: 1 route check per second; registered: unlimited.
 - **Cache**: Cache route results for same From/To coordinates. TTL: 15 min (configurable). Reduces OSRM calls.
 - **Alternatives**: Do not re-check alternatives for floods/incidents in MVP. Show alternatives as text only (road names from OSRM steps).
 
