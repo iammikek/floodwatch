@@ -125,8 +125,16 @@
                 <div
                     x-data="{
                         gpsLoading: false,
+                        gpsTimeoutId: null,
                         init() {
-                            this.$watch('$wire.loading', (val) => { if (!val) this.gpsLoading = false; });
+                            const self = this;
+                            const clearGps = () => {
+                                self.gpsLoading = false;
+                                if (self.gpsTimeoutId) clearTimeout(self.gpsTimeoutId);
+                                self.gpsTimeoutId = null;
+                            };
+                            Livewire.on('search-completed', clearGps);
+                            this.$watch('$wire.loading', (val) => { if (!val) clearGps(); });
                         },
                         getLocation() {
                             if (!navigator.geolocation) {
@@ -134,12 +142,15 @@
                                 return;
                             }
                             this.gpsLoading = true;
+                            this.gpsTimeoutId = setTimeout(() => { this.gpsLoading = false; this.gpsTimeoutId = null; }, 60000);
                             navigator.geolocation.getCurrentPosition(
                                 (pos) => {
                                     $wire.dispatch('location-from-gps', { lat: pos.coords.latitude, lng: pos.coords.longitude });
                                 },
                                 () => {
                                     this.gpsLoading = false;
+                                    if (this.gpsTimeoutId) clearTimeout(this.gpsTimeoutId);
+                                    this.gpsTimeoutId = null;
                                     $wire.set('error', @js(__('flood-watch.dashboard.gps_error')));
                                 },
                                 { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
@@ -151,9 +162,8 @@
                     <button
                         type="button"
                         @click="getLocation(); window.__loadLeaflet && window.__loadLeaflet()"
-                        :disabled="gpsLoading"
+                        :disabled="gpsLoading || $wire.loading"
                         wire:loading.attr="disabled"
-                        wire:target="searchFromGps"
                         class="min-h-[44px] inline-flex items-center justify-center gap-2 px-4 py-3 sm:py-2 rounded-lg border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         aria-label="{{ __('flood-watch.dashboard.use_my_location') }}"
                     >

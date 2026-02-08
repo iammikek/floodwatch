@@ -124,6 +124,7 @@ class FloodWatchDashboard extends Component
         $validation = null;
 
         if ($locationTrimmed !== '') {
+            $this->stream(to: 'searchStatus', content: __('flood-watch.progress.looking_up_location'), replace: true);
             $validation = $locationResolver->resolve($locationTrimmed);
             if (! $validation['valid']) {
                 $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
@@ -147,6 +148,7 @@ class FloodWatchDashboard extends Component
     #[On('location-from-gps')]
     public function searchFromGps(float $lat, float $lng, FloodWatchService $assistant, LocationResolver $locationResolver, FloodWatchTrendService $trendService, UserSearchService $userSearchService): void
     {
+        $this->stream(to: 'searchStatus', content: __('flood-watch.progress.looking_up_location'), replace: true);
         $result = $locationResolver->reverseFromCoords($lat, $lng);
 
         if (! $result['valid']) {
@@ -216,7 +218,7 @@ class FloodWatchDashboard extends Component
         $cacheKey = $locationTrimmed !== '' ? $locationTrimmed : null;
         $userLat = data_get($validation, 'lat');
         $userLng = data_get($validation, 'lng');
-        $region = $validation === null ? 'somerset' : data_get($validation, 'region');
+        $region = $validation === null ? 'somerset' : (data_get($validation, 'region') ?? 'somerset');
 
         try {
             $onProgress = fn (string $status) => $streamStatus($status);
