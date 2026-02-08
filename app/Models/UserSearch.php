@@ -25,6 +25,8 @@ class UserSearch extends Model
     protected function casts(): array
     {
         return [
+            'lat' => 'float',
+            'lng' => 'float',
             'searched_at' => 'datetime',
         ];
     }

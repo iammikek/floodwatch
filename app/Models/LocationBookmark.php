@@ -25,6 +25,8 @@ class LocationBookmark extends Model
     protected function casts(): array
     {
         return [
+            'lat' => 'float',
+            'lng' => 'float',
             'is_default' => 'boolean',
         ];
     }
