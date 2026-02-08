@@ -69,7 +69,10 @@
             :assistant-response="$assistantResponse"
         />
 
-        <x-flood-watch.route-check />
+        <x-flood-watch.route-check
+            :route-check-loading="$routeCheckLoading"
+            :route-check-result="$routeCheckResult"
+        />
 
         <x-flood-watch.error-banner
             :error="$error"

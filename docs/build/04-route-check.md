@@ -135,6 +135,8 @@ Add to `config/flood-watch.php`:
 
 ## Wireframe Placement (incremental UI)
 
+**Component states wireframe**: `public/wireframes/revised-brief.html` – section "Route Check – Component States" shows all 7 states: empty, loading, clear, blocked, at risk, delays, error.
+
 Place in revised wireframe position so the section appears as you build:
 
 - **Desktop**: Route Check in its own card/block – side by side with Risk (or above map). See `public/wireframes/revised-brief.html` desktop grid.
@@ -158,3 +160,16 @@ If OSRM fails or route not found: "Unable to compute route. Check that both loca
 
 - Mock OSRM response; mock flood/incident data; assert verdict
 - From/To outside area → error
+
+---
+
+## Future Enhancements (Smarter Verdict)
+
+**Rivers on route**: Identify rivers that the route crosses or runs near (e.g. from EA river gauges, OSM water features, or config). Use `RiverLevelService` to check levels for those rivers. If levels are elevated or rising, flag "at risk" even without an active flood warning.
+
+**Wet area detection (Somerset Levels)**: On the Levels, low-lying areas can become wet or impassable before formal flood warnings are issued. Consider:
+- Route segments within known flood-prone polygons (North Moor, King's Sedgemoor, Parrett/Tone catchments)
+- River Parrett / Tone levels trending up
+- Muchelney rule: when Parrett is elevated, warn about Muchelney access even if Highways API shows no closure
+
+This would extend the deterministic verdict logic with predictive/hydrological context rather than relying solely on active flood warnings and road incidents.

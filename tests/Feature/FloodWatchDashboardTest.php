@@ -48,6 +48,80 @@ class FloodWatchDashboardTest extends TestCase
             ->assertSee('Check route', false);
     }
 
+    public function test_route_check_returns_verdict_when_valid_from_to(): void
+    {
+        $user = User::factory()->create();
+        Config::set('flood-watch.national_highways.api_key', 'test-key');
+        Config::set('flood-watch.national_highways.base_url', 'https://api.example.com');
+
+        Http::fake(function ($request) {
+            if (str_contains($request->url(), 'api.postcodes.io')) {
+                return Http::response(['result' => ['latitude' => 51.0358, 'longitude' => -2.8318]], 200);
+            }
+            if (str_contains($request->url(), 'router.project-osrm.org')) {
+                return Http::response([
+                    'code' => 'Ok',
+                    'routes' => [
+                        [
+                            'distance' => 50000,
+                            'duration' => 3600,
+                            'geometry' => [
+                                'coordinates' => [[-2.8318, 51.0358], [-2.5778, 51.4545]],
+                                'type' => 'LineString',
+                            ],
+                            'legs' => [],
+                        ],
+                    ],
+                ], 200);
+            }
+            if (str_contains($request->url(), 'environment.data.gov.uk')) {
+                return Http::response(['items' => []], 200);
+            }
+            if (str_contains($request->url(), 'api.example.com')) {
+                return Http::response(['D2Payload' => ['situation' => []]], 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
+        Livewire::actingAs($user)
+            ->test('flood-watch-dashboard')
+            ->set('routeFrom', 'TA10 0DP')
+            ->set('routeTo', 'BS1 1AA')
+            ->call('checkRoute')
+            ->assertSet('routeCheckLoading', false)
+            ->assertSet('routeCheckResult.verdict', 'clear')
+            ->assertSet('routeCheckResult.summary', fn ($s) => is_string($s) && $s !== '');
+    }
+
+    public function test_route_check_shows_error_when_from_invalid(): void
+    {
+        $user = User::factory()->create();
+
+        Http::fake(function ($request) {
+            if (str_contains($request->url(), 'api.postcodes.io')) {
+                return Http::response(['status' => 404, 'error' => 'Postcode not found'], 404);
+            }
+            if (str_contains($request->url(), 'nominatim.openstreetmap.org')) {
+                return Http::response([], 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
+        $result = Livewire::actingAs($user)
+            ->test('flood-watch-dashboard')
+            ->set('routeFrom', 'InvalidPlace99')
+            ->set('routeTo', 'TA10 0DP')
+            ->call('checkRoute')
+            ->assertSet('routeCheckLoading', false)
+            ->assertSet('routeCheckResult.verdict', 'clear')
+            ->get('routeCheckResult');
+
+        expect($result)->toHaveKey('summary')
+            ->and($result['summary'])->not->toBe('');
+    }
+
     public function test_search_displays_assistant_response(): void
     {
         Config::set('openai.api_key', 'test-key');

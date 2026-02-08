@@ -7,6 +7,7 @@ use App\Models\UserSearch;
 use App\Services\FloodWatchService;
 use App\Services\FloodWatchTrendService;
 use App\Services\LocationResolver;
+use App\Services\RouteCheckService;
 use App\Services\UserSearchService;
 use App\Support\IncidentIcon;
 use App\Support\LogMasker;
@@ -55,6 +56,10 @@ class FloodWatchDashboard extends Component
     public string $routeFrom = '';
 
     public string $routeTo = '';
+
+    public bool $routeCheckLoading = false;
+
+    public ?array $routeCheckResult = null;
 
     /**
      * User's location bookmarks (when logged in).
@@ -163,6 +168,49 @@ class FloodWatchDashboard extends Component
             if ($default !== null && $this->location === '') {
                 $this->location = $default->location;
             }
+            if ($default !== null && $this->routeFrom === '') {
+                $this->routeFrom = $default->location;
+            }
+        }
+    }
+
+    public function checkRoute(RouteCheckService $routeCheckService): void
+    {
+        if (Auth::guest()) {
+            $key = 'flood-watch-route-guest:'.request()->ip();
+            $decaySeconds = 900;
+            if (RateLimiter::tooManyAttempts($key, 1)) {
+                $this->routeCheckResult = [
+                    'verdict' => 'clear',
+                    'summary' => __('flood-watch.error.guest_rate_limit'),
+                    'floods_on_route' => [],
+                    'incidents_on_route' => [],
+                    'alternatives' => [],
+                    'route_geometry' => null,
+                ];
+
+                return;
+            }
+            RateLimiter::hit($key, $decaySeconds);
+        }
+
+        $this->routeCheckLoading = true;
+        $this->routeCheckResult = null;
+
+        try {
+            $result = $routeCheckService->check($this->routeFrom, $this->routeTo);
+            $this->routeCheckResult = $result->toArray();
+        } finally {
+            $this->routeCheckLoading = false;
+        }
+    }
+
+    #[On('location-from-gps-for-route')]
+    public function setRouteFromFromGps(float $lat, float $lng, LocationResolver $locationResolver): void
+    {
+        $result = $locationResolver->reverseFromCoords($lat, $lng);
+        if ($result['valid'] && $result['in_area']) {
+            $this->routeFrom = $result['location'];
         }
     }
 

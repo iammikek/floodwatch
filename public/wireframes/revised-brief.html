@@ -219,6 +219,152 @@
             </div>
         </section>
 
+        <!-- Route Check Component States -->
+        <section>
+            <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-2">Route Check – Component States</h2>
+            <p class="text-xs text-slate-500 mb-4">Ref: docs/build/04-route-check.md · From/To geocoded via LocationResolver; verdict from RouteCheckService</p>
+            <div class="flex flex-wrap gap-6">
+                <!-- State 1: Empty (default) -->
+                <div class="w-[340px]">
+                    <p class="text-xs font-medium text-slate-500 mb-2">1. Empty (default)</p>
+                    <div class="p-4 rounded-lg bg-blue-50 border border-blue-200">
+                        <h3 class="text-xs font-semibold text-slate-700 uppercase tracking-wide mb-3">Route Check</h3>
+                        <div class="flex flex-col gap-2">
+                            <div class="flex gap-2">
+                                <input class="flex-1 text-sm rounded border-slate-300 px-3 py-2" placeholder="From" />
+                                <button class="shrink-0 w-10 h-10 rounded-lg border border-slate-300 flex items-center justify-center" title="Use my location">📍</button>
+                            </div>
+                            <input class="text-sm rounded border-slate-300 px-3 py-2" placeholder="To" />
+                            <button class="py-2 bg-blue-600 text-white text-sm font-medium rounded">Check route</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- State 2: Loading -->
+                <div class="w-[340px]">
+                    <p class="text-xs font-medium text-slate-500 mb-2">2. Loading</p>
+                    <div class="p-4 rounded-lg bg-blue-50 border border-blue-200">
+                        <h3 class="text-xs font-semibold text-slate-700 uppercase tracking-wide mb-3">Route Check</h3>
+                        <div class="flex flex-col gap-2">
+                            <div class="flex gap-2">
+                                <input class="flex-1 text-sm rounded border-slate-300 px-3 py-2" value="Langport" readonly />
+                                <button class="shrink-0 w-10 h-10 rounded-lg border border-slate-300 flex items-center justify-center" disabled>📍</button>
+                            </div>
+                            <input class="text-sm rounded border-slate-300 px-3 py-2" value="Taunton" readonly />
+                            <button class="py-2 bg-blue-400 text-white text-sm font-medium rounded flex items-center justify-center gap-2" disabled>
+                                <svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                Searching…
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <!-- State 3: Clear -->
+                <div class="w-[340px]">
+                    <p class="text-xs font-medium text-slate-500 mb-2">3. Verdict: Clear</p>
+                    <div class="p-4 rounded-lg bg-blue-50 border border-blue-200">
+                        <h3 class="text-xs font-semibold text-slate-700 uppercase tracking-wide mb-3">Route Check</h3>
+                        <div class="flex flex-col gap-2 mb-4">
+                            <div class="flex gap-2">
+                                <input class="flex-1 text-sm rounded border-slate-300 px-3 py-2" value="Langport" readonly />
+                                <button class="shrink-0 w-10 h-10 rounded-lg border border-slate-300 flex items-center justify-center">📍</button>
+                            </div>
+                            <input class="text-sm rounded border-slate-300 px-3 py-2" value="Taunton" readonly />
+                            <button class="py-2 bg-blue-600 text-white text-sm font-medium rounded">Check route</button>
+                        </div>
+                        <div class="p-4 rounded-lg bg-white border border-slate-200 space-y-2">
+                            <span class="inline-flex px-2.5 py-1 rounded-full text-sm font-medium bg-emerald-100 text-emerald-800">Clear</span>
+                            <p class="text-sm text-slate-600">Route clear. No flood warnings or road incidents affecting your route.</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- State 4: Blocked -->
+                <div class="w-[340px]">
+                    <p class="text-xs font-medium text-slate-500 mb-2">4. Verdict: Blocked</p>
+                    <div class="p-4 rounded-lg bg-blue-50 border border-blue-200">
+                        <h3 class="text-xs font-semibold text-slate-700 uppercase tracking-wide mb-3">Route Check</h3>
+                        <div class="flex flex-col gap-2 mb-4">
+                            <div class="flex gap-2">
+                                <input class="flex-1 text-sm rounded border-slate-300 px-3 py-2" value="Langport" readonly />
+                                <button class="shrink-0 w-10 h-10 rounded-lg border border-slate-300 flex items-center justify-center">📍</button>
+                            </div>
+                            <input class="text-sm rounded border-slate-300 px-3 py-2" value="Taunton" readonly />
+                            <button class="py-2 bg-blue-600 text-white text-sm font-medium rounded">Check route</button>
+                        </div>
+                        <div class="p-4 rounded-lg bg-white border border-slate-200 space-y-2">
+                            <span class="inline-flex px-2.5 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">Blocked</span>
+                            <p class="text-sm text-slate-600">Route blocked by road closure. Consider an alternative route.</p>
+                            <p class="text-xs font-medium text-slate-500 uppercase mt-2">Road incidents on route</p>
+                            <p class="text-sm text-slate-700">🚫 A361 — Road closed</p>
+                            <p class="text-xs font-medium text-slate-500 uppercase mt-2">Alternative routes</p>
+                            <p class="text-sm text-slate-600">M5 J25 → A358 → Taunton (50 km, ~45 min)</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- State 5: At risk -->
+                <div class="w-[340px]">
+                    <p class="text-xs font-medium text-slate-500 mb-2">5. Verdict: At risk</p>
+                    <div class="p-4 rounded-lg bg-blue-50 border border-blue-200">
+                        <h3 class="text-xs font-semibold text-slate-700 uppercase tracking-wide mb-3">Route Check</h3>
+                        <div class="flex flex-col gap-2 mb-4">
+                            <div class="flex gap-2">
+                                <input class="flex-1 text-sm rounded border-slate-300 px-3 py-2" value="Langport" readonly />
+                                <button class="shrink-0 w-10 h-10 rounded-lg border border-slate-300 flex items-center justify-center">📍</button>
+                            </div>
+                            <input class="text-sm rounded border-slate-300 px-3 py-2" value="Bristol" readonly />
+                            <button class="py-2 bg-blue-600 text-white text-sm font-medium rounded">Check route</button>
+                        </div>
+                        <div class="p-4 rounded-lg bg-white border border-slate-200 space-y-2">
+                            <span class="inline-flex px-2.5 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-800">At risk</span>
+                            <p class="text-sm text-slate-600">Route passes through areas with flood warnings. Check conditions before travelling.</p>
+                            <p class="text-xs font-medium text-slate-500 uppercase mt-2">Flood warnings on route</p>
+                            <p class="text-sm text-amber-700">North Moor flood warning area</p>
+                            <p class="text-sm text-amber-700">King's Sedgemoor drain</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- State 6: Delays -->
+                <div class="w-[340px]">
+                    <p class="text-xs font-medium text-slate-500 mb-2">6. Verdict: Delays</p>
+                    <div class="p-4 rounded-lg bg-blue-50 border border-blue-200">
+                        <h3 class="text-xs font-semibold text-slate-700 uppercase tracking-wide mb-3">Route Check</h3>
+                        <div class="flex flex-col gap-2 mb-4">
+                            <div class="flex gap-2">
+                                <input class="flex-1 text-sm rounded border-slate-300 px-3 py-2" value="Langport" readonly />
+                                <button class="shrink-0 w-10 h-10 rounded-lg border border-slate-300 flex items-center justify-center">📍</button>
+                            </div>
+                            <input class="text-sm rounded border-slate-300 px-3 py-2" value="Exeter" readonly />
+                            <button class="py-2 bg-blue-600 text-white text-sm font-medium rounded">Check route</button>
+                        </div>
+                        <div class="p-4 rounded-lg bg-white border border-slate-200 space-y-2">
+                            <span class="inline-flex px-2.5 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">Delays</span>
+                            <p class="text-sm text-slate-600">Route has 2 delay(s) or lane closure(s). Allow extra time.</p>
+                            <p class="text-xs font-medium text-slate-500 uppercase mt-2">Road incidents on route</p>
+                            <p class="text-sm text-slate-700">⚠️ M5 — Lane closures</p>
+                            <p class="text-sm text-slate-700">🚧 A38 — Road works</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- State 7: Error -->
+                <div class="w-[340px]">
+                    <p class="text-xs font-medium text-slate-500 mb-2">7. Error (invalid / outside area)</p>
+                    <div class="p-4 rounded-lg bg-blue-50 border border-blue-200">
+                        <h3 class="text-xs font-semibold text-slate-700 uppercase tracking-wide mb-3">Route Check</h3>
+                        <div class="flex flex-col gap-2 mb-4">
+                            <div class="flex gap-2">
+                                <input class="flex-1 text-sm rounded border-red-300 px-3 py-2" value="London" />
+                                <button class="shrink-0 w-10 h-10 rounded-lg border border-slate-300 flex items-center justify-center">📍</button>
+                            </div>
+                            <input class="text-sm rounded border-slate-300 px-3 py-2" value="Taunton" />
+                            <button class="py-2 bg-blue-600 text-white text-sm font-medium rounded">Check route</button>
+                        </div>
+                        <div class="p-4 rounded-lg bg-white border border-slate-200 space-y-2">
+                            <span class="inline-flex px-2.5 py-1 rounded-full text-sm font-medium bg-slate-100 text-slate-700">Unable to check</span>
+                            <p class="text-sm text-slate-600">Both locations must be in the South West (Bristol, Somerset, Devon, Cornwall).</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Location input options -->
         <section>
             <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-2">Location Input</h2>

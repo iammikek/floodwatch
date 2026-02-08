@@ -144,6 +144,25 @@ return [
         'suspended' => 'Suspended',
     ],
 
+    'route_check' => [
+        'error_missing_locations' => 'Please enter both From and To locations.',
+        'error_invalid_from' => 'Could not find the From location. Try a postcode or town name.',
+        'error_invalid_to' => 'Could not find the To location. Try a postcode or town name.',
+        'error_outside_area' => 'Both locations must be in the South West (Bristol, Somerset, Devon, Cornwall).',
+        'error_route_failed' => 'Unable to compute route. Check that both locations are in the South West.',
+        'summary_blocked' => 'Route blocked by road closure. Consider an alternative route.',
+        'summary_at_risk' => 'Route passes through areas with flood warnings. Check conditions before travelling.',
+        'summary_delays' => 'Route has :incident_count delay(s) or lane closure(s). Allow extra time.',
+        'summary_clear' => 'Route clear. No flood warnings or road incidents affecting your route.',
+        'verdict_blocked' => 'Blocked',
+        'verdict_at_risk' => 'At risk',
+        'verdict_delays' => 'Delays',
+        'verdict_clear' => 'Clear',
+        'alternatives' => 'Alternative routes',
+        'floods_on_route' => 'Flood warnings on route',
+        'incidents_on_route' => 'Road incidents on route',
+    ],
+
     'incident_type' => [
         'authorityOperation' => 'Authority operation',
         'constructionWork' => 'Road works',

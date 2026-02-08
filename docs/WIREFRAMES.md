@@ -81,5 +81,5 @@ flowchart LR
 
 ## HTML Wireframes
 
-- `public/wireframes/revised-brief.html` – MVP
+- `public/wireframes/revised-brief.html` – MVP (includes Route Check component states: empty, loading, clear, blocked, at risk, delays, error)
 - `public/wireframes/situational-awareness.html` – Phase 2
