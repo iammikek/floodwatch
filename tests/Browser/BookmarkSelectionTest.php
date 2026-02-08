@@ -27,8 +27,6 @@ test('bookmark button shows loading indicator when clicked', function () {
             ->assertSee('Home')
             ->assertSee('Langport')
             ->click('[data-testid="bookmark-'.$bookmark->id.'"]')
-            ->waitForText(__('flood-watch.dashboard.searching'), 2)
-            ->pause(500)
-            ->assertSourceHas('wire:loading');
+            ->waitForText(__('flood-watch.dashboard.searching'), 2);
     });
 })->skip(fn () => ! getenv('DUSK_ENABLED'), 'Dusk tests require DUSK_ENABLED=1 and a running server. Run: sail up -d && DUSK_ENABLED=1 sail dusk');

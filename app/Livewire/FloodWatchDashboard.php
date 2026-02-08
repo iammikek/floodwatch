@@ -132,7 +132,7 @@ class FloodWatchDashboard extends Component
             'in_area' => true,
             'lat' => $bookmark->lat,
             'lng' => $bookmark->lng,
-            'region' => $bookmark->region,
+            'region' => $bookmark->region ?? 'somerset',
             'display_name' => $bookmark->location,
         ];
 
