@@ -39,6 +39,15 @@ class FloodWatchDashboardTest extends TestCase
             ->assertSet('location', '');
     }
 
+    public function test_dashboard_displays_route_check_section(): void
+    {
+        Livewire::test('flood-watch-dashboard')
+            ->assertSee('Route Check', false)
+            ->assertSee('From', false)
+            ->assertSee('To', false)
+            ->assertSee('Check route', false);
+    }
+
     public function test_search_displays_assistant_response(): void
     {
         Config::set('openai.api_key', 'test-key');

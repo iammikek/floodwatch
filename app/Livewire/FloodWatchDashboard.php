@@ -52,6 +52,10 @@ class FloodWatchDashboard extends Component
 
     public bool $autoRefreshEnabled = false;
 
+    public string $routeFrom = '';
+
+    public string $routeTo = '';
+
     /**
      * User's location bookmarks (when logged in).
      *

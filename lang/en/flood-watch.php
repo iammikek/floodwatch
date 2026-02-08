@@ -106,6 +106,10 @@ return [
         'edit' => 'Edit',
         'delete' => 'Delete',
         'delete_bookmark_confirm' => 'Remove this bookmark?',
+        'route_check' => 'Route Check',
+        'route_check_from' => 'From',
+        'route_check_to' => 'To',
+        'route_check_button' => 'Check route',
     ],
     'bookmarks' => [
         'title' => 'Location bookmarks',
