@@ -25,11 +25,11 @@ beforeEach(function () {
     ];
 
     Http::fake([
-        'environment.data.gov.uk' => Http::response(['items' => []], 200),
-        'api.ffc-environment-agency.fgs.metoffice.gov.uk' => Http::response([], 200),
-        'api.open-meteo.com' => Http::response([], 200),
-        'api.data.nationalhighways.co.uk' => Http::response([], 200),
-        'api.openai.com/v1/organization/usage' => Http::response($usageResponse, 200),
+        '*environment.data.gov.uk*' => Http::response(['items' => []], 200),
+        '*api.ffc-environment-agency.fgs.metoffice.gov.uk*' => Http::response(['statement' => []], 200),
+        '*api.open-meteo.com*' => Http::response(['daily' => []], 200),
+        '*api.data.nationalhighways.co.uk*' => Http::response([], 200),
+        '*api.openai.com*' => Http::response($usageResponse, 200),
     ]);
 });
 

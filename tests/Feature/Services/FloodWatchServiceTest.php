@@ -108,6 +108,12 @@ class FloodWatchServiceTest extends TestCase
     {
         Config::set('openai.api_key', 'test-key');
 
+        Http::fake([
+            '*api.ffc-environment-agency.fgs.metoffice.gov.uk*' => Http::response(['statement' => []], 200),
+            '*api.open-meteo.com*' => Http::response(['daily' => ['time' => [], 'weathercode' => [], 'temperature_2m_max' => [], 'temperature_2m_min' => [], 'precipitation_sum' => []]], 200),
+            '*environment.data.gov.uk*' => Http::response(['items' => []], 200),
+        ]);
+
         $directResponse = CreateResponse::fake([
             'choices' => [
                 [
@@ -136,6 +142,12 @@ class FloodWatchServiceTest extends TestCase
     public function test_chat_records_llm_request_with_usage_and_context(): void
     {
         Config::set('openai.api_key', 'test-key');
+
+        Http::fake([
+            '*api.ffc-environment-agency.fgs.metoffice.gov.uk*' => Http::response(['statement' => []], 200),
+            '*api.open-meteo.com*' => Http::response(['daily' => ['time' => [], 'weathercode' => [], 'temperature_2m_max' => [], 'temperature_2m_min' => [], 'precipitation_sum' => []]], 200),
+            '*environment.data.gov.uk*' => Http::response(['items' => []], 200),
+        ]);
 
         $directResponse = CreateResponse::fake([
             'choices' => [
