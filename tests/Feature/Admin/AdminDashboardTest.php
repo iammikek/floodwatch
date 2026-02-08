@@ -135,10 +135,6 @@ test('admin dashboard displays recent llm requests section', function () {
 });
 
 test('admin dashboard displays llm requests table when populated', function () {
-    if (! \Illuminate\Support\Facades\Schema::hasTable('llm_requests')) {
-        $this->markTestSkipped('llm_requests table not present');
-    }
-
     $admin = User::factory()->admin()->create();
     \App\Models\LlmRequest::factory()->create([
         'model' => 'gpt-4o-mini',

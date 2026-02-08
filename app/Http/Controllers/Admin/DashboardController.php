@@ -10,6 +10,7 @@ use App\Models\UserSearch;
 use App\Services\OpenAiUsageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -27,15 +28,9 @@ class DashboardController extends Controller
 
         $llmUsage = app(OpenAiUsageService::class)->getUsage();
 
-        try {
-            $recentLlmRequests = LlmRequest::query()
-                ->with('user')
-                ->latest()
-                ->limit(10)
-                ->get();
-        } catch (\Throwable) {
-            $recentLlmRequests = collect();
-        }
+        $recentLlmRequests = Schema::hasTable('llm_requests')
+            ? LlmRequest::query()->with('user')->latest()->limit(10)->get()
+            : collect();
 
         $budgetMonthly = config('flood-watch.llm_budget_monthly', 0);
         $budgetAlertThreshold = $budgetMonthly > 0 ? round($budgetMonthly * 0.8, 2) : null;

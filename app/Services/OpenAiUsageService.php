@@ -52,6 +52,7 @@ class OpenAiUsageService
     {
         try {
             $today = $this->fetchCompletionsUsage(
+                $apiKey,
                 now()->startOfDay()->timestamp,
                 now()->timestamp,
                 '1h',
@@ -59,6 +60,7 @@ class OpenAiUsageService
             );
 
             $thisMonth = $this->fetchCompletionsUsage(
+                $apiKey,
                 now()->startOfMonth()->timestamp,
                 now()->timestamp,
                 '1d',
@@ -108,7 +110,7 @@ class OpenAiUsageService
     /**
      * @return array<int, array{object: string, start_time: int, end_time: int, results: array}>
      */
-    private function fetchCompletionsUsage(int $startTime, int $endTime, string $bucketWidth, int $limit): array
+    private function fetchCompletionsUsage(string $apiKey, int $startTime, int $endTime, string $bucketWidth, int $limit): array
     {
         $url = self::USAGE_BASE_URL.'/completions';
         $allData = [];
@@ -123,7 +125,6 @@ class OpenAiUsageService
                 'page' => $page,
             ]));
 
-            $apiKey = config('openai.org_api_key') ?? config('openai.api_key');
             $request = Http::withToken($apiKey)->timeout(self::TIMEOUT);
 
             $org = config('openai.organization');
