@@ -82,6 +82,12 @@ return [
     'default_radius_km' => (int) env('FLOOD_WATCH_RADIUS_KM', 15),
 
     /*
+    | Sentinel value for default (no-location) searches. Stored in user_searches.
+    | Stable, locale-independent; translate at display time via __('flood-watch.dashboard.default_location').
+    */
+    'default_location_sentinel' => 'default',
+
+    /*
     |--------------------------------------------------------------------------
     | Environment Agency API
     |--------------------------------------------------------------------------

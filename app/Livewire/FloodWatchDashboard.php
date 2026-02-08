@@ -2,9 +2,11 @@
 
 namespace App\Livewire;
 
+use App\Models\UserSearch;
 use App\Services\FloodWatchService;
 use App\Services\FloodWatchTrendService;
 use App\Services\LocationResolver;
+use App\Services\UserSearchService;
 use App\Support\IncidentIcon;
 use App\Support\LogMasker;
 use Illuminate\Support\Facades\Auth;
@@ -48,6 +50,45 @@ class FloodWatchDashboard extends Component
 
     public bool $autoRefreshEnabled = false;
 
+    /**
+     * Last 5 searches for the current user or session.
+     *
+     * @return array<int, array{location: string, lat: float, lng: float, region: ?string}>
+     */
+    public function getRecentSearchesProperty(): array
+    {
+        $query = UserSearch::query()
+            ->latest('searched_at')
+            ->limit(5);
+
+        if (Auth::check()) {
+            $query->where('user_id', Auth::id());
+        } else {
+            $query->where('session_id', session()->getId());
+        }
+
+        return $query->get()
+            ->map(fn (UserSearch $s) => [
+                'location' => $s->location,
+                'lat' => $s->lat,
+                'lng' => $s->lng,
+                'region' => $s->region,
+            ])
+            ->values()
+            ->all();
+    }
+
+    public function selectRecentSearch(string $location): void
+    {
+        $this->location = $location === config('flood-watch.default_location_sentinel') ? '' : $location;
+        $this->search(
+            app(FloodWatchService::class),
+            app(LocationResolver::class),
+            app(FloodWatchTrendService::class),
+            app(UserSearchService::class)
+        );
+    }
+
     public function mount(): void
     {
         if (Auth::guest()) {
@@ -76,7 +117,7 @@ class FloodWatchDashboard extends Component
         }
     }
 
-    public function search(FloodWatchService $assistant, LocationResolver $locationResolver, FloodWatchTrendService $trendService): void
+    public function search(FloodWatchService $assistant, LocationResolver $locationResolver, FloodWatchTrendService $trendService, UserSearchService $userSearchService): void
     {
         $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'hasUserLocation', 'lastChecked', 'error', 'retryAfterTimestamp']);
         $this->loading = true;
@@ -153,6 +194,15 @@ class FloodWatchDashboard extends Component
                 count($this->floods),
                 count($this->incidents),
                 $this->lastChecked
+            );
+
+            $userSearchService->record(
+                $locationTrimmed !== '' ? $locationTrimmed : config('flood-watch.default_location_sentinel'),
+                $userLat,
+                $userLng,
+                $region,
+                Auth::id(),
+                Auth::guest() ? session()->getId() : null
             );
 
             $this->dispatch('search-completed');

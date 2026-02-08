@@ -105,7 +105,7 @@ Stores locations users have searched. Guests: `user_id = null`, `session_id` set
 | created_at | timestamp | |
 | updated_at | timestamp | |
 
-**Indexes**: `user_id`, `session_id`, `searched_at` (for retention/cleanup).
+**Indexes**: `user_id`, `session_id`, `searched_at` (for retention/cleanup), `region` (for admin top-regions aggregation), `(user_id, searched_at)` and `(session_id, searched_at)` (for recent-searches filter+sort).
 
 **Retention**: e.g. 90 days; prune older rows via scheduled job.
 
@@ -179,3 +179,4 @@ flowchart LR
 | `docs/ARCHITECTURE.md` | System structure, data flow |
 | `docs/PLAN.md` | Search history, bookmarks implementation plan |
 | `docs/BRIEF.md` | User needs, persistence requirements |
+| `docs/DATA_RETENTION.md` | Retention policies, pruning, future tasks |

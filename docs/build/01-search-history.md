@@ -10,12 +10,12 @@ Store searched locations in the database. Feeds "Recent searches" UI and admin m
 
 ## Acceptance Criteria
 
-- [ ] Each successful search creates a `UserSearch` record (guest: `user_id` null, `session_id` set; registered: `user_id` set)
-- [ ] Recent searches (last 5) appear when user changes location or in quick-pick UI
-- [ ] Guest recent searches keyed by session; registered by user
-- [ ] Admin dashboard User Metrics can show `UserSearch::count()` and top regions (enhances build 1)
-- [ ] Feature test: search creates UserSearch; recent searches returns correct items
-- [ ] `sail test` passes
+- [x] Each successful search creates a `UserSearch` record (guest: `user_id` null, `session_id` set; registered: `user_id` set)
+- [x] Recent searches (last 5) appear when user changes location or in quick-pick UI
+- [x] Guest recent searches keyed by session; registered by user
+- [x] Admin dashboard User Metrics can show `UserSearch::count()` and top regions (enhances build 1)
+- [x] Feature test: search creates UserSearch; recent searches returns correct items
+- [x] `sail test` passes
 
 ---
 
@@ -50,4 +50,4 @@ Store searched locations in the database. Feeds "Recent searches" UI and admin m
 
 ## Retention
 
-Add scheduled job (or document): Prune rows older than 90 days. Can defer to later.
+Add scheduled job (or document): Prune rows older than 90 days. Can defer to later. See `docs/DATA_RETENTION.md` for future task.

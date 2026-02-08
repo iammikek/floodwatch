@@ -42,6 +42,19 @@
                         <dd class="text-gray-900">{{ number_format($totalSearches) }}</dd>
                     </div>
                 </dl>
+                @if (!empty($topRegions))
+                    <div class="mt-4">
+                        <h4 class="text-sm font-medium text-gray-700 mb-2">Top regions by search count</h4>
+                        <ul class="flex flex-wrap gap-2">
+                            @foreach ($topRegions as $region => $count)
+                                <li class="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1.5 text-sm">
+                                    <span class="font-medium text-slate-700">{{ ucfirst($region) }}</span>
+                                    <span class="text-slate-500">{{ number_format($count) }}</span>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
             </section>
 
             <section class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">

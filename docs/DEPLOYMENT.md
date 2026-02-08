@@ -147,6 +147,36 @@ Railway automatically builds and deploys. No manual steps.
 - For SQLite: ensure `database/` is writable (Dockerfile creates it)
 - For volume: ensure mount path matches `DB_DATABASE`
 
+### Redis cache cannot be found
+
+The app uses Redis for the `flood-watch` cache store (search results, health checks) and for trends. If Redis is not provisioned, you'll see connection errors.
+
+**Option A – Use database cache (no Redis)**
+
+Avoid Redis by using the database cache store:
+
+| Variable | Value |
+|----------|-------|
+| `FLOOD_WATCH_CACHE_STORE` | `database` |
+| `CACHE_STORE` | `database` |
+| `FLOOD_WATCH_TRENDS_ENABLED` | `false` |
+
+Ensure migrations have run (`php artisan migrate`) so the `cache` table exists.
+
+**Option B – Add Redis on Railway**
+
+1. Railway → Your Project → **New** → **Database** → **Redis**
+2. After Redis is created, select your **app service** → **Variables** → **Add variable reference**
+3. Choose the Redis service and add `REDIS_URL` (Railway usually provides this)
+4. Set (or leave as default):
+
+| Variable | Value |
+|----------|-------|
+| `FLOOD_WATCH_CACHE_STORE` | `flood-watch` |
+| `CACHE_STORE` | `redis` |
+
+Railway injects `REDIS_URL` when the Redis service is linked. Laravel uses it for the Redis connection.
+
 ## Custom Domain
 
 1. Railway → Settings → Domains → Add Custom Domain
