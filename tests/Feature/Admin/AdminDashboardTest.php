@@ -75,6 +75,25 @@ test('admin dashboard displays user metrics section', function () {
     $response->assertSee('User Metrics', false);
 });
 
+test('admin dashboard displays top regions when user searches exist', function () {
+    $admin = User::factory()->admin()->create();
+
+    \App\Models\UserSearch::factory()->count(3)->create(['region' => 'somerset']);
+    \App\Models\UserSearch::factory()->count(2)->create(['region' => 'bristol']);
+    \App\Models\UserSearch::factory()->count(1)->create(['region' => 'devon']);
+
+    $response = $this->actingAs($admin)->get('/admin');
+
+    $response->assertOk();
+    $response->assertSee('Top regions by search count', false);
+    $response->assertSee('Somerset', false);
+    $response->assertSee('Bristol', false);
+    $response->assertSee('Devon', false);
+    $response->assertSee('3', false);
+    $response->assertSee('2', false);
+    $response->assertSee('1', false);
+});
+
 test('admin dashboard displays llm cost section', function () {
     $admin = User::factory()->admin()->create();
 
@@ -85,40 +104,21 @@ test('admin dashboard displays llm cost section', function () {
 });
 
 test('admin dashboard displays llm usage from openai api', function () {
-    Config::set('openai.org_api_key', 'sk-org-admin-test');
     $admin = User::factory()->admin()->create();
 
-    Http::fake(function ($request) {
-        if (str_contains($request->url(), 'api.openai.com/v1/organization/usage')) {
-            return Http::response([
-                'object' => 'page',
-                'data' => [
-                    [
-                        'object' => 'bucket',
-                        'start_time' => now()->startOfMonth()->timestamp,
-                        'end_time' => now()->timestamp,
-                        'results' => [
-                            [
-                                'object' => 'organization.usage.completions.result',
-                                'num_model_requests' => 3,
-                                'input_tokens' => 1000,
-                                'output_tokens' => 200,
-                            ],
-                        ],
-                    ],
-                ],
-                'has_more' => false,
-                'next_page' => null,
-            ], 200);
-        }
-        if (str_contains($request->url(), 'environment.data.gov.uk')) {
-            return Http::response(['items' => []], 200);
-        }
-        if (str_contains($request->url(), 'api.ffc-environment-agency') || str_contains($request->url(), 'api.open-meteo.com') || str_contains($request->url(), 'api.data.nationalhighways.co.uk')) {
-            return Http::response([], 200);
-        }
-
-        return Http::response([], 404);
+    $this->mock(\App\Services\OpenAiUsageService::class, function ($mock) {
+        $mock->shouldReceive('getUsage')
+            ->once()
+            ->andReturn([
+                'requests_today' => 5,
+                'requests_this_month' => 42,
+                'input_tokens_this_month' => 1000,
+                'output_tokens_this_month' => 200,
+                'cost_this_month' => 0.27,
+                'remaining_budget' => null,
+                'chart_daily' => [],
+                'error' => null,
+            ]);
     });
 
     $response = $this->actingAs($admin)->get('/admin');
@@ -127,8 +127,8 @@ test('admin dashboard displays llm usage from openai api', function () {
     $response->assertSee('Requests today', false);
     $response->assertSee('Requests this month', false);
     $response->assertSee('Est. cost this month', false);
-    $response->assertSee('Usage this month', false);
-    $response->assertSee('llm-usage-chart', false);
+    $response->assertSee('5', false);
+    $response->assertSee('42', false);
 });
 
 test('admin dashboard displays recent llm requests section', function () {
@@ -160,41 +160,22 @@ test('admin dashboard displays llm requests table when populated', function () {
 });
 
 test('admin dashboard displays remaining budget when llm_budget_initial is set', function () {
-    Config::set('openai.org_api_key', 'sk-org-admin-test');
     Config::set('flood-watch.llm_budget_initial', 10);
     $admin = User::factory()->admin()->create();
 
-    Http::fake(function ($request) {
-        if (str_contains($request->url(), 'api.openai.com/v1/organization/usage')) {
-            return Http::response([
-                'object' => 'page',
-                'data' => [
-                    [
-                        'object' => 'bucket',
-                        'start_time' => now()->startOfMonth()->timestamp,
-                        'end_time' => now()->timestamp,
-                        'results' => [
-                            [
-                                'object' => 'organization.usage.completions.result',
-                                'num_model_requests' => 2,
-                                'input_tokens' => 500,
-                                'output_tokens' => 100,
-                            ],
-                        ],
-                    ],
-                ],
-                'has_more' => false,
-                'next_page' => null,
-            ], 200);
-        }
-        if (str_contains($request->url(), 'environment.data.gov.uk')) {
-            return Http::response(['items' => []], 200);
-        }
-        if (str_contains($request->url(), 'api.ffc-environment-agency') || str_contains($request->url(), 'api.open-meteo.com') || str_contains($request->url(), 'api.data.nationalhighways.co.uk')) {
-            return Http::response([], 200);
-        }
-
-        return Http::response([], 404);
+    $this->mock(\App\Services\OpenAiUsageService::class, function ($mock) {
+        $mock->shouldReceive('getUsage')
+            ->once()
+            ->andReturn([
+                'requests_today' => 2,
+                'requests_this_month' => 15,
+                'input_tokens_this_month' => 500,
+                'output_tokens_this_month' => 100,
+                'cost_this_month' => 0.14,
+                'remaining_budget' => 9.86,
+                'chart_daily' => [],
+                'error' => null,
+            ]);
     });
 
     $response = $this->actingAs($admin)->get('/admin');

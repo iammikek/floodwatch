@@ -32,6 +32,15 @@ class DashboardController extends Controller
 
         $totalUsers = User::count();
         $totalSearches = UserSearch::count();
+        $topRegions = UserSearch::query()
+            ->whereNotNull('region')
+            ->where('region', '!=', '')
+            ->selectRaw('region, count(*) as search_count')
+            ->groupBy('region')
+            ->orderByDesc('search_count')
+            ->limit(10)
+            ->pluck('search_count', 'region')
+            ->all();
 
         $llmUsage = app(OpenAiUsageService::class)->getUsage();
 
@@ -47,6 +56,7 @@ class DashboardController extends Controller
             'checks' => $checks,
             'totalUsers' => $totalUsers,
             'totalSearches' => $totalSearches,
+            'topRegions' => $topRegions,
             'llmUsage' => $llmUsage,
             'recentLlmRequests' => $recentLlmRequests,
             'budgetMonthly' => $budgetMonthly,

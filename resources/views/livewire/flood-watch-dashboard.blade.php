@@ -98,6 +98,22 @@
             <label for="location" class="block text-sm font-medium text-slate-700 mb-2">
                 {{ __('flood-watch.dashboard.your_location') }}
             </label>
+            @if (count($recentSearches ?? []) > 0)
+                <div class="flex flex-wrap gap-2 mb-3">
+                    <span class="text-xs text-slate-500 self-center mr-1">{{ __('flood-watch.dashboard.recent_searches') }}:</span>
+                    @foreach ($recentSearches as $recent)
+                        <button
+                            type="button"
+                            wire:click="selectRecentSearch({{ Js::from($recent['location']) }})"
+                            @click="window.__loadLeaflet && window.__loadLeaflet()"
+                            wire:loading.attr="disabled"
+                            class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors disabled:opacity-50"
+                        >
+                            {{ $recent['location'] }}
+                        </button>
+                    @endforeach
+                </div>
+            @endif
             <div class="flex flex-col sm:flex-row gap-2">
                 <input
                     type="text"

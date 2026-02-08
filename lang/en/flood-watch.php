@@ -52,6 +52,7 @@ return [
         'stations' => 'stations',
         'your_location' => 'Your location',
         'location_placeholder' => 'e.g. Langport, TA10 0, Bristol',
+        'default_location' => 'Somerset Levels',
         'check_status' => 'Check status',
         'searching' => 'Searching…',
         'connecting' => 'Connecting…',
