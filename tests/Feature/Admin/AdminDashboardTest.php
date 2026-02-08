@@ -33,10 +33,10 @@ beforeEach(function () {
     ]);
 });
 
-test('admin dashboard returns 403 for guest', function () {
+test('admin dashboard redirects guest to login', function () {
     $response = $this->get('/admin');
 
-    $response->assertStatus(403);
+    $response->assertRedirect(route('login'));
 });
 
 test('admin dashboard returns 403 for non-admin user', function () {

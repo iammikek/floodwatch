@@ -16,10 +16,6 @@ class DashboardController extends Controller
 {
     public function __invoke(Request $request): View
     {
-        if (! $request->user()) {
-            abort(403);
-        }
-
         Gate::authorize('accessAdmin');
 
         $healthResponse = app(HealthController::class)($request);

@@ -11,6 +11,7 @@ API health, LLM cost, user metrics, budget alerts, recent LLM requests. Restrict
 ## Acceptance Criteria
 
 - [x] Route `/admin` (or `/admin-dashboard`) exists and requires auth
+- [x] Guests are redirected to login when visiting `/admin`
 - [x] Non-admin users receive 403 when visiting `/admin`
 - [x] Admin users can access `/admin` and see dashboard
 - [x] API Health section displays: EA, Flood Forecast, Weather, National Highways, Cache status (from `/health` or equivalent)
@@ -24,7 +25,7 @@ API health, LLM cost, user metrics, budget alerts, recent LLM requests. Restrict
 
 ## Access Control
 
-- **Route**: `/admin` or `/admin-dashboard`
+- **Route**: `/admin` or `/admin-dashboard` – protected by `auth` middleware
 - **Gate**: `$this->authorize('accessAdmin')` – defined in foundation
 
 ---
@@ -70,6 +71,7 @@ Reuse `/health` endpoint response. `HealthController` returns EA, NH, Cache, etc
 
 ## Tests
 
-- Guest/user cannot access admin route
+- Guest redirected to login
+- Non-admin user receives 403
 - Admin can access
 - Metrics render (mock data)
