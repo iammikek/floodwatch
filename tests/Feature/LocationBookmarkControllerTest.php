@@ -86,6 +86,28 @@ test('second bookmark is not default when first exists', function () {
     expect($work->is_default)->toBeFalse();
 });
 
+test('user can edit bookmark label and location', function () {
+    $user = User::factory()->create();
+    $bookmark = LocationBookmark::factory()->create([
+        'user_id' => $user->id,
+        'label' => 'Home',
+        'location' => 'Langport',
+        'lat' => 51.0358,
+        'lng' => -2.8318,
+    ]);
+
+    $response = $this->actingAs($user)->patch(route('bookmarks.update', $bookmark), [
+        'label' => 'Parents',
+        'location' => 'Bristol',
+    ]);
+
+    $response->assertRedirect(route('profile.edit'));
+    $response->assertSessionHas('status', 'bookmark-updated');
+    $bookmark->refresh();
+    expect($bookmark->label)->toBe('Parents');
+    expect($bookmark->location)->toBe('Bristol, England');
+});
+
 test('user can update bookmark to set as default', function () {
     $user = User::factory()->create();
     $first = LocationBookmark::factory()->create([

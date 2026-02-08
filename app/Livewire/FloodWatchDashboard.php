@@ -154,7 +154,7 @@ class FloodWatchDashboard extends Component
                 $this->error = __('flood-watch.error.guest_rate_limit');
                 $this->retryAfterTimestamp = time() + $seconds;
             }
-        } elseif (Auth::user()->locationBookmarks()->where('is_default', true)->exists()) {
+        } else {
             $default = Auth::user()->locationBookmarks()->where('is_default', true)->first();
             if ($default !== null && $this->location === '') {
                 $this->location = $default->location;

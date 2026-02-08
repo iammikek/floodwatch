@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Models\LocationBookmark;
 use App\Services\LocationResolver;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateLocationBookmarkRequest extends FormRequest
@@ -73,5 +74,19 @@ class UpdateLocationBookmarkRequest extends FormRequest
         $resolved = $this->resolvedLocation;
 
         return $resolved !== null ? ($resolved['display_name'] ?? trim($this->input('location', ''))) : null;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    protected function failedValidation(Validator $validator): void
+    {
+        $bookmark = $this->route('bookmark');
+
+        if ($bookmark instanceof LocationBookmark) {
+            session()->flash('editing_bookmark_id', $bookmark->id);
+        }
+
+        parent::failedValidation($validator);
     }
 }

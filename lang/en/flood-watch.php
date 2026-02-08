@@ -110,8 +110,10 @@ return [
     'bookmarks' => [
         'title' => 'Location bookmarks',
         'intro' => 'Save locations to quickly check flood and road status. Your default bookmark loads when you open Flood Watch.',
+        'default' => 'Default',
         'label' => 'Label',
         'label_placeholder' => 'e.g. Home, Work, Parents',
+        'location' => 'Location',
         'location_placeholder' => 'e.g. Langport, TA10 0, Bristol',
         'add' => 'Add bookmark',
         'no_bookmarks' => 'No bookmarks yet. Add one below.',
@@ -121,6 +123,8 @@ return [
         'created' => 'Bookmark added.',
         'updated' => 'Bookmark updated.',
         'deleted' => 'Bookmark removed.',
+        'save' => 'Save',
+        'cancel' => 'Cancel',
     ],
     'map' => [
         'your_location' => 'Your location',

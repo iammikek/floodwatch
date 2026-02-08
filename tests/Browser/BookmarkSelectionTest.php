@@ -27,7 +27,7 @@ test('bookmark button shows loading indicator when clicked', function () {
             ->assertSee('Home')
             ->assertSee('Langport')
             ->click('[data-testid="bookmark-'.$bookmark->id.'"]')
-            ->waitForText('Searching...', 2)
+            ->waitForText(__('flood-watch.dashboard.searching'), 2)
             ->pause(500)
             ->assertSourceHas('wire:loading');
     });
