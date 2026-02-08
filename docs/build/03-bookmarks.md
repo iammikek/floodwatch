@@ -4,6 +4,8 @@ Registered users can bookmark multiple locations (home, work, parents). One can 
 
 **Status**: ✅ Complete
 
+**Scope**: Add, delete, and set default only. No edit/update—users delete and re-add to change a bookmark.
+
 **Prerequisite**: [00-foundation.md](00-foundation.md) – migration and model already exist.
 
 **Schema**: `docs/SCHEMA.md` – `location_bookmarks` table
@@ -20,7 +22,7 @@ Registered users can bookmark multiple locations (home, work, parents). One can 
 - [x] Dashboard shows bookmark dropdown when logged in; selecting bookmark loads that location
 - [x] Default bookmark pre-loads on app open (mount)
 - [x] Max 10 bookmarks per user (configurable)
-- [x] Feature tests: CRUD bookmarks; default uniqueness; dashboard loads default
+- [x] Feature tests: create, delete, set default; default uniqueness; dashboard loads default
 - [x] `sail test` passes
 
 ---
@@ -71,3 +73,14 @@ Registered users can bookmark multiple locations (home, work, parents). One can 
 - **LocationBookmarkControllerTest**: Guest rejection, create, first/second default, set default, delete, authorization (set-default, destroy), max limit
 - **FloodWatchDashboardTest**: Default pre-loads on mount, bookmarks shown when logged in
 - **LocationBookmarkTest** (model): Factory, casts, default uniqueness, DB constraint
+
+---
+
+## PR Description (copy to GitHub)
+
+**Location bookmarks** – add, delete, set default. No edit/update.
+
+- Profile: add bookmark (label + location), list with Set as default / Delete
+- Dashboard: bookmark buttons when logged in; default pre-loads on mount
+- Routes: `POST /bookmarks`, `POST /bookmarks/{bookmark}/default`, `DELETE /bookmarks/{bookmark}`
+- Key files: `LocationBookmarkController`, `StoreLocationBookmarkRequest`, `bookmarks-form.blade.php`
