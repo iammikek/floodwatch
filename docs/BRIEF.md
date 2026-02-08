@@ -91,8 +91,7 @@ Users can enter their location via:
 | Method | Example |
 |--------|---------|
 | **Postcode** | TA10 9 |
-| **Address** | High Street, Langport |
-| **What3Words** | ///word.word.word |
+| **Place name** | Langport, High Street |
 | **Use my location** | Phone GPS – browser geolocation; resolves to coordinates |
 
 All resolve to coordinates for flood, road, and forecast checks. **"Use my location"** uses the browser Geolocation API (requires HTTPS); useful on mobile when out in the Levels.
@@ -127,8 +126,8 @@ Registered users can **bookmark more than one location** and switch between them
 
 | Input | Output |
 |-------|--------|
-| **From** (postcode/address/What3Words) | Route status: |
-| **To** (postcode/address/What3Words) | • **Clear** – Route appears passable |
+| **From** (postcode or place name) | Route status: |
+| **To** (postcode or place name) | • **Clear** – Route appears passable |
 | | • **Blocked** – Road closed at X, alternative via Y |
 | | • **At risk** – Route crosses flood warning area |
 | | • **Delays** – Lane closures, expect delays |
@@ -267,7 +266,7 @@ We must always consider LLM cost:
 | Flood Forecasting Centre | 5-day forecast |
 | National Highways | Road incidents (DATEX II) |
 | Open-Meteo (or similar) | Weather |
-| What3Words API | Location lookup (optional) |
+| postcodes.io + Nominatim | Postcode and place name lookup |
 | Routing (OSRM, etc.) | Route geometry for route check |
 
 ---
@@ -296,7 +295,7 @@ Flood Watch helps locals in flood-prone areas decide:
 
 Core features:
 
-- Location lookup (postcode, address, What3Words) with persistence
+- Location lookup (postcode, place name) with persistence
 - Route check (From → To: clear / blocked / at risk)
 - Backend polling and geographic caching for fast, shared access
 - LLM cost control: cache responses, skip when trivial

@@ -61,15 +61,14 @@ flowchart TD
 
 ### 2.1 Lookup Methods
 
-**Criterion**: Users can enter location via postcode, address, What3Words, or **Use my location** (phone GPS).
+**Criterion**: Users can enter location via postcode or place name, or **Use my location** (phone GPS).
 
 **Verification**:
 
 | Method | Status |
 |--------|--------|
 | Postcode | Required |
-| Address | Required |
-| What3Words | Required |
+| Place name | Required |
 | Use my location (GPS) | Planned |
 
 All resolve to coordinates used for flood, road, and forecast checks. **Use my location** uses browser Geolocation API (HTTPS required).
@@ -100,7 +99,7 @@ All resolve to coordinates used for flood, road, and forecast checks. **Use my l
 
 **Verification**:
 
-- Input: From (postcode/address/What3Words) + To (postcode/address/What3Words)
+- Input: From (postcode or place name) + To (postcode or place name)
 - Output: Route clear / blocked / at risk with alternatives when blocked
 - Route uses real road incidents and flood areas along the path
 
@@ -200,8 +199,7 @@ All resolve to coordinates used for flood, road, and forecast checks. **Use my l
 | | Car at risk advice | [ ] |
 | | Decision prioritisation | [ ] |
 | **Location** | Postcode lookup | [x] Met |
-| | Address lookup | [ ] |
-| | What3Words lookup | [ ] |
+| | Place name lookup | [ ] |
 | | Remember previous location | [x] Partial (localStorage) |
 | | Bookmarks (multiple locations) for registered users | [ ] |
 | | Profile default location | [ ] |

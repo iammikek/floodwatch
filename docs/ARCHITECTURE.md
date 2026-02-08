@@ -4,7 +4,7 @@
 
 Flood Watch correlates Environment Agency flood data with National Highways road status to provide a single source of truth for flood and road viability in the South West (Bristol, Somerset, Devon, Cornwall).
 
-**Product brief**: See `docs/BRIEF.md` for the revised scope – user decision support (house/car at risk), location lookup (postcode, address, What3Words, **Use my location** via GPS), route check, backend polling, and LLM cost control.
+**Product brief**: See `docs/BRIEF.md` for the revised scope – user decision support (house/car at risk), location lookup (postcode, place name, **Use my location** via GPS), route check, backend polling, and LLM cost control.
 
 **Planned**: Search history in `user_searches`; bookmarks in `location_bookmarks`. See **`docs/SCHEMA.md`** for full schema and object map.
 
