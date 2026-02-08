@@ -17,6 +17,14 @@ class StoreLocationBookmarkRequest extends FormRequest
     /**
      * {@inheritdoc}
      */
+    public function authorize(): bool
+    {
+        return $this->user() !== null;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function rules(): array
     {
         $max = config('flood-watch.bookmarks_max_per_user', 10);
