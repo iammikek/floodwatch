@@ -34,6 +34,15 @@ Use `config('flood-watch.donation_url')` – already in config from foundation.
 </a>
 ```
 
+---
+
+## Wireframe Placement (incremental UI)
+
+Place in revised wireframe position so changes are visible:
+
+- **Dashboard footer** (after results): Add summary line + support link: `"2 flood warnings · 1 road closed · Last updated 2:45 pm"` + `Support Flood Watch` link. Reuse existing footer area in `flood-watch-dashboard.blade.php`; extend with dynamic counts when `$floods` / `$incidents` exist.
+- **Profile**: Support block as specified above.
+
 **Profile**: Add block in `resources/views/profile/edit.blade.php`:
 
 ```html

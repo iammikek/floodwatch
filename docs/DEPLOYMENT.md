@@ -70,6 +70,7 @@ In Railway → Your Service → Variables, add:
 | `FLOOD_WATCH_CACHE_STORE` | `flood-watch-array` |
 | `FLOOD_WATCH_CACHE_TTL_MINUTES` | `15` |
 | `CONCURRENCY_DRIVER` | `process` (production). Use `sync` for testing. |
+| `QUEUE_CONNECTION` | `database` (default). Queue worker runs on deploy via `scripts/start.sh`. |
 
 Optional (for road closure data):
 
@@ -114,6 +115,14 @@ git push origin main
 ```
 
 Railway automatically builds and deploys. No manual steps.
+
+## Queue Worker
+
+The deploy starts a queue worker (`php artisan queue:work`) in the background via `scripts/start.sh`. This processes:
+
+- **LLM request recording** – Each Flood Watch search records token usage to `llm_requests` for the admin dashboard.
+
+If `QUEUE_CONNECTION=database` (default), jobs are stored in the `jobs` table. Ensure migrations have run so the table exists.
 
 ## Rollback
 

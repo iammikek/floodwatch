@@ -16,7 +16,7 @@ RUN composer dump-autoload --optimize
 
 # Runtime
 FROM php:8.4-cli-alpine
-RUN apk add --no-cache sqlite-dev sqlite-libs postgresql-dev curl libzip-dev icu-dev \
+RUN apk add --no-cache dumb-init sqlite-dev sqlite-libs postgresql-dev curl libzip-dev icu-dev \
     && docker-php-ext-configure intl \
     && docker-php-ext-install pdo_sqlite pdo_pgsql zip intl opcache
 
@@ -26,8 +26,10 @@ COPY --from=frontend /app/public/build /app/public/build
 WORKDIR /app
 
 RUN mkdir -p storage/framework/{sessions,views,cache} storage/logs bootstrap/cache \
-    && chmod -R 775 storage bootstrap/cache
+    && chmod -R 775 storage bootstrap/cache \
+    && chmod +x /app/scripts/start.sh
 
 EXPOSE 80
 
-CMD ["sh", "-c", "touch database/database.sqlite 2>/dev/null || true && php artisan migrate --force && php artisan config:cache && php artisan route:cache && php artisan view:cache && exec php artisan serve --host=0.0.0.0 --port=${PORT:-80}"]
+ENTRYPOINT ["dumb-init", "--"]
+CMD ["/app/scripts/start.sh"]
