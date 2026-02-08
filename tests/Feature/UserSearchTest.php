@@ -77,9 +77,9 @@ test('successful search creates user search record for guest', function () {
     expect($record->user_id)->toBeNull()
         ->and($record->session_id)->not->toBeNull()
         ->and($record->location)->toBe('Langport')
-        ->and($record->lat)->toBe(51.0358)
-        ->and($record->lng)->toBe(-2.8318)
         ->and($record->region)->not->toBeNull();
+    expect($record->lat)->toEqualWithDelta(51.0358, 0.0001);
+    expect($record->lng)->toEqualWithDelta(-2.8318, 0.0001);
 });
 
 test('successful search creates user search record for registered user', function () {

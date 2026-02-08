@@ -109,7 +109,7 @@
                             wire:loading.attr="disabled"
                             class="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors disabled:opacity-50"
                         >
-                            {{ $recent['location'] === config('flood-watch.default_location_name') ? __('flood-watch.dashboard.default_location') : $recent['location'] }}
+                            {{ $recent['location'] === config('flood-watch.default_location_sentinel') ? __('flood-watch.dashboard.default_location') : $recent['location'] }}
                         </button>
                     @endforeach
                 </div>

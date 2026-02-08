@@ -80,7 +80,7 @@ class FloodWatchDashboard extends Component
 
     public function selectRecentSearch(string $location): void
     {
-        $this->location = $location;
+        $this->location = $location === config('flood-watch.default_location_sentinel') ? '' : $location;
         $this->search(
             app(FloodWatchService::class),
             app(LocationResolver::class),
@@ -197,7 +197,7 @@ class FloodWatchDashboard extends Component
             );
 
             $userSearchService->record(
-                $locationTrimmed !== '' ? $locationTrimmed : config('flood-watch.default_location_name'),
+                $locationTrimmed !== '' ? $locationTrimmed : config('flood-watch.default_location_sentinel'),
                 $userLat,
                 $userLng,
                 $region,
