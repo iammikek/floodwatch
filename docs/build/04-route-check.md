@@ -203,6 +203,8 @@ If OSRM fails or route not found: "Unable to compute route. Check that both loca
 
 ## Future Enhancements (Smarter Verdict)
 
+See **`docs/build/09-smarter-route-verdict.md`** for full plan.
+
 **Rivers on route**: Identify rivers that the route crosses or runs near (e.g. from EA river gauges, OSM water features, or config). Use `RiverLevelService` to check levels for those rivers. If levels are elevated or rising, flag "at risk" even without an active flood warning.
 
 **Wet area detection (Somerset Levels)**: On the Levels, low-lying areas can become wet or impassable before formal flood warnings are issued. Consider:
