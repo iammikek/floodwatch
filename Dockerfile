@@ -16,7 +16,7 @@ RUN composer dump-autoload --optimize
 
 # Runtime
 FROM php:8.4-cli-alpine
-RUN apk add --no-cache sqlite-dev sqlite-libs postgresql-dev curl libzip-dev icu-dev \
+RUN apk add --no-cache dumb-init sqlite-dev sqlite-libs postgresql-dev curl libzip-dev icu-dev \
     && docker-php-ext-configure intl \
     && docker-php-ext-install pdo_sqlite pdo_pgsql zip intl opcache
 
@@ -31,4 +31,5 @@ RUN mkdir -p storage/framework/{sessions,views,cache} storage/logs bootstrap/cac
 
 EXPOSE 80
 
+ENTRYPOINT ["dumb-init", "--"]
 CMD ["/app/scripts/start.sh"]
