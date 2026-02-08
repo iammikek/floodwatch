@@ -87,6 +87,8 @@ return [
     */
     'default_location_sentinel' => 'default',
 
+    'bookmarks_max_per_user' => (int) env('FLOOD_WATCH_BOOKMARKS_MAX', 10),
+
     /*
     |--------------------------------------------------------------------------
     | Environment Agency API
