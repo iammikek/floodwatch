@@ -86,29 +86,7 @@ test('second bookmark is not default when first exists', function () {
     expect($work->is_default)->toBeFalse();
 });
 
-test('user can edit bookmark label and location', function () {
-    $user = User::factory()->create();
-    $bookmark = LocationBookmark::factory()->create([
-        'user_id' => $user->id,
-        'label' => 'Home',
-        'location' => 'Langport',
-        'lat' => 51.0358,
-        'lng' => -2.8318,
-    ]);
-
-    $response = $this->actingAs($user)->patch(route('bookmarks.update', $bookmark), [
-        'label' => 'Parents',
-        'location' => 'Langport',
-    ]);
-
-    $response->assertRedirect(route('profile.edit'));
-    $response->assertSessionHas('status', 'bookmark-updated');
-    $bookmark->refresh();
-    expect($bookmark->label)->toBe('Parents');
-    expect($bookmark->location)->toBe('Langport, Somerset, England');
-});
-
-test('user can update bookmark to set as default', function () {
+test('user can set bookmark as default', function () {
     $user = User::factory()->create();
     $first = LocationBookmark::factory()->create([
         'user_id' => $user->id,
@@ -121,14 +99,27 @@ test('user can update bookmark to set as default', function () {
         'is_default' => false,
     ]);
 
-    $response = $this->actingAs($user)->patch(route('bookmarks.update', $second), [
-        'is_default' => true,
-    ]);
+    $response = $this->actingAs($user)->post(route('bookmarks.set-default', $second));
 
     $response->assertRedirect(route('profile.edit'));
-    $response->assertSessionHas('status', 'bookmark-updated');
+    $response->assertSessionHas('status', 'bookmark-default-set');
     expect($first->fresh()->is_default)->toBeFalse();
     expect($second->fresh()->is_default)->toBeTrue();
+});
+
+test("user cannot set another user's bookmark as default", function () {
+    $user = User::factory()->create();
+    $other = User::factory()->create();
+    $bookmark = LocationBookmark::factory()->create([
+        'user_id' => $other->id,
+        'label' => 'Home',
+        'is_default' => false,
+    ]);
+
+    $response = $this->actingAs($user)->post(route('bookmarks.set-default', $bookmark));
+
+    $response->assertStatus(403);
+    expect($bookmark->fresh()->is_default)->toBeFalse();
 });
 
 test('user can delete bookmark', function () {

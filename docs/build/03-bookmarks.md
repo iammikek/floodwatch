@@ -8,13 +8,13 @@ Registered users can bookmark multiple locations (home, work, parents). One can 
 
 **Schema**: `docs/SCHEMA.md` – `location_bookmarks` table
 
-**Key files**: `LocationBookmarkController`, `StoreLocationBookmarkRequest`, `UpdateLocationBookmarkRequest`, `profile/partials/bookmarks-form.blade.php`, `config/flood-watch.php` (`bookmarks_max_per_user`)
+**Key files**: `LocationBookmarkController`, `StoreLocationBookmarkRequest`, `profile/partials/bookmarks-form.blade.php`, `config/flood-watch.php` (`bookmarks_max_per_user`)
 
 ---
 
 ## Acceptance Criteria
 
-- [x] Registered users can add, edit, delete bookmarks from profile
+- [x] Registered users can add, delete bookmarks from profile
 - [x] One bookmark per user can be "default"; setting default clears others
 - [x] Location must resolve via LocationResolver and be in South West
 - [x] Dashboard shows bookmark dropdown when logged in; selecting bookmark loads that location
@@ -29,12 +29,12 @@ Registered users can bookmark multiple locations (home, work, parents). One can 
 
 **Location**: `resources/views/profile/edit.blade.php`, `resources/views/profile/partials/bookmarks-form.blade.php`
 
-- List bookmarks with Edit/Delete
+- List bookmarks with Set as default / Delete
 - Add bookmark: input label + location (reuse LocationResolver or postcode input)
 - "Set as default" – one per user
-- **Implemented**: `LocationBookmarkController` (store, update, destroy), routes under auth
+- **Implemented**: `LocationBookmarkController` (store, setDefault, destroy), routes under auth
 
-**Routes**: `POST /bookmarks`, `PATCH /bookmarks/{bookmark}`, `DELETE /bookmarks/{bookmark}`
+**Routes**: `POST /bookmarks`, `POST /bookmarks/{bookmark}/default`, `DELETE /bookmarks/{bookmark}`
 
 ---
 
@@ -68,6 +68,6 @@ Registered users can bookmark multiple locations (home, work, parents). One can 
 
 ## Tests
 
-- **LocationBookmarkControllerTest**: Guest rejection, create, first/second default, set default, delete, authorization, max limit
+- **LocationBookmarkControllerTest**: Guest rejection, create, first/second default, set default, delete, authorization (set-default, destroy), max limit
 - **FloodWatchDashboardTest**: Default pre-loads on mount, bookmarks shown when logged in
 - **LocationBookmarkTest** (model): Factory, casts, default uniqueness, DB constraint

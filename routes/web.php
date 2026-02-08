@@ -18,7 +18,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::post('/bookmarks', [LocationBookmarkController::class, 'store'])->name('bookmarks.store');
-    Route::patch('/bookmarks/{bookmark}', [LocationBookmarkController::class, 'update'])->name('bookmarks.update');
+    Route::post('/bookmarks/{bookmark}/default', [LocationBookmarkController::class, 'setDefault'])->name('bookmarks.set-default');
     Route::delete('/bookmarks/{bookmark}', [LocationBookmarkController::class, 'destroy'])->name('bookmarks.destroy');
 });
 

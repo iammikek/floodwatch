@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreLocationBookmarkRequest;
-use App\Http\Requests\UpdateLocationBookmarkRequest;
 use App\Models\LocationBookmark;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -31,24 +30,22 @@ class LocationBookmarkController extends Controller
     }
 
     /**
-     * Update a bookmark.
+     * Set a bookmark as the user's default.
      */
-    public function update(UpdateLocationBookmarkRequest $request, LocationBookmark $bookmark): RedirectResponse
+    public function setDefault(LocationBookmark $bookmark): RedirectResponse
     {
-        $data = $request->validated();
-
-        if ($request->resolvedLocation !== null) {
-            $resolved = $request->resolvedLocation;
-            $data['location'] = $request->resolvedDisplayName();
-            $data['lat'] = $resolved['lat'];
-            $data['lng'] = $resolved['lng'];
-            $data['region'] = $resolved['region'] ?? null;
+        if ($bookmark->user_id !== Auth::id()) {
+            abort(403);
         }
 
-        $bookmark->update($data);
+        LocationBookmark::query()
+            ->where('user_id', Auth::id())
+            ->update(['is_default' => false]);
+
+        $bookmark->update(['is_default' => true]);
 
         return redirect()->route('profile.edit')
-            ->with('status', 'bookmark-updated');
+            ->with('status', 'bookmark-default-set');
     }
 
     /**

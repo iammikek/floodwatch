@@ -121,7 +121,7 @@ return [
         'auth_required' => 'You must be logged in to add bookmarks.',
         'unable_to_resolve' => 'Unable to look up that location. Try a postcode or town name.',
         'created' => 'Bookmark added.',
-        'updated' => 'Bookmark updated.',
+        'default_set' => 'Default bookmark updated.',
         'deleted' => 'Bookmark removed.',
         'save' => 'Save',
         'cancel' => 'Cancel',
