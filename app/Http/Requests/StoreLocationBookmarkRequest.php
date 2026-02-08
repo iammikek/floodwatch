@@ -7,6 +7,8 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class StoreLocationBookmarkRequest extends FormRequest
 {
+    protected $errorBag = 'bookmark-store';
+
     /**
      * Resolved location data from LocationResolver (set during validation).
      *

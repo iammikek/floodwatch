@@ -9,6 +9,8 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateLocationBookmarkRequest extends FormRequest
 {
+    protected $errorBag = 'bookmark-update';
+
     /**
      * Resolved location data from LocationResolver (set during validation, when location is provided).
      *

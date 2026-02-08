@@ -95,7 +95,7 @@
                                 required
                                 maxlength="50"
                             />
-                            <x-input-error class="mt-2" :messages="$errors->get('label')" />
+                            <x-input-error class="mt-2" :messages="$errors->getBag('bookmark-update')->get('label')" />
                         </div>
                         <div>
                             <x-input-label for="edit_bookmark_location_{{ $bookmark->id }}" :value="__('flood-watch.bookmarks.location')" />
@@ -109,7 +109,7 @@
                                 required
                                 maxlength="255"
                             />
-                            <x-input-error class="mt-2" :messages="$errors->get('location')" />
+                            <x-input-error class="mt-2" :messages="$errors->getBag('bookmark-update')->get('location')" />
                         </div>
                         <div class="flex gap-2">
                             <x-primary-button type="submit">{{ __('flood-watch.bookmarks.save') }}</x-primary-button>
@@ -139,7 +139,7 @@
                     required
                     maxlength="50"
                 />
-                <x-input-error class="mt-2" :messages="$errors->get('label')" />
+                <x-input-error class="mt-2" :messages="$errors->getBag('bookmark-store')->get('label')" />
             </div>
 
             <div>
@@ -154,7 +154,7 @@
                     required
                     maxlength="255"
                 />
-                <x-input-error class="mt-2" :messages="$errors->get('location')" />
+                <x-input-error class="mt-2" :messages="$errors->getBag('bookmark-store')->get('location')" />
             </div>
 
             <x-primary-button>{{ __('flood-watch.bookmarks.add') }}</x-primary-button>

@@ -56,7 +56,7 @@ test('fails when label is missing', function () {
         'location' => 'Langport',
     ]);
 
-    $response->assertSessionHasErrors('label');
+    $response->assertSessionHasErrors('label', null, 'bookmark-store');
 });
 
 test('fails when label exceeds max length', function () {
@@ -67,7 +67,7 @@ test('fails when label exceeds max length', function () {
         'location' => 'Langport',
     ]);
 
-    $response->assertSessionHasErrors('label');
+    $response->assertSessionHasErrors('label', null, 'bookmark-store');
 });
 
 test('fails when location is missing', function () {
@@ -77,7 +77,7 @@ test('fails when location is missing', function () {
         'label' => 'Home',
     ]);
 
-    $response->assertSessionHasErrors('location');
+    $response->assertSessionHasErrors('location', null, 'bookmark-store');
 });
 
 test('fails when max bookmarks reached', function () {
@@ -104,5 +104,5 @@ test('fails when max bookmarks reached', function () {
         'location' => 'Langport',
     ]);
 
-    $response->assertSessionHasErrors('location');
+    $response->assertSessionHasErrors('location', null, 'bookmark-store');
 });

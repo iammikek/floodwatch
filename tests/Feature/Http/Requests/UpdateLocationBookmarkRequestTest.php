@@ -107,7 +107,7 @@ test('fails when label exceeds max length', function () {
         'label' => str_repeat('a', 51),
     ]);
 
-    $response->assertSessionHasErrors('label');
+    $response->assertSessionHasErrors('label', null, 'bookmark-update');
 });
 
 test('flashes editing_bookmark_id when validation fails', function () {
@@ -122,4 +122,5 @@ test('flashes editing_bookmark_id when validation fails', function () {
     ]);
 
     $response->assertSessionHas('editing_bookmark_id', $bookmark->id);
+    $response->assertSessionHasErrors('label', null, 'bookmark-update');
 });

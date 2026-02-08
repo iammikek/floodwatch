@@ -168,6 +168,6 @@ test('max bookmarks reached prevents new bookmark', function () {
         'location' => 'Langport',
     ]);
 
-    $response->assertSessionHasErrors('location');
+    $response->assertSessionHasErrors('location', null, 'bookmark-store');
     expect($user->locationBookmarks()->count())->toBe(10);
 });
