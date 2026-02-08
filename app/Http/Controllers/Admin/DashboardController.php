@@ -21,8 +21,9 @@ class DashboardController extends Controller
 
         $cacheKey = config('flood-watch.cache_key_prefix', 'flood-watch').':admin:health:checks';
         $cacheExpiry = now()->addSeconds(config('flood-watch.health_check_cache_ttl', 60));
+        $store = config('flood-watch.cache_store', 'flood-watch');
 
-        $checks = Cache::remember($cacheKey, $cacheExpiry, function () use ($request) {
+        $checks = Cache::store($store)->remember($cacheKey, $cacheExpiry, function () use ($request) {
             $healthResponse = app(HealthController::class)($request);
             $healthData = $healthResponse->getData(true);
 
