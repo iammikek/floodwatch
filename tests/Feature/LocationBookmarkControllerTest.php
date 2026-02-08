@@ -98,14 +98,14 @@ test('user can edit bookmark label and location', function () {
 
     $response = $this->actingAs($user)->patch(route('bookmarks.update', $bookmark), [
         'label' => 'Parents',
-        'location' => 'Bristol',
+        'location' => 'Langport',
     ]);
 
     $response->assertRedirect(route('profile.edit'));
     $response->assertSessionHas('status', 'bookmark-updated');
     $bookmark->refresh();
     expect($bookmark->label)->toBe('Parents');
-    expect($bookmark->location)->toBe('Bristol, England');
+    expect($bookmark->location)->toBe('Langport, Somerset, England');
 });
 
 test('user can update bookmark to set as default', function () {
