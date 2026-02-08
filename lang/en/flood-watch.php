@@ -95,6 +95,7 @@ return [
         'free_to_use' => 'Flood Watch is free to use. If it helps you,',
         'support_development' => 'consider supporting development',
         'use_my_location' => 'Use my location',
+        'getting_location' => 'Getting location…',
         'recent_searches' => 'Recent searches',
         'gps_error' => 'Could not get location. Try entering a postcode.',
     ],

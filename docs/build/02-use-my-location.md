@@ -10,13 +10,13 @@ Button that uses browser Geolocation API to get user's position and run a search
 
 ## Acceptance Criteria
 
-- [ ] "Use my location" button visible next to location input (mobile + desktop)
-- [ ] Clicking button triggers browser geolocation prompt
-- [ ] On success: lat/long sent to backend; reverse-geocoded; search runs with resolved location
-- [ ] On deny/error: user sees "Could not get location. Try entering a postcode."
-- [ ] Location outside South West shows existing "outside area" error
-- [ ] Feature test: `searchFromGps` with valid coords runs search; invalid coords show error
-- [ ] `sail test` passes
+- [x] "Use my location" button visible next to location input (mobile + desktop)
+- [x] Clicking button triggers browser geolocation prompt
+- [x] On success: lat/long sent to backend; reverse-geocoded; search runs with resolved location
+- [x] On deny/error: user sees "Could not get location. Try entering a postcode."
+- [x] Location outside South West shows existing "outside area" error
+- [x] Feature test: `searchFromGps` with valid coords runs search; invalid coords show error
+- [x] `sail test` passes
 
 ---
 
@@ -38,14 +38,14 @@ navigator.geolocation.getCurrentPosition(
 
 1. User clicks "Use my location"
 2. Browser prompts for permission
-3. On success: get `lat`, `long` → send to backend (or reverse-geocode Client side)
+3. On success: get `lat`, `lng` → send to backend (or reverse-geocode client-side)
 4. Backend: `LocationResolver` can accept lat/long or we add a reverse-geocode step (Nominatim: `reverse?lat=X&lon=Y`) to get display name
 5. Run search with resolved location
 
 **Option A**: Send lat/long to Livewire; backend reverse-geocodes, validates region, runs search.  
 **Option B**: Client reverse-geocodes (e.g. Nominatim), sends location string; backend resolves as usual.
 
-**Recommendation**: Option A – keep logic server-side. Add `LocationResolver::reverseFromCoords(float $lat, float $long)` or use Nominatim `reverse` endpoint.
+**Recommendation**: Option A – keep logic server-side. Use `LocationResolver::reverseFromCoords(float $lat, float $lng)` (from foundation).
 
 ---
 
@@ -74,9 +74,9 @@ Emit Livewire event with lat/long when got; `FloodWatchDashboard` listens and ru
 
 ## Implementation
 
-1. **Alpine component** in dashboard: `useMyLocation()` – calls `getCurrentPosition`, dispatches `livewire:dispatch` with `location-from-gps` and payload `{lat, long}`
-2. **Livewire**: `#[On('location-from-gps')] public function searchFromGps(float $lat, float $long)` – reverse-geocode (or validate), set `$this->location`, call `search()`
-3. **Reverse geocode**: Use `LocationResolver::reverseFromCoords($lat, $long)` (from foundation)
+1. **Alpine component** in dashboard: `useMyLocation()` – calls `getCurrentPosition`, dispatches `livewire:dispatch` with `location-from-gps` and payload `{lat, lng}`
+2. **Livewire**: `#[On('location-from-gps')] public function searchFromGps(float $lat, float $lng)` – reverse-geocode (or validate), set `$this->location`, call `search()`
+3. **Reverse geocode**: Use `LocationResolver::reverseFromCoords($lat, $lng)` (from foundation)
 4. **Region check**: `reverseFromCoords` returns `in_area`; use existing validation
 
 ---
@@ -91,3 +91,19 @@ If denied or error: Show message "Could not get location. Try entering a postcod
 
 - Feature test: Mock Geolocation or test the `searchFromGps` path with fake lat/long
 - Ensure reverse-geocode returns valid South West location; otherwise show outside_area error
+- HTTP fake: Mock `nominatim.openstreetmap.org/reverse` for reverse-geocode responses
+
+---
+
+## Gaps / Suggestions
+
+1. **Nominatim rate limiting**: Reverse geocode is called on every GPS search. Consider caching by rounded lat/lng for short periods if needed.
+2. **Button accessibility**: Add `aria-label` for screen readers.
+3. **Livewire event name**: `livewire:dispatch` is correct; verify the event name passed to `$wire` matches what the component listens for (e.g. `location-from-gps`).
+4. **Loading state**: Show a brief "Getting location…" while Geolocation is resolving.
+
+Additional:
+
+- **Payload naming**: Use `lng` (not `long`) in event payload to match backend/DB convention.
+- **Synthetic validation**: `search()` expects validation from `LocationResolver::resolve()`. For GPS, build a synthetic validation array from `reverseFromCoords` result: `{valid, in_area, lat, lng, region, display_name}`. Refactor `search()` to accept optional pre-resolved validation if needed.
+- **UserSearchService**: GPS searches will create `UserSearch` records via existing `search()` flow; ensure synthetic validation includes `lat`, `lng`, `region`.

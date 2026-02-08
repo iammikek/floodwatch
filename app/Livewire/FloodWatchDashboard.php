@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\On;
 use Livewire\Component;
 use OpenAI\Exceptions\ErrorException;
 use OpenAI\Exceptions\RateLimitException;
@@ -119,6 +120,70 @@ class FloodWatchDashboard extends Component
 
     public function search(FloodWatchService $assistant, LocationResolver $locationResolver, FloodWatchTrendService $trendService, UserSearchService $userSearchService): void
     {
+        $locationTrimmed = trim($this->location);
+        $validation = null;
+
+        if ($locationTrimmed !== '') {
+            $validation = $locationResolver->resolve($locationTrimmed);
+            if (! $validation['valid']) {
+                $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
+                $this->error = $validation['error'] ?? __('flood-watch.error.invalid_location');
+
+                return;
+            }
+            if (! $validation['in_area']) {
+                $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
+                $this->error = $validation['error'] ?? __('flood-watch.error.outside_area');
+
+                return;
+            }
+        }
+
+        $this->performSearch($assistant, $locationResolver, $trendService, $userSearchService, $validation);
+    }
+
+    #[On('location-from-gps')]
+    public function searchFromGps(float $lat, float $lng, FloodWatchService $assistant, LocationResolver $locationResolver, FloodWatchTrendService $trendService, UserSearchService $userSearchService): void
+    {
+        $result = $locationResolver->reverseFromCoords($lat, $lng);
+
+        if (! $result['valid']) {
+            $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
+            $this->error = $result['error'] ?? __('flood-watch.dashboard.gps_error');
+
+            return;
+        }
+
+        if (! $result['in_area']) {
+            $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
+            $this->error = __('flood-watch.error.outside_area');
+
+            return;
+        }
+
+        $this->location = $result['location'];
+        $validation = [
+            'valid' => true,
+            'in_area' => true,
+            'lat' => $lat,
+            'lng' => $lng,
+            'region' => $result['region'],
+            'display_name' => $result['location'],
+        ];
+
+        $this->performSearch($assistant, $locationResolver, $trendService, $userSearchService, $validation);
+    }
+
+    /**
+     * @param  array{valid: bool, in_area: bool, lat?: float, lng?: float, region?: string, display_name?: string}|null  $validation
+     */
+    private function performSearch(
+        FloodWatchService $assistant,
+        LocationResolver $locationResolver,
+        FloodWatchTrendService $trendService,
+        UserSearchService $userSearchService,
+        ?array $validation
+    ): void {
         $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'hasUserLocation', 'lastChecked', 'error', 'retryAfterTimestamp']);
         $this->loading = true;
 
@@ -143,22 +208,8 @@ class FloodWatchDashboard extends Component
             $this->stream(to: 'searchStatus', content: $message, replace: true);
         };
 
-        $validation = null;
         if ($locationTrimmed !== '') {
             $streamStatus(__('flood-watch.progress.looking_up_location'));
-            $validation = $locationResolver->resolve($locationTrimmed);
-            if (! $validation['valid']) {
-                $this->error = $validation['error'] ?? __('flood-watch.error.invalid_location');
-                $this->loading = false;
-
-                return;
-            }
-            if (! $validation['in_area']) {
-                $this->error = $validation['error'] ?? __('flood-watch.error.outside_area');
-                $this->loading = false;
-
-                return;
-            }
         }
 
         $message = $this->buildMessage($locationTrimmed, $validation);

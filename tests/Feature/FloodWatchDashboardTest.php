@@ -696,4 +696,106 @@ class FloodWatchDashboardTest extends TestCase
             ->assertSet('assistantResponse', 'After cooldown.')
             ->assertSet('error', null);
     }
+
+    public function test_search_from_gps_with_valid_coords_runs_search_and_shows_results(): void
+    {
+        Config::set('openai.api_key', 'test-key');
+        Config::set('flood-watch.national_highways.api_key', 'test-key');
+        Config::set('flood-watch.national_highways.base_url', 'https://api.example.com');
+
+        Http::fake(function ($request) {
+            if (str_contains($request->url(), 'nominatim.openstreetmap.org/reverse')) {
+                return Http::response([
+                    'lat' => '51.0358',
+                    'lon' => '-2.8318',
+                    'display_name' => 'Langport, Somerset, England',
+                    'address' => [
+                        'town' => 'Langport',
+                        'county' => 'Somerset',
+                        'country' => 'United Kingdom',
+                    ],
+                ], 200);
+            }
+            if (str_contains($request->url(), 'environment.data.gov.uk')) {
+                return Http::response(['items' => []], 200);
+            }
+            if (str_contains($request->url(), 'api.example.com')) {
+                return Http::response(['D2Payload' => ['situation' => []]], 200);
+            }
+            if (str_contains($request->url(), 'fgs.metoffice.gov.uk')) {
+                return Http::response(['statement' => []], 200);
+            }
+            if (str_contains($request->url(), 'open-meteo.com')) {
+                return Http::response(['daily' => ['time' => [], 'weathercode' => [], 'temperature_2m_max' => [], 'temperature_2m_min' => [], 'precipitation_sum' => []]], 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
+        $finalResponse = CreateResponse::fake([
+            'choices' => [
+                [
+                    'index' => 0,
+                    'message' => [
+                        'role' => 'assistant',
+                        'content' => 'GPS search for Langport complete.',
+                        'tool_calls' => [],
+                    ],
+                    'logprobs' => null,
+                    'finish_reason' => 'stop',
+                ],
+            ],
+        ]);
+
+        OpenAI::fake([$finalResponse]);
+
+        Livewire::test('flood-watch-dashboard')
+            ->call('searchFromGps', 51.0358, -2.8318)
+            ->assertSet('location', 'Langport')
+            ->assertSet('assistantResponse', 'GPS search for Langport complete.')
+            ->assertSet('mapCenter', ['lat' => 51.0358, 'lng' => -2.8318])
+            ->assertSet('hasUserLocation', true)
+            ->assertSet('error', null);
+    }
+
+    public function test_search_from_gps_with_out_of_area_coords_shows_error(): void
+    {
+        Http::fake([
+            'nominatim.openstreetmap.org/*' => Http::response([
+                'lat' => '51.5074',
+                'lon' => '-0.1278',
+                'display_name' => 'London, England',
+                'address' => [
+                    'city' => 'London',
+                    'county' => 'Greater London',
+                    'country' => 'United Kingdom',
+                ],
+            ], 200),
+        ]);
+
+        Livewire::test('flood-watch-dashboard')
+            ->call('searchFromGps', 51.5074, -0.1278)
+            ->assertSet('error', 'This location is outside the South West.')
+            ->assertSet('assistantResponse', null);
+    }
+
+    public function test_search_from_gps_with_invalid_reverse_geocode_shows_error(): void
+    {
+        Http::fake([
+            'nominatim.openstreetmap.org/*' => Http::response([], 200),
+        ]);
+
+        Livewire::test('flood-watch-dashboard')
+            ->call('searchFromGps', 0.0, 0.0)
+            ->assertSet('error', 'Could not get location. Try entering a postcode.')
+            ->assertSet('assistantResponse', null);
+    }
+
+    public function test_use_my_location_button_is_visible(): void
+    {
+        $response = $this->get('/');
+
+        $response->assertStatus(200);
+        $response->assertSee('Use my location', false);
+    }
 }

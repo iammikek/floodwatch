@@ -25,8 +25,11 @@ Implementation specs for Cursor agentic development. Build in order; each spec i
 | 5 | [Route check (From/To)](04-route-check.md) | ~1–2 h | RouteCheckService, OSRM, Livewire |
 | 6 | [Donations](05-donations.md) | ~15 min | Layout, profile view |
 | 7 | [Backend polling](07-backend-polling.md) | ~1 h | Scheduled job, routes/console.php |
+| 8 | [Revised wireframe UI](08-revised-wireframe-ui.md) | ~3–4 h | Layout refactor, Risk/Route blocks, responsive |
 
 **Note**: Admin dashboard comes first so we can monitor API health, users, and LLM cost from the start. Search history enhances admin metrics when built.
+
+**Incremental wireframe**: Builds 03, 04, 05 include "Wireframe placement" – add their UI in the revised wireframe position as you build, so you see layout changes as you go. Build 08 then refines the shell (header, grid, Risk/Action blocks).
 
 ---
 

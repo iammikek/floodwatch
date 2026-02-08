@@ -54,6 +54,17 @@ Returns route geometry (LineString). Use to check if route intersects flood poly
 
 ---
 
+## Wireframe Placement (incremental UI)
+
+Place in revised wireframe position so the section appears as you build:
+
+- **Desktop**: Route Check in its own card/block – side by side with Risk (or above map). See `public/wireframes/revised-brief.html` desktop grid.
+- **Mobile**: Route Check section below Action Steps (or below main content). Blue-tinted block (`bg-blue-50 border-blue-200`).
+- **Structure**: Heading "Route Check", From input (default: current location), To input, [Check route] button, result panel below.
+- **When no search yet**: From pre-filled with "Langport" or current location; To empty. Result panel hidden until check runs.
+
+---
+
 ## Geometry
 
 - Flood polygons: from `EnvironmentAgencyFloodService::getPolygonsForAreaIds()` or similar

@@ -42,6 +42,18 @@ Registered users can bookmark multiple locations (home, work, parents). One can 
 
 ---
 
+## Wireframe Placement (incremental UI)
+
+Place in revised wireframe position so changes are visible as you build:
+
+- **Header location bar** (logged in): `[Langport ▼] 📍 TA10 9 [Change] [Use my location] [Profile]`
+  - Dropdown lists bookmarks; selecting one loads location and runs search
+  - "Change" opens location input/recent searches (existing flow)
+- **Mobile**: Same structure, compact; bookmark dropdown in header
+- Reuse existing location input area for "Change"; add dropdown *above* or *beside* when user has bookmarks
+
+---
+
 ## Validations
 
 - Location must resolve via `LocationResolver` and be in South West
