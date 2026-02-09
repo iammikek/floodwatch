@@ -209,6 +209,125 @@ class RouteCheckServiceTest extends TestCase
                 return Http::response([], 200);
             }
             if (str_contains($request->url(), 'router.project-osrm.org')) {
+                $primaryRoute = [
+                    'distance' => 50000,
+                    'duration' => 3600,
+                    'geometry' => [
+                        'coordinates' => [[-2.8318, 51.0358], [-2.5778, 51.4545]],
+                        'type' => 'LineString',
+                    ],
+                    'legs' => [],
+                ];
+                if (str_contains($request->url(), 'alternatives=2')) {
+                    return Http::response([
+                        'code' => 'Ok',
+                        'routes' => [
+                            $primaryRoute,
+                            [
+                                'distance' => 55000,
+                                'duration' => 3900,
+                                'legs' => [
+                                    [
+                                        'steps' => [
+                                            ['name' => 'A358', 'ref' => ''],
+                                            ['name' => 'M5', 'ref' => 'M5'],
+                                        ],
+                                    ],
+                                ],
+                            ],
+                        ],
+                    ], 200);
+                }
+
+                return Http::response(['code' => 'Ok', 'routes' => [$primaryRoute]], 200);
+            }
+            if (str_contains($request->url(), 'environment.data.gov.uk')) {
+                return Http::response(['items' => []], 200);
+            }
+            if (str_contains($request->url(), 'api.example.com')) {
+                return Http::response($fixture, 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
+        $service = app(RouteCheckService::class);
+        $result = $service->check('TA10 0DP', 'BS1 1AA');
+
+        $this->assertNotEmpty($result->incidentsOnRoute, 'Expected incidents on route from fixture');
+        $this->assertSame('blocked', $result->verdict);
+        $this->assertStringContainsString('road closure', strtolower($result->summary));
+        $this->assertNotEmpty($result->alternatives, 'Blocked verdict should fetch alternatives');
+    }
+
+    public function test_makes_single_osrm_call_when_verdict_not_blocked(): void
+    {
+        Config::set('flood-watch.national_highways.api_key', 'test-key');
+        Config::set('flood-watch.national_highways.base_url', 'https://api.example.com');
+
+        $osrmCallCount = 0;
+        Http::fake(function ($request) use (&$osrmCallCount) {
+            if (str_contains($request->url(), 'api.postcodes.io')) {
+                return Http::response(['result' => ['latitude' => 51.0358, 'longitude' => -2.8318]], 200);
+            }
+            if (str_contains($request->url(), 'router.project-osrm.org')) {
+                $osrmCallCount++;
+
+                return Http::response([
+                    'code' => 'Ok',
+                    'routes' => [
+                        [
+                            'distance' => 50000,
+                            'duration' => 3600,
+                            'geometry' => [
+                                'coordinates' => [[-2.8318, 51.0358], [-2.5778, 51.4545]],
+                                'type' => 'LineString',
+                            ],
+                            'legs' => [],
+                        ],
+                    ],
+                ], 200);
+            }
+            if (str_contains($request->url(), 'environment.data.gov.uk')) {
+                return Http::response(['items' => []], 200);
+            }
+            if (str_contains($request->url(), 'api.example.com')) {
+                return Http::response(['D2Payload' => ['situation' => []]], 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
+        $service = app(RouteCheckService::class);
+        $service->check('TA10 0DP', 'BS1 1AA');
+
+        $this->assertSame(1, $osrmCallCount, 'Clear verdict should make only 1 OSRM call (no alternatives fetch)');
+    }
+
+    public function test_skips_alternatives_fetch_when_config_disabled(): void
+    {
+        Config::set('flood-watch.national_highways.api_key', 'test-key');
+        Config::set('flood-watch.national_highways.base_url', 'https://api.example.com');
+        Config::set('flood-watch.route_check.fetch_alternatives_when_blocked', false);
+
+        $fixture = json_decode(file_get_contents(__DIR__.'/../../fixtures/national_highways_closures.json'), true);
+        $osrmCallCount = 0;
+
+        Http::fake(function ($request) use ($fixture, &$osrmCallCount) {
+            if (str_contains($request->url(), 'api.postcodes.io')) {
+                $url = $request->url();
+                $coords = str_contains($url, 'TA10')
+                    ? ['latitude' => 51.0358, 'longitude' => -2.8318]
+                    : ['latitude' => 51.4545, 'longitude' => -2.5778];
+
+                return Http::response(['result' => $coords], 200);
+            }
+            if (str_contains($request->url(), 'nominatim.openstreetmap.org')) {
+                return Http::response([], 200);
+            }
+            if (str_contains($request->url(), 'router.project-osrm.org')) {
+                $osrmCallCount++;
+
                 return Http::response([
                     'code' => 'Ok',
                     'routes' => [
@@ -237,9 +356,11 @@ class RouteCheckServiceTest extends TestCase
         $service = app(RouteCheckService::class);
         $result = $service->check('TA10 0DP', 'BS1 1AA');
 
-        $this->assertNotEmpty($result->incidentsOnRoute, 'Expected incidents on route from fixture');
         $this->assertSame('blocked', $result->verdict);
-        $this->assertStringContainsString('road closure', strtolower($result->summary));
+        $this->assertSame(1, $osrmCallCount, 'fetch_alternatives_when_blocked=false should skip second OSRM call');
+        $this->assertEmpty($result->alternatives);
+
+        Config::set('flood-watch.route_check.fetch_alternatives_when_blocked', true);
     }
 
     public function test_returns_delays_verdict_when_lane_closures_on_route(): void

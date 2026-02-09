@@ -191,6 +191,7 @@ return [
         'incident_proximity_km' => (float) env('FLOOD_WATCH_ROUTE_INCIDENT_PROXIMITY_KM', 0.5),
         'cache_ttl_minutes' => (int) env('FLOOD_WATCH_ROUTE_CACHE_TTL_MINUTES', 15),
         'incident_check_max_route_points' => (int) env('FLOOD_WATCH_ROUTE_INCIDENT_CHECK_MAX_POINTS', 150),
+        'fetch_alternatives_when_blocked' => env('FLOOD_WATCH_FETCH_ALTERNATIVES_WHEN_BLOCKED', true),
     ],
 
     /*

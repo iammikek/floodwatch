@@ -82,7 +82,7 @@ class RouteCheckService
     /**
      * @return array{code: string, routes?: array}
      */
-    private function fetchOsrmRoute(float $fromLat, float $fromLng, float $toLat, float $toLng): array
+    private function fetchOsrmRoute(float $fromLat, float $fromLng, float $toLat, float $toLng, bool $withAlternatives = false): array
     {
         $baseUrl = rtrim(config('flood-watch.route_check.osrm_url'), '/');
         $timeout = config('flood-watch.route_check.osrm_timeout', 15);
@@ -90,9 +90,11 @@ class RouteCheckService
         $params = [
             'overview' => 'full',
             'geometries' => 'geojson',
-            'alternatives' => 2,
-            'steps' => 'true',
         ];
+        if ($withAlternatives) {
+            $params['alternatives'] = 2;
+            $params['steps'] = 'true';
+        }
 
         $response = Http::timeout($timeout)->get($url, $params);
 
@@ -114,7 +116,7 @@ class RouteCheckService
 
     private function fetchAndAnalyzeRoute(float $fromLat, float $fromLng, float $toLat, float $toLng): RouteCheckResult
     {
-        $osrmData = $this->fetchOsrmRoute($fromLat, $fromLng, $toLat, $toLng);
+        $osrmData = $this->fetchOsrmRoute($fromLat, $fromLng, $toLat, $toLng, false);
         $routes = $osrmData['routes'] ?? [];
         $primaryRoute = $routes[0] ?? null;
 
@@ -145,7 +147,13 @@ class RouteCheckService
 
         $verdict = $this->computeVerdict($floodsOnRoute, $incidentsOnRoute);
         $summary = $this->buildSummary($verdict, $floodsOnRoute, $incidentsOnRoute);
-        $alternatives = $this->extractAlternatives(array_slice($routes, 1, 2));
+
+        $alternatives = [];
+        if ($verdict === 'blocked' && config('flood-watch.route_check.fetch_alternatives_when_blocked', true)) {
+            $altData = $this->fetchOsrmRoute($fromLat, $fromLng, $toLat, $toLng, true);
+            $altRoutes = $altData['routes'] ?? [];
+            $alternatives = $this->extractAlternatives(array_slice($altRoutes, 1, 2));
+        }
 
         $geometry = $routeCoords;
         $routeKey = md5(sprintf('%.4f,%.4f,%.4f,%.4f', $fromLat, $fromLng, $toLat, $toLng));
