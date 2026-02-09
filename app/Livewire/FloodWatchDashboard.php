@@ -61,6 +61,10 @@ class FloodWatchDashboard extends Component
 
     public ?array $routeCheckResult = null;
 
+    public ?string $displayLocation = null;
+
+    public ?string $outcode = null;
+
     /**
      * User's location bookmarks (when logged in).
      *
@@ -143,6 +147,7 @@ class FloodWatchDashboard extends Component
             'lng' => $bookmark->lng,
             'region' => $bookmark->region ?? 'somerset',
             'display_name' => $bookmark->location,
+            'outcode' => $this->extractOutcode($bookmark->location),
         ];
 
         $this->performSearch(
@@ -316,7 +321,7 @@ class FloodWatchDashboard extends Component
         UserSearchService $userSearchService,
         ?array $validation
     ): void {
-        $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'hasUserLocation', 'lastChecked', 'error', 'retryAfterTimestamp']);
+        $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'hasUserLocation', 'lastChecked', 'error', 'retryAfterTimestamp', 'displayLocation', 'outcode']);
         $this->loading = true;
 
         if (Auth::guest()) {
@@ -386,6 +391,8 @@ class FloodWatchDashboard extends Component
             $this->mapCenter = ['lat' => $lat, 'lng' => $lng];
             $this->hasUserLocation = $userLat !== null && $userLng !== null;
             $this->lastChecked = $result['lastChecked'] ?? null;
+            $this->displayLocation = data_get($validation, 'display_name') ?? $locationTrimmed;
+            $this->outcode = data_get($validation, 'outcode');
 
             $trendService->record(
                 $locationTrimmed !== '' ? $locationTrimmed : null,
@@ -451,6 +458,16 @@ class FloodWatchDashboard extends Component
             ->sortByDesc(fn (array $f) => $f['timeMessageChanged'] ?? $f['timeRaised'] ?? '')
             ->values()
             ->all();
+    }
+
+    private function extractOutcode(string $location): ?string
+    {
+        $trimmed = trim($location);
+        if (preg_match('/^([A-Za-z]{1,2}[0-9][0-9A-Za-z]?)(?:\s+[0-9][A-Za-z]{2})?$/i', $trimmed, $m)) {
+            return $m[1];
+        }
+
+        return null;
     }
 
     private function haversineDistanceKm(float $lat1, float $lng1, float $lat2, float $lng2): float

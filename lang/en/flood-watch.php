@@ -114,6 +114,9 @@ return [
         'route_check_from' => 'From',
         'route_check_to' => 'To',
         'route_check_button' => 'Check route',
+        'change_location' => 'Change location',
+        'change' => 'Change',
+        'refresh' => 'Refresh',
     ],
     'donations' => [
         'support_title' => 'Support Flood Watch',
