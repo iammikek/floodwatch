@@ -428,9 +428,11 @@ class FloodWatchService
                 $args['radius_km'] ?? null
             ),
             'GetHighwaysIncidents' => $this->sortIncidentsByPriority(
-                $this->filterIncidentsByRegion(
-                    $this->highwaysService->getIncidents(),
-                    $context['region'] ?? null
+                $this->filterMotorwaysFromDisplay(
+                    $this->filterIncidentsByRegion(
+                        $this->highwaysService->getIncidents(),
+                        $context['region'] ?? null
+                    )
                 )
             ),
             'GetFloodForecast' => $this->forecastService->getForecast(),
@@ -676,6 +678,29 @@ class FloodWatchService
         });
 
         return array_values($incidents);
+    }
+
+    /**
+     * Filter out motorway incidents when config excludes them (hyperlocal focus).
+     *
+     * @param  array<int, array{road?: string}>  $incidents
+     * @return array<int, array{road?: string}>
+     */
+    private function filterMotorwaysFromDisplay(array $incidents): array
+    {
+        if (! config('flood-watch.exclude_motorways_from_display', true)) {
+            return $incidents;
+        }
+
+        return array_values(array_filter($incidents, function (array $incident): bool {
+            $road = trim((string) ($incident['road'] ?? ''));
+            if ($road === '') {
+                return true;
+            }
+            $baseRoad = $this->extractBaseRoad($road);
+
+            return ! preg_match('/^M\d+/', $baseRoad);
+        }));
     }
 
     /**
