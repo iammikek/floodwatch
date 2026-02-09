@@ -689,7 +689,7 @@ class FloodWatchDashboardTest extends TestCase
     public function test_guest_sees_rate_limit_on_page_load_when_already_limited(): void
     {
         $key = 'flood-watch-guest:127.0.0.1';
-        RateLimiter::hit($key, 1);
+        RateLimiter::hit($key, 60);
 
         $component = Livewire::test('flood-watch-dashboard')
             ->assertSet('error', __('flood-watch.error.guest_rate_limit', ['action' => 'request']))
