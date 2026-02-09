@@ -692,7 +692,7 @@ class FloodWatchDashboardTest extends TestCase
         RateLimiter::hit($key, 1);
 
         $component = Livewire::test('flood-watch-dashboard')
-            ->assertSet('error', 'Guests are limited to one request per second. Please try again in a moment or register for unlimited access.')
+            ->assertSet('error', __('flood-watch.error.guest_rate_limit', ['action' => 'request']))
             ->assertSet('retryAfterTimestamp', fn ($v) => $v !== null && $v > time());
     }
 
@@ -741,7 +741,7 @@ class FloodWatchDashboardTest extends TestCase
             ->assertSet('assistantResponse', 'First search OK.');
 
         $component->call('search')
-            ->assertSet('error', 'Guests are limited to one request per second. Please try again in a moment or register for unlimited access.')
+            ->assertSet('error', __('flood-watch.error.guest_rate_limit', ['action' => 'request']))
             ->assertSet('retryAfterTimestamp', fn ($v) => $v !== null && $v > time());
     }
 
