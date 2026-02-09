@@ -2,6 +2,8 @@
 
 "Support Flood Watch" link in footer and profile. Links to external donation page (Ko-fi, Buy Me a Coffee, PayPal).
 
+**Status**: ✅ Complete
+
 **Prerequisite**: [00-foundation.md](00-foundation.md) – `donation_url` config exists.
 
 **Ref**: `docs/BRIEF.md` §8, `docs/PLAN.md` Donations
@@ -10,11 +12,11 @@
 
 ## Acceptance Criteria
 
-- [ ] "Support Flood Watch" link in footer; links to `config('flood-watch.donation_url')` or placeholder
-- [ ] Profile page has "Support Flood Watch" block with Donate link
-- [ ] Link opens in new tab (`target="_blank" rel="noopener"`)
-- [ ] When `FLOOD_WATCH_DONATION_URL` empty, link can point to placeholder or be hidden (document behaviour)
-- [ ] `sail test` passes
+- [x] "Support Flood Watch" link in footer; links to `config('flood-watch.donation_url')` or placeholder
+- [x] Profile page has "Support Flood Watch" block with Donate link
+- [x] Link opens in new tab (`target="_blank" rel="noopener"`)
+- [x] When `FLOOD_WATCH_DONATION_URL` empty, link can point to placeholder or be hidden (document behaviour)
+- [x] `sail test` passes
 
 ---
 

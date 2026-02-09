@@ -13,9 +13,9 @@ Reorganise the Flood Watch dashboard to match the revised brief wireframe (`docs
 - [00-foundation](00-foundation.md)
 - [01-search-history](01-search-history.md) ✓
 - [02-use-my-location](02-use-my-location.md) ✓
-- [03-bookmarks](03-bookmarks.md) – location dropdown (adds in wireframe position)
+- [03-bookmarks](03-bookmarks.md) ✓ – location dropdown (adds in wireframe position)
 - [04-route-check](04-route-check.md) – Route Check section (adds in wireframe position)
-- [05-donations](05-donations.md) – footer support link (adds in wireframe position)
+- [05-donations](05-donations.md) ✓ – footer support link (adds in wireframe position)
 
 ---
 

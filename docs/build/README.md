@@ -23,7 +23,7 @@ Implementation specs for Cursor agentic development. Build in order; each spec i
 | 3 | [Use my location (GPS)](02-use-my-location.md) | ~30 min | FloodWatchDashboard, Alpine/JS |
 | 4 | [Location bookmarks](03-bookmarks.md) ✓ | ~1–2 h | LocationBookmarkController, Profile UI |
 | 5 | [Route check (From/To)](04-route-check.md) | ~1–2 h | RouteCheckService, OSRM, Livewire |
-| 6 | [Donations](05-donations.md) | ~15 min | Layout, profile view |
+| 6 | [Donations](05-donations.md) ✓ | ~15 min | Layout, profile view |
 | 7 | [Backend polling](07-backend-polling.md) | ~1 h | Scheduled job, routes/console.php |
 | 8 | [Revised wireframe UI](08-revised-wireframe-ui.md) | ~3–4 h | Layout refactor, Risk/Route blocks, responsive |
 
