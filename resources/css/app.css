@@ -1,3 +1,10 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+    .flood-map-marker {
+        background: transparent !important;
+        border: none !important;
+    }
+}

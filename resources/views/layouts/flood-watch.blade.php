@@ -61,7 +61,7 @@
                 userIcon() {
                     const title = this.t?.your_location || 'Your location';
                     return L.divIcon({
-                        className: 'flood-map-marker flood-map-marker-user',
+                        className: 'leaflet-div-icon flood-map-marker flood-map-marker-user',
                         html: '<span class=\'flood-map-marker-inner\' title=\'' + title.replace(/'/g, '&#39;') + '\'>📍</span>',
                         iconSize: [28, 28],
                         iconAnchor: [14, 14]
@@ -74,7 +74,7 @@
                     const icon = type === 'pumping_station' ? '⚙' : type === 'barrier' ? '🛡' : type === 'drain' ? '〰' : '💧';
                     const levelLabel = status === 'elevated' ? (this.t?.elevated_level || 'Elevated level') : status === 'expected' ? (this.t?.expected_level || 'Expected level') : status === 'low' ? (this.t?.low_level || 'Low level') : '';
                     return L.divIcon({
-                        className: 'flood-map-marker flood-map-marker-station ' + statusClass,
+                        className: 'leaflet-div-icon flood-map-marker flood-map-marker-station ' + statusClass,
                         html: '<span class=\'flood-map-marker-inner\' title=\'' + levelLabel.replace(/'/g, '&#39;') + '\'>' + icon + '</span>',
                         iconSize: [26, 26],
                         iconAnchor: [13, 13]
@@ -97,7 +97,7 @@
                     const isSevere = level === 1;
                     const title = this.t?.flood_warning || 'Flood warning';
                     return L.divIcon({
-                        className: 'flood-map-marker flood-map-marker-flood' + (isSevere ? ' severe' : ''),
+                        className: 'leaflet-div-icon flood-map-marker flood-map-marker-flood' + (isSevere ? ' severe' : ''),
                         html: '<span class=\'flood-map-marker-inner\' title=\'' + title.replace(/'/g, '&#39;') + '\'>' + (isSevere ? '🚨' : '⚠') + '</span>',
                         iconSize: [26, 26],
                         iconAnchor: [13, 13]
@@ -127,7 +127,7 @@
                     const fallback = this.t?.road_incident || 'Road incident';
                     const title = this.esc(i.typeLabel || i.incidentType || i.managementType || fallback);
                     return L.divIcon({
-                        className: 'flood-map-marker flood-map-marker-incident',
+                        className: 'leaflet-div-icon flood-map-marker flood-map-marker-incident',
                         html: '<span class=\'flood-map-marker-inner\' title=\'' + title + '\'>' + icon + '</span>',
                         iconSize: [26, 26],
                         iconAnchor: [13, 13]
@@ -186,6 +186,16 @@
                                     .bindPopup(this.incidentPopup(i));
                             }
                         });
+                        if (this.routeGeometry && this.routeGeometry.length >= 2) {
+                            const latLngs = this.routeGeometry.map(c => [c[1], c[0]]);
+                            const routeLayer = L.polyline(latLngs, { color: '#2563eb', weight: 5, opacity: 0.8 });
+                            routeLayer.addTo(this.map);
+                            const hasSearchMarkers = this.hasUser || (this.floods && this.floods.length > 0) || (this.incidents && this.incidents.length > 0) || (this.stations && this.stations.length > 0);
+                            if (!hasSearchMarkers) {
+                                this.map.fitBounds(routeLayer.getBounds(), { padding: [20, 20], maxZoom: 12 });
+                            }
+                        }
+                        this.map.invalidateSize();
                     };
                     this.$nextTick(() => {
                         const el = document.getElementById('flood-map');
@@ -201,7 +211,9 @@
                                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                             }).addTo(this.map);
                             this.map.invalidateSize();
-                            requestIdleCallback(() => addMarkers(L), { timeout: 100 });
+                            (typeof requestIdleCallback !== 'undefined'
+                                ? (cb) => requestIdleCallback(cb, { timeout: 100 })
+                                : (cb) => setTimeout(cb, 100))(() => addMarkers(L));
                         });
                     });
                 }

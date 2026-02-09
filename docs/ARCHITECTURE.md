@@ -4,7 +4,7 @@
 
 Flood Watch correlates Environment Agency flood data with National Highways road status to provide a single source of truth for flood and road viability in the South West (Bristol, Somerset, Devon, Cornwall).
 
-**Product brief**: See `docs/BRIEF.md` for the revised scope – user decision support (house/car at risk), location lookup (postcode, address, What3Words, **Use my location** via GPS), route check, backend polling, and LLM cost control.
+**Product brief**: See `docs/BRIEF.md` for the revised scope – user decision support (house/car at risk), location lookup (postcode, place name, **Use my location** via GPS), route check, backend polling, and LLM cost control.
 
 **Planned**: Search history in `user_searches`; bookmarks in `location_bookmarks`. See **`docs/SCHEMA.md`** for full schema and object map.
 
@@ -68,7 +68,7 @@ flowchart TB
 1. **User input** → LocationResolver (postcode/place) → coordinates + region
 2. **FloodWatchService.chat()** pre-fetches in parallel via `Concurrency::run()`: forecast, weather, river levels (flood alerts are not pre-fetched)
 3. **LLM** receives system prompt + tools; calls GetFloodData (flood alerts), GetHighwaysIncidents (road status), GetCorrelationSummary, etc. Tool calls are LLM-driven
-4. **RiskCorrelationService** applies deterministic rules (flood↔road pairs, predictive warnings)
+4. **RiskCorrelationService** applies deterministic rules (flood↔road pairs, predictive warnings). See **`docs/RISK_CORRELATION.md`** for full documentation.
 5. **Response** synthesized by LLM, cached, returned with floods/incidents/forecast
 
 ## Extension Points

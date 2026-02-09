@@ -298,6 +298,7 @@ Reverb as second service or process; Redis if scaling. Alternative: Pusher (free
 | `docs/ARCHITECTURE.md` | System structure, data flow |
 | `docs/LLM_DATA_FLOW.md` | How LLM consumes data |
 | `docs/DEPLOYMENT.md` | Railway runbook, pre-launch checklist |
+| `docs/PERFORMANCE.md` | OSRM limits, self-hosting, scaling options |
 | `docs/TROUBLESHOOTING.md` | LLM timeout, circuit breaker, cache |
 | `docs/CONSIDERATIONS.md` | Risks, API dependency, regional scope, costs |
 | `docs/DATA_SOURCES.md` | Current + planned APIs; National Rail implementation plan |

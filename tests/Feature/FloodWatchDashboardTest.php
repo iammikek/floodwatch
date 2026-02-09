@@ -27,16 +27,181 @@ class FloodWatchDashboardTest extends TestCase
     public function test_flood_watch_dashboard_displays_flood_risk_road_status_and_forecast_badges(): void
     {
         Livewire::test('flood-watch-dashboard')
-            ->assertSee('Flood Risk')
-            ->assertSee('Road Status')
-            ->assertSee('5-Day Forecast');
+            ->assertSee(__('flood-watch.dashboard.flood_risk'))
+            ->assertSee(__('flood-watch.dashboard.road_status'))
+            ->assertSee(__('flood-watch.dashboard.forecast'));
     }
 
     public function test_flood_watch_dashboard_has_location_input(): void
     {
         Livewire::test('flood-watch-dashboard')
-            ->assertSee('Your location', false)
+            ->assertSee(__('flood-watch.dashboard.your_location'), false)
             ->assertSet('location', '');
+    }
+
+    public function test_dashboard_displays_route_check_section(): void
+    {
+        Livewire::test('flood-watch-dashboard')
+            ->assertSee(__('flood-watch.dashboard.route_check'), false)
+            ->assertSee(__('flood-watch.dashboard.route_check_from'), false)
+            ->assertSee(__('flood-watch.dashboard.route_check_to'), false)
+            ->assertSee(__('flood-watch.dashboard.route_check_button'), false);
+    }
+
+    public function test_dashboard_footer_shows_donation_link_when_configured(): void
+    {
+        Config::set('flood-watch.donation_url', 'https://ko-fi.com/example');
+
+        $response = $this->get('/');
+
+        $response->assertStatus(200);
+        $response->assertSee(__('flood-watch.dashboard.support_development'), false);
+        $response->assertSee('https://ko-fi.com/example');
+    }
+
+    public function test_route_check_returns_verdict_when_valid_from_to(): void
+    {
+        $user = User::factory()->create();
+        Config::set('flood-watch.national_highways.api_key', 'test-key');
+        Config::set('flood-watch.national_highways.base_url', 'https://api.example.com');
+
+        Http::fake(function ($request) {
+            if (str_contains($request->url(), 'api.postcodes.io')) {
+                return Http::response(['result' => ['latitude' => 51.0358, 'longitude' => -2.8318]], 200);
+            }
+            if (str_contains($request->url(), 'router.project-osrm.org')) {
+                return Http::response([
+                    'code' => 'Ok',
+                    'routes' => [
+                        [
+                            'distance' => 50000,
+                            'duration' => 3600,
+                            'geometry' => [
+                                'coordinates' => [[-2.8318, 51.0358], [-2.5778, 51.4545]],
+                                'type' => 'LineString',
+                            ],
+                            'legs' => [],
+                        ],
+                    ],
+                ], 200);
+            }
+            if (str_contains($request->url(), 'environment.data.gov.uk')) {
+                return Http::response(['items' => []], 200);
+            }
+            if (str_contains($request->url(), 'api.example.com')) {
+                return Http::response(['D2Payload' => ['situation' => []]], 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
+        Livewire::actingAs($user)
+            ->test('flood-watch-dashboard')
+            ->set('routeFrom', 'TA10 0DP')
+            ->set('routeTo', 'BS1 1AA')
+            ->call('checkRoute')
+            ->assertSet('routeCheckLoading', false)
+            ->assertSet('routeCheckResult.verdict', 'clear')
+            ->assertSet('routeCheckResult.summary', fn ($s) => is_string($s) && $s !== '')
+            ->assertSet('routeCheckResult.route_key', fn ($k) => is_string($k) && strlen($k) === 32)
+            ->assertSet('routeCheckResult.route_geometry', fn ($g) => is_array($g) && count($g) >= 2);
+    }
+
+    public function test_route_check_returns_error_when_osrm_returns_route_without_geometry(): void
+    {
+        $user = User::factory()->create();
+        Config::set('flood-watch.national_highways.api_key', 'test-key');
+        Config::set('flood-watch.national_highways.base_url', 'https://api.example.com');
+
+        Http::fake(function ($request) {
+            if (str_contains($request->url(), 'api.postcodes.io')) {
+                return Http::response(['result' => ['latitude' => 51.0358, 'longitude' => -2.8318]], 200);
+            }
+            if (str_contains($request->url(), 'router.project-osrm.org')) {
+                return Http::response([
+                    'code' => 'Ok',
+                    'routes' => [
+                        [
+                            'distance' => 50000,
+                            'duration' => 3600,
+                            'geometry' => ['coordinates' => [], 'type' => 'LineString'],
+                            'legs' => [],
+                        ],
+                    ],
+                ], 200);
+            }
+            if (str_contains($request->url(), 'environment.data.gov.uk')) {
+                return Http::response(['items' => []], 200);
+            }
+            if (str_contains($request->url(), 'api.example.com')) {
+                return Http::response(['D2Payload' => ['situation' => []]], 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
+        Livewire::actingAs($user)
+            ->test('flood-watch-dashboard')
+            ->set('routeFrom', 'TA10 0DP')
+            ->set('routeTo', 'BS1 1AA')
+            ->call('checkRoute')
+            ->assertSet('routeCheckLoading', false)
+            ->assertSet('routeCheckResult.verdict', 'error')
+            ->assertSet('routeCheckResult.summary', __('flood-watch.route_check.error_route_failed'))
+            ->assertSet('routeCheckResult.route_geometry', null)
+            ->assertSet('routeCheckResult.route_key', null);
+    }
+
+    public function test_route_check_shows_error_when_from_invalid(): void
+    {
+        $user = User::factory()->create();
+
+        Http::fake(function ($request) {
+            if (str_contains($request->url(), 'api.postcodes.io')) {
+                return Http::response(['status' => 404, 'error' => 'Postcode not found'], 404);
+            }
+            if (str_contains($request->url(), 'nominatim.openstreetmap.org')) {
+                return Http::response([], 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
+        $result = Livewire::actingAs($user)
+            ->test('flood-watch-dashboard')
+            ->set('routeFrom', 'InvalidPlace99')
+            ->set('routeTo', 'TA10 0DP')
+            ->call('checkRoute')
+            ->assertSet('routeCheckLoading', false)
+            ->assertSet('routeCheckResult.verdict', 'error')
+            ->get('routeCheckResult');
+
+        expect($result)->toHaveKey('summary')
+            ->and($result['summary'])->not->toBe('');
+    }
+
+    public function test_route_check_error_shows_unable_to_check_badge(): void
+    {
+        $user = User::factory()->create();
+
+        Http::fake(function ($request) {
+            if (str_contains($request->url(), 'api.postcodes.io')) {
+                return Http::response(['status' => 404, 'error' => 'Postcode not found'], 404);
+            }
+            if (str_contains($request->url(), 'nominatim.openstreetmap.org')) {
+                return Http::response([], 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
+        Livewire::actingAs($user)
+            ->test('flood-watch-dashboard')
+            ->set('routeFrom', 'InvalidPlace99')
+            ->set('routeTo', 'TA10 0DP')
+            ->call('checkRoute')
+            ->assertSet('routeCheckResult.verdict', 'error')
+            ->assertSee(__('flood-watch.route_check.verdict_error'), false);
     }
 
     public function test_search_displays_assistant_response(): void
@@ -110,10 +275,10 @@ class FloodWatchDashboardTest extends TestCase
             ->assertSet('assistantResponse', "## Current Status\n\nNo active flood warnings. Roads are clear.")
             ->assertSet('floods', [])
             ->assertSet('incidents', [])
-            ->assertSee('No active flood warnings')
-            ->assertSee('Roads are clear')
-            ->assertSee('No alerts')
-            ->assertSee('Clear');
+            ->assertSee(__('flood-watch.dashboard.no_flood_warnings'))
+            ->assertSee(__('flood-watch.dashboard.roads_clear'))
+            ->assertSee(__('flood-watch.dashboard.no_alerts'))
+            ->assertSee(__('flood-watch.dashboard.clear'));
     }
 
     public function test_search_displays_flood_and_road_sections_separately(): void
@@ -219,11 +384,11 @@ class FloodWatchDashboardTest extends TestCase
             ->call('search')
             ->assertSet('floods.0.description', 'River Parrett at Langport')
             ->assertSet('incidents.0.road', 'A361')
-            ->assertSee('Flood warnings')
-            ->assertSee('Road Status')
+            ->assertSee(__('flood-watch.dashboard.flood_warnings'))
+            ->assertSee(__('flood-watch.dashboard.road_status'))
             ->assertSee('River Parrett at Langport')
             ->assertSee('A361')
-            ->assertSee('Summary');
+            ->assertSee(__('flood-watch.dashboard.summary'));
     }
 
     public function test_search_shows_error_when_no_openai_key(): void
@@ -239,7 +404,7 @@ class FloodWatchDashboardTest extends TestCase
     {
         Livewire::test('flood-watch-dashboard')
             ->set('loading', true)
-            ->assertSee('Connecting')
+            ->assertSee(__('flood-watch.dashboard.connecting'))
             ->assertSee('animate-spin');
     }
 
@@ -507,10 +672,10 @@ class FloodWatchDashboardTest extends TestCase
             ->set('location', 'TA10 0')
             ->call('search');
 
-        $component->assertSet('hasUserLocation', true)
-            ->assertSee('km from your location');
-
         $floods = $component->get('floods');
+        $component->assertSet('hasUserLocation', true)
+            ->assertSee(__('flood-watch.dashboard.km_from_location', ['distance' => $floods[0]['distanceKm']]));
+
         $this->assertCount(2, $floods);
         $this->assertArrayHasKey('distanceKm', $floods[0]);
         $this->assertArrayHasKey('distanceKm', $floods[1]);
@@ -524,14 +689,14 @@ class FloodWatchDashboardTest extends TestCase
     public function test_guest_sees_rate_limit_on_page_load_when_already_limited(): void
     {
         $key = 'flood-watch-guest:127.0.0.1';
-        RateLimiter::hit($key, 900);
+        RateLimiter::hit($key, 60);
 
         $component = Livewire::test('flood-watch-dashboard')
-            ->assertSet('error', 'Guests are limited to one search every 15 minutes. Please try again later or register for unlimited access.')
+            ->assertSet('error', __('flood-watch.error.guest_rate_limit', ['action' => 'request']))
             ->assertSet('retryAfterTimestamp', fn ($v) => $v !== null && $v > time());
     }
 
-    public function test_guest_user_is_rate_limited_to_one_search_per_fifteen_minutes(): void
+    public function test_guest_user_is_rate_limited_to_one_search_per_second(): void
     {
         Config::set('openai.api_key', 'test-key');
         Config::set('flood-watch.national_highways.api_key', 'test-key');
@@ -576,7 +741,7 @@ class FloodWatchDashboardTest extends TestCase
             ->assertSet('assistantResponse', 'First search OK.');
 
         $component->call('search')
-            ->assertSet('error', 'Guests are limited to one search every 15 minutes. Please try again later or register for unlimited access.')
+            ->assertSet('error', __('flood-watch.error.guest_rate_limit', ['action' => 'request']))
             ->assertSet('retryAfterTimestamp', fn ($v) => $v !== null && $v > time());
     }
 
@@ -796,7 +961,7 @@ class FloodWatchDashboardTest extends TestCase
         $response = $this->get('/');
 
         $response->assertStatus(200);
-        $response->assertSee('Use my location', false);
+        $response->assertSee(__('flood-watch.dashboard.use_my_location'), false);
     }
 
     public function test_dashboard_pre_loads_default_bookmark_when_logged_in(): void

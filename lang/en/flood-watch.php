@@ -22,7 +22,7 @@ return [
         'invalid_location' => 'Invalid location.',
         'outside_area' => 'This location is outside the South West.',
         'rate_limit' => 'AI service rate limit exceeded. Please wait a minute and try again.',
-        'guest_rate_limit' => 'Guests are limited to one search every 15 minutes. Please try again later or register for unlimited access.',
+        'guest_rate_limit' => 'Guests are limited to one :action per second. Please try again in a moment or register for unlimited access.',
         'timeout' => 'The request took too long. The AI service may be busy. Please try again in a moment.',
         'connection' => 'Unable to reach the service. Please check your connection and try again.',
         'generic' => 'Unable to get a response. Please try again.',
@@ -34,7 +34,7 @@ return [
     'dashboard' => [
         'title' => 'Flood Watch',
         'intro' => 'Enter your location and we\'ll use AI to collate flood warnings, river levels, road incidents and forecasts into a single summary. We cross-reference Environment Agency flood data with National Highways road status so you can see how flooding affects travel in Bristol, Somerset, Devon and Cornwall.',
-        'guest_banner' => 'Guests are limited to one search every 15 minutes. Register for free to get more searches.',
+        'guest_banner' => 'Guests are limited to one request per second. Register for free for unlimited access.',
         'guest_banner_register' => 'Register',
         'flood_risk' => 'Flood Risk',
         'road_status' => 'Road Status',
@@ -106,7 +106,18 @@ return [
         'edit' => 'Edit',
         'delete' => 'Delete',
         'delete_bookmark_confirm' => 'Remove this bookmark?',
+        'route_check' => 'Route Check',
+        'route_line' => 'Route',
+        'route_check_from' => 'From',
+        'route_check_to' => 'To',
+        'route_check_button' => 'Check route',
     ],
+    'donations' => [
+        'support_title' => 'Support Flood Watch',
+        'support_intro' => 'Help cover API and hosting costs. The app stays free.',
+        'donate' => 'Donate',
+    ],
+
     'bookmarks' => [
         'title' => 'Location bookmarks',
         'intro' => 'Save locations to quickly check flood and road status. Your default bookmark loads when you open Flood Watch.',
@@ -138,6 +149,26 @@ return [
         'planned' => 'Planned',
         'active' => 'Active',
         'suspended' => 'Suspended',
+    ],
+
+    'route_check' => [
+        'error_missing_locations' => 'Please enter both From and To locations.',
+        'error_invalid_from' => 'Could not find the From location. Try a postcode or town name.',
+        'error_invalid_to' => 'Could not find the To location. Try a postcode or town name.',
+        'error_outside_area' => 'Both locations must be in the South West (Bristol, Somerset, Devon, Cornwall).',
+        'error_route_failed' => 'Unable to compute route. Check that both locations are in the South West.',
+        'summary_blocked' => 'Route blocked by road closure. Consider an alternative route.',
+        'summary_at_risk' => 'Route passes through areas with flood warnings. Check conditions before travelling.',
+        'summary_delays' => 'Route has :incident_count delay(s) or lane closure(s). Allow extra time.',
+        'summary_clear' => 'Route clear. No flood warnings or road incidents affecting your route.',
+        'verdict_blocked' => 'Blocked',
+        'verdict_at_risk' => 'At risk',
+        'verdict_delays' => 'Delays',
+        'verdict_clear' => 'Clear',
+        'verdict_error' => 'Unable to check',
+        'alternatives' => 'Alternative routes',
+        'floods_on_route' => 'Flood warnings on route',
+        'incidents_on_route' => 'Road incidents on route',
     ],
 
     'incident_type' => [

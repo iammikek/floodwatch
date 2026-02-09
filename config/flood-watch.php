@@ -182,6 +182,18 @@ return [
 
     'cache_key_prefix' => env('FLOOD_WATCH_CACHE_PREFIX', 'flood-watch'),
 
+    'route_check' => [
+        'osrm_url' => env('FLOOD_WATCH_OSRM_URL', 'https://router.project-osrm.org'),
+        'osrm_timeout' => (int) env('FLOOD_WATCH_OSRM_TIMEOUT', 15),
+        'flood_radius_km' => (int) env('FLOOD_WATCH_ROUTE_FLOOD_RADIUS_KM', 25),
+        'flood_radius_buffer_km' => (int) env('FLOOD_WATCH_ROUTE_FLOOD_RADIUS_BUFFER_KM', 5),
+        'flood_radius_max_km' => (int) env('FLOOD_WATCH_ROUTE_FLOOD_RADIUS_MAX_KM', 80),
+        'incident_proximity_km' => (float) env('FLOOD_WATCH_ROUTE_INCIDENT_PROXIMITY_KM', 0.5),
+        'cache_ttl_minutes' => (int) env('FLOOD_WATCH_ROUTE_CACHE_TTL_MINUTES', 15),
+        'incident_check_max_route_points' => (int) env('FLOOD_WATCH_ROUTE_INCIDENT_CHECK_MAX_POINTS', 150),
+        'fetch_alternatives_when_blocked' => env('FLOOD_WATCH_FETCH_ALTERNATIVES_WHEN_BLOCKED', true),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Health Check Cache (Admin Dashboard)

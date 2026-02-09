@@ -17,6 +17,11 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withSchedule(function (Schedule $schedule): void {
         $schedule->command('flood-watch:prune-llm-requests')->daily();
+
+        $locations = implode(',', array_values(config('flood-watch.warm_cache_locations', [])));
+        if ($locations !== '') {
+            $schedule->command('flood-watch:warm-cache', ['--locations' => $locations])->everyFifteenMinutes();
+        }
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

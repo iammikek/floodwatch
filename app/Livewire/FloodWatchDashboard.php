@@ -7,6 +7,7 @@ use App\Models\UserSearch;
 use App\Services\FloodWatchService;
 use App\Services\FloodWatchTrendService;
 use App\Services\LocationResolver;
+use App\Services\RouteCheckService;
 use App\Services\UserSearchService;
 use App\Support\IncidentIcon;
 use App\Support\LogMasker;
@@ -51,6 +52,14 @@ class FloodWatchDashboard extends Component
     public ?int $retryAfterTimestamp = null;
 
     public bool $autoRefreshEnabled = false;
+
+    public string $routeFrom = '';
+
+    public string $routeTo = '';
+
+    public bool $routeCheckLoading = false;
+
+    public ?array $routeCheckResult = null;
 
     /**
      * User's location bookmarks (when logged in).
@@ -145,13 +154,23 @@ class FloodWatchDashboard extends Component
         );
     }
 
+    /**
+     * Guest rate limit key. Shared across search and route check for a combined
+     * limit of 1 request/second (either action counts). Copy uses "request" not
+     * "search"/"route check" to reflect this.
+     */
+    private function guestRateLimitKey(): string
+    {
+        return 'flood-watch-guest:'.request()->ip();
+    }
+
     public function mount(): void
     {
         if (Auth::guest()) {
-            $key = 'flood-watch-guest:'.request()->ip();
+            $key = $this->guestRateLimitKey();
             if (RateLimiter::tooManyAttempts($key, 1)) {
                 $seconds = RateLimiter::availableIn($key);
-                $this->error = __('flood-watch.error.guest_rate_limit');
+                $this->error = __('flood-watch.error.guest_rate_limit', ['action' => 'request']);
                 $this->retryAfterTimestamp = time() + $seconds;
             }
         } else {
@@ -159,6 +178,53 @@ class FloodWatchDashboard extends Component
             if ($default !== null && $this->location === '') {
                 $this->location = $default->location;
             }
+            if ($default !== null && $this->routeFrom === '') {
+                $this->routeFrom = $default->location;
+            }
+        }
+    }
+
+    public function checkRoute(RouteCheckService $routeCheckService): void
+    {
+        $this->error = null;
+
+        if (Auth::guest()) {
+            $key = $this->guestRateLimitKey();
+            $decaySeconds = 1;
+            if (RateLimiter::tooManyAttempts($key, 1)) {
+                $this->routeCheckLoading = false;
+                $this->retryAfterTimestamp = time() + RateLimiter::availableIn($key);
+                $this->routeCheckResult = [
+                    'verdict' => 'error',
+                    'summary' => __('flood-watch.error.guest_rate_limit', ['action' => 'request']),
+                    'floods_on_route' => [],
+                    'incidents_on_route' => [],
+                    'alternatives' => [],
+                    'route_geometry' => null,
+                ];
+
+                return;
+            }
+            RateLimiter::hit($key, $decaySeconds);
+        }
+
+        $this->routeCheckLoading = true;
+        $this->routeCheckResult = null;
+
+        try {
+            $result = $routeCheckService->check($this->routeFrom, $this->routeTo);
+            $this->routeCheckResult = $result->toArray();
+        } finally {
+            $this->routeCheckLoading = false;
+        }
+    }
+
+    #[On('location-from-gps-for-route')]
+    public function setRouteFromFromGps(float $lat, float $lng, LocationResolver $locationResolver): void
+    {
+        $result = $locationResolver->reverseFromCoords($lat, $lng);
+        if ($result['valid'] && $result['in_area']) {
+            $this->routeFrom = $result['location'];
         }
     }
 
@@ -254,12 +320,12 @@ class FloodWatchDashboard extends Component
         $this->loading = true;
 
         if (Auth::guest()) {
-            $key = 'flood-watch-guest:'.request()->ip();
-            $decaySeconds = 900;
+            $key = $this->guestRateLimitKey();
+            $decaySeconds = 1;
 
             if (RateLimiter::tooManyAttempts($key, 1)) {
                 $seconds = RateLimiter::availableIn($key);
-                $this->error = __('flood-watch.error.guest_rate_limit');
+                $this->error = __('flood-watch.error.guest_rate_limit', ['action' => 'request']);
                 $this->retryAfterTimestamp = time() + $seconds;
                 $this->loading = false;
 
@@ -289,7 +355,7 @@ class FloodWatchDashboard extends Component
                 $userLat,
                 $userLng
             );
-            $this->incidents = $this->enrichIncidentsWithIcons($result['incidents']);
+            $this->incidents = IncidentIcon::enrichIncidents($result['incidents']);
             $this->forecast = $result['forecast'] ?? [];
             $this->weather = $result['weather'] ?? [];
             $this->riverLevels = $result['riverLevels'] ?? [];
@@ -471,26 +537,6 @@ class FloodWatchDashboard extends Component
     }
 
     /**
-     * Add icon and human-readable labels to each incident.
-     *
-     * @param  array<int, array<string, mixed>>  $incidents
-     * @return array<int, array<string, mixed>>
-     */
-    private function enrichIncidentsWithIcons(array $incidents): array
-    {
-        return array_map(function (array $incident): array {
-            $incident['icon'] = IncidentIcon::forIncident(
-                $incident['incidentType'] ?? null,
-                $incident['managementType'] ?? null
-            );
-            $incident['statusLabel'] = IncidentIcon::statusLabel($incident['status'] ?? null);
-            $incident['typeLabel'] = IncidentIcon::typeLabel($incident['incidentType'] ?? $incident['managementType'] ?? null);
-
-            return $incident;
-        }, $incidents);
-    }
-
-    /**
      * Restore component state from client-side storage (e.g. localStorage).
      * Called by the frontend when cached results exist.
      *
@@ -500,17 +546,12 @@ class FloodWatchDashboard extends Component
     {
         $this->assistantResponse = is_string($data['assistantResponse'] ?? null) ? $data['assistantResponse'] : null;
         $this->floods = is_array($data['floods'] ?? null) ? $data['floods'] : [];
-        $this->incidents = $this->enrichIncidentsWithIcons(is_array($data['incidents'] ?? null) ? $data['incidents'] : []);
+        $this->incidents = IncidentIcon::enrichIncidents(is_array($data['incidents'] ?? null) ? $data['incidents'] : []);
         $this->forecast = is_array($data['forecast'] ?? null) ? $data['forecast'] : [];
         $this->weather = is_array($data['weather'] ?? null) ? $data['weather'] : [];
         $this->riverLevels = is_array($data['riverLevels'] ?? null) ? $data['riverLevels'] : [];
         $this->mapCenter = is_array($data['mapCenter'] ?? null) ? $data['mapCenter'] : null;
         $this->hasUserLocation = (bool) ($data['hasUserLocation'] ?? false);
         $this->lastChecked = is_string($data['lastChecked'] ?? null) ? $data['lastChecked'] : null;
-    }
-
-    public function render()
-    {
-        return view('livewire.flood-watch-dashboard');
     }
 }
