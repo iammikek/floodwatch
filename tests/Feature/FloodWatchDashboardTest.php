@@ -1289,4 +1289,41 @@ class FloodWatchDashboardTest extends TestCase
             ->set('incidents', [])
             ->assertDontSee(__('flood-watch.dashboard.emergency_title'), false);
     }
+
+    public function test_footer_shows_section_links_when_results_exist(): void
+    {
+        Livewire::test('flood-watch-dashboard')
+            ->set('assistantResponse', 'Summary.')
+            ->set('floods', [])
+            ->set('incidents', [])
+            ->assertSee(__('flood-watch.dashboard.road_status'), false)
+            ->assertSee(__('flood-watch.dashboard.forecast'), false)
+            ->assertSee(__('flood-watch.dashboard.river_levels'), false);
+    }
+
+    public function test_desktop_grid_layout_when_results_exist(): void
+    {
+        $html = Livewire::test('flood-watch-dashboard')
+            ->set('assistantResponse', 'Summary.')
+            ->set('floods', [])
+            ->set('incidents', [])
+            ->html();
+
+        expect($html)->toContain('hidden lg:block')
+            ->toContain('grid grid-cols-2')
+            ->toContain('grid-cols-[1.5fr_1fr]');
+    }
+
+    public function test_separate_mobile_and_desktop_layouts(): void
+    {
+        $html = Livewire::test('flood-watch-dashboard')
+            ->set('assistantResponse', 'Summary.')
+            ->set('mapCenter', ['lat' => 51.0358, 'lng' => -2.8318])
+            ->set('floods', [])
+            ->set('incidents', [])
+            ->html();
+
+        expect($html)->toContain('lg:hidden')
+            ->toContain('hidden lg:block');
+    }
 }

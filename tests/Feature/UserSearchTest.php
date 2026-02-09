@@ -101,11 +101,30 @@ test('recent searches returns last five for guest', function () {
     $this->get('/');
     $sessionId = session()->getId();
 
-    UserSearch::factory()->count(3)->sequence(
-        ['location' => 'Langport', 'session_id' => $sessionId, 'user_id' => null, 'searched_at' => now()->subMinutes(1)],
-        ['location' => 'TA10 0', 'session_id' => $sessionId, 'user_id' => null, 'searched_at' => now()->subMinutes(2)],
-        ['location' => 'Bristol', 'session_id' => $sessionId, 'user_id' => null, 'searched_at' => now()->subMinutes(3)],
-    )->create(['lat' => 51.0358, 'lng' => -2.8318]);
+    UserSearch::factory()->create([
+        'location' => 'Langport',
+        'session_id' => $sessionId,
+        'user_id' => null,
+        'lat' => 51.0358,
+        'lng' => -2.8318,
+        'searched_at' => now()->subMinutes(1),
+    ]);
+    UserSearch::factory()->create([
+        'location' => 'TA10 0',
+        'session_id' => $sessionId,
+        'user_id' => null,
+        'lat' => 51.0400,
+        'lng' => -2.8300,
+        'searched_at' => now()->subMinutes(2),
+    ]);
+    UserSearch::factory()->create([
+        'location' => 'Bristol',
+        'session_id' => $sessionId,
+        'user_id' => null,
+        'lat' => 51.4545,
+        'lng' => -2.5879,
+        'searched_at' => now()->subMinutes(3),
+    ]);
 
     $component = Livewire::test('flood-watch-dashboard');
 
@@ -120,10 +139,20 @@ test('recent searches returns last five for guest', function () {
 test('recent searches returns last five for registered user', function () {
     $user = User::factory()->create();
 
-    UserSearch::factory()->count(2)->sequence(
-        ['location' => 'Langport', 'user_id' => $user->id, 'searched_at' => now()->subMinutes(1)],
-        ['location' => 'Exeter', 'user_id' => $user->id, 'searched_at' => now()->subMinutes(2)],
-    )->create(['lat' => 51.0358, 'lng' => -2.8318]);
+    UserSearch::factory()->create([
+        'location' => 'Langport',
+        'user_id' => $user->id,
+        'lat' => 51.0358,
+        'lng' => -2.8318,
+        'searched_at' => now()->subMinutes(1),
+    ]);
+    UserSearch::factory()->create([
+        'location' => 'Exeter',
+        'user_id' => $user->id,
+        'lat' => 50.7184,
+        'lng' => -3.5339,
+        'searched_at' => now()->subMinutes(2),
+    ]);
 
     $component = Livewire::actingAs($user)->test('flood-watch-dashboard');
     $recentSearches = $component->get('recentSearches') ?? [];
@@ -145,6 +174,34 @@ test('recent searches excludes other guests sessions', function () {
     $recentSearches = $component->get('recentSearches') ?? [];
 
     expect($recentSearches)->toHaveCount(0);
+});
+
+test('recent searches deduplicates same location by coordinates', function () {
+    $this->get('/');
+    $sessionId = session()->getId();
+
+    UserSearch::factory()->create([
+        'location' => 'TA10 0DP',
+        'session_id' => $sessionId,
+        'user_id' => null,
+        'lat' => 51.0358,
+        'lng' => -2.8318,
+        'searched_at' => now()->subMinutes(1),
+    ]);
+    UserSearch::factory()->create([
+        'location' => 'TA10 0DP',
+        'session_id' => $sessionId,
+        'user_id' => null,
+        'lat' => 51.0358,
+        'lng' => -2.8318,
+        'searched_at' => now()->subMinutes(2),
+    ]);
+
+    $component = Livewire::test('flood-watch-dashboard');
+    $recentSearches = $component->get('recentSearches') ?? [];
+
+    expect($recentSearches)->toHaveCount(1)
+        ->and($recentSearches[0]['location'])->toBe('TA10 0DP');
 });
 
 test('recent searches excludes other users records', function () {

@@ -13,7 +13,7 @@
     <body>
         @auth
             <header class="bg-white border-b border-slate-200 px-4 py-2">
-                <div class="max-w-2xl mx-auto flex justify-between items-center">
+                <div class="max-w-2xl lg:max-w-6xl mx-auto flex justify-between items-center">
                     <a href="{{ url('/') }}" class="shrink-0 flex items-center">
                         <x-application-logo class="block h-4 w-auto fill-current text-slate-800" />
                     </a>
@@ -29,18 +29,6 @@
                             <button type="submit" class="text-sm text-slate-600 hover:text-slate-800 p-0 border-0 bg-transparent cursor-pointer">{{ __('Log Out') }}</button>
                         </form>
                     </div>
-                    </div>
-                </div>
-            </header>
-        @else
-            <header class="bg-white border-b border-slate-200 px-4 py-2">
-                <div class="max-w-2xl mx-auto flex justify-between items-center">
-                    <a href="{{ url('/') }}" class="shrink-0 flex items-center">
-                        <x-application-logo class="block h-4 w-auto fill-current text-slate-800" />
-                    </a>
-                    <div class="flex gap-3">
-                        <a href="{{ route('login') }}" class="text-sm text-slate-600 hover:text-slate-800">{{ __('Log in') }}</a>
-                        <a href="{{ route('register') }}" class="text-sm text-blue-600 hover:text-blue-700">{{ __('Register') }}</a>
                     </div>
                 </div>
             </header>
