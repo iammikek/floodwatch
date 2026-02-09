@@ -27,25 +27,25 @@ class FloodWatchDashboardTest extends TestCase
     public function test_flood_watch_dashboard_displays_flood_risk_road_status_and_forecast_badges(): void
     {
         Livewire::test('flood-watch-dashboard')
-            ->assertSee('Flood Risk')
-            ->assertSee('Road Status')
-            ->assertSee('5-Day Forecast');
+            ->assertSee(__('flood-watch.dashboard.flood_risk'))
+            ->assertSee(__('flood-watch.dashboard.road_status'))
+            ->assertSee(__('flood-watch.dashboard.forecast'));
     }
 
     public function test_flood_watch_dashboard_has_location_input(): void
     {
         Livewire::test('flood-watch-dashboard')
-            ->assertSee('Your location', false)
+            ->assertSee(__('flood-watch.dashboard.your_location'), false)
             ->assertSet('location', '');
     }
 
     public function test_dashboard_displays_route_check_section(): void
     {
         Livewire::test('flood-watch-dashboard')
-            ->assertSee('Route Check', false)
-            ->assertSee('From', false)
-            ->assertSee('To', false)
-            ->assertSee('Check route', false);
+            ->assertSee(__('flood-watch.dashboard.route_check'), false)
+            ->assertSee(__('flood-watch.dashboard.route_check_from'), false)
+            ->assertSee(__('flood-watch.dashboard.route_check_to'), false)
+            ->assertSee(__('flood-watch.dashboard.route_check_button'), false);
     }
 
     public function test_dashboard_footer_shows_donation_link_when_configured(): void
@@ -55,7 +55,7 @@ class FloodWatchDashboardTest extends TestCase
         $response = $this->get('/');
 
         $response->assertStatus(200);
-        $response->assertSee('consider supporting development', false);
+        $response->assertSee(__('flood-watch.dashboard.support_development'), false);
         $response->assertSee('https://ko-fi.com/example');
     }
 
@@ -275,10 +275,10 @@ class FloodWatchDashboardTest extends TestCase
             ->assertSet('assistantResponse', "## Current Status\n\nNo active flood warnings. Roads are clear.")
             ->assertSet('floods', [])
             ->assertSet('incidents', [])
-            ->assertSee('No active flood warnings')
-            ->assertSee('Roads are clear')
-            ->assertSee('No alerts')
-            ->assertSee('Clear');
+            ->assertSee(__('flood-watch.dashboard.no_flood_warnings'))
+            ->assertSee(__('flood-watch.dashboard.roads_clear'))
+            ->assertSee(__('flood-watch.dashboard.no_alerts'))
+            ->assertSee(__('flood-watch.dashboard.clear'));
     }
 
     public function test_search_displays_flood_and_road_sections_separately(): void
@@ -384,11 +384,11 @@ class FloodWatchDashboardTest extends TestCase
             ->call('search')
             ->assertSet('floods.0.description', 'River Parrett at Langport')
             ->assertSet('incidents.0.road', 'A361')
-            ->assertSee('Flood warnings')
-            ->assertSee('Road Status')
+            ->assertSee(__('flood-watch.dashboard.flood_warnings'))
+            ->assertSee(__('flood-watch.dashboard.road_status'))
             ->assertSee('River Parrett at Langport')
             ->assertSee('A361')
-            ->assertSee('Summary');
+            ->assertSee(__('flood-watch.dashboard.summary'));
     }
 
     public function test_search_shows_error_when_no_openai_key(): void
@@ -404,7 +404,7 @@ class FloodWatchDashboardTest extends TestCase
     {
         Livewire::test('flood-watch-dashboard')
             ->set('loading', true)
-            ->assertSee('Connecting')
+            ->assertSee(__('flood-watch.dashboard.connecting'))
             ->assertSee('animate-spin');
     }
 
@@ -672,10 +672,10 @@ class FloodWatchDashboardTest extends TestCase
             ->set('location', 'TA10 0')
             ->call('search');
 
-        $component->assertSet('hasUserLocation', true)
-            ->assertSee('km from your location');
-
         $floods = $component->get('floods');
+        $component->assertSet('hasUserLocation', true)
+            ->assertSee(__('flood-watch.dashboard.km_from_location', ['distance' => $floods[0]['distanceKm']]));
+
         $this->assertCount(2, $floods);
         $this->assertArrayHasKey('distanceKm', $floods[0]);
         $this->assertArrayHasKey('distanceKm', $floods[1]);
@@ -692,7 +692,7 @@ class FloodWatchDashboardTest extends TestCase
         RateLimiter::hit($key, 1);
 
         $component = Livewire::test('flood-watch-dashboard')
-            ->assertSet('error', 'Guests are limited to one search per second. Please try again in a moment or register for unlimited access.')
+            ->assertSet('error', 'Guests are limited to one request per second. Please try again in a moment or register for unlimited access.')
             ->assertSet('retryAfterTimestamp', fn ($v) => $v !== null && $v > time());
     }
 
@@ -741,7 +741,7 @@ class FloodWatchDashboardTest extends TestCase
             ->assertSet('assistantResponse', 'First search OK.');
 
         $component->call('search')
-            ->assertSet('error', 'Guests are limited to one search per second. Please try again in a moment or register for unlimited access.')
+            ->assertSet('error', 'Guests are limited to one request per second. Please try again in a moment or register for unlimited access.')
             ->assertSet('retryAfterTimestamp', fn ($v) => $v !== null && $v > time());
     }
 
@@ -961,7 +961,7 @@ class FloodWatchDashboardTest extends TestCase
         $response = $this->get('/');
 
         $response->assertStatus(200);
-        $response->assertSee('Use my location', false);
+        $response->assertSee(__('flood-watch.dashboard.use_my_location'), false);
     }
 
     public function test_dashboard_pre_loads_default_bookmark_when_logged_in(): void

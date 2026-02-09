@@ -409,7 +409,9 @@ class RouteCheckService
                 return $data;
             }
             if (is_array($data)) {
-                return RouteCheckResult::fromArray($data);
+                $reconstructed = RouteCheckResult::fromArray($data);
+
+                return $reconstructed ?? null;
             }
 
             return null;

@@ -34,7 +34,7 @@ return [
     'dashboard' => [
         'title' => 'Flood Watch',
         'intro' => 'Enter your location and we\'ll use AI to collate flood warnings, river levels, road incidents and forecasts into a single summary. We cross-reference Environment Agency flood data with National Highways road status so you can see how flooding affects travel in Bristol, Somerset, Devon and Cornwall.',
-        'guest_banner' => 'Guests are limited to one search per second. Register for free to get more searches.',
+        'guest_banner' => 'Guests are limited to one request per second. Register for free for unlimited access.',
         'guest_banner_register' => 'Register',
         'flood_risk' => 'Flood Risk',
         'road_status' => 'Road Status',
