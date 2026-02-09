@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Enums\IncidentType;
 use App\Models\LocationBookmark;
 use App\Models\UserSearch;
 use App\Services\FloodWatchService;
@@ -119,6 +120,108 @@ class FloodWatchDashboard extends Component
             ])
             ->values()
             ->all();
+    }
+
+    /**
+     * House risk status derived from floods (at_risk or clear).
+     */
+    public function getHouseRiskProperty(): string
+    {
+        $activeFloods = $this->getActiveFloods();
+
+        return count($activeFloods) > 0 ? 'at_risk' : 'clear';
+    }
+
+    /**
+     * Roads risk status derived from incidents (closed, delays, or clear).
+     */
+    public function getRoadsRiskProperty(): string
+    {
+        $hasBlocking = $this->hasBlockingClosure();
+        $hasDelays = $this->hasDelaysOrLaneClosures();
+
+        if ($hasBlocking) {
+            return 'closed';
+        }
+        if ($hasDelays) {
+            return 'delays';
+        }
+
+        return 'clear';
+    }
+
+    /**
+     * Action steps derived from floods and incidents.
+     *
+     * @return array<int, string>
+     */
+    public function getActionStepsProperty(): array
+    {
+        $steps = [];
+        $activeFloods = $this->getActiveFloods();
+        $hasBlocking = $this->hasBlockingClosure();
+
+        if (count($activeFloods) > 0) {
+            $steps[] = 'deploy_defences';
+            $steps[] = 'monitor_updates';
+        }
+        if ($hasBlocking) {
+            $steps[] = 'avoid_routes';
+        }
+        if (count($steps) === 0) {
+            $steps[] = 'none';
+        }
+
+        return $steps;
+    }
+
+    /**
+     * Whether any flood has severityLevel === 1 (Danger to Life).
+     */
+    public function getHasDangerToLifeProperty(): bool
+    {
+        foreach ($this->floods as $flood) {
+            $level = (int) ($flood['severityLevel'] ?? 4);
+            if ($level === 1) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Floods with severityLevel 1, 2, or 3 (active; 4 = inactive).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function getActiveFloods(): array
+    {
+        return array_values(array_filter($this->floods, fn (array $f) => ((int) ($f['severityLevel'] ?? 4)) < 4));
+    }
+
+    private function hasBlockingClosure(): bool
+    {
+        foreach ($this->incidents as $incident) {
+            $type = $incident['incidentType'] ?? $incident['incident_type'] ?? '';
+            if (IncidentType::isBlockingClosure((string) $type)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function hasDelaysOrLaneClosures(): bool
+    {
+        foreach ($this->incidents as $incident) {
+            $type = strtolower((string) ($incident['incidentType'] ?? $incident['incident_type'] ?? ''));
+            if (str_contains($type, 'lane') || str_contains($type, 'closure') || ! empty($incident['delayTime'] ?? $incident['delay_time'] ?? null)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function selectRecentSearch(string $location): void

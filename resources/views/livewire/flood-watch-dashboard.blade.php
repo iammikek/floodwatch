@@ -121,6 +121,19 @@
                     :can-retry="$this->canRetry()"
                 />
 
+                <x-flood-watch.results.your-risk
+                    :house-risk="$this->houseRisk"
+                    :roads-risk="$this->roadsRisk"
+                />
+
+                <x-flood-watch.results.action-steps
+                    :steps="$this->actionSteps"
+                />
+
+                @if ($this->hasDangerToLife)
+                    <x-flood-watch.results.danger-to-life />
+                @endif
+
                 <x-flood-watch.results.flood-map
                     :map-center="$mapCenter"
                     :river-levels="$riverLevels"
