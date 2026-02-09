@@ -167,12 +167,12 @@ class RouteCheckService
             throw new \RuntimeException('Route has no usable geometry');
         }
         $routeBbox = $this->computeBbox($routeCoords);
-        $midLat = ($fromLat + $toLat) / 2;
-        $midLng = ($fromLng + $toLng) / 2;
-        $radiusKm = config('flood-watch.route_check.flood_radius_km', 25);
+        $centerLat = ($routeBbox['minLat'] + $routeBbox['maxLat']) / 2;
+        $centerLng = ($routeBbox['minLng'] + $routeBbox['maxLng']) / 2;
+        $radiusKm = $this->computeFloodRadiusKm($routeCoords, $routeBbox);
         $proximityKm = config('flood-watch.route_check.incident_proximity_km', 0.5);
 
-        $floods = $this->floodService->getFloods($midLat, $midLng, $radiusKm);
+        $floods = $this->floodService->getFloods($centerLat, $centerLng, (int) ceil($radiusKm));
         $incidents = $this->highwaysService->getIncidents();
 
         $floodsOnRoute = $this->filterFloodsOnRoute($floods, $routeBbox);
@@ -241,6 +241,49 @@ class RouteCheckService
             'maxLng' => max($lngs),
             'maxLat' => max($lats),
         ];
+    }
+
+    /**
+     * Derive flood query radius from route geometry so long routes get adequate coverage.
+     * Uses max distance from bbox center to any route point + buffer, clamped to config limits.
+     *
+     * @param  array<int, array{0: float, 1: float}>  $routeCoords  [lng, lat] pairs
+     * @param  array{minLng: float, minLat: float, maxLng: float, maxLat: float}  $routeBbox
+     */
+    private function computeFloodRadiusKm(array $routeCoords, array $routeBbox): float
+    {
+        $centerLat = ($routeBbox['minLat'] + $routeBbox['maxLat']) / 2;
+        $centerLng = ($routeBbox['minLng'] + $routeBbox['maxLng']) / 2;
+
+        $maxDistKm = 0.0;
+        foreach ($routeCoords as $c) {
+            $lat = $c[1];
+            $lng = $c[0];
+            $d = $this->haversineKm($centerLat, $centerLng, $lat, $lng);
+            if ($d > $maxDistKm) {
+                $maxDistKm = $d;
+            }
+        }
+
+        $bufferKm = config('flood-watch.route_check.flood_radius_buffer_km', 5);
+        $minKm = config('flood-watch.route_check.flood_radius_km', 25);
+        $maxKm = config('flood-watch.route_check.flood_radius_max_km', 80);
+
+        $radius = $maxDistKm + $bufferKm;
+
+        return (float) max($minKm, min($radius, $maxKm));
+    }
+
+    private function haversineKm(float $lat1, float $lng1, float $lat2, float $lng2): float
+    {
+        $earthRadiusKm = 6371.0;
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLng = deg2rad($lng2 - $lng1);
+        $a = sin($dLat / 2) ** 2
+            + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLng / 2) ** 2;
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        return $earthRadiusKm * $c;
     }
 
     /**

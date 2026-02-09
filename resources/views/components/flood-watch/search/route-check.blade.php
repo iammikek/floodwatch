@@ -14,6 +14,7 @@
                     type="text"
                     wire:model="routeFrom"
                     placeholder="{{ __('flood-watch.dashboard.route_check_from') }}"
+                    aria-label="{{ __('flood-watch.dashboard.route_check_from') }}"
                     @disabled($routeCheckLoading)
                     class="block flex-1 min-h-[44px] rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 />
@@ -31,7 +32,6 @@
                         )
                     "
                     @disabled($routeCheckLoading)
-                    wire:loading.attr="disabled"
                     class="shrink-0 min-h-[44px] inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     aria-label="{{ __('flood-watch.dashboard.use_my_location') }}"
                     title="{{ __('flood-watch.dashboard.use_my_location') }}"
@@ -43,6 +43,7 @@
                 type="text"
                 wire:model="routeTo"
                 placeholder="{{ __('flood-watch.dashboard.route_check_to') }}"
+                aria-label="{{ __('flood-watch.dashboard.route_check_to') }}"
                 @disabled($routeCheckLoading)
                 class="block flex-1 min-h-[44px] rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             />
@@ -50,7 +51,6 @@
                 type="button"
                 wire:click="checkRoute"
                 @disabled($routeCheckLoading)
-                wire:loading.attr="disabled"
                 class="min-h-[44px] inline-flex items-center justify-center gap-2 px-5 py-3 sm:py-2 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
                 <span wire:loading.remove wire:target="checkRoute">{{ __('flood-watch.dashboard.route_check_button') }}</span>

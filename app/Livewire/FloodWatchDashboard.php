@@ -182,7 +182,7 @@ class FloodWatchDashboard extends Component
             if (RateLimiter::tooManyAttempts($key, 1)) {
                 $this->routeCheckResult = [
                     'verdict' => 'error',
-                    'summary' => __('flood-watch.error.guest_rate_limit', ['action' => 'request']),
+                    'summary' => __('flood-watch.error.guest_rate_limit', ['action' => 'route check']),
                     'floods_on_route' => [],
                     'incidents_on_route' => [],
                     'alternatives' => [],
