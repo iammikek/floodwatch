@@ -35,12 +35,17 @@
     x-init="init()"
 >
     <div class="max-w-2xl mx-auto w-full">
-        <h1 class="text-2xl font-semibold text-slate-900 mb-6">
-            {{ __('flood-watch.dashboard.title') }}
-        </h1>
-        <p class="text-slate-600 mb-6">
-            {{ __('flood-watch.dashboard.intro') }}
-        </p>
+        <x-flood-watch.search.location-header
+            :location="$location"
+            :display-location="$displayLocation"
+            :outcode="$outcode"
+            :bookmarks="$this->bookmarks"
+            :recent-searches="$this->recentSearches ?? []"
+            :retry-after-timestamp="$retryAfterTimestamp"
+            :can-retry="$this->canRetry()"
+            :assistant-response="$assistantResponse"
+            :loading="$loading"
+        />
 
         <x-flood-watch.status.guest-banner />
 
@@ -59,14 +64,6 @@
             :forecast-status="$forecastStatus"
             :weather-status="$weatherStatus"
             :river-status="$riverStatus"
-        />
-
-        <x-flood-watch.search.location-search
-            :bookmarks="$this->bookmarks"
-            :recent-searches="$this->recentSearches ?? []"
-            :retry-after-timestamp="$retryAfterTimestamp"
-            :can-retry="$this->canRetry()"
-            :assistant-response="$assistantResponse"
         />
 
         <x-flood-watch.search.route-check

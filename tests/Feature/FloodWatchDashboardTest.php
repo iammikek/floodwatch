@@ -964,6 +964,165 @@ class FloodWatchDashboardTest extends TestCase
         $response->assertSee(__('flood-watch.dashboard.use_my_location'), false);
     }
 
+    public function test_location_header_shows_compact_bar_after_search(): void
+    {
+        Config::set('openai.api_key', 'test-key');
+        Config::set('flood-watch.national_highways.api_key', 'test-key');
+        Config::set('flood-watch.national_highways.base_url', 'https://api.example.com');
+
+        Http::fake(function ($request) {
+            if (str_contains($request->url(), 'api.postcodes.io')) {
+                return Http::response(['result' => ['latitude' => 51.0358, 'longitude' => -2.8318]], 200);
+            }
+            if (str_contains($request->url(), 'environment.data.gov.uk')) {
+                return Http::response(['items' => []], 200);
+            }
+            if (str_contains($request->url(), 'api.example.com')) {
+                return Http::response(['D2Payload' => ['situation' => []]], 200);
+            }
+            if (str_contains($request->url(), 'fgs.metoffice.gov.uk')) {
+                return Http::response(['statement' => []], 200);
+            }
+            if (str_contains($request->url(), 'open-meteo.com')) {
+                return Http::response(['daily' => ['time' => [], 'weathercode' => [], 'temperature_2m_max' => [], 'temperature_2m_min' => [], 'precipitation_sum' => []]], 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
+        OpenAI::fake([CreateResponse::fake([
+            'choices' => [
+                [
+                    'index' => 0,
+                    'message' => [
+                        'role' => 'assistant',
+                        'content' => 'Location header test.',
+                        'tool_calls' => [],
+                    ],
+                    'logprobs' => null,
+                    'finish_reason' => 'stop',
+                ],
+            ],
+        ])]);
+
+        $user = User::factory()->create();
+
+        $component = Livewire::actingAs($user)
+            ->test('flood-watch-dashboard')
+            ->set('location', 'TA10 0DP')
+            ->call('search');
+
+        $component->assertSet('displayLocation', fn ($v) => $v !== null && $v !== '')
+            ->assertSet('assistantResponse', 'Location header test.');
+    }
+
+    public function test_display_location_and_outcode_set_after_postcode_search(): void
+    {
+        Config::set('openai.api_key', 'test-key');
+        Config::set('flood-watch.national_highways.api_key', 'test-key');
+        Config::set('flood-watch.national_highways.base_url', 'https://api.example.com');
+
+        Http::fake(function ($request) {
+            if (str_contains($request->url(), 'api.postcodes.io')) {
+                return Http::response([
+                    'result' => [
+                        'latitude' => 51.0358,
+                        'longitude' => -2.8318,
+                        'outcode' => 'TA10',
+                    ],
+                ], 200);
+            }
+            if (str_contains($request->url(), 'environment.data.gov.uk')) {
+                return Http::response(['items' => []], 200);
+            }
+            if (str_contains($request->url(), 'api.example.com')) {
+                return Http::response(['D2Payload' => ['situation' => []]], 200);
+            }
+            if (str_contains($request->url(), 'fgs.metoffice.gov.uk')) {
+                return Http::response(['statement' => []], 200);
+            }
+            if (str_contains($request->url(), 'open-meteo.com')) {
+                return Http::response(['daily' => ['time' => [], 'weathercode' => [], 'temperature_2m_max' => [], 'temperature_2m_min' => [], 'precipitation_sum' => []]], 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
+        OpenAI::fake([CreateResponse::fake([
+            'choices' => [
+                [
+                    'index' => 0,
+                    'message' => [
+                        'role' => 'assistant',
+                        'content' => 'Outcode test.',
+                        'tool_calls' => [],
+                    ],
+                    'logprobs' => null,
+                    'finish_reason' => 'stop',
+                ],
+            ],
+        ])]);
+
+        $user = User::factory()->create();
+
+        Livewire::actingAs($user)
+            ->test('flood-watch-dashboard')
+            ->set('location', 'TA10 0DP')
+            ->call('search')
+            ->assertSet('outcode', 'TA10');
+    }
+
+    public function test_location_header_shows_change_and_refresh_when_logged_in_with_results(): void
+    {
+        Config::set('openai.api_key', 'test-key');
+        Config::set('flood-watch.national_highways.api_key', 'test-key');
+        Config::set('flood-watch.national_highways.base_url', 'https://api.example.com');
+
+        Http::fake(function ($request) {
+            if (str_contains($request->url(), 'api.postcodes.io')) {
+                return Http::response(['result' => ['latitude' => 51.0358, 'longitude' => -2.8318]], 200);
+            }
+            if (str_contains($request->url(), 'environment.data.gov.uk')) {
+                return Http::response(['items' => []], 200);
+            }
+            if (str_contains($request->url(), 'api.example.com')) {
+                return Http::response(['D2Payload' => ['situation' => []]], 200);
+            }
+            if (str_contains($request->url(), 'fgs.metoffice.gov.uk')) {
+                return Http::response(['statement' => []], 200);
+            }
+            if (str_contains($request->url(), 'open-meteo.com')) {
+                return Http::response(['daily' => ['time' => [], 'weathercode' => [], 'temperature_2m_max' => [], 'temperature_2m_min' => [], 'precipitation_sum' => []]], 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
+        OpenAI::fake([CreateResponse::fake([
+            'choices' => [
+                [
+                    'index' => 0,
+                    'message' => [
+                        'role' => 'assistant',
+                        'content' => 'Refresh test.',
+                        'tool_calls' => [],
+                    ],
+                    'logprobs' => null,
+                    'finish_reason' => 'stop',
+                ],
+            ],
+        ])]);
+
+        $user = User::factory()->create();
+
+        Livewire::actingAs($user)
+            ->test('flood-watch-dashboard')
+            ->set('location', 'TA10 0DP')
+            ->call('search')
+            ->assertSee(__('flood-watch.dashboard.change'), false)
+            ->assertSee(__('flood-watch.dashboard.refresh'), false);
+    }
+
     public function test_dashboard_pre_loads_default_bookmark_when_logged_in(): void
     {
         $user = User::factory()->create();
