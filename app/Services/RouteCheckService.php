@@ -135,7 +135,7 @@ class RouteCheckService
         $floods = $this->floodService->getFloods($centerLat, $centerLng, (int) ceil($radiusKm));
         $incidents = $this->highwaysService->getIncidents();
 
-        $floodsOnRoute = $this->filterFloodsOnRoute($floods, $routeBbox);
+        $floodsOnRoute = $this->filterFloodsOnRoute($floods, $routeBbox, $proximityKm);
         $incidentsOnRoute = $this->incidentsFilter->filter(
             $incidents,
             $routeCoords,
@@ -253,8 +253,10 @@ class RouteCheckService
      * @param  array{minLng: float, minLat: float, maxLng: float, maxLat: float}  $routeBbox
      * @return array<int, array<string, mixed>>
      */
-    private function filterFloodsOnRoute(array $floods, array $routeBbox): array
+    private function filterFloodsOnRoute(array $floods, array $routeBbox, float $centroidBufferKm): array
     {
+        $expandedBbox = $this->expandBboxKm($routeBbox, $centroidBufferKm);
+
         $onRoute = [];
         foreach ($floods as $flood) {
             $polygon = $flood['polygon'] ?? null;
@@ -267,8 +269,8 @@ class RouteCheckService
                 $lat = $flood['lat'] ?? $flood['latitude'] ?? null;
                 $lng = $flood['lng'] ?? $flood['long'] ?? $flood['longitude'] ?? null;
                 if ($lat !== null && $lng !== null) {
-                    if ($lng >= $routeBbox['minLng'] && $lng <= $routeBbox['maxLng']
-                        && $lat >= $routeBbox['minLat'] && $lat <= $routeBbox['maxLat']) {
+                    if ($lng >= $expandedBbox['minLng'] && $lng <= $expandedBbox['maxLng']
+                        && $lat >= $expandedBbox['minLat'] && $lat <= $expandedBbox['maxLat']) {
                         $onRoute[] = $flood;
                     }
                 }
@@ -276,6 +278,28 @@ class RouteCheckService
         }
 
         return $onRoute;
+    }
+
+    /**
+     * Expand bbox by buffer km. Handles degenerate bboxes (horizontal/vertical routes).
+     *
+     * @param  array{minLng: float, minLat: float, maxLng: float, maxLat: float}  $bbox
+     * @return array{minLng: float, minLat: float, maxLng: float, maxLat: float}
+     */
+    private function expandBboxKm(array $bbox, float $bufferKm): array
+    {
+        $midLat = ($bbox['minLat'] + $bbox['maxLat']) / 2;
+        $degPerKmLat = 1 / 111.0;
+        $degPerKmLng = 1 / (111.0 * max(0.01, cos(deg2rad($midLat))));
+        $dLat = $bufferKm * $degPerKmLat;
+        $dLng = $bufferKm * $degPerKmLng;
+
+        return [
+            'minLng' => $bbox['minLng'] - $dLng,
+            'minLat' => $bbox['minLat'] - $dLat,
+            'maxLng' => $bbox['maxLng'] + $dLng,
+            'maxLat' => $bbox['maxLat'] + $dLat,
+        ];
     }
 
     /**

@@ -154,10 +154,20 @@ class FloodWatchDashboard extends Component
         );
     }
 
+    /**
+     * Guest rate limit key. Shared across search and route check for a combined
+     * limit of 1 request/second (either action counts). Copy uses "request" not
+     * "search"/"route check" to reflect this.
+     */
+    private function guestRateLimitKey(): string
+    {
+        return 'flood-watch-guest:'.request()->ip();
+    }
+
     public function mount(): void
     {
         if (Auth::guest()) {
-            $key = 'flood-watch-guest:'.request()->ip();
+            $key = $this->guestRateLimitKey();
             if (RateLimiter::tooManyAttempts($key, 1)) {
                 $seconds = RateLimiter::availableIn($key);
                 $this->error = __('flood-watch.error.guest_rate_limit', ['action' => 'request']);
@@ -179,7 +189,7 @@ class FloodWatchDashboard extends Component
         $this->error = null;
 
         if (Auth::guest()) {
-            $key = 'flood-watch-guest:'.request()->ip();
+            $key = $this->guestRateLimitKey();
             $decaySeconds = 1;
             if (RateLimiter::tooManyAttempts($key, 1)) {
                 $this->routeCheckLoading = false;
@@ -310,7 +320,7 @@ class FloodWatchDashboard extends Component
         $this->loading = true;
 
         if (Auth::guest()) {
-            $key = 'flood-watch-guest:'.request()->ip();
+            $key = $this->guestRateLimitKey();
             $decaySeconds = 1;
 
             if (RateLimiter::tooManyAttempts($key, 1)) {
