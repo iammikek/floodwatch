@@ -17,7 +17,7 @@ class FloodWatchWarmCacheCommand extends Command
         if (empty(config('openai.api_key'))) {
             $this->warn('OPENAI_API_KEY not set. Skipping cache warm.');
 
-            return self::FAILURE;
+            return self::SUCCESS;
         }
 
         $locations = $this->option('locations')

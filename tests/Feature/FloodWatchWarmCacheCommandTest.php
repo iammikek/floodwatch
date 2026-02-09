@@ -73,7 +73,8 @@ test('warm cache command skips when api key not set', function () {
     Config::set('openai.api_key', '');
 
     $this->artisan('flood-watch:warm-cache', ['--locations' => 'Langport'])
-        ->assertFailed();
+        ->assertSuccessful()
+        ->expectsOutputToContain('Skipping cache warm');
 });
 
 test('schedule list includes warm cache command', function () {

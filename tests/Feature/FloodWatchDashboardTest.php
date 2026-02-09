@@ -177,7 +177,7 @@ class FloodWatchDashboardTest extends TestCase
             ->and($result['summary'])->not->toBe('');
     }
 
-    public function test_route_check_error_does_not_show_clear_badge(): void
+    public function test_route_check_error_shows_unable_to_check_badge(): void
     {
         $user = User::factory()->create();
 
@@ -198,7 +198,7 @@ class FloodWatchDashboardTest extends TestCase
             ->set('routeTo', 'TA10 0DP')
             ->call('checkRoute')
             ->assertSet('routeCheckResult.verdict', 'error')
-            ->assertDontSee(__('flood-watch.route_check.verdict_clear'), false);
+            ->assertSee(__('flood-watch.route_check.verdict_error'), false);
     }
 
     public function test_search_displays_assistant_response(): void

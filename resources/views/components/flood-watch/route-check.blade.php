@@ -64,7 +64,6 @@
             <div class="mt-4 p-4 rounded-lg bg-white border border-slate-200 space-y-3">
                 @php
                     $verdict = $routeCheckResult['verdict'] ?? 'clear';
-                    $isError = $verdict === 'error';
                     $verdictKey = 'flood-watch.route_check.verdict_' . $verdict;
                     $verdictClasses = match ($verdict) {
                         'blocked' => 'bg-red-100 text-red-800',
@@ -74,13 +73,11 @@
                         default => 'bg-emerald-100 text-emerald-800',
                     };
                 @endphp
-                @if (!$isError)
-                    <div class="flex items-center gap-2">
-                        <span class="inline-flex px-2.5 py-1 rounded-full text-sm font-medium {{ $verdictClasses }}">
-                            {{ __($verdictKey) }}
-                        </span>
-                    </div>
-                @endif
+                <div class="flex items-center gap-2">
+                    <span class="inline-flex px-2.5 py-1 rounded-full text-sm font-medium {{ $verdictClasses }}">
+                        {{ __($verdictKey) }}
+                    </span>
+                </div>
                 <p class="text-slate-600 text-sm">{{ $routeCheckResult['summary'] ?? '' }}</p>
 
                 @if (!empty($routeCheckResult['floods_on_route']))
