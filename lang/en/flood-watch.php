@@ -165,6 +165,7 @@ return [
         'verdict_at_risk' => 'At risk',
         'verdict_delays' => 'Delays',
         'verdict_clear' => 'Clear',
+        'verdict_error' => 'Unable to check',
         'alternatives' => 'Alternative routes',
         'floods_on_route' => 'Flood warnings on route',
         'incidents_on_route' => 'Road incidents on route',

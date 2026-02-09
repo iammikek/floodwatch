@@ -26,7 +26,7 @@ class RouteCheckService
 
         if ($fromTrimmed === '' || $toTrimmed === '') {
             return new RouteCheckResult(
-                verdict: 'clear',
+                verdict: 'error',
                 summary: __('flood-watch.route_check.error_missing_locations'),
                 floodsOnRoute: [],
                 incidentsOnRoute: [],
@@ -38,7 +38,7 @@ class RouteCheckService
         $fromValidation = $this->locationResolver->resolve($fromTrimmed);
         if (! $fromValidation['valid']) {
             return new RouteCheckResult(
-                verdict: 'clear',
+                verdict: 'error',
                 summary: $fromValidation['error'] ?? __('flood-watch.route_check.error_invalid_from'),
                 floodsOnRoute: [],
                 incidentsOnRoute: [],
@@ -48,7 +48,7 @@ class RouteCheckService
         }
         if (! ($fromValidation['in_area'] ?? false)) {
             return new RouteCheckResult(
-                verdict: 'clear',
+                verdict: 'error',
                 summary: __('flood-watch.route_check.error_outside_area'),
                 floodsOnRoute: [],
                 incidentsOnRoute: [],
@@ -60,7 +60,7 @@ class RouteCheckService
         $toValidation = $this->locationResolver->resolve($toTrimmed);
         if (! $toValidation['valid']) {
             return new RouteCheckResult(
-                verdict: 'clear',
+                verdict: 'error',
                 summary: $toValidation['error'] ?? __('flood-watch.route_check.error_invalid_to'),
                 floodsOnRoute: [],
                 incidentsOnRoute: [],
@@ -70,7 +70,7 @@ class RouteCheckService
         }
         if (! ($toValidation['in_area'] ?? false)) {
             return new RouteCheckResult(
-                verdict: 'clear',
+                verdict: 'error',
                 summary: __('flood-watch.route_check.error_outside_area'),
                 floodsOnRoute: [],
                 incidentsOnRoute: [],
@@ -105,7 +105,7 @@ class RouteCheckService
             report($e);
 
             return new RouteCheckResult(
-                verdict: 'clear',
+                verdict: 'error',
                 summary: __('flood-watch.route_check.error_route_failed'),
                 floodsOnRoute: [],
                 incidentsOnRoute: [],
@@ -159,6 +159,9 @@ class RouteCheckService
         }
 
         $routeCoords = $this->extractRouteCoordinates($primaryRoute);
+        if (count($routeCoords) < 2) {
+            throw new \RuntimeException('Route has no usable geometry');
+        }
         $routeBbox = $this->computeBbox($routeCoords);
         $midLat = ($fromLat + $toLat) / 2;
         $midLng = ($fromLng + $toLng) / 2;
@@ -169,7 +172,7 @@ class RouteCheckService
         $incidents = $this->highwaysService->getIncidents();
 
         $floodsOnRoute = $this->filterFloodsOnRoute($floods, $routeBbox);
-        $incidentsOnRoute = $this->filterIncidentsOnRoute($incidents, $routeCoords, $proximityKm);
+        $incidentsOnRoute = $this->filterIncidentsOnRoute($incidents, $routeCoords, $routeBbox, $proximityKm);
 
         $verdict = $this->computeVerdict($floodsOnRoute, $incidentsOnRoute);
         $summary = $this->buildSummary($verdict, $floodsOnRoute, $incidentsOnRoute);
@@ -262,7 +265,10 @@ class RouteCheckService
     }
 
     /**
-     * @param  array<string, mixed>  $polygon  GeoJSON polygon
+     * Extract bbox from GeoJSON FeatureCollection with Polygon or MultiPolygon geometries.
+     * Walks all coordinate pairs in nested rings to handle both geometry types.
+     *
+     * @param  array<string, mixed>  $polygon  GeoJSON FeatureCollection
      * @return array{minLng: float, minLat: float, maxLng: float, maxLat: float}
      */
     private function extractPolygonBbox(array $polygon): array
@@ -271,11 +277,9 @@ class RouteCheckService
         $features = $polygon['features'] ?? [];
         foreach ($features as $feature) {
             $geom = $feature['geometry'] ?? [];
-            $ring = $geom['coordinates'][0] ?? [];
-            foreach ($ring as $c) {
-                if (is_array($c) && count($c) >= 2) {
-                    $coords[] = [(float) $c[0], (float) $c[1]];
-                }
+            $geometryCoords = $geom['coordinates'] ?? [];
+            foreach ($this->extractCoordinatePairs($geometryCoords) as $pair) {
+                $coords[] = $pair;
             }
         }
         if (empty($coords)) {
@@ -293,6 +297,30 @@ class RouteCheckService
     }
 
     /**
+     * Recursively extract [lng, lat] coordinate pairs from GeoJSON coordinates.
+     * Handles Polygon (coordinates[ring][point]) and MultiPolygon (coordinates[poly][ring][point]).
+     *
+     * @param  array<int, mixed>  $coords
+     * @return array<int, array{0: float, 1: float}>
+     */
+    private function extractCoordinatePairs(array $coords): array
+    {
+        $pairs = [];
+        foreach ($coords as $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+            if (isset($item[0], $item[1]) && is_numeric($item[0]) && is_numeric($item[1])) {
+                $pairs[] = [(float) $item[0], (float) $item[1]];
+            } else {
+                $pairs = array_merge($pairs, $this->extractCoordinatePairs($item));
+            }
+        }
+
+        return $pairs;
+    }
+
+    /**
      * @param  array{minLng: float, minLat: float, maxLng: float, maxLat: float}  $a
      * @param  array{minLng: float, minLat: float, maxLng: float, maxLat: float}  $b
      */
@@ -303,12 +331,23 @@ class RouteCheckService
     }
 
     /**
+     * Filter incidents to those within proximity of the route. Uses bbox prefilter,
+     * route downsampling, and point-to-segment distance for accuracy and performance.
+     *
      * @param  array<int, array<string, mixed>>  $incidents
      * @param  array<int, array{0: float, 1: float}>  $routeCoords
+     * @param  array{minLng: float, minLat: float, maxLng: float, maxLat: float}  $routeBbox
      * @return array<int, array<string, mixed>>
      */
-    private function filterIncidentsOnRoute(array $incidents, array $routeCoords, float $proximityKm): array
-    {
+    private function filterIncidentsOnRoute(
+        array $incidents,
+        array $routeCoords,
+        array $routeBbox,
+        float $proximityKm
+    ): array {
+        $expandedBbox = $this->expandBboxKm($routeBbox, $proximityKm);
+        $simplified = $this->downsampleRouteForIncidentCheck($routeCoords);
+
         $onRoute = [];
         foreach ($incidents as $incident) {
             $incidentCoords = CoordinateMapper::normalize($incident);
@@ -317,13 +356,10 @@ class RouteCheckService
             if ($lat === null || $lng === null) {
                 continue;
             }
-            $minDist = PHP_FLOAT_MAX;
-            foreach ($routeCoords as $rc) {
-                $d = $this->haversineKm($lat, $lng, $rc[1], $rc[0]);
-                if ($d < $minDist) {
-                    $minDist = $d;
-                }
+            if (! $this->pointInBbox($lat, $lng, $expandedBbox)) {
+                continue;
             }
+            $minDist = $this->distanceToRouteKm($lat, $lng, $simplified, $proximityKm);
             if ($minDist <= $proximityKm) {
                 $incident['distanceKm'] = round($minDist, 2);
                 $onRoute[] = $incident;
@@ -331,6 +367,110 @@ class RouteCheckService
         }
 
         return $onRoute;
+    }
+
+    /**
+     * @param  array{minLng: float, minLat: float, maxLng: float, maxLat: float}  $bbox
+     * @return array{minLng: float, minLat: float, maxLng: float, maxLat: float}
+     */
+    private function expandBboxKm(array $bbox, float $bufferKm): array
+    {
+        $midLat = ($bbox['minLat'] + $bbox['maxLat']) / 2;
+        $degPerKmLat = 1 / 111.0;
+        $degPerKmLng = 1 / (111.0 * cos(deg2rad($midLat)));
+        $dLat = $bufferKm * $degPerKmLat;
+        $dLng = $bufferKm * $degPerKmLng;
+
+        return [
+            'minLng' => $bbox['minLng'] - $dLng,
+            'minLat' => $bbox['minLat'] - $dLat,
+            'maxLng' => $bbox['maxLng'] + $dLng,
+            'maxLat' => $bbox['maxLat'] + $dLat,
+        ];
+    }
+
+    private function pointInBbox(float $lat, float $lng, array $bbox): bool
+    {
+        return $lng >= $bbox['minLng'] && $lng <= $bbox['maxLng']
+            && $lat >= $bbox['minLat'] && $lat <= $bbox['maxLat'];
+    }
+
+    /**
+     * Downsample route to max points for incident proximity check.
+     *
+     * @param  array<int, array{0: float, 1: float}>  $routeCoords
+     * @return array<int, array{0: float, 1: float}>
+     */
+    private function downsampleRouteForIncidentCheck(array $routeCoords): array
+    {
+        $maxPoints = config('flood-watch.route_check.incident_check_max_route_points', 150);
+        $n = count($routeCoords);
+        if ($n <= $maxPoints) {
+            return $routeCoords;
+        }
+        $step = ($n - 1) / ($maxPoints - 1);
+        $result = [];
+        for ($i = 0; $i < $maxPoints; $i++) {
+            $idx = (int) round($i * $step);
+            if ($idx >= $n) {
+                $idx = $n - 1;
+            }
+            $result[] = $routeCoords[$idx];
+        }
+
+        return $result;
+    }
+
+    /**
+     * Distance from point to nearest point on route (point-to-segment).
+     * Returns early if distance exceeds cutoffKm to avoid unnecessary work.
+     *
+     * @param  array<int, array{0: float, 1: float}>  $routeCoords
+     */
+    private function distanceToRouteKm(float $lat, float $lng, array $routeCoords, float $cutoffKm): float
+    {
+        $minDist = PHP_FLOAT_MAX;
+        $n = count($routeCoords);
+        for ($i = 0; $i < $n - 1; $i++) {
+            $a = $routeCoords[$i];
+            $b = $routeCoords[$i + 1];
+            $d = $this->distanceToSegmentKm($lat, $lng, $a, $b);
+            if ($d < $minDist) {
+                $minDist = $d;
+                if ($minDist <= $cutoffKm) {
+                    return $minDist;
+                }
+            }
+        }
+        if ($n === 1) {
+            return $this->haversineKm($lat, $lng, $routeCoords[0][1], $routeCoords[0][0]);
+        }
+
+        return $minDist;
+    }
+
+    /**
+     * Point-to-segment distance via sampling along segment.
+     *
+     * @param  array{0: float, 1: float}  $a  [lng, lat]
+     * @param  array{0: float, 1: float}  $b  [lng, lat]
+     */
+    private function distanceToSegmentKm(float $lat, float $lng, array $a, array $b): float
+    {
+        $segLenKm = $this->haversineKm($a[1], $a[0], $b[1], $b[0]);
+        $nSamples = (int) max(3, min(15, ceil($segLenKm / 0.3)));
+        $minDist = PHP_FLOAT_MAX;
+        for ($i = 0; $i <= $nSamples; $i++) {
+            $t = $i / $nSamples;
+            $sLat = $a[1] + $t * ($b[1] - $a[1]);
+            $sLng = $a[0] + $t * ($b[0] - $a[0]);
+            $d = $this->haversineKm($lat, $lng, $sLat, $sLng);
+            if ($d < $minDist) {
+                $minDist = $d;
+            }
+        }
+
+        return $minDist;
     }
 
     private function haversineKm(float $lat1, float $lng1, float $lat2, float $lng2): float

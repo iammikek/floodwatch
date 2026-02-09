@@ -177,11 +177,11 @@ class FloodWatchDashboard extends Component
     public function checkRoute(RouteCheckService $routeCheckService): void
     {
         if (Auth::guest()) {
-            $key = 'flood-watch-route-guest:'.request()->ip();
+            $key = 'flood-watch-guest:'.request()->ip();
             $decaySeconds = 1;
             if (RateLimiter::tooManyAttempts($key, 1)) {
                 $this->routeCheckResult = [
-                    'verdict' => 'clear',
+                    'verdict' => 'error',
                     'summary' => __('flood-watch.error.guest_rate_limit'),
                     'floods_on_route' => [],
                     'incidents_on_route' => [],

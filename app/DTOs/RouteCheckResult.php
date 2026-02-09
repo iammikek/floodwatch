@@ -5,7 +5,7 @@ namespace App\DTOs;
 /**
  * Result of a route check: verdict, summary, and affected floods/incidents.
  *
- * @param  string  $verdict  One of: blocked, at_risk, delays, clear
+ * @param  string  $verdict  One of: blocked, at_risk, delays, clear, error
  * @param  string  $summary  Human-readable summary
  * @param  array<int, array<string, mixed>>  $floodsOnRoute  Floods affecting the route
  * @param  array<int, array<string, mixed>>  $incidentsOnRoute  Incidents affecting the route

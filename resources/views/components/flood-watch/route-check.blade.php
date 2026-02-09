@@ -19,10 +19,13 @@
                 <button
                     type="button"
                     @click="
-                        if (!navigator.geolocation) return;
+                        if (!navigator.geolocation) {
+                            $wire.set('error', @js(__('flood-watch.dashboard.gps_error')));
+                            return;
+                        }
                         navigator.geolocation.getCurrentPosition(
                             (pos) => $wire.dispatch('location-from-gps-for-route', { lat: pos.coords.latitude, lng: pos.coords.longitude }),
-                            () => {},
+                            () => { $wire.set('error', @js(__('flood-watch.dashboard.gps_error'))); },
                             { enableHighAccuracy: true, timeout: 10000 }
                         )
                     "
@@ -61,19 +64,23 @@
             <div class="mt-4 p-4 rounded-lg bg-white border border-slate-200 space-y-3">
                 @php
                     $verdict = $routeCheckResult['verdict'] ?? 'clear';
+                    $isError = $verdict === 'error';
                     $verdictKey = 'flood-watch.route_check.verdict_' . $verdict;
                     $verdictClasses = match ($verdict) {
                         'blocked' => 'bg-red-100 text-red-800',
                         'at_risk' => 'bg-amber-100 text-amber-800',
                         'delays' => 'bg-yellow-100 text-yellow-800',
+                        'error' => 'bg-slate-100 text-slate-700',
                         default => 'bg-emerald-100 text-emerald-800',
                     };
                 @endphp
-                <div class="flex items-center gap-2">
-                    <span class="inline-flex px-2.5 py-1 rounded-full text-sm font-medium {{ $verdictClasses }}">
-                        {{ __($verdictKey) }}
-                    </span>
-                </div>
+                @if (!$isError)
+                    <div class="flex items-center gap-2">
+                        <span class="inline-flex px-2.5 py-1 rounded-full text-sm font-medium {{ $verdictClasses }}">
+                            {{ __($verdictKey) }}
+                        </span>
+                    </div>
+                @endif
                 <p class="text-slate-600 text-sm">{{ $routeCheckResult['summary'] ?? '' }}</p>
 
                 @if (!empty($routeCheckResult['floods_on_route']))
