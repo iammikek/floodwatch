@@ -89,9 +89,10 @@ class RouteCheckService
 
         $cacheKey = $this->cacheKey($fromLat, $fromLng, $toLat, $toLng);
         $ttl = config('flood-watch.route_check.cache_ttl_minutes', 15);
+        $cache = Cache::store(config('flood-watch.cache_store', 'flood-watch'));
 
         if ($ttl > 0) {
-            $cached = Cache::get($cacheKey);
+            $cached = $cache->get($cacheKey);
             if ($cached !== null && $cached instanceof RouteCheckResult) {
                 return $cached;
             }
@@ -100,7 +101,7 @@ class RouteCheckService
         try {
             $result = $this->fetchAndAnalyzeRoute($fromLat, $fromLng, $toLat, $toLng);
             if ($ttl > 0) {
-                Cache::put($cacheKey, $result, now()->addMinutes($ttl));
+                $cache->put($cacheKey, $result, now()->addMinutes($ttl));
             }
 
             return $result;

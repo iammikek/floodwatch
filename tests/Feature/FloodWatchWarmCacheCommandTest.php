@@ -14,6 +14,16 @@ test('warm cache command runs successfully with mocked APIs', function () {
     Config::set('flood-watch.national_highways.base_url', 'https://api.example.com');
 
     Http::fake(function ($request) {
+        if (str_contains($request->url(), 'nominatim.openstreetmap.org')) {
+            return Http::response([
+                [
+                    'lat' => '51.0358',
+                    'lon' => '-2.8318',
+                    'display_name' => 'Langport, Somerset',
+                    'address' => ['county' => 'Somerset'],
+                ],
+            ], 200);
+        }
         if (str_contains($request->url(), 'environment.data.gov.uk')) {
             return Http::response(['items' => []], 200);
         }

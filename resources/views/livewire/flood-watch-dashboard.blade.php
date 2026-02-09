@@ -88,10 +88,10 @@
             $routeIncidents = $hasRouteGeometry ? ($routeCheckResult['incidents_on_route'] ?? []) : [];
         @endphp
 
-        @if ($hasRouteGeometry && $mapCenterFromRoute && !$assistantResponse)
+        @if ($hasRouteGeometry && $mapCenterForRoute && !$assistantResponse)
             <div class="mt-6 lg:block hidden" wire:key="route-map-{{ md5(json_encode($routeGeometry)) }}">
                 <x-flood-watch.results.flood-map
-                    :map-center="$mapCenterFromRoute"
+                    :map-center="$mapCenterForRoute"
                     :river-levels="[]"
                     :floods="$routeFloods"
                     :incidents="$routeIncidents"

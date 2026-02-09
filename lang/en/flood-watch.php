@@ -22,7 +22,7 @@ return [
         'invalid_location' => 'Invalid location.',
         'outside_area' => 'This location is outside the South West.',
         'rate_limit' => 'AI service rate limit exceeded. Please wait a minute and try again.',
-        'guest_rate_limit' => 'Guests are limited to one search per second. Please try again in a moment or register for unlimited access.',
+        'guest_rate_limit' => 'Guests are limited to one :action per second. Please try again in a moment or register for unlimited access.',
         'timeout' => 'The request took too long. The AI service may be busy. Please try again in a moment.',
         'connection' => 'Unable to reach the service. Please check your connection and try again.',
         'generic' => 'Unable to get a response. Please try again.',

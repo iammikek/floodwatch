@@ -100,7 +100,7 @@ class IncidentsOnRouteFilter
 
     /**
      * Distance from point to nearest point on route (point-to-segment).
-     * Returns the true minimum across all segments for accurate display/sorting.
+     * Returns early when minDist <= cutoffKm to avoid unnecessary work.
      *
      * @param  array<int, array{0: float, 1: float}>  $routeCoords
      */
@@ -114,6 +114,9 @@ class IncidentsOnRouteFilter
             $d = $this->distanceToSegmentKm($lat, $lng, $a, $b);
             if ($d < $minDist) {
                 $minDist = $d;
+                if ($minDist <= $cutoffKm) {
+                    return $minDist;
+                }
             }
         }
         if ($n === 1) {
