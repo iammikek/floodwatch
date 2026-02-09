@@ -25,6 +25,18 @@ final readonly class RouteCheckResult
         public ?string $routeKey = null,
     ) {}
 
+    public static function error(string $summary): self
+    {
+        return new self(
+            verdict: 'error',
+            summary: $summary,
+            floodsOnRoute: [],
+            incidentsOnRoute: [],
+            alternatives: [],
+            routeGeometry: null,
+        );
+    }
+
     public function toArray(): array
     {
         return [

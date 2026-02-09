@@ -10,6 +10,7 @@ use App\Support\IncidentIcon;
 use App\Support\IncidentsOnRouteFilter;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use RuntimeException;
 use Throwable;
 
 class RouteCheckService
@@ -28,58 +29,23 @@ class RouteCheckService
         $toTrimmed = trim($to);
 
         if ($fromTrimmed === '' || $toTrimmed === '') {
-            return new RouteCheckResult(
-                verdict: 'error',
-                summary: __('flood-watch.route_check.error_missing_locations'),
-                floodsOnRoute: [],
-                incidentsOnRoute: [],
-                alternatives: [],
-                routeGeometry: null,
-            );
+            return RouteCheckResult::error(__('flood-watch.route_check.error_missing_locations'));
         }
 
         $fromValidation = $this->locationResolver->resolve($fromTrimmed);
         if (! $fromValidation['valid']) {
-            return new RouteCheckResult(
-                verdict: 'error',
-                summary: $fromValidation['error'] ?? __('flood-watch.route_check.error_invalid_from'),
-                floodsOnRoute: [],
-                incidentsOnRoute: [],
-                alternatives: [],
-                routeGeometry: null,
-            );
+            return RouteCheckResult::error($fromValidation['error'] ?? __('flood-watch.route_check.error_invalid_from'));
         }
         if (! ($fromValidation['in_area'] ?? false)) {
-            return new RouteCheckResult(
-                verdict: 'error',
-                summary: __('flood-watch.route_check.error_outside_area'),
-                floodsOnRoute: [],
-                incidentsOnRoute: [],
-                alternatives: [],
-                routeGeometry: null,
-            );
+            return RouteCheckResult::error(__('flood-watch.route_check.error_outside_area'));
         }
 
         $toValidation = $this->locationResolver->resolve($toTrimmed);
         if (! $toValidation['valid']) {
-            return new RouteCheckResult(
-                verdict: 'error',
-                summary: $toValidation['error'] ?? __('flood-watch.route_check.error_invalid_to'),
-                floodsOnRoute: [],
-                incidentsOnRoute: [],
-                alternatives: [],
-                routeGeometry: null,
-            );
+            return RouteCheckResult::error($toValidation['error'] ?? __('flood-watch.route_check.error_invalid_to'));
         }
         if (! ($toValidation['in_area'] ?? false)) {
-            return new RouteCheckResult(
-                verdict: 'error',
-                summary: __('flood-watch.route_check.error_outside_area'),
-                floodsOnRoute: [],
-                incidentsOnRoute: [],
-                alternatives: [],
-                routeGeometry: null,
-            );
+            return RouteCheckResult::error(__('flood-watch.route_check.error_outside_area'));
         }
 
         $fromLat = (float) $fromValidation['lat'];
@@ -108,14 +74,7 @@ class RouteCheckService
         } catch (Throwable $e) {
             report($e);
 
-            return new RouteCheckResult(
-                verdict: 'error',
-                summary: __('flood-watch.route_check.error_route_failed'),
-                floodsOnRoute: [],
-                incidentsOnRoute: [],
-                alternatives: [],
-                routeGeometry: null,
-            );
+            return RouteCheckResult::error(__('flood-watch.route_check.error_route_failed'));
         }
     }
 
@@ -137,7 +96,7 @@ class RouteCheckService
         $response = Http::timeout($timeout)->get($url, $params);
 
         if ($response->status() === 400 && str_contains((string) $response->body(), 'NoRoute')) {
-            throw new \RuntimeException('No route found');
+            throw new RuntimeException('No route found');
         }
 
         if (! $response->successful()) {
@@ -146,7 +105,7 @@ class RouteCheckService
 
         $data = $response->json();
         if (($data['code'] ?? '') !== 'Ok') {
-            throw new \RuntimeException('OSRM returned: '.($data['code'] ?? 'unknown'));
+            throw new RuntimeException('OSRM returned: '.($data['code'] ?? 'unknown'));
         }
 
         return $data;
@@ -159,12 +118,12 @@ class RouteCheckService
         $primaryRoute = $routes[0] ?? null;
 
         if ($primaryRoute === null) {
-            throw new \RuntimeException('No route returned');
+            throw new RuntimeException('No route returned');
         }
 
         $routeCoords = $this->extractRouteCoordinates($primaryRoute);
         if (count($routeCoords) < 2) {
-            throw new \RuntimeException('Route has no usable geometry');
+            throw new RuntimeException('Route has no usable geometry');
         }
         $routeBbox = $this->computeBbox($routeCoords);
         $centerLat = ($routeBbox['minLat'] + $routeBbox['maxLat']) / 2;
@@ -194,7 +153,7 @@ class RouteCheckService
             verdict: $verdict,
             summary: $summary,
             floodsOnRoute: $this->enrichFloodsWithIcons($floodsOnRoute),
-            incidentsOnRoute: $this->enrichIncidentsWithIcons($incidentsOnRoute),
+            incidentsOnRoute: IncidentIcon::enrichIncidents($incidentsOnRoute),
             alternatives: $alternatives,
             routeGeometry: $geometry,
             routeKey: $routeKey,
@@ -298,7 +257,7 @@ class RouteCheckService
         $onRoute = [];
         foreach ($floods as $flood) {
             $polygon = $flood['polygon'] ?? null;
-            if ($polygon !== null && is_array($polygon)) {
+            if (is_array($polygon)) {
                 $floodBbox = $this->bboxExtractor->extractBboxFromFeatureCollection($polygon);
                 if ($this->bboxOverlaps($routeBbox, $floodBbox)) {
                     $onRoute[] = $flood;
@@ -428,24 +387,6 @@ class RouteCheckService
 
             return $f;
         }, $floods);
-    }
-
-    /**
-     * @param  array<int, array<string, mixed>>  $incidents
-     * @return array<int, array<string, mixed>>
-     */
-    private function enrichIncidentsWithIcons(array $incidents): array
-    {
-        return array_map(function (array $inc): array {
-            $inc['icon'] = IncidentIcon::forIncident(
-                $inc['incidentType'] ?? null,
-                $inc['managementType'] ?? null
-            );
-            $inc['statusLabel'] = IncidentIcon::statusLabel($inc['status'] ?? null);
-            $inc['typeLabel'] = IncidentIcon::typeLabel($inc['incidentType'] ?? $inc['managementType'] ?? null);
-
-            return $inc;
-        }, $incidents);
     }
 
     private function cacheKey(float $fromLat, float $fromLng, float $toLat, float $toLng): string

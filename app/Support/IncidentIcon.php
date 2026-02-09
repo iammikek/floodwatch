@@ -96,6 +96,26 @@ class IncidentIcon
         return $default;
     }
 
+    /**
+     * Add icon and human-readable labels to each incident.
+     *
+     * @param  array<int, array<string, mixed>>  $incidents
+     * @return array<int, array<string, mixed>>
+     */
+    public static function enrichIncidents(array $incidents): array
+    {
+        return array_map(function (array $incident): array {
+            $incident['icon'] = self::forIncident(
+                $incident['incidentType'] ?? null,
+                $incident['managementType'] ?? null
+            );
+            $incident['statusLabel'] = self::statusLabel($incident['status'] ?? null);
+            $incident['typeLabel'] = self::typeLabel($incident['incidentType'] ?? $incident['managementType'] ?? null);
+
+            return $incident;
+        }, $incidents);
+    }
+
     private static function splitCamelCase(string $value): string
     {
         $withSpaces = preg_replace('/([a-z])([A-Z])/', '$1 $2', str_replace('_', ' ', $value));
