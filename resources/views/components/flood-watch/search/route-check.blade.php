@@ -119,7 +119,7 @@
                     </div>
                 @endif
 
-                @if (!empty($routeCheckResult['alternatives']))
+                @if ($verdict === 'blocked' && !empty($routeCheckResult['alternatives']))
                     <div>
                         <p class="text-xs font-medium text-slate-500 uppercase mb-1">{{ __('flood-watch.route_check.alternatives') }}</p>
                         <ul class="space-y-2 text-sm">
