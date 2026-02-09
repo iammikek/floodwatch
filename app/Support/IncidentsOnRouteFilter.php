@@ -81,10 +81,8 @@ class IncidentsOnRouteFilter
      */
     private function downsample(array $routeCoords, int $maxPoints): array
     {
+        $maxPoints = max(2, $maxPoints);
         $n = count($routeCoords);
-        if ($maxPoints < 2) {
-            return $n > 0 ? array_slice($routeCoords, 0, 1) : [];
-        }
         if ($n <= $maxPoints) {
             return $routeCoords;
         }

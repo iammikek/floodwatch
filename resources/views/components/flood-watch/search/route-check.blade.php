@@ -18,26 +18,33 @@
                     @disabled($routeCheckLoading)
                     class="block flex-1 min-h-[44px] rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 />
-                <button
-                    type="button"
-                    @click="
-                        if (!navigator.geolocation) {
-                            $wire.set('error', @js(__('flood-watch.dashboard.gps_error')));
-                            return;
+                <div
+                    x-data="{
+                        getLocation() {
+                            if (!navigator.geolocation) {
+                                $wire.set('error', @js(__('flood-watch.dashboard.gps_error')));
+                                return;
+                            }
+                            navigator.geolocation.getCurrentPosition(
+                                (pos) => $wire.dispatch('location-from-gps-for-route', { lat: pos.coords.latitude, lng: pos.coords.longitude }),
+                                () => { $wire.set('error', @js(__('flood-watch.dashboard.gps_error'))); },
+                                { enableHighAccuracy: true, timeout: 10000 }
+                            );
                         }
-                        navigator.geolocation.getCurrentPosition(
-                            (pos) => $wire.dispatch('location-from-gps-for-route', { lat: pos.coords.latitude, lng: pos.coords.longitude }),
-                            () => { $wire.set('error', @js(__('flood-watch.dashboard.gps_error'))); },
-                            { enableHighAccuracy: true, timeout: 10000 }
-                        )
-                    "
-                    @disabled($routeCheckLoading)
-                    class="shrink-0 min-h-[44px] inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    aria-label="{{ __('flood-watch.dashboard.use_my_location') }}"
-                    title="{{ __('flood-watch.dashboard.use_my_location') }}"
+                    }"
+                    class="contents"
                 >
-                    📍
-                </button>
+                    <button
+                        type="button"
+                        @click="getLocation()"
+                        @disabled($routeCheckLoading)
+                        class="shrink-0 min-h-[44px] inline-flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        aria-label="{{ __('flood-watch.dashboard.use_my_location') }}"
+                        title="{{ __('flood-watch.dashboard.use_my_location') }}"
+                    >
+                        📍
+                    </button>
+                </div>
             </div>
             <input
                 type="text"
