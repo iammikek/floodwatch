@@ -22,11 +22,10 @@
     id="results"
     @if ($wirePoll) wire:poll.900s="search" @endif
 >
-    <x-flood-watch.status.results-header
+    <x-flood-watch.status.mobile-summary-bar
+        :floods="$floods"
+        :incidents="$incidents"
         :last-checked="$lastChecked"
-        :auto-refresh-enabled="$autoRefreshEnabled"
-        :retry-after-timestamp="$retryAfterTimestamp"
-        :can-retry="$canRetry"
     />
 
     {{-- Risk block (stacked) --}}
@@ -47,12 +46,6 @@
     <x-flood-watch.results.flood-risk
         :floods="$floods"
         :has-user-location="$hasUserLocation"
-    />
-
-    <x-flood-watch.status.mobile-summary-bar
-        :floods="$floods"
-        :incidents="$incidents"
-        :last-checked="$lastChecked"
     />
 
     <nav class="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-600" aria-label="{{ __('flood-watch.dashboard.summary') }}">
