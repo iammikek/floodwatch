@@ -27,9 +27,11 @@ class FloodWatchDashboardTest extends TestCase
     public function test_flood_watch_dashboard_displays_flood_risk_road_status_and_forecast_badges(): void
     {
         Livewire::test('flood-watch-dashboard')
+            ->set('assistantResponse', 'Summary.')
+            ->set('mapCenter', ['lat' => 51.0358, 'lng' => -2.8318])
             ->assertSee(__('flood-watch.dashboard.flood_risk'))
             ->assertSee(__('flood-watch.dashboard.road_status'))
-            ->assertSee(__('flood-watch.dashboard.forecast'));
+            ->assertSee(__('flood-watch.dashboard.forecast_outlook'));
     }
 
     public function test_flood_watch_dashboard_has_location_input(): void
@@ -277,8 +279,7 @@ class FloodWatchDashboardTest extends TestCase
             ->assertSet('incidents', [])
             ->assertSee(__('flood-watch.dashboard.no_flood_warnings'))
             ->assertSee(__('flood-watch.dashboard.roads_clear'))
-            ->assertSee(__('flood-watch.dashboard.no_alerts'))
-            ->assertSee(__('flood-watch.dashboard.clear'));
+            ->assertSee(__('flood-watch.dashboard.mobile_summary_no_floods'));
     }
 
     public function test_search_displays_flood_and_road_sections_separately(): void
@@ -1310,8 +1311,8 @@ class FloodWatchDashboardTest extends TestCase
             ->html();
 
         expect($html)->toContain('hidden lg:block')
-            ->toContain('grid grid-cols-2')
-            ->toContain('grid-cols-[1.5fr_1fr]');
+            ->toContain('grid-cols-[1fr_1.5fr]')
+            ->toContain('grid-cols-3');
     }
 
     public function test_separate_mobile_and_desktop_layouts(): void

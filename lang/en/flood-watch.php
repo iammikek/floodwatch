@@ -87,6 +87,7 @@ return [
         'trend' => 'Trend',
         'issued' => 'Issued',
         'no_forecast' => 'No forecast available.',
+        'no_river_levels' => 'No river level data available.',
         'weather_forecast' => '5-day weather forecast',
         'no_weather' => 'No weather data available.',
         'delay' => 'Delay',
