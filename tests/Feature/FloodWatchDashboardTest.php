@@ -1217,4 +1217,76 @@ class FloodWatchDashboardTest extends TestCase
             ->assertSet('hasUserLocation', true)
             ->assertSet('error', null);
     }
+
+    public function test_your_risk_block_shows_house_clear_and_roads_clear_when_no_floods_or_incidents(): void
+    {
+        Livewire::test('flood-watch-dashboard')
+            ->set('assistantResponse', 'Summary.')
+            ->set('floods', [])
+            ->set('incidents', [])
+            ->assertSee(__('flood-watch.dashboard.your_risk'), false)
+            ->assertSee(__('flood-watch.dashboard.house_risk_clear'), false)
+            ->assertSee(__('flood-watch.dashboard.roads_risk_clear'), false);
+    }
+
+    public function test_your_risk_block_shows_house_at_risk_when_floods_present(): void
+    {
+        Livewire::test('flood-watch-dashboard')
+            ->set('assistantResponse', 'Summary.')
+            ->set('floods', [['severityLevel' => 2, 'description' => 'Test flood']])
+            ->set('incidents', [])
+            ->assertSee(__('flood-watch.dashboard.your_risk'), false)
+            ->assertSee(__('flood-watch.dashboard.house_risk_at_risk'), false);
+    }
+
+    public function test_your_risk_block_shows_roads_closed_when_blocking_incident(): void
+    {
+        Livewire::test('flood-watch-dashboard')
+            ->set('assistantResponse', 'Summary.')
+            ->set('floods', [])
+            ->set('incidents', [['incidentType' => 'roadClosed', 'road' => 'A361']])
+            ->assertSee(__('flood-watch.dashboard.your_risk'), false)
+            ->assertSee(__('flood-watch.dashboard.roads_risk_closed'), false);
+    }
+
+    public function test_action_steps_show_none_when_no_floods_or_incidents(): void
+    {
+        Livewire::test('flood-watch-dashboard')
+            ->set('assistantResponse', 'Summary.')
+            ->set('floods', [])
+            ->set('incidents', [])
+            ->assertSee(__('flood-watch.dashboard.action_steps'), false)
+            ->assertSee(__('flood-watch.dashboard.action_none'), false);
+    }
+
+    public function test_action_steps_show_deploy_and_monitor_when_floods_present(): void
+    {
+        Livewire::test('flood-watch-dashboard')
+            ->set('assistantResponse', 'Summary.')
+            ->set('floods', [['severityLevel' => 2, 'description' => 'Test']])
+            ->set('incidents', [])
+            ->assertSee(__('flood-watch.dashboard.action_steps'), false)
+            ->assertSee(__('flood-watch.dashboard.action_deploy_defences'), false)
+            ->assertSee(__('flood-watch.dashboard.action_monitor_updates'), false);
+    }
+
+    public function test_danger_to_life_block_shown_when_severe_flood(): void
+    {
+        Livewire::test('flood-watch-dashboard')
+            ->set('assistantResponse', 'Summary.')
+            ->set('floods', [['severityLevel' => 1, 'description' => 'Severe']])
+            ->set('incidents', [])
+            ->assertSee(__('flood-watch.dashboard.emergency_title'), false)
+            ->assertSee(__('flood-watch.dashboard.emergency_999'), false)
+            ->assertSee(__('flood-watch.dashboard.emergency_floodline'), false);
+    }
+
+    public function test_danger_to_life_block_not_shown_when_no_severe_flood(): void
+    {
+        Livewire::test('flood-watch-dashboard')
+            ->set('assistantResponse', 'Summary.')
+            ->set('floods', [['severityLevel' => 2, 'description' => 'Warning']])
+            ->set('incidents', [])
+            ->assertDontSee(__('flood-watch.dashboard.emergency_title'), false);
+    }
 }
