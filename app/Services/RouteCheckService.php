@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\DTOs\RouteCheckResult;
+use App\Enums\IncidentType;
 use App\Flood\Services\EnvironmentAgencyFloodService;
 use App\Roads\Services\NationalHighwaysService;
 use App\Support\GeoJsonBboxExtractor;
@@ -58,8 +59,8 @@ class RouteCheckService
         $cache = Cache::store(config('flood-watch.cache_store', 'flood-watch'));
 
         if ($ttl > 0) {
-            $cached = $cache->get($cacheKey);
-            if ($cached !== null && $cached instanceof RouteCheckResult) {
+            $cached = $this->cacheGet($cache, $cacheKey);
+            if ($cached !== null) {
                 return $cached;
             }
         }
@@ -67,7 +68,7 @@ class RouteCheckService
         try {
             $result = $this->fetchAndAnalyzeRoute($fromLat, $fromLng, $toLat, $toLng);
             if ($ttl > 0) {
-                $cache->put($cacheKey, $result, now()->addMinutes($ttl));
+                $this->cachePut($cache, $cacheKey, $result->toArray(), now()->addMinutes($ttl));
             }
 
             return $result;
@@ -300,7 +301,7 @@ class RouteCheckService
                 $inc['incidentType'] ?? '',
                 $inc['managementType'] ?? '',
             ])));
-            if (str_contains($type, 'roadclosed') || str_contains($type, 'closure')) {
+            if (IncidentType::isBlockingClosure($type)) {
                 $hasBlocked = true;
                 break;
             }
@@ -395,5 +396,37 @@ class RouteCheckService
         $key = sprintf('%.4f,%.4f,%.4f,%.4f', $fromLat, $fromLng, $toLat, $toLng);
 
         return "{$prefix}:route_check:{$key}";
+    }
+
+    /**
+     * Safe cache read: returns RouteCheckResult or null on failure/corrupt/incompatible data.
+     */
+    private function cacheGet(\Illuminate\Contracts\Cache\Repository $cache, string $key): ?RouteCheckResult
+    {
+        try {
+            $data = $cache->get($key);
+            if ($data instanceof RouteCheckResult) {
+                return $data;
+            }
+            if (is_array($data)) {
+                return RouteCheckResult::fromArray($data);
+            }
+
+            return null;
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * Safe cache write: silently skips on store failure.
+     */
+    private function cachePut(\Illuminate\Contracts\Cache\Repository $cache, string $key, array $value, \DateTimeInterface|int $ttl): void
+    {
+        try {
+            $cache->put($key, $value, $ttl);
+        } catch (Throwable) {
+            // Silently skip cache write on Redis/serialization failure
+        }
     }
 }

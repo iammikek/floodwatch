@@ -49,4 +49,27 @@ final readonly class RouteCheckResult
             'route_key' => $this->routeKey,
         ];
     }
+
+    /**
+     * Reconstruct from array (e.g. cache payload). Returns null if array is invalid.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public static function fromArray(array $data): ?self
+    {
+        $verdict = $data['verdict'] ?? null;
+        if (! is_string($verdict) || $verdict === '') {
+            return null;
+        }
+
+        return new self(
+            verdict: $verdict,
+            summary: (string) ($data['summary'] ?? ''),
+            floodsOnRoute: is_array($data['floods_on_route'] ?? null) ? $data['floods_on_route'] : [],
+            incidentsOnRoute: is_array($data['incidents_on_route'] ?? null) ? $data['incidents_on_route'] : [],
+            alternatives: is_array($data['alternatives'] ?? null) ? $data['alternatives'] : [],
+            routeGeometry: isset($data['route_geometry']) && is_array($data['route_geometry']) ? $data['route_geometry'] : null,
+            routeKey: isset($data['route_key']) && is_string($data['route_key']) ? $data['route_key'] : null,
+        );
+    }
 }

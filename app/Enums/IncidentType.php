@@ -85,4 +85,29 @@ enum IncidentType: string
 
         return null;
     }
+
+    /**
+     * Whether this incident type indicates a full road closure (blocked), not lane-only.
+     */
+    public function isBlocked(): bool
+    {
+        return $this === self::RoadClosed;
+    }
+
+    /**
+     * Whether the given type string indicates a blocking road closure (not lane closures).
+     * Checks RoadClosed first (managementType can override incidentType).
+     */
+    public static function isBlockingClosure(string $type): bool
+    {
+        $lower = strtolower($type);
+        if (str_contains($lower, strtolower(self::RoadClosed->value))) {
+            return true;
+        }
+        if (str_contains($lower, strtolower(self::LaneClosures->value)) || str_contains($lower, 'lane closure')) {
+            return false;
+        }
+
+        return str_contains($lower, 'closure') && ! str_contains($lower, 'lane');
+    }
 }
