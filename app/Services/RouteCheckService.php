@@ -188,6 +188,7 @@ class RouteCheckService
         $alternatives = $this->extractAlternatives(array_slice($routes, 1, 2));
 
         $geometry = $routeCoords;
+        $routeKey = md5(sprintf('%.4f,%.4f,%.4f,%.4f', $fromLat, $fromLng, $toLat, $toLng));
 
         return new RouteCheckResult(
             verdict: $verdict,
@@ -196,6 +197,7 @@ class RouteCheckService
             incidentsOnRoute: $this->enrichIncidentsWithIcons($incidentsOnRoute),
             alternatives: $alternatives,
             routeGeometry: $geometry,
+            routeKey: $routeKey,
         );
     }
 
@@ -335,7 +337,10 @@ class RouteCheckService
         $hasBlocked = false;
         $hasDelays = false;
         foreach ($incidentsOnRoute as $inc) {
-            $type = strtolower($inc['incidentType'] ?? $inc['managementType'] ?? '');
+            $type = strtolower(implode(' ', array_filter([
+                $inc['incidentType'] ?? '',
+                $inc['managementType'] ?? '',
+            ])));
             if (str_contains($type, 'roadclosed') || str_contains($type, 'closure')) {
                 $hasBlocked = true;
                 break;

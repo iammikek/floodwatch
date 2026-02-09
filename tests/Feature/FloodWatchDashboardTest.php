@@ -102,7 +102,9 @@ class FloodWatchDashboardTest extends TestCase
             ->call('checkRoute')
             ->assertSet('routeCheckLoading', false)
             ->assertSet('routeCheckResult.verdict', 'clear')
-            ->assertSet('routeCheckResult.summary', fn ($s) => is_string($s) && $s !== '');
+            ->assertSet('routeCheckResult.summary', fn ($s) => is_string($s) && $s !== '')
+            ->assertSet('routeCheckResult.route_key', fn ($k) => is_string($k) && strlen($k) === 32)
+            ->assertSet('routeCheckResult.route_geometry', fn ($g) => is_array($g) && count($g) >= 2);
     }
 
     public function test_route_check_returns_error_when_osrm_returns_route_without_geometry(): void
@@ -146,7 +148,8 @@ class FloodWatchDashboardTest extends TestCase
             ->assertSet('routeCheckLoading', false)
             ->assertSet('routeCheckResult.verdict', 'error')
             ->assertSet('routeCheckResult.summary', __('flood-watch.route_check.error_route_failed'))
-            ->assertSet('routeCheckResult.route_geometry', null);
+            ->assertSet('routeCheckResult.route_geometry', null)
+            ->assertSet('routeCheckResult.route_key', null);
     }
 
     public function test_route_check_shows_error_when_from_invalid(): void

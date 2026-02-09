@@ -77,6 +77,7 @@
         @php
             $routeGeometry = $routeCheckResult['route_geometry'] ?? null;
             $hasRouteGeometry = $routeGeometry && count($routeGeometry) > 0;
+            $routeKey = $routeCheckResult['route_key'] ?? ($hasRouteGeometry ? md5($routeFrom . '|' . $routeTo) : null);
             $mapCenterFromRoute = null;
             if ($hasRouteGeometry && !$mapCenter) {
                 $lats = array_column($routeGeometry, 1);
@@ -89,7 +90,7 @@
         @endphp
 
         @if ($hasRouteGeometry && $mapCenterForRoute && !$assistantResponse)
-            <div class="mt-6 lg:block hidden" wire:key="route-map-{{ md5(json_encode($routeGeometry)) }}">
+            <div class="mt-6 lg:block hidden" wire:key="route-map-{{ $routeKey }}">
                 <x-flood-watch.results.flood-map
                     :map-center="$mapCenterForRoute"
                     :river-levels="[]"
@@ -98,6 +99,7 @@
                     :has-user-location="false"
                     :last-checked="null"
                     :route-geometry="$routeGeometry"
+                    :route-key="$routeKey"
                 />
             </div>
         @endif
@@ -130,6 +132,7 @@
                     :has-user-location="$hasUserLocation"
                     :last-checked="$lastChecked"
                     :route-geometry="$routeCheckResult['route_geometry'] ?? null"
+                    :route-key="$routeKey"
                 />
 
                 <x-flood-watch.results.flood-risk
