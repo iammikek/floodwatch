@@ -95,7 +95,8 @@ class FloodWatchDashboard extends Component
     }
 
     /**
-     * Last 5 searches for the current user or session.
+     * Last 5 unique searches for the current user or session.
+     * Same location (by lat/lng) appears only once, most recent first.
      *
      * @return array<int, array{location: string, lat: float, lng: float, region: ?string}>
      */
@@ -103,7 +104,7 @@ class FloodWatchDashboard extends Component
     {
         $query = UserSearch::query()
             ->latest('searched_at')
-            ->limit(5);
+            ->limit(20);
 
         if (Auth::check()) {
             $query->where('user_id', Auth::id());
@@ -112,6 +113,8 @@ class FloodWatchDashboard extends Component
         }
 
         return $query->get()
+            ->unique(fn (UserSearch $s) => round($s->lat, 4).','.round($s->lng, 4))
+            ->take(5)
             ->map(fn (UserSearch $s) => [
                 'location' => $s->location,
                 'lat' => $s->lat,

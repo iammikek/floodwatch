@@ -16,7 +16,7 @@
         x-data="floodMap({ center: @js($mapCenter), stations: @js($riverLevels), floods: @js($floods), incidents: @js($incidents), hasUser: @js($hasUserLocation), routeGeometry: @js($routeGeometry), t: @js(['your_location' => __('flood-watch.map.your_location'), 'elevated_level' => __('flood-watch.map.elevated_level'), 'expected_level' => __('flood-watch.map.expected_level'), 'low_level' => __('flood-watch.map.low_level'), 'typical_range' => __('flood-watch.map.typical_range'), 'flood_warning' => __('flood-watch.dashboard.flood_warning'), 'flood_area' => __('flood-watch.dashboard.flood_area'), 'km_from_location' => __('flood-watch.dashboard.km_from_location'), 'road' => __('flood-watch.dashboard.road'), 'road_incident' => __('flood-watch.dashboard.road_incident')]) })"
         x-init="init()"
     >
-        <div id="flood-map" class="h-72 sm:h-80 md:h-96 w-full bg-slate-100"></div>
+        <div id="flood-map" class="h-72 sm:h-80 md:h-96 lg:h-[28rem] w-full bg-slate-100"></div>
         @if (count($incidents) > 0)
             <div class="px-3 py-2 bg-blue-50/50 border-t border-slate-200">
                 <p class="text-xs font-medium text-blue-800 mb-1.5">{{ __('flood-watch.dashboard.road_incidents_on_map') }}</p>

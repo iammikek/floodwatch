@@ -34,7 +34,7 @@
     }"
     x-init="init()"
 >
-    <div class="max-w-2xl mx-auto w-full">
+    <div class="max-w-2xl lg:max-w-6xl mx-auto w-full">
         <x-flood-watch.search.location-header
             :location="$location"
             :display-location="$displayLocation"
@@ -46,9 +46,6 @@
             :assistant-response="$assistantResponse"
             :loading="$loading"
         />
-
-        <x-flood-watch.status.guest-banner />
-
         @php
             $hasResults = !$loading && $assistantResponse;
             $floodStatus = $hasResults ? (count($floods) > 0 ? count($floods) . ' ' . (count($floods) === 1 ? __('flood-watch.dashboard.warning') : __('flood-watch.dashboard.warnings')) : __('flood-watch.dashboard.no_alerts')) : null;
@@ -57,19 +54,12 @@
             $weatherStatus = $hasResults ? (count($weather) > 0 ? count($weather) . ' ' . __('flood-watch.dashboard.days') : '—') : null;
             $riverStatus = $hasResults ? (count($riverLevels) > 0 ? count($riverLevels) . ' ' . __('flood-watch.dashboard.stations') : '—') : null;
         @endphp
-        <x-flood-watch.status.result-badges
-            :has-results="$hasResults"
-            :flood-status="$floodStatus"
-            :road-status="$roadStatus"
-            :forecast-status="$forecastStatus"
-            :weather-status="$weatherStatus"
-            :river-status="$riverStatus"
-        />
-
-        <x-flood-watch.search.route-check
-            :route-check-loading="$routeCheckLoading"
-            :route-check-result="$routeCheckResult"
-        />
+        @if (!$assistantResponse)
+            <x-flood-watch.search.route-check
+                :route-check-loading="$routeCheckLoading"
+                :route-check-result="$routeCheckResult"
+            />
+        @endif
 
         @php
             $routeGeometry = $routeCheckResult['route_geometry'] ?? null;
@@ -109,59 +99,60 @@
         <x-flood-watch.status.search-loading />
 
         @if (!$loading && $assistantResponse)
-            <div
-                class="space-y-6 scroll-smooth"
-                id="results"
-                @if (!$error && $autoRefreshEnabled && auth()->check()) wire:poll.900s="search" @endif
-            >
-                <x-flood-watch.status.results-header
+            @php
+                $wirePoll = !$error && $autoRefreshEnabled && auth()->check();
+            @endphp
+
+            <div class="lg:hidden">
+                <x-flood-watch.layout.mobile-results
                     :last-checked="$lastChecked"
                     :auto-refresh-enabled="$autoRefreshEnabled"
                     :retry-after-timestamp="$retryAfterTimestamp"
                     :can-retry="$this->canRetry()"
-                />
-
-                <x-flood-watch.results.your-risk
                     :house-risk="$this->houseRisk"
                     :roads-risk="$this->roadsRisk"
+                    :action-steps="$this->actionSteps"
+                    :has-danger-to-life="$this->hasDangerToLife"
+                    :route-check-loading="$routeCheckLoading"
+                    :route-check-result="$routeCheckResult"
+                    :floods="$floods"
+                    :has-user-location="$hasUserLocation"
+                    :weather="$weather"
+                    :incidents="$incidents"
+                    :assistant-response="$assistantResponse"
+                    :wire-poll="$wirePoll"
                 />
+            </div>
 
-                <x-flood-watch.results.action-steps
-                    :steps="$this->actionSteps"
-                />
-
-                @if ($this->hasDangerToLife)
-                    <x-flood-watch.results.danger-to-life />
-                @endif
-
-                <x-flood-watch.results.flood-map
+            <div class="hidden lg:block">
+                <x-flood-watch.layout.desktop-results
+                    :last-checked="$lastChecked"
+                    :auto-refresh-enabled="$autoRefreshEnabled"
+                    :retry-after-timestamp="$retryAfterTimestamp"
+                    :can-retry="$this->canRetry()"
+                    :house-risk="$this->houseRisk"
+                    :roads-risk="$this->roadsRisk"
+                    :action-steps="$this->actionSteps"
+                    :has-danger-to-life="$this->hasDangerToLife"
+                    :route-check-loading="$routeCheckLoading"
+                    :route-check-result="$routeCheckResult"
                     :map-center="$mapCenter"
                     :river-levels="$riverLevels"
                     :floods="$floods"
                     :incidents="$incidents"
                     :has-user-location="$hasUserLocation"
-                    :last-checked="$lastChecked"
-                    :route-geometry="$routeCheckResult['route_geometry'] ?? null"
+                    :route-geometry="$routeGeometry"
                     :route-key="$routeKey"
+                    :forecast="$forecast"
+                    :weather="$weather"
+                    :assistant-response="$assistantResponse"
+                    :wire-poll="$wirePoll"
                 />
-
-                <x-flood-watch.results.flood-risk
-                    :floods="$floods"
-                    :has-user-location="$hasUserLocation"
-                />
-
-                <x-flood-watch.results.forecast :forecast="$forecast" />
-
-                <x-flood-watch.results.weather :weather="$weather" />
-
-                <x-flood-watch.results.road-status :incidents="$incidents" />
-
-                <x-flood-watch.results.summary :assistant-response="$assistantResponse" />
             </div>
         @elseif (!$loading && !$error)
             <p class="text-slate-500 text-sm">{{ __('flood-watch.dashboard.prompt') }}</p>
         @endif
 
-        <x-flood-watch.layout.footer />
+        <x-flood-watch.layout.footer :show-section-links="$hasResults" />
     </div>
 </div>

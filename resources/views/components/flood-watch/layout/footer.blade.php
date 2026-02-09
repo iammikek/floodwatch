@@ -1,4 +1,17 @@
+@props([
+    'showSectionLinks' => false,
+])
+
 <footer class="mt-12 pt-6 border-t border-slate-200">
+    @if ($showSectionLinks)
+        <nav class="flex flex-wrap gap-x-4 gap-y-1 mb-4 text-sm text-slate-600" aria-label="{{ __('flood-watch.dashboard.summary') }}">
+            <a href="#road-status" class="underline hover:text-slate-800">{{ __('flood-watch.dashboard.road_status') }}</a>
+            <span aria-hidden="true">·</span>
+            <a href="#forecast" class="underline hover:text-slate-800">{{ __('flood-watch.dashboard.forecast') }}</a>
+            <span aria-hidden="true">·</span>
+            <a href="#map-section" class="underline hover:text-slate-800">{{ __('flood-watch.dashboard.river_levels') }}</a>
+        </nav>
+    @endif
     @if (config('flood-watch.donation_url'))
         <p class="text-xs text-slate-500 mb-2">
             {{ __('flood-watch.dashboard.free_to_use') }}

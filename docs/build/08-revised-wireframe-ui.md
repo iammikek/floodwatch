@@ -73,16 +73,15 @@ Reorganise the Flood Watch dashboard to match the revised brief wireframe (`docs
    - Built in [04-route-check](04-route-check.md) with wireframe placement
    - Build 08: ensure it slots correctly into desktop grid (Risk | Route side by side)
 
-### Phase C: Desktop Grid + Map
+### Phase C: Desktop Grid + Map ✓
 
-8. **Desktop two-column layout**
+8. **Desktop two-column layout** ✓
    - Top row: Risk (left) | Route Check (right)
    - Bottom row: Map (left, larger) | Flood Warnings list (right)
-   - Footer: Road Status · Forecast · River Levels · Attribution
+   - Footer: Road Status · Forecast · River Levels · Attribution (section links when results)
 
-9. **Mobile: omit map**
-   - Config or breakpoint: `@media (max-width: 640px)` hide map
-   - Or: collapsible "Show map" to reduce payload on small screens
+9. **Mobile: omit map** ✓
+   - Map hidden below `sm` (640px); `hidden sm:block` on map wrapper
 
 ### Phase D: Profile + Donations
 
@@ -124,10 +123,10 @@ Reorganise the Flood Watch dashboard to match the revised brief wireframe (`docs
 ## Acceptance Criteria
 
 - [x] Header shows location at top; [Change] [Use my location] [Refresh] for logged in (Profile in layout header)
-- [ ] Mobile: Your Risk → Action Steps → Route Check (no map)
-- [ ] Desktop: Risk + Route side by side; Map + Flood Warnings side by side
-- [ ] Danger to Life block visible when severe flood warning
+- [x] Mobile: Your Risk → Action Steps → Route Check (no map)
+- [x] Desktop: Risk + Route side by side; Map + Flood Warnings side by side
+- [x] Danger to Life block visible when severe flood warning
 - [x] Route Check section present (from build 04)
-- [ ] Footer: summary counts, last updated, support link
+- [x] Footer: section links (Road Status · Forecast · River Levels), support link
 - [x] Responsive; matches wireframe structure (Phase A)
 - [x] `sail test` passes
