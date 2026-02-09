@@ -211,7 +211,9 @@
                                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                             }).addTo(this.map);
                             this.map.invalidateSize();
-                            setTimeout(() => addMarkers(L), 100);
+                            (typeof requestIdleCallback !== 'undefined'
+                                ? (cb) => requestIdleCallback(cb, { timeout: 100 })
+                                : (cb) => setTimeout(cb, 100))(() => addMarkers(L));
                         });
                     });
                 }
