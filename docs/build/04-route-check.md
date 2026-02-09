@@ -2,6 +2,8 @@
 
 Geocode From and To; compute route; overlay incidents/floods; produce summary: Clear / Blocked / At risk / Delays.
 
+**Status**: ✅ Complete
+
 **Ref**: `docs/BRIEF.md` §4, `docs/ACCEPTANCE_CRITERIA.md` §3
 
 ---
@@ -63,17 +65,20 @@ Mapping of `docs/ACCEPTANCE_CRITERIA.md` to Route Check build. **Met** = Route C
 
 2. ~~**From default**~~ **Decided**: Pre-fill From from default bookmark when logged in. Otherwise, From is empty and we prompt for location with a "Use my location" button (reuse GPS flow from main search).
 
-3. ~~**Alternatives when blocked**~~ **Decided**: Show 2 alternative routes when the primary route is blocked. Use `alternatives=2` in OSRM request.
+3. ~~**Alternatives when blocked**~~ **Decided**: Show 2 alternative routes when the primary route is blocked. Two-phase OSRM fetch: primary route only first (minimal payload); second call with `alternatives=2` and `steps=true` only when verdict is blocked. Reduces OSRM payload/CPU for public demo (1 req/sec policy).
 
 ---
 
 ## Routing Engine
 
-**OSRM** (free, self-hosted or public demo): `GET https://router.project-osrm.org/route/v1/driving/{lon1},{lat1};{lon2},{lat2}?overview=full&geometries=geojson&alternatives=2&steps=true`
+**OSRM** (free, self-hosted or public demo): `GET https://router.project-osrm.org/route/v1/driving/{lon1},{lat1};{lon2},{lat2}`
 
-- `overview=full`, `geometries=geojson` – route geometry (LineString) for map and intersection checks.
-- `alternatives=2` – up to 2 alternative routes when blocked.
-- `steps=true` – road names for alternative summaries (e.g. "M5 J25 → A358 → Taunton").
+**Two-phase fetch** (minimises payload for public demo):
+
+1. **Primary call** (every check): `overview=full`, `geometries=geojson` – route geometry only. No `alternatives` or `steps`.
+2. **Alternatives call** (only when verdict is blocked): same URL + `alternatives=2`, `steps=true` – road names for alternative summaries (e.g. "M5 J25 → A358 → Taunton").
+
+Controlled by `fetch_alternatives_when_blocked` config (default `true`). Set to `false` to skip the second call entirely.
 
 **Alternative**: Mapbox Directions API (requires key), Valhalla – document choice in implementation.
 
@@ -84,11 +89,12 @@ Mapping of `docs/ACCEPTANCE_CRITERIA.md` to Route Check build. **Met** = Route C
 1. From: default bookmark (if logged in) or user enters postcode/place or taps "Use my location".
 2. To: user enters postcode/place.
 3. Geocode both via `LocationResolver::resolve()`
-4. Call OSRM for route geometry
+4. Call OSRM for primary route geometry (no alternatives/steps)
 5. Fetch floods and incidents for route corridor (see Geometry)
 6. Check if route intersects any flood polygon or is near any incident
 7. Produce verdict: **Clear** | **Blocked** | **At risk** | **Delays**
-8. Deterministic summary (MVP); optional LLM prose later
+8. If verdict is blocked and `fetch_alternatives_when_blocked`: second OSRM call with alternatives+steps
+9. Deterministic summary (MVP); optional LLM prose later
 
 ---
 
@@ -139,6 +145,8 @@ When route check runs on desktop (`lg` breakpoint or above):
 
 When multiple apply, use highest priority.
 
+**Implementation**: `IncidentType::isBlockingClosure()` distinguishes full road closures (blocked) from lane closures (delays). Uses `incidentType` and `managementType` from National Highways DATEX II.
+
 ---
 
 ## Geometry
@@ -164,8 +172,12 @@ Add to `config/flood-watch.php`:
     'osrm_url' => env('FLOOD_WATCH_OSRM_URL', 'https://router.project-osrm.org'),
     'osrm_timeout' => (int) env('FLOOD_WATCH_OSRM_TIMEOUT', 15),
     'flood_radius_km' => (int) env('FLOOD_WATCH_ROUTE_FLOOD_RADIUS_KM', 25),
+    'flood_radius_buffer_km' => (int) env('FLOOD_WATCH_ROUTE_FLOOD_RADIUS_BUFFER_KM', 5),
+    'flood_radius_max_km' => (int) env('FLOOD_WATCH_ROUTE_FLOOD_RADIUS_MAX_KM', 80),
     'incident_proximity_km' => (float) env('FLOOD_WATCH_ROUTE_INCIDENT_PROXIMITY_KM', 0.5),
+    'incident_check_max_route_points' => (int) env('FLOOD_WATCH_ROUTE_INCIDENT_CHECK_MAX_POINTS', 150),
     'cache_ttl_minutes' => (int) env('FLOOD_WATCH_ROUTE_CACHE_TTL_MINUTES', 15),
+    'fetch_alternatives_when_blocked' => env('FLOOD_WATCH_FETCH_ALTERNATIVES_WHEN_BLOCKED', true),
 ],
 ```
 
