@@ -27,11 +27,10 @@
     id="results"
     @if ($wirePoll) wire:poll.900s="search" @endif
 >
-    <x-flood-watch.status.results-header
+    <x-flood-watch.status.mobile-summary-bar
+        :floods="$floods"
+        :incidents="$incidents"
         :last-checked="$lastChecked"
-        :auto-refresh-enabled="$autoRefreshEnabled"
-        :retry-after-timestamp="$retryAfterTimestamp"
-        :can-retry="$canRetry"
     />
 
     {{-- Row 1: Risk (left) | Route Check (right) --}}
