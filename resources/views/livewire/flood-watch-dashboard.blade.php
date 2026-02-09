@@ -42,7 +42,7 @@
             {{ __('flood-watch.dashboard.intro') }}
         </p>
 
-        <x-flood-watch.guest-banner />
+        <x-flood-watch.status.guest-banner />
 
         @php
             $hasResults = !$loading && $assistantResponse;
@@ -52,7 +52,7 @@
             $weatherStatus = $hasResults ? (count($weather) > 0 ? count($weather) . ' ' . __('flood-watch.dashboard.days') : '—') : null;
             $riverStatus = $hasResults ? (count($riverLevels) > 0 ? count($riverLevels) . ' ' . __('flood-watch.dashboard.stations') : '—') : null;
         @endphp
-        <x-flood-watch.result-badges
+        <x-flood-watch.status.result-badges
             :has-results="$hasResults"
             :flood-status="$floodStatus"
             :road-status="$roadStatus"
@@ -61,7 +61,7 @@
             :river-status="$riverStatus"
         />
 
-        <x-flood-watch.location-search
+        <x-flood-watch.search.location-search
             :bookmarks="$this->bookmarks"
             :recent-searches="$this->recentSearches ?? []"
             :retry-after-timestamp="$retryAfterTimestamp"
@@ -69,7 +69,7 @@
             :assistant-response="$assistantResponse"
         />
 
-        <x-flood-watch.route-check
+        <x-flood-watch.search.route-check
             :route-check-loading="$routeCheckLoading"
             :route-check-result="$routeCheckResult"
         />
@@ -90,7 +90,7 @@
 
         @if ($hasRouteGeometry && $mapCenterFromRoute && !$assistantResponse)
             <div class="mt-6 lg:block hidden" wire:key="route-map-{{ md5(json_encode($routeGeometry)) }}">
-                <x-flood-watch.flood-map
+                <x-flood-watch.results.flood-map
                     :map-center="$mapCenterFromRoute"
                     :river-levels="[]"
                     :floods="$routeFloods"
@@ -102,12 +102,12 @@
             </div>
         @endif
 
-        <x-flood-watch.error-banner
+        <x-flood-watch.status.error-banner
             :error="$error"
             :retry-after-timestamp="$retryAfterTimestamp"
         />
 
-        <x-flood-watch.search-loading />
+        <x-flood-watch.status.search-loading />
 
         @if (!$loading && $assistantResponse)
             <div
@@ -115,14 +115,14 @@
                 id="results"
                 @if (!$error && $autoRefreshEnabled && auth()->check()) wire:poll.900s="search" @endif
             >
-                <x-flood-watch.results-header
+                <x-flood-watch.status.results-header
                     :last-checked="$lastChecked"
                     :auto-refresh-enabled="$autoRefreshEnabled"
                     :retry-after-timestamp="$retryAfterTimestamp"
                     :can-retry="$this->canRetry()"
                 />
 
-                <x-flood-watch.flood-map
+                <x-flood-watch.results.flood-map
                     :map-center="$mapCenter"
                     :river-levels="$riverLevels"
                     :floods="$floods"
@@ -132,23 +132,23 @@
                     :route-geometry="$routeCheckResult['route_geometry'] ?? null"
                 />
 
-                <x-flood-watch.flood-risk
+                <x-flood-watch.results.flood-risk
                     :floods="$floods"
                     :has-user-location="$hasUserLocation"
                 />
 
-                <x-flood-watch.forecast :forecast="$forecast" />
+                <x-flood-watch.results.forecast :forecast="$forecast" />
 
-                <x-flood-watch.weather :weather="$weather" />
+                <x-flood-watch.results.weather :weather="$weather" />
 
-                <x-flood-watch.road-status :incidents="$incidents" />
+                <x-flood-watch.results.road-status :incidents="$incidents" />
 
-                <x-flood-watch.summary :assistant-response="$assistantResponse" />
+                <x-flood-watch.results.summary :assistant-response="$assistantResponse" />
             </div>
         @elseif (!$loading && !$error)
             <p class="text-slate-500 text-sm">{{ __('flood-watch.dashboard.prompt') }}</p>
         @endif
 
-        <x-flood-watch.footer />
+        <x-flood-watch.layout.footer />
     </div>
 </div>

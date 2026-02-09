@@ -560,9 +560,4 @@ class FloodWatchDashboard extends Component
         $this->hasUserLocation = (bool) ($data['hasUserLocation'] ?? false);
         $this->lastChecked = is_string($data['lastChecked'] ?? null) ? $data['lastChecked'] : null;
     }
-
-    public function render()
-    {
-        return view('livewire.flood-watch-dashboard');
-    }
 }
