@@ -44,6 +44,13 @@ class FloodWatchDashboard extends Component
 
     public ?array $mapCenter = null;
 
+    /**
+     * Map viewport bounds (set by map moveend). When set, lists/cards show only items in view.
+     *
+     * @var array{n: float, s: float, e: float, w: float}|null
+     */
+    public ?array $mapBounds = null;
+
     public bool $hasUserLocation = false;
 
     public ?string $lastChecked = null;
@@ -151,6 +158,76 @@ class FloodWatchDashboard extends Component
         }
 
         return 'clear';
+    }
+
+    /**
+     * Update map viewport bounds so lists/cards favour data in the visible area.
+     */
+    public function setMapBounds(float $north, float $south, float $east, float $west): void
+    {
+        $this->mapBounds = [
+            'n' => $north,
+            's' => $south,
+            'e' => $east,
+            'w' => $west,
+        ];
+    }
+
+    /**
+     * Floods to display in lists/cards: viewport-filtered when map bounds are set, otherwise all.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function getFloodsInViewProperty(): array
+    {
+        return $this->filterItemsInBounds(
+            $this->floods,
+            fn (array $f) => [
+                isset($f['lat']) ? (float) $f['lat'] : null,
+                isset($f['lng']) ? (float) $f['lng'] : (isset($f['long']) ? (float) $f['long'] : null),
+            ]
+        );
+    }
+
+    /**
+     * Incidents to display in lists/cards: viewport-filtered when map bounds are set, otherwise all.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function getIncidentsInViewProperty(): array
+    {
+        return $this->filterItemsInBounds(
+            $this->incidents,
+            fn (array $i) => [
+                isset($i['lat']) ? (float) $i['lat'] : (isset($i['latitude']) ? (float) $i['latitude'] : null),
+                isset($i['lng']) ? (float) $i['lng'] : (isset($i['longitude']) ? (float) $i['longitude'] : null),
+            ]
+        );
+    }
+
+    /**
+     * Filter items to those inside mapBounds. Items without coords are included when bounds are set.
+     *
+     * @param  array<int, array<string, mixed>>  $items
+     * @param  callable(array): array{0: ?float, 1: ?float}  $getLatLng
+     * @return array<int, array<string, mixed>>
+     */
+    private function filterItemsInBounds(array $items, callable $getLatLng): array
+    {
+        if ($this->mapBounds === null) {
+            return $items;
+        }
+        $b = $this->mapBounds;
+        $inBounds = function (array $item) use ($b, $getLatLng): bool {
+            [$lat, $lng] = $getLatLng($item);
+            if ($lat === null || $lng === null) {
+                return true;
+            }
+
+            return $lat >= $b['s'] && $lat <= $b['n'] && $lng >= $b['w'] && $lng <= $b['e'];
+        };
+
+        return array_values(array_filter($items, $inBounds));
     }
 
     /**
@@ -364,14 +441,14 @@ class FloodWatchDashboard extends Component
             $this->stream(to: 'searchStatus', content: __('flood-watch.progress.looking_up_location'), replace: true);
             $validation = $locationResolver->resolve($locationTrimmed);
             if (! $validation['valid']) {
-                $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
+                $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'mapBounds', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
                 $this->error = $validation['error'] ?? __('flood-watch.error.invalid_location');
                 $this->loading = false;
 
                 return;
             }
             if (! $validation['in_area']) {
-                $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
+                $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'mapBounds', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
                 $this->error = $validation['error'] ?? __('flood-watch.error.outside_area');
                 $this->loading = false;
 
@@ -389,7 +466,7 @@ class FloodWatchDashboard extends Component
         $result = $locationResolver->reverseFromCoords($lat, $lng);
 
         if (! $result['valid']) {
-            $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
+            $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'mapBounds', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
             $this->error = $result['error'] ?? __('flood-watch.dashboard.gps_error');
             $this->loading = false;
 
@@ -397,7 +474,7 @@ class FloodWatchDashboard extends Component
         }
 
         if (! $result['in_area']) {
-            $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
+            $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'mapBounds', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
             $this->error = __('flood-watch.error.outside_area');
             $this->loading = false;
 
@@ -427,7 +504,7 @@ class FloodWatchDashboard extends Component
         UserSearchService $userSearchService,
         ?array $validation
     ): void {
-        $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'hasUserLocation', 'lastChecked', 'error', 'retryAfterTimestamp', 'displayLocation', 'outcode']);
+        $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'mapBounds', 'hasUserLocation', 'lastChecked', 'error', 'retryAfterTimestamp', 'displayLocation', 'outcode']);
         $this->loading = true;
 
         if (Auth::guest()) {

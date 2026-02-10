@@ -13,6 +13,8 @@
     'riverLevels',
     'floods',
     'incidents',
+    'floodsInView' => null,
+    'incidentsInView' => null,
     'hasUserLocation',
     'routeGeometry',
     'routeKey',
@@ -52,8 +54,12 @@
         <x-flood-watch.results.summary :assistant-response="$assistantResponse" />
     @endif
 
-    {{-- Row 2: Map full width --}}
-    <div class="w-full min-w-0">
+    @php
+        $floodsForList = $floodsInView ?? $floods;
+        $incidentsForList = $incidentsInView ?? $incidents;
+    @endphp
+    {{-- Row 2: Map full width (wire:ignore so map is not recreated when viewport-filtered lists update; key so new search gets fresh map) --}}
+    <div class="w-full min-w-0" wire:ignore wire:key="map-{{ $lastChecked ?? 'initial' }}-{{ $routeKey ?? 'none' }}">
         <x-flood-watch.results.flood-map
             :map-center="$mapCenter"
             :river-levels="$riverLevels"
@@ -66,13 +72,13 @@
         />
     </div>
 
-    {{-- Row 2: 3 columns = Flood Warnings | Road Status | Forecast (compact cards) --}}
+    {{-- Row 2: 3 columns = Flood Warnings | Road Status | Forecast (compact cards; favour visible map area) --}}
     @php
-        $floodSummary = count($floods) > 0
-            ? collect($floods)->map(fn ($f) => trim(($f['description'] ?? '') . (isset($f['severity']) ? ' (' . $f['severity'] . ')' : '')))->filter()->implode(', ')
+        $floodSummary = count($floodsForList) > 0
+            ? collect($floodsForList)->map(fn ($f) => trim(($f['description'] ?? '') . (isset($f['severity']) ? ' (' . $f['severity'] . ')' : '')))->filter()->implode(', ')
             : __('flood-watch.dashboard.no_flood_warnings');
-        $roadSummary = count($incidents) > 0
-            ? collect($incidents)->map(fn ($i) => trim(($i['road'] ?? '') . (isset($i['statusLabel']) ? ' ' . $i['statusLabel'] : '')))->filter()->implode('; ')
+        $roadSummary = count($incidentsForList) > 0
+            ? collect($incidentsForList)->map(fn ($i) => trim(($i['road'] ?? '') . (isset($i['statusLabel']) ? ' ' . $i['statusLabel'] : '')))->filter()->implode('; ')
             : __('flood-watch.dashboard.roads_clear');
         $forecastSummary = !empty($forecast['england_forecast'])
             ? $forecast['england_forecast']
@@ -96,7 +102,7 @@
     <x-flood-watch.results.weather :weather="$weather" />
 
     <x-flood-watch.results.flood-risk
-        :floods="$floods"
+        :floods="$floodsForList"
         :has-user-location="$hasUserLocation"
     />
 </div>

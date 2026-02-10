@@ -337,6 +337,20 @@
                                     }, 300);
                                 });
                             }
+                            const sendBounds = () => {
+                                const b = this.map.getBounds();
+                                const wireEl = this.$el.closest('[wire\\:id]');
+                                const wireId = wireEl ? wireEl.getAttribute('wire:id') : null;
+                                if (wireId && typeof Livewire !== 'undefined' && Livewire.find(wireId)) {
+                                    Livewire.find(wireId).call('setMapBounds', b.getNorth(), b.getSouth(), b.getEast(), b.getWest());
+                                }
+                            };
+                            let boundsTimeout = null;
+                            this.map.on('moveend', () => {
+                                if (boundsTimeout) clearTimeout(boundsTimeout);
+                                boundsTimeout = setTimeout(() => { sendBounds(); boundsTimeout = null; }, 400);
+                            });
+                            setTimeout(sendBounds, 500);
                         });
                     });
                 }
