@@ -21,8 +21,7 @@
                     </p>
 
                     @if (!empty($incident['delayTime']))
-                        <p class="text-sm text-slate-500 mt-1">{{ __('flood-watch.dashboard.delay') }}
-                            : {{ $incident['delayTime'] }}</p>
+                        <p class="text-sm text-slate-500 mt-1">{{ __('flood-watch.dashboard.delay') }}: {{ $incident['delayTime'] }}</p>
                     @endif
                 </li>
             @endforeach

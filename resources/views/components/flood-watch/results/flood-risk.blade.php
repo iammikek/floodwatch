@@ -28,8 +28,7 @@
                                 @if (!empty($flood['timeRaised']))
                                     ·
                                 @endif
-                                {{ __('flood-watch.dashboard.updated') }}
-                                : {{ Carbon::parse($flood['timeMessageChanged'])->format('j M Y, g:i a') }}
+                                {{ __('flood-watch.dashboard.updated') }}: {{ Carbon::parse($flood['timeMessageChanged'])->format('j M Y, g:i a') }}
                             @endif
                         </p>
                     @endif
