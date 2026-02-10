@@ -232,10 +232,12 @@
                                 this.map.remove();
                                 this.map = null;
                             }
-                            this.map = L.map('flood-map').setView([this.center.lat, lng], 11);
+                            this.map = L.map('flood-map', { zoomSnap: 0.5 }).setView([this.center.lat, lng], 13);
                             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+                                maxZoom: 19
                             }).addTo(this.map);
+                            L.control.scale({ imperial: false }).addTo(this.map);
                             this.map.invalidateSize();
                             if (this.polygonsUrl && this.floods && this.floods.length > 0) {
                                 const ids = this.floods.map(f => f.floodAreaID).filter(Boolean);
