@@ -3,11 +3,10 @@
 ])
 
 @php
-    use Illuminate\Support\Str;
     $body = preg_replace('/^#+\s*Current\s+Status\s*\n+/i', '', trim($assistantResponse));
     $body = trim(preg_replace('/#+\s*Action\s+Steps\s*\n+.*?(?=\n\s*#+\s|\z)/si', '', $body));
-    $plain = trim(preg_replace('/\s+/', ' ', strip_tags(Str::markdown($body))));
-    $teaser = $plain === '' ? '' : Str::limit($plain, 200);
+    $plain = trim(preg_replace('/\s+/', ' ', strip_tags(\Illuminate\Support\Str::markdown($body))));
+    $teaser = $plain === '' ? '' : \Illuminate\Support\Str::limit($plain, 200);
 @endphp
 <div
     id="ai-advice"
