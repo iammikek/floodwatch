@@ -3,29 +3,51 @@
     x-data="{
         init() {
             this.$nextTick(() => {
-                const el = this.$el?.closest('[wire\\:id]');
-                const wire = el ? Livewire.find(el.getAttribute('wire:id')) : null;
-                if (!wire) return;
-                const storedLoc = localStorage.getItem('flood-watch-location');
-                if (storedLoc) wire.set('location', storedLoc);
-                const storedResults = localStorage.getItem('flood-watch-results');
-                if (storedResults) {
-                    try {
-                        wire.restoreFromStorage(JSON.parse(storedResults));
-                    } catch (e) {}
+                const getWire = () => {
+                    const el = document.querySelector('[wire\\:id]');
+                    return el && typeof Livewire !== 'undefined' ? Livewire.find(el.getAttribute('wire:id')) : null;
+                };
+                const setLayoutFromViewport = () => {
+                    const w = getWire();
+                    if (!w) return;
+                    const isDesktop = window.innerWidth >= 1024;
+                    const want = isDesktop ? 'desktop' : 'mobile';
+                    const hasMap = document.getElementById('flood-map') !== null;
+                    const hasMobileLayout = document.getElementById('ai-advice') !== null;
+                    const needUpdate = !hasMap && !hasMobileLayout || (hasMap && !isDesktop) || (hasMobileLayout && isDesktop);
+                    if (needUpdate) w.set('layoutVariant', want);
+                };
+                setLayoutFromViewport();
+                let resizeT = null;
+                window.addEventListener('resize', () => {
+                    if (resizeT) clearTimeout(resizeT);
+                    resizeT = setTimeout(setLayoutFromViewport, 150);
+                });
+                const wire = getWire();
+                if (wire) {
+                    const storedLoc = localStorage.getItem('flood-watch-location');
+                    if (storedLoc) wire.set('location', storedLoc);
+                    const storedResults = localStorage.getItem('flood-watch-results');
+                    if (storedResults) {
+                        try {
+                            wire.restoreFromStorage(JSON.parse(storedResults));
+                        } catch (e) {}
+                    }
                 }
                 Livewire.on('search-completed', () => {
-                    const loc = wire.location;
+                    const w = getWire();
+                    if (!w) return;
+                    const loc = w.location;
                     if (loc) localStorage.setItem('flood-watch-location', loc);
                     try {
                         localStorage.setItem('flood-watch-results', JSON.stringify({
-                            assistantResponse: wire.assistantResponse,
-                            floods: wire.floods || [],
-                            incidents: wire.incidents || [],
-                            forecast: wire.forecast || [], weather: wire.weather || [],
-                            riverLevels: wire.riverLevels || [], mapCenter: wire.mapCenter,
-                            hasUserLocation: wire.hasUserLocation || false,
-                            lastChecked: wire.lastChecked
+                            assistantResponse: w.assistantResponse,
+                            floods: w.floods || [],
+                            incidents: w.incidents || [],
+                            forecast: w.forecast || [], weather: w.weather || [],
+                            riverLevels: w.riverLevels || [], mapCenter: w.mapCenter,
+                            hasUserLocation: w.hasUserLocation || false,
+                            lastChecked: w.lastChecked
                         }));
                     } catch (e) {}
                 });
@@ -76,8 +98,8 @@
             $routeIncidents = $hasRouteGeometry ? ($routeCheckResult['incidents_on_route'] ?? []) : [];
         @endphp
 
-        @if ($hasRouteGeometry && $mapCenterForRoute && !$assistantResponse)
-            <div class="mt-6 lg:block hidden" wire:key="route-map-{{ $routeKey }}">
+        @if ($hasRouteGeometry && $mapCenterForRoute && !$assistantResponse && $layoutVariant === 'desktop')
+            <div class="mt-6" wire:key="route-map-{{ $routeKey }}">
                 <x-flood-watch.results.flood-map
                     :map-center="$mapCenterForRoute"
                     :river-levels="[]"
@@ -103,7 +125,7 @@
                 $wirePoll = !$error && $autoRefreshEnabled && auth()->check();
             @endphp
 
-            <div class="lg:hidden">
+            @if ($layoutVariant === 'mobile')
                 <x-flood-watch.layout.mobile-results
                     :last-checked="$lastChecked"
                     :auto-refresh-enabled="$autoRefreshEnabled"
@@ -122,9 +144,7 @@
                     :assistant-response="$assistantResponse"
                     :wire-poll="$wirePoll"
                 />
-            </div>
-
-            <div class="hidden lg:block">
+            @else
                 <x-flood-watch.layout.desktop-results
                     :last-checked="$lastChecked"
                     :auto-refresh-enabled="$autoRefreshEnabled"
@@ -150,7 +170,7 @@
                     :assistant-response="$assistantResponse"
                     :wire-poll="$wirePoll"
                 />
-            </div>
+            @endif
         @elseif (!$loading && !$error)
             <p class="text-slate-500 text-sm">{{ __('flood-watch.dashboard.prompt') }}</p>
         @endif

@@ -1308,14 +1308,14 @@ class FloodWatchDashboardTest extends TestCase
             ->set('assistantResponse', 'Summary.')
             ->set('floods', [])
             ->set('incidents', [])
+            ->set('layoutVariant', 'desktop')
             ->html();
 
-        expect($html)->toContain('hidden lg:block')
-            ->toContain('grid-cols-2')
+        expect($html)->toContain('grid-cols-2')
             ->toContain('grid-cols-3');
     }
 
-    public function test_separate_mobile_and_desktop_layouts(): void
+    public function test_only_one_results_layout_rendered_no_duplicate_ids(): void
     {
         $html = Livewire::test('flood-watch-dashboard')
             ->set('assistantResponse', 'Summary.')
@@ -1324,7 +1324,7 @@ class FloodWatchDashboardTest extends TestCase
             ->set('incidents', [])
             ->html();
 
-        expect($html)->toContain('lg:hidden')
-            ->toContain('hidden lg:block');
+        $idResultsCount = substr_count($html, 'id="results"');
+        expect($idResultsCount)->toBe(1);
     }
 }
