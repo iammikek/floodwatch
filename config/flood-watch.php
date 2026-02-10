@@ -188,12 +188,13 @@ return [
     | Cache Store
     |--------------------------------------------------------------------------
     |
-    | Cache store for flood/road data. Use "flood-watch" (Redis) in production,
-    | "flood-watch-array" in testing (no Redis required).
+    | Cache store for flood/road data. Defaults to the app cache store (e.g.
+    | database on Railway without Redis). Set FLOOD_WATCH_CACHE_STORE=flood-watch
+    | when Redis is available; use "flood-watch-array" in testing.
     |
     */
 
-    'cache_store' => env('FLOOD_WATCH_CACHE_STORE', 'flood-watch'),
+    'cache_store' => env('FLOOD_WATCH_CACHE_STORE', env('CACHE_STORE', 'database')),
 
     /*
     |--------------------------------------------------------------------------
