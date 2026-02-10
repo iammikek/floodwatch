@@ -70,7 +70,8 @@
                 },
                 stationPopup(s) {
                     const t = this.t || {};
-                    let html = '<b>' + (s.station || '') + '</b><br>' + (s.river || '') + '<br>' + s.value + ' ' + (s.unit || 'm');
+                    const val = s.value != null && !Number.isNaN(Number(s.value)) ? Number(s.value).toFixed(2) : '—';
+                    let html = '<b>' + (s.station || '') + '</b><br>' + (s.river || '') + '<br>' + val + ' ' + (s.unit || 'm');
                     if (s.levelStatus === 'elevated') html += '<br><span style=\'color:#b91c1c;font-weight:600\'>↑ ' + (t.elevated_level || 'Elevated').replace(/ level$/, '') + '</span>';
                     else if (s.levelStatus === 'expected') html += '<br><span style=\'color:#1d4ed8\'>→ ' + (t.expected_level || 'Expected').replace(/ level$/, '') + '</span>';
                     else if (s.levelStatus === 'low') html += '<br><span style=\'color:#64748b\'>↓ ' + (t.low_level || 'Low').replace(/ level$/, '') + '</span>';
@@ -145,6 +146,33 @@
                     if (!this.center) return;
                     const lng = this.center.lng ?? this.center.long;
                     if (lng == null) return;
+                    const addStationsLayer = (L) => {
+                        if (this.stationLayerGroup) {
+                            this.map.removeLayer(this.stationLayerGroup);
+                            this.stationLayerGroup = null;
+                        }
+                        if (typeof L.MarkerClusterGroup !== 'function') {
+                            this.stationLayerGroup = L.layerGroup();
+                            (this.stations || []).forEach(s => {
+                                const slng = s.lng ?? s.long;
+                                if (s.lat != null && slng != null) {
+                                    L.marker([s.lat, slng], { icon: this.stationIcon(s) })
+                                        .addTo(this.stationLayerGroup)
+                                        .bindPopup(this.stationPopup(s));
+                                }
+                            });
+                        } else {
+                            this.stationLayerGroup = L.markerClusterGroup();
+                            (this.stations || []).forEach(s => {
+                                const slng = s.lng ?? s.long;
+                                if (s.lat != null && slng != null) {
+                                    const m = L.marker([s.lat, slng], { icon: this.stationIcon(s) }).bindPopup(this.stationPopup(s));
+                                    this.stationLayerGroup.addLayer(m);
+                                }
+                            });
+                        }
+                        this.stationLayerGroup.addTo(this.map);
+                    };
                     const addMarkers = (L) => {
                         if (this.hasUser) {
                             const loc = this.t?.your_location || 'Your location';
@@ -152,14 +180,7 @@
                                 .addTo(this.map)
                                 .bindPopup('<b>' + loc.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</b>');
                         }
-                        (this.stations || []).forEach(s => {
-                            const slng = s.lng ?? s.long;
-                            if (s.lat != null && slng != null) {
-                                L.marker([s.lat, slng], { icon: this.stationIcon(s) })
-                                    .addTo(this.map)
-                                    .bindPopup(this.stationPopup(s));
-                            }
-                        });
+                        addStationsLayer(L);
                         (() => {
                             const byArea = {};
                             (this.floods || []).forEach(f => {
@@ -170,6 +191,8 @@
                                 if (!existing || level < (existing.severityLevel ?? 4)) byArea[id] = f;
                             });
                             const deduped = Object.values(byArea);
+                            const useClusters = typeof L.MarkerClusterGroup === 'function';
+                            const floodCluster = useClusters ? L.markerClusterGroup() : null;
                             deduped.forEach(f => {
                                 const geo = this.normalizeFloodPolygon(f.polygon);
                                 if (geo) {
@@ -183,20 +206,33 @@
                                 }
                                 const flng = f.lng ?? f.long;
                                 if (f.lat != null && flng != null) {
-                                    L.marker([f.lat, flng], { icon: this.floodIcon(f) })
-                                        .addTo(this.map)
-                                        .bindPopup(this.floodPopup(f));
+                                    const m = L.marker([f.lat, flng], { icon: this.floodIcon(f) }).bindPopup(this.floodPopup(f));
+                                    if (floodCluster) floodCluster.addLayer(m);
+                                    else m.addTo(this.map);
                                 }
                             });
+                            if (floodCluster) floodCluster.addTo(this.map);
                         })();
-                        (this.incidents || []).forEach(i => {
-                            const ilng = i.lng ?? i.long;
-                            if (i.lat != null && ilng != null) {
-                                L.marker([i.lat, ilng], { icon: this.incidentIcon(i) })
-                                    .addTo(this.map)
-                                    .bindPopup(this.incidentPopup(i));
-                            }
-                        });
+                        if (typeof L.MarkerClusterGroup === 'function') {
+                            const incidentCluster = L.markerClusterGroup();
+                            (this.incidents || []).forEach(i => {
+                                const ilng = i.lng ?? i.long;
+                                if (i.lat != null && ilng != null) {
+                                    const m = L.marker([i.lat, ilng], { icon: this.incidentIcon(i) }).bindPopup(this.incidentPopup(i));
+                                    incidentCluster.addLayer(m);
+                                }
+                            });
+                            incidentCluster.addTo(this.map);
+                        } else {
+                            (this.incidents || []).forEach(i => {
+                                const ilng = i.lng ?? i.long;
+                                if (i.lat != null && ilng != null) {
+                                    L.marker([i.lat, ilng], { icon: this.incidentIcon(i) })
+                                        .addTo(this.map)
+                                        .bindPopup(this.incidentPopup(i));
+                                }
+                            });
+                        }
                         if (this.routeGeometry && this.routeGeometry.length >= 2) {
                             const latLngs = this.routeGeometry.map(c => [c[1], c[0]]);
                             const routeLayer = L.polyline(latLngs, { color: '#2563eb', weight: 5, opacity: 0.8 });
@@ -257,6 +293,22 @@
                             (typeof requestIdleCallback !== 'undefined'
                                 ? (cb) => requestIdleCallback(cb, { timeout: 100 })
                                 : (cb) => setTimeout(cb, 100))(() => addMarkers(L));
+                            if (this.riverLevelsUrl) {
+                                let riverLevelsTimeout = null;
+                                this.map.on('moveend', () => {
+                                    if (riverLevelsTimeout) clearTimeout(riverLevelsTimeout);
+                                    riverLevelsTimeout = setTimeout(() => {
+                                        const center = this.map.getCenter();
+                                        const zoom = this.map.getZoom();
+                                        const radiusKm = Math.round(Math.max(5, Math.min(50, 200 / Math.pow(2, (zoom - 10) / 2))));
+                                        const url = this.riverLevelsUrl + '?lat=' + center.lat + '&lng=' + center.lng + '&radius=' + radiusKm;
+                                        fetch(url).then(r => r.ok ? r.json() : []).then(data => {
+                                            this.stations = Array.isArray(data) ? data : [];
+                                            addStationsLayer(L);
+                                        }).catch(() => {}).finally(() => { riverLevelsTimeout = null; });
+                                    }, 300);
+                                });
+                            }
                         });
                     });
                 }
