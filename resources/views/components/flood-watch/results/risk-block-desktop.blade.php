@@ -23,8 +23,8 @@
 @endphp
 
 <div id="your-risk">
-    <h2 class="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-2">{{ __('flood-watch.dashboard.your_risk') }}</h2>
     <div class="p-4 bg-white shadow-sm border border-slate-200 space-y-1.5 text-sm">
+        <h2 class="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-2">{{ __('flood-watch.dashboard.your_risk') }}</h2>
         <p class="text-slate-700"><span class="font-medium">{{ __('flood-watch.dashboard.flood_risk') }}:</span> {{ $houseLabel }}</p>
         <p class="text-slate-700"><span class="font-medium">{{ __('flood-watch.dashboard.road_status') }}:</span> {{ $roadsLabel }}</p>
         @foreach ($actionSteps as $step)

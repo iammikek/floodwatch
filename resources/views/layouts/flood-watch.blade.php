@@ -116,8 +116,9 @@
                     return {
                         color: isSevere ? '#dc2626' : '#f59e0b',
                         fillColor: isSevere ? '#dc2626' : '#f59e0b',
-                        fillOpacity: 0.25,
-                        weight: 2
+                        fillOpacity: 0.3,
+                        weight: 1,
+                        opacity: 0.7
                     };
                 },
                 incidentIcon(i) {
@@ -159,24 +160,35 @@
                                     .bindPopup(this.stationPopup(s));
                             }
                         });
-                        (this.floods || []).forEach(f => {
-                            const geo = this.normalizeFloodPolygon(f.polygon);
-                            if (geo) {
-                                const style = this.floodPolygonStyle(f);
-                                L.geoJSON(geo, {
-                                    style: () => style,
-                                    onEachFeature: (feature, layer) => {
-                                        layer.bindPopup(this.floodPopup(f));
-                                    }
-                                }).addTo(this.map);
-                            }
-                            const flng = f.lng ?? f.long;
-                            if (f.lat != null && flng != null) {
-                                L.marker([f.lat, flng], { icon: this.floodIcon(f) })
-                                    .addTo(this.map)
-                                    .bindPopup(this.floodPopup(f));
-                            }
-                        });
+                        (() => {
+                            const byArea = {};
+                            (this.floods || []).forEach(f => {
+                                const id = f.floodAreaID || (f.lat != null && (f.lng != null || f.long != null) ? [f.lat, f.lng ?? f.long].join(',') : null);
+                                if (!id) return;
+                                const existing = byArea[id];
+                                const level = (f.severityLevel ?? 4);
+                                if (!existing || level < (existing.severityLevel ?? 4)) byArea[id] = f;
+                            });
+                            const deduped = Object.values(byArea);
+                            deduped.forEach(f => {
+                                const geo = this.normalizeFloodPolygon(f.polygon);
+                                if (geo) {
+                                    const style = this.floodPolygonStyle(f);
+                                    L.geoJSON(geo, {
+                                        style: () => style,
+                                        onEachFeature: (feature, layer) => {
+                                            layer.bindPopup(this.floodPopup(f));
+                                        }
+                                    }).addTo(this.map);
+                                }
+                                const flng = f.lng ?? f.long;
+                                if (f.lat != null && flng != null) {
+                                    L.marker([f.lat, flng], { icon: this.floodIcon(f) })
+                                        .addTo(this.map)
+                                        .bindPopup(this.floodPopup(f));
+                                }
+                            });
+                        })();
                         (this.incidents || []).forEach(i => {
                             const ilng = i.lng ?? i.long;
                             if (i.lat != null && ilng != null) {

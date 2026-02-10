@@ -33,33 +33,32 @@
         :last-checked="$lastChecked"
     />
 
-    {{-- Row 1: Left = Risk + Summary + Route Check (stacked) | Right = Map --}}
-    <div class="grid grid-cols-[1fr_1.5fr] gap-6">
-        <div class="space-y-6">
-            <x-flood-watch.results.risk-block-desktop
-                :house-risk="$houseRisk"
-                :roads-risk="$roadsRisk"
-                :action-steps="$actionSteps"
-                :has-danger-to-life="$hasDangerToLife"
-            />
-            <x-flood-watch.results.summary :assistant-response="$assistantResponse" />
-            <x-flood-watch.search.route-check
-                :route-check-loading="$routeCheckLoading"
-                :route-check-result="$routeCheckResult"
-            />
-        </div>
-        <div class="min-w-0">
-            <x-flood-watch.results.flood-map
-                :map-center="$mapCenter"
-                :river-levels="$riverLevels"
-                :floods="$floods"
-                :incidents="$incidents"
-                :has-user-location="$hasUserLocation"
-                :last-checked="$lastChecked"
-                :route-geometry="$routeGeometry"
-                :route-key="$routeKey"
-            />
-        </div>
+    {{-- Row 1: Your risk | Route check (same row) --}}
+    <div class="grid grid-cols-2 gap-4">
+        <x-flood-watch.results.risk-block-desktop
+            :house-risk="$houseRisk"
+            :roads-risk="$roadsRisk"
+            :action-steps="$actionSteps"
+            :has-danger-to-life="$hasDangerToLife"
+        />
+        <x-flood-watch.search.route-check
+            :route-check-loading="$routeCheckLoading"
+            :route-check-result="$routeCheckResult"
+        />
+    </div>
+
+    {{-- Row 2: Map full width --}}
+    <div class="w-full min-w-0">
+        <x-flood-watch.results.flood-map
+            :map-center="$mapCenter"
+            :river-levels="$riverLevels"
+            :floods="$floods"
+            :incidents="$incidents"
+            :has-user-location="$hasUserLocation"
+            :last-checked="$lastChecked"
+            :route-geometry="$routeGeometry"
+            :route-key="$routeKey"
+        />
     </div>
 
     {{-- Row 2: 3 columns = Flood Warnings | Road Status | Forecast (compact cards) --}}
