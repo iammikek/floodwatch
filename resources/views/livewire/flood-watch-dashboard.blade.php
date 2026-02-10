@@ -18,10 +18,10 @@
                     const loc = wire.location;
                     if (loc) localStorage.setItem('flood-watch-location', loc);
                     try {
-                        const floods = (wire.floods || []).map(f => { const { polygon, ...rest } = f; return rest; });
                         localStorage.setItem('flood-watch-results', JSON.stringify({
                             assistantResponse: wire.assistantResponse,
-                            floods, incidents: wire.incidents || [],
+                            floods: wire.floods || [],
+                            incidents: wire.incidents || [],
                             forecast: wire.forecast || [], weather: wire.weather || [],
                             riverLevels: wire.riverLevels || [], mapCenter: wire.mapCenter,
                             hasUserLocation: wire.hasUserLocation || false,
