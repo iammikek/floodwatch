@@ -14,7 +14,7 @@
                     const want = isDesktop ? 'desktop' : 'mobile';
                     const hasMap = document.getElementById('flood-map') !== null;
                     const hasMobileLayout = document.getElementById('ai-advice') !== null;
-                    const needUpdate = !hasMap && !hasMobileLayout || (hasMap && !isDesktop) || (hasMobileLayout && isDesktop);
+                    const needUpdate = (!hasMap && !hasMobileLayout) || (hasMap && !isDesktop) || (hasMobileLayout && isDesktop);
                     if (needUpdate) w.set('layoutVariant', want);
                 };
                 setLayoutFromViewport();
@@ -39,10 +39,11 @@
                     if (!w) return;
                     const loc = w.location;
                     if (loc) localStorage.setItem('flood-watch-location', loc);
+                    const floodsForStorage = (w.floods || []).map(({ polygon, ...rest }) => rest);
                     try {
                         localStorage.setItem('flood-watch-results', JSON.stringify({
                             assistantResponse: w.assistantResponse,
-                            floods: w.floods || [],
+                            floods: floodsForStorage,
                             incidents: w.incidents || [],
                             forecast: w.forecast || [], weather: w.weather || [],
                             riverLevels: w.riverLevels || [], mapCenter: w.mapCenter,

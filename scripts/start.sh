@@ -14,7 +14,10 @@ php artisan view:cache
 php artisan queue:work --tries=3 --timeout=60 &
 WORKER_PID=$!
 
-# Start scheduler (runs schedule:run every minute)
+# Start scheduler (runs schedule:run every minute). Required for:
+# - FetchNationalHighwaysIncidentsJob, ScrapeSomersetCouncilRoadworksJob (every 15 min)
+# - flood-watch:warm-cache (every 15 min), flood-watch:prune-llm-requests (daily)
+# Jobs use onOneServer(); CACHE_STORE must be database or Redis (not file) for schedule locks.
 php artisan schedule:work &
 SCHEDULER_PID=$!
 

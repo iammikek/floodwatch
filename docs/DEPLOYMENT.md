@@ -124,6 +124,21 @@ The deploy starts a queue worker (`php artisan queue:work`) in the background vi
 
 If `QUEUE_CONNECTION=database` (default), jobs are stored in the `jobs` table. Ensure migrations have run so the table exists.
 
+## Scheduler
+
+The deploy also starts the Laravel scheduler (`php artisan schedule:work`) via `scripts/start.sh`. It runs `schedule:run` every minute and executes:
+
+| Schedule | Task |
+|----------|------|
+| Every 15 min | `FetchNationalHighwaysIncidentsJob` – refresh road incidents cache |
+| Every 15 min | `ScrapeSomersetCouncilRoadworksJob` – refresh Somerset roadworks cache |
+| Every 15 min | `flood-watch:warm-cache` – warm flood/forecast/weather cache for configured regions |
+| Daily | `flood-watch:prune-llm-requests` – prune old LLM request records |
+
+**Cache lock requirement**: The NH and Somerset jobs use `onOneServer()` and `withoutOverlapping()`, which require a cache driver that supports atomic locks. Use **database** or **Redis** for `CACHE_STORE` / `FLOOD_WATCH_CACHE_STORE` in production. The **file** cache driver does not support locks; if you use file cache, scheduled jobs with `onOneServer()` may run on every instance or behave inconsistently.
+
+**Monitoring**: The scheduler process runs in the background; if it exits, the container restarts (start.sh waits on all PIDs). For production, consider verifying scheduled jobs run (e.g. check cache timestamps or logs) or adding a health check that asserts recent cache activity.
+
 ## Rollback
 
 1. Railway → Deployments

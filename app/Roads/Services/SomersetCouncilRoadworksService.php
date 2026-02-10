@@ -16,6 +16,8 @@ use Psr\SimpleCache\InvalidArgumentException;
  */
 class SomersetCouncilRoadworksService
 {
+    private const MAX_HTML_SIZE_BYTES = 2 * 1024 * 1024;
+
     public static function cacheKey(): string
     {
         $prefix = config('flood-watch.cache_key_prefix', 'flood-watch');
@@ -88,6 +90,10 @@ class SomersetCouncilRoadworksService
      */
     private function parseIncidentsFromHtml(string $html): array
     {
+        if (strlen($html) > self::MAX_HTML_SIZE_BYTES) {
+            return [];
+        }
+
         $incidents = [];
         $dom = new \DOMDocument;
 
@@ -176,7 +182,7 @@ class SomersetCouncilRoadworksService
     private function inferManagementType(string $details): ?string
     {
         $lower = strtolower($details);
-        if ((str_contains($lower, 'lane') && str_contains($lower, 'close')) || str_contains($lower, 'lane closure')) {
+        if (str_contains($lower, 'lane') && str_contains($lower, 'close')) {
             return null;
         }
         if (str_contains($lower, 'closed') || str_contains($lower, 'closure')) {
