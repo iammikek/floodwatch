@@ -21,6 +21,13 @@ class FloodWatchServiceTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function tearDown(): void
+    {
+        Cache::forget(NationalHighwaysService::CACHE_KEY);
+        Cache::forget(SomersetCouncilRoadworksService::CACHE_KEY);
+        parent::tearDown();
+    }
+
     public function test_returns_message_when_no_api_key(): void
     {
         Config::set('openai.api_key', '');

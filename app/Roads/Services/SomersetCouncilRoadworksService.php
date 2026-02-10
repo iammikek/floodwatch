@@ -82,34 +82,36 @@ class SomersetCouncilRoadworksService
         $incidents = [];
         $dom = new \DOMDocument;
 
-        libxml_use_internal_errors(true);
-        if (! @$dom->loadHTML('<?xml encoding="UTF-8">'.$html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD)) {
-            libxml_clear_errors();
-
-            return [];
-        }
-        libxml_clear_errors();
-
-        $xpath = new \DOMXPath($dom);
-
-        foreach ($xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' inrix-feed__alert ')]") as $alert) {
-            $title = $this->textContent($xpath, ".//*[contains(concat(' ', normalize-space(@class), ' '), ' inrix-feed__alert-title ')]", $alert);
-            $details = $this->textContent($xpath, ".//*[contains(concat(' ', normalize-space(@class), ' '), ' inrix-feed__alert-details ')]", $alert);
-
-            $road = $this->normalizeRoadFromTitle($title);
-            $delayTime = trim(preg_replace('/\s+/', ' ', $details) ?? '');
-
-            if ($road !== '' || $delayTime !== '') {
-                $incidents[] = [
-                    'road' => $road !== '' ? $road : $title,
-                    'status' => 'active',
-                    'incidentType' => $this->inferIncidentType($details),
-                    'delayTime' => $delayTime,
-                ];
+        $previous = libxml_use_internal_errors(true);
+        try {
+            if (! @$dom->loadHTML('<?xml encoding="UTF-8">'.$html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD)) {
+                return [];
             }
-        }
 
-        return $incidents;
+            $xpath = new \DOMXPath($dom);
+
+            foreach ($xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' inrix-feed__alert ')]") as $alert) {
+                $title = $this->textContent($xpath, ".//*[contains(concat(' ', normalize-space(@class), ' '), ' inrix-feed__alert-title ')]", $alert);
+                $details = $this->textContent($xpath, ".//*[contains(concat(' ', normalize-space(@class), ' '), ' inrix-feed__alert-details ')]", $alert);
+
+                $road = $this->normalizeRoadFromTitle($title);
+                $delayTime = trim(preg_replace('/\s+/', ' ', $details) ?? '');
+
+                if ($road !== '' || $delayTime !== '') {
+                    $incidents[] = [
+                        'road' => $road !== '' ? $road : $title,
+                        'status' => 'active',
+                        'incidentType' => $this->inferIncidentType($details),
+                        'delayTime' => $delayTime,
+                    ];
+                }
+            }
+
+            return $incidents;
+        } finally {
+            libxml_clear_errors();
+            libxml_use_internal_errors($previous);
+        }
     }
 
     private function textContent(\DOMXPath $xpath, string $expr, \DOMNode $context): string

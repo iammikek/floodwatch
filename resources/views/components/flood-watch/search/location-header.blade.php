@@ -12,7 +12,7 @@
 
 @php
     $hasLocation = trim($location) !== '';
-    $hasResults = !$loading && $assistantResponse;
+    $hasResults = !$loading && $assistantResponse !== null && $assistantResponse !== '';
     $displayText = $displayLocation ?? $location;
     $locationSuffix = $outcode ? " · {$outcode}" : '';
 @endphp
