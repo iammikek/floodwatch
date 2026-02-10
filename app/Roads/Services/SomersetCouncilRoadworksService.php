@@ -21,7 +21,7 @@ class SomersetCouncilRoadworksService
      * Get incidents from cache (populated by ScrapeSomersetCouncilRoadworksJob).
      * Returns the same shape as National Highways for merging.
      *
-     * @return array<int, array{road: string, status: string, incidentType: string, delayTime: string}>
+     * @return array<int, array{road: string, status: string, incidentType: string, delayTime: string, managementType?: string}>
      */
     public function getIncidents(): array
     {
@@ -75,7 +75,7 @@ class SomersetCouncilRoadworksService
     /**
      * Parse INRIX feed incidents from the page HTML.
      *
-     * @return array<int, array{road: string, status: string, incidentType: string, delayTime: string}>
+     * @return array<int, array{road: string, status: string, incidentType: string, delayTime: string, managementType?: string}>
      */
     private function parseIncidentsFromHtml(string $html): array
     {
@@ -98,12 +98,17 @@ class SomersetCouncilRoadworksService
                 $delayTime = trim(preg_replace('/\s+/', ' ', $details) ?? '');
 
                 if ($road !== '' || $delayTime !== '') {
-                    $incidents[] = [
+                    $incident = [
                         'road' => $road !== '' ? $road : $title,
                         'status' => 'active',
                         'incidentType' => $this->inferIncidentType($details),
                         'delayTime' => $delayTime,
                     ];
+                    $managementType = $this->inferManagementType($details);
+                    if ($managementType !== null) {
+                        $incident['managementType'] = $managementType;
+                    }
+                    $incidents[] = $incident;
                 }
             }
 
@@ -154,5 +159,21 @@ class SomersetCouncilRoadworksService
         }
 
         return 'authorityOperation';
+    }
+
+    /**
+     * When the incident is a full road closure (not lane-only), return managementType for downstream (sorting, blocking).
+     */
+    private function inferManagementType(string $details): ?string
+    {
+        $lower = strtolower($details);
+        if ((str_contains($lower, 'lane') && str_contains($lower, 'close')) || str_contains($lower, 'lane closure')) {
+            return null;
+        }
+        if (str_contains($lower, 'closed') || str_contains($lower, 'closure')) {
+            return 'roadClosed';
+        }
+
+        return null;
     }
 }

@@ -886,4 +886,140 @@ class FloodWatchServiceTest extends TestCase
         $this->assertContains('A372', $roads, 'Incidents should include Somerset Council cached A372');
         $this->assertGreaterThanOrEqual(2, count($result['incidents']));
     }
+
+    public function test_get_highways_incidents_excludes_motorways_from_display_when_config_true(): void
+    {
+        Config::set('openai.api_key', 'test-key');
+        Config::set('flood-watch.national_highways.api_key', null);
+        Config::set('flood-watch.exclude_motorways_from_display', true);
+
+        Cache::put(NationalHighwaysService::CACHE_KEY, [
+            ['road' => 'M5', 'status' => 'closed', 'incidentType' => 'roadClosed', 'delayTime' => 'J14-15'],
+            ['road' => 'A361', 'status' => 'active', 'incidentType' => 'laneClosures', 'delayTime' => ''],
+        ], now()->addMinutes(15));
+
+        Http::fake(function ($request) {
+            if (str_contains($request->url(), 'environment.data.gov.uk')) {
+                return Http::response(['items' => []], 200);
+            }
+            if (str_contains($request->url(), 'fgs.metoffice.gov.uk')) {
+                return Http::response(['statement' => []], 200);
+            }
+            if (str_contains($request->url(), 'open-meteo.com')) {
+                return Http::response(['daily' => ['time' => [], 'weathercode' => [], 'temperature_2m_max' => [], 'temperature_2m_min' => [], 'precipitation_sum' => []]], 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
+        $toolCallResponse = CreateResponse::fake([
+            'choices' => [
+                [
+                    'index' => 0,
+                    'message' => [
+                        'role' => 'assistant',
+                        'content' => null,
+                        'tool_calls' => [
+                            ['id' => 'call_1', 'type' => 'function', 'function' => ['name' => 'GetFloodData', 'arguments' => '{}']],
+                            ['id' => 'call_2', 'type' => 'function', 'function' => ['name' => 'GetHighwaysIncidents', 'arguments' => '{}']],
+                        ],
+                    ],
+                    'logprobs' => null,
+                    'finish_reason' => 'tool_calls',
+                ],
+            ],
+        ]);
+        $finalResponse = CreateResponse::fake([
+            'choices' => [
+                [
+                    'index' => 0,
+                    'message' => [
+                        'role' => 'assistant',
+                        'content' => 'A-road only.',
+                        'tool_calls' => [],
+                    ],
+                    'logprobs' => null,
+                    'finish_reason' => 'stop',
+                ],
+            ],
+        ]);
+
+        OpenAI::fake([$toolCallResponse, $finalResponse]);
+
+        $service = app(FloodWatchService::class);
+        $result = $service->chat('Check status', [], null, 51.0, -2.8);
+
+        $roads = array_column($result['incidents'], 'road');
+        $this->assertCount(1, $result['incidents'], 'Motorways should be excluded when exclude_motorways_from_display is true');
+        $this->assertContains('A361', $roads);
+        $this->assertNotContains('M5', $roads);
+    }
+
+    public function test_get_highways_incidents_retains_motorways_when_config_false(): void
+    {
+        Config::set('openai.api_key', 'test-key');
+        Config::set('flood-watch.national_highways.api_key', null);
+        Config::set('flood-watch.exclude_motorways_from_display', false);
+
+        Cache::put(NationalHighwaysService::CACHE_KEY, [
+            ['road' => 'M5', 'status' => 'closed', 'incidentType' => 'roadClosed', 'delayTime' => 'J14-15'],
+            ['road' => 'A361', 'status' => 'active', 'incidentType' => 'laneClosures', 'delayTime' => ''],
+        ], now()->addMinutes(15));
+
+        Http::fake(function ($request) {
+            if (str_contains($request->url(), 'environment.data.gov.uk')) {
+                return Http::response(['items' => []], 200);
+            }
+            if (str_contains($request->url(), 'fgs.metoffice.gov.uk')) {
+                return Http::response(['statement' => []], 200);
+            }
+            if (str_contains($request->url(), 'open-meteo.com')) {
+                return Http::response(['daily' => ['time' => [], 'weathercode' => [], 'temperature_2m_max' => [], 'temperature_2m_min' => [], 'precipitation_sum' => []]], 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
+        $toolCallResponse = CreateResponse::fake([
+            'choices' => [
+                [
+                    'index' => 0,
+                    'message' => [
+                        'role' => 'assistant',
+                        'content' => null,
+                        'tool_calls' => [
+                            ['id' => 'call_1', 'type' => 'function', 'function' => ['name' => 'GetFloodData', 'arguments' => '{}']],
+                            ['id' => 'call_2', 'type' => 'function', 'function' => ['name' => 'GetHighwaysIncidents', 'arguments' => '{}']],
+                        ],
+                    ],
+                    'logprobs' => null,
+                    'finish_reason' => 'tool_calls',
+                ],
+            ],
+        ]);
+        $finalResponse = CreateResponse::fake([
+            'choices' => [
+                [
+                    'index' => 0,
+                    'message' => [
+                        'role' => 'assistant',
+                        'content' => 'Both roads.',
+                        'tool_calls' => [],
+                    ],
+                    'logprobs' => null,
+                    'finish_reason' => 'stop',
+                ],
+            ],
+        ]);
+
+        OpenAI::fake([$toolCallResponse, $finalResponse]);
+
+        $service = app(FloodWatchService::class);
+        $result = $service->chat('Check status', [], null, 51.0, -2.8);
+
+        $roads = array_column($result['incidents'], 'road');
+        $this->assertCount(2, $result['incidents'], 'Motorways should be retained when exclude_motorways_from_display is false');
+        $this->assertContains('M5', $roads);
+        $this->assertContains('A361', $roads);
+    }
 }

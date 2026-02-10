@@ -206,8 +206,8 @@ class FloodWatchDashboard extends Component
     private function hasBlockingClosure(): bool
     {
         foreach ($this->incidents as $incident) {
-            $type = $incident['incidentType'] ?? $incident['incident_type'] ?? '';
-            if (IncidentType::isBlockingClosure((string) $type)) {
+            $type = (string) ($incident['managementType'] ?? $incident['incidentType'] ?? $incident['incident_type'] ?? '');
+            if (IncidentType::isBlockingClosure($type)) {
                 return true;
             }
         }

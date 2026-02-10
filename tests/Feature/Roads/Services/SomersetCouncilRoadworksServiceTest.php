@@ -75,6 +75,7 @@ class SomersetCouncilRoadworksServiceTest extends TestCase
         $this->assertSame('A361 Main Road', $cached[0]['road']);
         $this->assertSame('active', $cached[0]['status']);
         $this->assertSame('flooding', $cached[0]['incidentType']);
+        $this->assertSame('roadClosed', $cached[0]['managementType'] ?? null, 'Full closure (e.g. closed due to flooding) should set managementType for blocking/sort');
         $this->assertStringContainsString('closed due to flooding', $cached[0]['delayTime']);
 
         $this->assertSame('M5', $cached[1]['road']);

@@ -1297,7 +1297,7 @@ class FloodWatchDashboardTest extends TestCase
             ->set('floods', [])
             ->set('incidents', [])
             ->assertSee(__('flood-watch.dashboard.road_status'), false)
-            ->assertSee(__('flood-watch.dashboard.forecast'), false)
+            ->assertSee(__('flood-watch.dashboard.weather_forecast'), false)  // middle link in section-jump-nav
             ->assertSee(__('flood-watch.dashboard.flood_warnings'), false);
     }
 
