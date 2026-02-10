@@ -12,7 +12,7 @@
 <div
     id="ai-advice"
     class="p-4 border-b-2 border-amber-200 bg-amber-50/70 rounded-lg"
-    x-data="{ open: false }"
+    x-data="{ open: false, showLess: @js(__('flood-watch.dashboard.show_less')), readFull: @js(__('flood-watch.dashboard.read_full_summary')) }"
     @open-summary.window="open = true"
 >
     <p class="text-xs font-semibold text-slate-500 uppercase mb-2">{{ __('flood-watch.dashboard.ai_advice') }}</p>
@@ -32,7 +32,7 @@
             class="mt-3 text-sm font-medium text-blue-600 flex items-center gap-1 hover:text-blue-700"
             :aria-expanded="open"
         >
-                <span x-text="open ? '{{ __('flood-watch.dashboard.show_less') }}' : '{{ __('flood-watch.dashboard.read_full_summary') }}'"></span>
+                <span x-text="open ? showLess : readFull"></span>
                 <svg class="w-4 h-4 transition-transform" :class="open && 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                 </svg>
