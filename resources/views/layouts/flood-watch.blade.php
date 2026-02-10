@@ -100,6 +100,16 @@
                     if (f.message) html += '<br><small>' + f.message.replace(/<[^>]*>/g, '').substring(0, 150) + (f.message.length > 150 ? '…' : '') + '</small>';
                     return html;
                 },
+                normalizeFloodPolygon(polygon) {
+                    if (!polygon || typeof polygon !== 'object') return null;
+                    if (polygon.type === 'FeatureCollection' && Array.isArray(polygon.features) && polygon.features.length > 0) {
+                        return polygon;
+                    }
+                    if (polygon.type === 'Feature' && polygon.geometry) {
+                        return { type: 'FeatureCollection', features: [polygon] };
+                    }
+                    return null;
+                },
                 floodPolygonStyle(f) {
                     const level = f.severityLevel || 0;
                     const isSevere = level === 1;
@@ -150,9 +160,10 @@
                             }
                         });
                         (this.floods || []).forEach(f => {
-                            if (f.polygon && f.polygon.features) {
+                            const geo = this.normalizeFloodPolygon(f.polygon);
+                            if (geo) {
                                 const style = this.floodPolygonStyle(f);
-                                L.geoJSON(f.polygon, {
+                                L.geoJSON(geo, {
                                     style: () => style,
                                     onEachFeature: (feature, layer) => {
                                         layer.bindPopup(this.floodPopup(f));
