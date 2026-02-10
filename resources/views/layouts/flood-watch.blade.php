@@ -51,8 +51,8 @@
                     return L.divIcon({
                         className: 'leaflet-div-icon flood-map-marker flood-map-marker-user',
                         html: '<span class=\'flood-map-marker-inner\' title=\'' + title.replace(/'/g, '&#39;') + '\'>📍</span>',
-                        iconSize: [28, 28],
-                        iconAnchor: [14, 14]
+                        iconSize: [56, 56],
+                        iconAnchor: [28, 28]
                     });
                 },
                 stationIcon(s) {
@@ -64,8 +64,8 @@
                     return L.divIcon({
                         className: 'leaflet-div-icon flood-map-marker flood-map-marker-station ' + statusClass,
                         html: '<span class=\'flood-map-marker-inner\' title=\'' + levelLabel.replace(/'/g, '&#39;') + '\'>' + icon + '</span>',
-                        iconSize: [26, 26],
-                        iconAnchor: [13, 13]
+                        iconSize: [52, 52],
+                        iconAnchor: [26, 26]
                     });
                 },
                 stationPopup(s) {
@@ -87,8 +87,8 @@
                     return L.divIcon({
                         className: 'leaflet-div-icon flood-map-marker flood-map-marker-flood' + (isSevere ? ' severe' : ''),
                         html: '<span class=\'flood-map-marker-inner\' title=\'' + title.replace(/'/g, '&#39;') + '\'>' + (isSevere ? '🚨' : '⚠') + '</span>',
-                        iconSize: [26, 26],
-                        iconAnchor: [13, 13]
+                        iconSize: [52, 52],
+                        iconAnchor: [26, 26]
                     });
                 },
                 floodPopup(f) {
@@ -128,8 +128,8 @@
                     return L.divIcon({
                         className: 'leaflet-div-icon flood-map-marker flood-map-marker-incident',
                         html: '<span class=\'flood-map-marker-inner\' title=\'' + title + '\'>' + icon + '</span>',
-                        iconSize: [26, 26],
-                        iconAnchor: [13, 13]
+                        iconSize: [52, 52],
+                        iconAnchor: [26, 26]
                     });
                 },
                 incidentPopup(i) {
