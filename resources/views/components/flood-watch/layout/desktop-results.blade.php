@@ -89,7 +89,7 @@
             <h4 class="text-xs font-semibold text-slate-500 shrink-0">{{ __('flood-watch.dashboard.flood_warnings') }}</h4>
             <p class="text-sm mt-1 overflow-y-auto min-h-0">{{ $floodSummary }}</p>
         </div>
-        <div class="p-3 bg-white border border-slate-200 min-h-0 flex flex-col max-h-48">
+        <div id="road-status" class="p-3 bg-white border border-slate-200 min-h-0 flex flex-col max-h-48">
             <h4 class="text-xs font-semibold text-slate-500 shrink-0">{{ __('flood-watch.dashboard.road_status') }}</h4>
             <p class="text-sm mt-1 overflow-y-auto min-h-0">{{ $roadSummary }}</p>
         </div>
