@@ -5,7 +5,7 @@
 
 @if ($error)
 <div
-    class="mb-6 p-4 rounded-lg bg-red-50 text-red-700 text-sm"
+    class="mb-6 p-4 bg-red-50 text-red-700 text-sm"
     @if($retryAfterTimestamp) wire:poll.1s="checkRetry" @endif
     x-data="{
         retryAfter: @js($retryAfterTimestamp),

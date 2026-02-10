@@ -11,7 +11,7 @@
 @endphp
 <div
     id="ai-advice"
-    class="p-4 border-b-2 border-amber-200 bg-amber-50/70 rounded-lg"
+    class="p-4 border-b-2 border-amber-200 bg-amber-50/70"
     x-data="{ open: false, showLess: @js(__('flood-watch.dashboard.show_less')), readFull: @js(__('flood-watch.dashboard.read_full_summary')) }"
     @open-summary.window="open = true"
 >

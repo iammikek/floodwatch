@@ -13,7 +13,7 @@
 
 <div id="action-steps">
     <h2 class="text-lg font-medium text-slate-900 mb-3">{{ __('flood-watch.dashboard.action_steps') }}</h2>
-    <ul class="list-disc list-inside space-y-2 p-4 rounded-lg bg-white shadow-sm border border-slate-200">
+    <ul class="list-disc list-inside space-y-2 p-4 bg-white shadow-sm border border-slate-200">
         @foreach ($steps as $step)
             <li class="text-slate-600">{{ $labels[$step] ?? $step }}</li>
         @endforeach

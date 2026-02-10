@@ -37,6 +37,6 @@
             </div>
         @endif
     @else
-        <p class="p-4 rounded-lg bg-white shadow-sm border border-slate-200 text-slate-600">{{ __('flood-watch.dashboard.no_weather') }}</p>
+        <p class="p-4 bg-white shadow-sm border border-slate-200 text-slate-600">{{ __('flood-watch.dashboard.no_weather') }}</p>
     @endif
 </div>

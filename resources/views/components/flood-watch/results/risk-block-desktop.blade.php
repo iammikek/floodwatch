@@ -24,7 +24,7 @@
 
 <div id="your-risk">
     <h2 class="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-2">{{ __('flood-watch.dashboard.your_risk') }}</h2>
-    <div class="p-4 rounded-lg bg-white shadow-sm border border-slate-200 space-y-1.5 text-sm">
+    <div class="p-4 bg-white shadow-sm border border-slate-200 space-y-1.5 text-sm">
         <p class="text-slate-700"><span class="font-medium">{{ __('flood-watch.dashboard.flood_risk') }}:</span> {{ $houseLabel }}</p>
         <p class="text-slate-700"><span class="font-medium">{{ __('flood-watch.dashboard.road_status') }}:</span> {{ $roadsLabel }}</p>
         @foreach ($actionSteps as $step)
@@ -32,7 +32,7 @@
         @endforeach
     </div>
     @if ($hasDangerToLife)
-        <div class="mt-3 p-3 rounded-lg bg-red-50 border-2 border-red-500">
+        <div class="mt-3 p-3 bg-red-50 border-2 border-red-500">
             <p class="text-xs font-bold text-red-800 mb-2">🆘 {{ __('flood-watch.dashboard.emergency_title') }}</p>
             <ul class="list-disc list-inside space-y-0.5 text-xs text-red-800">
                 <li>{{ __('flood-watch.dashboard.emergency_999') }}</li>

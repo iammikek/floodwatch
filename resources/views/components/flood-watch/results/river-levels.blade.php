@@ -7,7 +7,7 @@
     @if (count($riverLevels) > 0)
         <ul class="space-y-2">
             @foreach ($riverLevels as $level)
-                <li class="p-3 rounded-lg bg-white shadow-sm border border-slate-200">
+                <li class="p-3 bg-white shadow-sm border border-slate-200">
                     <p class="font-medium text-slate-900">{{ $level['station'] ?? '' }}</p>
                     <p class="text-sm text-slate-600">{{ $level['river'] ?? '' }}</p>
                     <p class="text-sm mt-1">
@@ -27,6 +27,6 @@
             @endforeach
         </ul>
     @else
-        <p class="p-4 rounded-lg bg-white shadow-sm border border-slate-200 text-slate-600">{{ __('flood-watch.dashboard.no_river_levels') }}</p>
+        <p class="p-4 bg-white shadow-sm border border-slate-200 text-slate-600">{{ __('flood-watch.dashboard.no_river_levels') }}</p>
     @endif
 </div>

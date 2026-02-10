@@ -33,7 +33,7 @@
         :last-checked="$lastChecked"
     />
 
-    {{-- Row 1: Left = Risk + Route Check (stacked) | Right = Map --}}
+    {{-- Row 1: Left = Risk + Summary + Route Check (stacked) | Right = Map --}}
     <div class="grid grid-cols-[1fr_1.5fr] gap-6">
         <div class="space-y-6">
             <x-flood-watch.results.risk-block-desktop
@@ -42,13 +42,10 @@
                 :action-steps="$actionSteps"
                 :has-danger-to-life="$hasDangerToLife"
             />
+            <x-flood-watch.results.summary :assistant-response="$assistantResponse" />
             <x-flood-watch.search.route-check
                 :route-check-loading="$routeCheckLoading"
                 :route-check-result="$routeCheckResult"
-            />
-            <x-flood-watch.results.flood-risk
-                :floods="$floods"
-                :has-user-location="$hasUserLocation"
             />
         </div>
         <div class="min-w-0">
@@ -74,25 +71,28 @@
             ? collect($incidents)->map(fn ($i) => trim(($i['road'] ?? '') . (isset($i['statusLabel']) ? ' ' . $i['statusLabel'] : '')))->filter()->implode('; ')
             : __('flood-watch.dashboard.roads_clear');
         $forecastSummary = !empty($forecast['england_forecast'])
-            ? \Illuminate\Support\Str::limit($forecast['england_forecast'], 120)
+            ? $forecast['england_forecast']
             : __('flood-watch.dashboard.no_forecast');
     @endphp
     <div class="p-4 border-t border-slate-200 grid grid-cols-3 gap-4">
-        <div class="p-3 rounded bg-white border border-slate-200">
-            <h4 class="text-xs font-semibold text-slate-500">{{ __('flood-watch.dashboard.flood_warnings') }}</h4>
-            <p class="text-sm mt-1">{{ $floodSummary }}</p>
+        <div class="p-3 bg-white border border-slate-200 min-h-0 flex flex-col max-h-48">
+            <h4 class="text-xs font-semibold text-slate-500 shrink-0">{{ __('flood-watch.dashboard.flood_warnings') }}</h4>
+            <p class="text-sm mt-1 overflow-y-auto min-h-0">{{ $floodSummary }}</p>
         </div>
-        <div class="p-3 rounded bg-white border border-slate-200">
-            <h4 class="text-xs font-semibold text-slate-500">{{ __('flood-watch.dashboard.road_status') }}</h4>
-            <p class="text-sm mt-1">{{ $roadSummary }}</p>
+        <div class="p-3 bg-white border border-slate-200 min-h-0 flex flex-col max-h-48">
+            <h4 class="text-xs font-semibold text-slate-500 shrink-0">{{ __('flood-watch.dashboard.road_status') }}</h4>
+            <p class="text-sm mt-1 overflow-y-auto min-h-0">{{ $roadSummary }}</p>
         </div>
-        <div class="p-3 rounded bg-white border border-slate-200">
-            <h4 class="text-xs font-semibold text-slate-500">{{ __('flood-watch.dashboard.forecast_outlook') }}</h4>
-            <p class="text-sm mt-1">{{ $forecastSummary }}</p>
+        <div class="p-3 bg-white border border-slate-200 min-h-0 flex flex-col max-h-48">
+            <h4 class="text-xs font-semibold text-slate-500 shrink-0">{{ __('flood-watch.dashboard.forecast_outlook') }}</h4>
+            <p class="text-sm mt-1 overflow-y-auto min-h-0">{{ $forecastSummary }}</p>
         </div>
     </div>
 
     <x-flood-watch.results.weather :weather="$weather" />
 
-    <x-flood-watch.results.summary :assistant-response="$assistantResponse" />
+    <x-flood-watch.results.flood-risk
+        :floods="$floods"
+        :has-user-location="$hasUserLocation"
+    />
 </div>

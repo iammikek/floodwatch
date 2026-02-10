@@ -3,7 +3,7 @@
     'routeCheckResult' => null,
 ])
 
-<div class="mb-6 p-4 rounded-lg bg-blue-50 border border-blue-200">
+<div class="mb-6 p-4 bg-blue-50 border border-blue-200">
     <h2 class="text-sm font-semibold text-slate-700 uppercase tracking-wide mb-3">
         {{ __('flood-watch.dashboard.route_check') }}
     </h2>
@@ -72,7 +72,7 @@
         </div>
 
         @if ($routeCheckResult)
-            <div class="mt-4 p-4 rounded-lg bg-white border border-slate-200 space-y-3">
+            <div class="mt-4 p-4 bg-white border border-slate-200 space-y-3">
                 @php
                     $verdict = $routeCheckResult['verdict'] ?? 'clear';
                     $verdictKey = 'flood-watch.route_check.verdict_' . $verdict;
