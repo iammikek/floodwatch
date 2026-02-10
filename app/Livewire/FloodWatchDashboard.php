@@ -74,6 +74,11 @@ class FloodWatchDashboard extends Component
     public ?string $outcode = null;
 
     /**
+     * Which results layout to render: 'mobile' or 'desktop'. Set from client by viewport so only one layout is in the DOM (no duplicate IDs).
+     */
+    public string $layoutVariant = 'mobile';
+
+    /**
      * User's location bookmarks (when logged in).
      *
      * @return array<int, array{id: int, label: string, location: string, lat: float, lng: float, region: ?string, is_default: bool}>
