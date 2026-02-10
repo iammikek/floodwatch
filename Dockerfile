@@ -20,6 +20,12 @@ RUN apk add --no-cache dumb-init sqlite-dev sqlite-libs postgresql-dev curl libz
     && docker-php-ext-configure intl \
     && docker-php-ext-install pdo_sqlite pdo_pgsql zip intl opcache
 
+# Redis (phpredis) for cache/session when REDIS_URL is set (e.g. Railway Redis add-on)
+RUN apk add --no-cache --virtual .build-deps $PHPIZE_DEPS \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
+    && apk del .build-deps
+
 COPY --from=composer /app/vendor /app/vendor
 COPY . /app
 COPY --from=frontend /app/public/build /app/public/build
