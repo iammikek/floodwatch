@@ -688,8 +688,8 @@ class FloodWatchService
             if ($aFlood !== $bFlood) {
                 return $aFlood ? -1 : 1;
             }
-            $aClosed = ($a['managementType'] ?? '') === 'roadClosed';
-            $bClosed = ($b['managementType'] ?? '') === 'roadClosed';
+            $aClosed = ($a['managementType'] ?? $a['incidentType'] ?? '') === 'roadClosed';
+            $bClosed = ($b['managementType'] ?? $b['incidentType'] ?? '') === 'roadClosed';
             if ($aClosed !== $bClosed) {
                 return $aClosed ? -1 : 1;
             }

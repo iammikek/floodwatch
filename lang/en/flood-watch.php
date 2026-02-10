@@ -122,7 +122,6 @@ return [
         'route_check_button' => 'Check route',
         'change_location' => 'Change location',
         'change' => 'Change',
-        'refresh' => 'Refresh',
         'your_risk' => 'Your Risk',
         'house_label' => 'House',
         'roads_label' => 'Roads',
