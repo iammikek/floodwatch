@@ -136,6 +136,7 @@ flowchart LR
 | Low | Postcode sector cache key | Use sector (TA10 0) not full (TA10 0DP) for cache; reduces cost |
 | Low | Cache warming | Schedule `flood-watch:warm-cache`; region-based locations; see below |
 | Low | Donations | "Support Flood Watch" link in footer; Ko-fi / PayPal / Buy Me a Coffee |
+| Low | **Manual refresh for results** | The manual refresh control was removed from the results header, and there is no other "Refresh" action wired to rerun search once results are shown. If users need to update results on demand (especially guests without auto-poll), consider reintroducing a refresh button in the location header or results layout. |
 
 ---
 

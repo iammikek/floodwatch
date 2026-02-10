@@ -19,8 +19,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withSchedule(function (Schedule $schedule): void {
         $schedule->command('flood-watch:prune-llm-requests')->daily();
 
-        $schedule->job(new \App\Jobs\FetchNationalHighwaysIncidentsJob)->everyFifteenMinutes();
-        $schedule->job(new ScrapeSomersetCouncilRoadworksJob)->everyFifteenMinutes();
+        $schedule->job(new \App\Jobs\FetchNationalHighwaysIncidentsJob)->everyFifteenMinutes()->withoutOverlapping()->onOneServer();
+        $schedule->job(new ScrapeSomersetCouncilRoadworksJob)->everyFifteenMinutes()->withoutOverlapping()->onOneServer();
 
         $locations = implode(',', array_values(config('flood-watch.warm_cache_locations', [])));
         if ($locations !== '') {

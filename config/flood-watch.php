@@ -328,10 +328,11 @@ return [
     | For hyperlocal flood monitoring, motorway closures are less relevant than
     | A-road closures. When true, incidents on motorways (M1, M4, M5, etc.)
     | are excluded from the incident list shown to users.
+    | Set FLOOD_WATCH_EXCLUDE_MOTORWAYS_FROM_DISPLAY=false to show motorways.
     |
     */
 
-    'exclude_motorways_from_display' => true,
+    'exclude_motorways_from_display' => env('FLOOD_WATCH_EXCLUDE_MOTORWAYS_FROM_DISPLAY', true),
 
     /*
     |--------------------------------------------------------------------------
