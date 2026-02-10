@@ -1,11 +1,14 @@
 <?php
 
+use App\Http\Controllers\FloodWatchPolygonsController;
 use App\Http\Controllers\HealthController;
 use App\Http\Controllers\LocationBookmarkController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health', HealthController::class)->name('health');
+
+Route::get('/flood-watch/polygons', FloodWatchPolygonsController::class)->name('flood-watch.polygons');
 
 Route::livewire('/', 'flood-watch-dashboard');
 

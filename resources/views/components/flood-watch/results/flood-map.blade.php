@@ -9,11 +9,14 @@
     'routeKey' => null,
 ])
 
+@php
+    $polygonsUrl = route('flood-watch.polygons');
+@endphp
 @if ($mapCenter)
 <div id="map-section" wire:key="map-{{ $lastChecked ?? 'initial' }}-{{ $routeKey ?? ($routeGeometry ? 'route' : 'no-route') }}" class="overflow-hidden border border-slate-200">
     <div
         class="flex flex-col"
-        x-data="floodMap({ center: @js($mapCenter), stations: @js($riverLevels), floods: @js($floods), incidents: @js($incidents), hasUser: @js($hasUserLocation), routeGeometry: @js($routeGeometry), t: @js(['your_location' => __('flood-watch.map.your_location'), 'elevated_level' => __('flood-watch.map.elevated_level'), 'expected_level' => __('flood-watch.map.expected_level'), 'low_level' => __('flood-watch.map.low_level'), 'typical_range' => __('flood-watch.map.typical_range'), 'flood_warning' => __('flood-watch.dashboard.flood_warning'), 'flood_area' => __('flood-watch.dashboard.flood_area'), 'km_from_location' => __('flood-watch.dashboard.km_from_location'), 'road' => __('flood-watch.dashboard.road'), 'road_incident' => __('flood-watch.dashboard.road_incident')]) })"
+        x-data="floodMap({ center: @js($mapCenter), stations: @js($riverLevels), floods: @js($floods), incidents: @js($incidents), hasUser: @js($hasUserLocation), routeGeometry: @js($routeGeometry), polygonsUrl: @js($polygonsUrl), t: @js(['your_location' => __('flood-watch.map.your_location'), 'elevated_level' => __('flood-watch.map.elevated_level'), 'expected_level' => __('flood-watch.map.expected_level'), 'low_level' => __('flood-watch.map.low_level'), 'typical_range' => __('flood-watch.map.typical_range'), 'flood_warning' => __('flood-watch.dashboard.flood_warning'), 'flood_area' => __('flood-watch.dashboard.flood_area'), 'km_from_location' => __('flood-watch.dashboard.km_from_location'), 'road' => __('flood-watch.dashboard.road'), 'road_incident' => __('flood-watch.dashboard.road_incident')]) })"
         x-init="init()"
     >
         <div id="flood-map" class="h-72 sm:h-80 md:h-96 lg:h-[28rem] w-full bg-slate-100"></div>

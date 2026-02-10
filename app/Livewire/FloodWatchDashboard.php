@@ -461,10 +461,12 @@ class FloodWatchDashboard extends Component
             $onProgress = fn (string $status) => $streamStatus($status);
             $result = $assistant->chat($message, [], $cacheKey, $userLat, $userLng, $region, auth()->id(), $onProgress);
             $this->assistantResponse = $result['response'];
-            $this->floods = $this->enrichFloodsWithDistance(
-                $result['floods'],
-                $userLat,
-                $userLng
+            $this->floods = $this->stripPolygonsFromFloods(
+                $this->enrichFloodsWithDistance(
+                    $result['floods'],
+                    $userLat,
+                    $userLng
+                )
             );
             $this->incidents = IncidentIcon::enrichIncidents($result['incidents']);
             $this->forecast = $result['forecast'] ?? [];
@@ -508,6 +510,22 @@ class FloodWatchDashboard extends Component
         } finally {
             $this->loading = false;
         }
+    }
+
+    /**
+     * Remove polygon GeoJSON from each flood to keep Livewire payload small; polygons are loaded from cache by the map.
+     *
+     * @param  array<int, array<string, mixed>>  $floods
+     * @return array<int, array<string, mixed>>
+     */
+    private function stripPolygonsFromFloods(array $floods): array
+    {
+        return array_map(function (array $flood) {
+            $out = $flood;
+            unset($out['polygon']);
+
+            return $out;
+        }, $floods);
     }
 
     /**
@@ -668,7 +686,7 @@ class FloodWatchDashboard extends Component
     public function restoreFromStorage(array $data): void
     {
         $this->assistantResponse = is_string($data['assistantResponse'] ?? null) ? $data['assistantResponse'] : null;
-        $this->floods = is_array($data['floods'] ?? null) ? $data['floods'] : [];
+        $this->floods = $this->stripPolygonsFromFloods(is_array($data['floods'] ?? null) ? $data['floods'] : []);
         $this->incidents = IncidentIcon::enrichIncidents(is_array($data['incidents'] ?? null) ? $data['incidents'] : []);
         $this->forecast = is_array($data['forecast'] ?? null) ? $data['forecast'] : [];
         $this->weather = is_array($data['weather'] ?? null) ? $data['weather'] : [];

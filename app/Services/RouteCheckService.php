@@ -161,7 +161,7 @@ class RouteCheckService
         return new RouteCheckResult(
             verdict: $verdict,
             summary: $summary,
-            floodsOnRoute: $this->enrichFloodsWithIcons($floodsOnRoute),
+            floodsOnRoute: $this->stripPolygonsFromFloods($this->enrichFloodsWithIcons($floodsOnRoute)),
             incidentsOnRoute: IncidentIcon::enrichIncidents($incidentsOnRoute),
             alternatives: $alternatives,
             routeGeometry: $geometry,
@@ -254,6 +254,22 @@ class RouteCheckService
         $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
 
         return $earthRadiusKm * $c;
+    }
+
+    /**
+     * Remove polygon from each flood so they are not stored in Livewire/route result; map loads polygons from cache.
+     *
+     * @param  array<int, array<string, mixed>>  $floods
+     * @return array<int, array<string, mixed>>
+     */
+    private function stripPolygonsFromFloods(array $floods): array
+    {
+        return array_map(function (array $flood) {
+            $out = $flood;
+            unset($out['polygon']);
+
+            return $out;
+        }, $floods);
     }
 
     /**

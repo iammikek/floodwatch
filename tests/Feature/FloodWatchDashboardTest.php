@@ -683,8 +683,9 @@ class FloodWatchDashboardTest extends TestCase
         $this->assertNotNull($floods[0]['distanceKm']);
         $this->assertNotNull($floods[1]['distanceKm']);
         $this->assertLessThanOrEqual($floods[1]['distanceKm'], $floods[0]['distanceKm']);
-        $this->assertArrayHasKey('polygon', $floods[0]);
-        $this->assertSame('FeatureCollection', $floods[0]['polygon']['type'] ?? null);
+        $this->assertArrayHasKey('floodAreaID', $floods[0]);
+        $this->assertNotEmpty($floods[0]['floodAreaID']);
+        $this->assertArrayNotHasKey('polygon', $floods[0]);
     }
 
     public function test_guest_sees_rate_limit_on_page_load_when_already_limited(): void
