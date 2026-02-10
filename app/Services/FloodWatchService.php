@@ -2,11 +2,13 @@
 
 namespace App\Services;
 
+use App\Enums\Region;
 use App\Flood\DTOs\FloodWarning;
 use App\Flood\Services\EnvironmentAgencyFloodService;
 use App\Flood\Services\FloodForecastService;
 use App\Flood\Services\RiverLevelService;
 use App\Roads\Services\NationalHighwaysService;
+use App\Roads\Services\SomersetCouncilRoadworksService;
 use App\Support\LogMasker;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Concurrency;
@@ -22,6 +24,7 @@ class FloodWatchService
     public function __construct(
         protected EnvironmentAgencyFloodService $floodService,
         protected NationalHighwaysService $highwaysService,
+        protected SomersetCouncilRoadworksService $somersetRoadworksService,
         protected FloodForecastService $forecastService,
         protected WeatherService $weatherService,
         protected RiverLevelService $riverLevelService,
@@ -430,7 +433,7 @@ class FloodWatchService
             'GetHighwaysIncidents' => $this->sortIncidentsByPriority(
                 $this->filterMotorwaysFromDisplay(
                     $this->filterIncidentsByRegion(
-                        $this->highwaysService->getIncidents(),
+                        $this->mergedHighwaysIncidents($context['region'] ?? null),
                         $context['region'] ?? null
                     )
                 )
@@ -652,6 +655,23 @@ class FloodWatchService
         }
 
         return $messages;
+    }
+
+    /**
+     * Merged incidents from cache: National Highways + Somerset Council (when region is Somerset).
+     *
+     * @return array<int, array{road?: string, status?: string, incidentType?: string, delayTime?: string}>
+     */
+    private function mergedHighwaysIncidents(?string $region): array
+    {
+        $incidents = $this->highwaysService->getIncidents();
+
+        if ($region === Region::Somerset->value) {
+            $somerset = $this->somersetRoadworksService->getIncidents();
+            $incidents = array_merge($incidents, $somerset);
+        }
+
+        return $incidents;
     }
 
     /**

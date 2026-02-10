@@ -4,8 +4,11 @@ namespace Tests\Feature\Services;
 
 use App\Models\LlmRequest;
 use App\Models\User;
+use App\Roads\Services\NationalHighwaysService;
+use App\Roads\Services\SomersetCouncilRoadworksService;
 use App\Services\FloodWatchService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 use OpenAI\Exceptions\ErrorException;
@@ -808,6 +811,75 @@ class FloodWatchServiceTest extends TestCase
 
         $this->assertCount(1, $result['incidents']);
         $this->assertSame('A361', $result['incidents'][0]['road']);
+    }
+
+    public function test_get_highways_incidents_merges_somerset_council_incidents_when_region_is_somerset(): void
+    {
+        Config::set('openai.api_key', 'test-key');
+        Config::set('flood-watch.national_highways.api_key', null);
+
+        Cache::put(NationalHighwaysService::CACHE_KEY, [
+            ['road' => 'A361', 'status' => 'closed', 'incidentType' => 'flooding', 'delayTime' => ''],
+        ], now()->addMinutes(15));
+        Cache::put(SomersetCouncilRoadworksService::CACHE_KEY, [
+            ['road' => 'A372', 'status' => 'active', 'incidentType' => 'roadClosed', 'delayTime' => 'Road closed'],
+        ], now()->addMinutes(30));
+
+        Http::fake(function ($request) {
+            if (str_contains($request->url(), 'environment.data.gov.uk')) {
+                return Http::response(['items' => []], 200);
+            }
+            if (str_contains($request->url(), 'fgs.metoffice.gov.uk')) {
+                return Http::response(['statement' => []], 200);
+            }
+            if (str_contains($request->url(), 'open-meteo.com')) {
+                return Http::response(['daily' => ['time' => [], 'weathercode' => [], 'temperature_2m_max' => [], 'temperature_2m_min' => [], 'precipitation_sum' => []]], 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
+        $toolCallResponse = CreateResponse::fake([
+            'choices' => [
+                [
+                    'index' => 0,
+                    'message' => [
+                        'role' => 'assistant',
+                        'content' => null,
+                        'tool_calls' => [
+                            ['id' => 'call_1', 'type' => 'function', 'function' => ['name' => 'GetFloodData', 'arguments' => '{}']],
+                            ['id' => 'call_2', 'type' => 'function', 'function' => ['name' => 'GetHighwaysIncidents', 'arguments' => '{}']],
+                        ],
+                    ],
+                    'logprobs' => null,
+                    'finish_reason' => 'tool_calls',
+                ],
+            ],
+        ]);
+        $finalResponse = CreateResponse::fake([
+            'choices' => [
+                [
+                    'index' => 0,
+                    'message' => [
+                        'role' => 'assistant',
+                        'content' => 'Summary with A361 and A372.',
+                        'tool_calls' => [],
+                    ],
+                    'logprobs' => null,
+                    'finish_reason' => 'stop',
+                ],
+            ],
+        ]);
+
+        OpenAI::fake([$toolCallResponse, $finalResponse]);
+
+        $service = app(FloodWatchService::class);
+        $result = $service->chat('Check flood and road status for Langport', [], null, 51.0358, -2.8318, 'somerset');
+
+        $roads = array_column($result['incidents'], 'road');
+        $this->assertContains('A361', $roads, 'Incidents should include National Highways cached A361');
+        $this->assertContains('A372', $roads, 'Incidents should include Somerset Council cached A372');
+        $this->assertGreaterThanOrEqual(2, count($result['incidents']));
     }
 
     public function test_chat_returns_empty_result_with_api_error_message_when_openai_throws_error_exception(): void
