@@ -827,10 +827,10 @@ class FloodWatchServiceTest extends TestCase
         Config::set('flood-watch.national_highways.api_key', null);
 
         Cache::store(config('flood-watch.cache_store'))->put(NationalHighwaysService::cacheKey(), [
-            ['road' => 'A361', 'status' => 'closed', 'incidentType' => 'flooding', 'delayTime' => ''],
+            ['road' => 'A361', 'status' => 'closed', 'incidentType' => 'flooding', 'delayTime' => '', 'lat' => 51.04, 'lng' => -2.83],
         ], now()->addMinutes(15));
         Cache::store(config('flood-watch.cache_store'))->put(SomersetCouncilRoadworksService::cacheKey(), [
-            ['road' => 'A372', 'status' => 'active', 'incidentType' => 'roadClosed', 'delayTime' => 'Road closed'],
+            ['road' => 'A372', 'status' => 'active', 'incidentType' => 'roadClosed', 'delayTime' => 'Road closed', 'lat' => 51.07, 'lng' => -2.90],
         ], now()->addMinutes(30));
 
         Http::fake(function ($request) {
@@ -1024,8 +1024,8 @@ class FloodWatchServiceTest extends TestCase
         Config::set('flood-watch.exclude_motorways_from_display', true);
 
         Cache::store(config('flood-watch.cache_store'))->put(NationalHighwaysService::cacheKey(), [
-            ['road' => 'M5', 'status' => 'closed', 'incidentType' => 'roadClosed', 'delayTime' => 'J14-15'],
-            ['road' => 'A361', 'status' => 'active', 'incidentType' => 'laneClosures', 'delayTime' => ''],
+            ['road' => 'M5', 'status' => 'closed', 'incidentType' => 'roadClosed', 'delayTime' => 'J14-15', 'lat' => 51.45, 'lng' => -2.58],
+            ['road' => 'A361', 'status' => 'active', 'incidentType' => 'laneClosures', 'delayTime' => '', 'lat' => 51.04, 'lng' => -2.83],
         ], now()->addMinutes(15));
 
         Http::fake(function ($request) {
@@ -1092,8 +1092,8 @@ class FloodWatchServiceTest extends TestCase
         Config::set('flood-watch.exclude_motorways_from_display', false);
 
         Cache::store(config('flood-watch.cache_store'))->put(NationalHighwaysService::cacheKey(), [
-            ['road' => 'M5', 'status' => 'closed', 'incidentType' => 'roadClosed', 'delayTime' => 'J14-15'],
-            ['road' => 'A361', 'status' => 'active', 'incidentType' => 'laneClosures', 'delayTime' => ''],
+            ['road' => 'M5', 'status' => 'closed', 'incidentType' => 'roadClosed', 'delayTime' => 'J14-15', 'lat' => 51.45, 'lng' => -2.58],
+            ['road' => 'A361', 'status' => 'active', 'incidentType' => 'laneClosures', 'delayTime' => '', 'lat' => 51.04, 'lng' => -2.83],
         ], now()->addMinutes(15));
 
         Http::fake(function ($request) {

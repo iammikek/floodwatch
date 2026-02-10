@@ -2,6 +2,8 @@
     class="min-h-screen bg-slate-50 p-4 sm:p-6 pb-safe"
     x-data="{
         init() {
+            let resizeT = null;
+            let resizeHandler = null;
             this.$nextTick(() => {
                 const getWire = () => {
                     const el = document.querySelector('[wire\\:id]');
@@ -18,11 +20,11 @@
                     if (needUpdate) w.set('layoutVariant', want);
                 };
                 setLayoutFromViewport();
-                let resizeT = null;
-                window.addEventListener('resize', () => {
+                resizeHandler = () => {
                     if (resizeT) clearTimeout(resizeT);
                     resizeT = setTimeout(setLayoutFromViewport, 150);
-                });
+                };
+                window.addEventListener('resize', resizeHandler);
                 const wire = getWire();
                 if (wire) {
                     const storedLoc = localStorage.getItem('flood-watch-location');
@@ -53,6 +55,10 @@
                     } catch (e) {}
                 });
             });
+            return () => {
+                if (resizeHandler) window.removeEventListener('resize', resizeHandler);
+                if (resizeT) clearTimeout(resizeT);
+            };
         }
     }"
     x-init="init()"

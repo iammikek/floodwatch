@@ -77,7 +77,7 @@ flowchart TB
 
 - **Location**: `resources/prompts/{version}/system.txt`
 - **Config**: `flood-watch.prompt_version` (env: `FLOOD_WATCH_PROMPT_VERSION`)
-- **Snapshot tests**: `tests/Feature/Services/FloodWatchPromptBuilderTest.php` – update snapshots when changing prompts (`sail test -- --update-snapshots`)
+- **Snapshot tests**: `tests/Feature/Services/FloodWatchPromptBuilderTest.php` – update snapshots when changing prompts: `PEST_UPDATE_SNAPSHOTS=1 sail artisan test tests/Feature/Services/FloodWatchPromptBuilderTest.php`
 
 ### Region Logic
 
@@ -144,6 +144,18 @@ The main `chat()` flow is synchronous. For high traffic, consider:
 - **Concurrency**: Pre-fetch (forecast, weather, river levels) runs in parallel via `Concurrency::run()`. Flood alerts and road incidents are fetched when the LLM calls GetFloodData and GetHighwaysIncidents. Driver: `sync` (default, in-process) vs `process` (spawns PHP processes). Use `sync` for testing (`phpunit.xml` sets `CONCURRENCY_DRIVER=sync`). Use `process` in production for better parallelism under load. Env: `CONCURRENCY_DRIVER` (or `APP_CONCURRENCY_DRIVER` depending on Laravel version).
 - **Polygon limit**: `flood-watch.environment_agency.max_polygons_per_request` caps polygon fetches per request
 
+## Security
+
+### Public map API endpoints
+
+`GET /flood-watch/polygons` and `GET /flood-watch/river-levels` are used by the front-end map (Leaflet) to load flood-area geometry and river gauges. They are not authenticated but are restricted so that only the app’s own front end can call them:
+
+- **Session flag**: The flood-watch layout sets `session('flood_watch_loaded', true)` when the dashboard page is rendered. Middleware `EnsureFloodWatchSession` runs on both routes and returns **403 Forbidden** if that flag is not present. So only requests that carry a session cookie from having loaded the dashboard (same origin) are allowed; direct calls (e.g. curl, other domains, scripts that never load the app) are rejected.
+- **Rate limiting**: Both routes use the `throttle:flood-watch-api` named limiter (30 requests per minute per IP; see `AppServiceProvider`). All web routes also pass through `ThrottleFloodWatch` (60/min per IP). Together this limits abuse and enumeration (e.g. scraping all polygon IDs).
+- **Front end**: The map sends requests with `credentials: 'same-origin'` so the session cookie is included.
+
+**Implementation**: `app/Http/Middleware/EnsureFloodWatchSession.php`, `routes/web.php` (middleware on the two routes), `resources/views/layouts/flood-watch.blade.php` (session flag). Tests use `withSession(['flood_watch_loaded' => true])` and include cases that assert 403 when the flag is missing.
+
 ## AI Development
 
 - **Laravel Boost**: MCP server, guidelines, `search-docs` for version-specific Laravel/Pest/Tailwind docs
@@ -172,5 +184,6 @@ An **analytics layer** is planned for reporting. See `docs/PLAN.md` – Analytic
 | Orchestration | `FloodWatchService` |
 | Correlation rules | `RiskCorrelationService` + config |
 | Prompts | `FloodWatchPromptBuilder` + `resources/prompts/` |
+| Map API protection | `EnsureFloodWatchSession` middleware, `ThrottleFloodWatch` |
 | Cache warm | `flood-watch:warm-cache` command |
 | Development plan | `docs/PLAN.md` |

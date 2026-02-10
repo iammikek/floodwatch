@@ -13,6 +13,7 @@ class FloodWatchPolygonsController extends Controller
     /**
      * Return polygon GeoJSON for the given flood area IDs from cache.
      * Polygons are cached by EnvironmentAgencyFloodService when flood data is fetched.
+     * Rate-limited via throttle:flood-watch-api (see routes).
      */
     public function __invoke(Request $request): JsonResponse
     {

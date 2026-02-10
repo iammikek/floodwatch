@@ -192,6 +192,11 @@ return [
     | database on Railway without Redis). Set FLOOD_WATCH_CACHE_STORE=flood-watch
     | when Redis is available; use "flood-watch-array" in testing.
     |
+    | Required for scheduled jobs: FetchNationalHighwaysIncidentsJob and
+    | ScrapeSomersetCouncilRoadworksJob use onOneServer() and withoutOverlapping(),
+    | which require a store that supports atomic locks (database or Redis). The
+    | file driver does not support locks and will cause jobs to behave inconsistently.
+    |
     */
 
     'cache_store' => env('FLOOD_WATCH_CACHE_STORE', env('CACHE_STORE', 'database')),
@@ -387,6 +392,20 @@ return [
     */
 
     'exclude_motorways_from_display' => env('FLOOD_WATCH_EXCLUDE_MOTORWAYS_FROM_DISPLAY', true),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Incident Proximity for AI Summary (Miles from Search Location)
+    |--------------------------------------------------------------------------
+    |
+    | When the user has a search location (postcode or GPS), only road incidents
+    | within this radius (km) of that location are included in the AI summary.
+    | Prevents e.g. A38 incidents in Cornwall appearing when the user is in Bristol.
+    | Set to 0 to disable (show all region-filtered incidents). 50 miles ≈ 80 km.
+    |
+    */
+
+    'incident_summary_proximity_km' => (float) env('FLOOD_WATCH_INCIDENT_SUMMARY_PROXIMITY_KM', 80),
 
     /*
     |--------------------------------------------------------------------------

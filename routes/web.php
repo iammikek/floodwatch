@@ -9,8 +9,12 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/health', HealthController::class)->name('health');
 
-Route::get('/flood-watch/polygons', FloodWatchPolygonsController::class)->name('flood-watch.polygons');
-Route::get('/flood-watch/river-levels', FloodWatchRiverLevelsController::class)->name('flood-watch.river-levels');
+Route::get('/flood-watch/polygons', FloodWatchPolygonsController::class)
+    ->middleware([\App\Http\Middleware\EnsureFloodWatchSession::class, 'throttle:flood-watch-api'])
+    ->name('flood-watch.polygons');
+Route::get('/flood-watch/river-levels', FloodWatchRiverLevelsController::class)
+    ->middleware([\App\Http\Middleware\EnsureFloodWatchSession::class, 'throttle:flood-watch-api'])
+    ->name('flood-watch.river-levels');
 
 Route::livewire('/', 'flood-watch-dashboard');
 
