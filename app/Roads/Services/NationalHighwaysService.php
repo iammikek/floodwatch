@@ -8,10 +8,13 @@ use App\Support\CircuitOpenException;
 use App\Support\CoordinateMapper;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
 class NationalHighwaysService
 {
+    public const CACHE_KEY = 'flood-watch:national-highways:incidents';
+
     public function __construct(
         protected ?CircuitBreaker $circuitBreaker = null
     ) {
@@ -19,20 +22,41 @@ class NationalHighwaysService
     }
 
     /**
-     * Get road and lane closure incidents for South West routes (M5, A38, A30, A303, A361, A372, etc.).
+     * Get incidents from cache (populated by FetchNationalHighwaysIncidentsJob). If cache is empty, fetches once and stores.
      *
      * @return array<int, array{road?: string, status?: string, incidentType?: string, delayTime?: string}>
      */
     public function getIncidents(): array
     {
+        $cached = Cache::get(self::CACHE_KEY);
+        if (is_array($cached)) {
+            return $cached;
+        }
+
+        return $this->fetchAndStoreInCache();
+    }
+
+    /**
+     * Fetch from the API and store in cache. Called by the deferred job.
+     *
+     * @return array<int, array{road?: string, status?: string, incidentType?: string, delayTime?: string}>
+     */
+    public function fetchAndStoreInCache(): array
+    {
         $apiKey = config('flood-watch.national_highways.api_key');
+        $cacheMinutes = config('flood-watch.national_highways.cache_minutes', 15);
 
         if (empty($apiKey)) {
             return [];
         }
 
         try {
-            return $this->circuitBreaker->execute(fn () => $this->fetchIncidents($apiKey));
+            $incidents = $this->circuitBreaker->execute(fn () => $this->fetchIncidents($apiKey));
+            if ($cacheMinutes > 0) {
+                Cache::put(self::CACHE_KEY, $incidents, now()->addMinutes($cacheMinutes));
+            }
+
+            return $incidents;
         } catch (CircuitOpenException) {
             return [];
         } catch (ConnectionException|RequestException $e) {

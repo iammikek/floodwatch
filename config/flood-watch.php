@@ -144,6 +144,24 @@ return [
         'retry_sleep_ms' => (int) env('FLOOD_WATCH_NH_RETRY_SLEEP_MS', 100),
         'closures_path' => env('NATIONAL_HIGHWAYS_CLOSURES_PATH', 'closures'),
         'fetch_unplanned' => env('NATIONAL_HIGHWAYS_FETCH_UNPLANNED', true),
+        'cache_minutes' => (int) env('NATIONAL_HIGHWAYS_CACHE_MINUTES', 15),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Somerset Council roadworks and travel (scraped)
+    |--------------------------------------------------------------------------
+    |
+    | Scrapes https://www.somerset.gov.uk/roads-travel-and-parking/roadworks-and-travel/
+    | for travel updates. Merged with National Highways incidents for Somerset region.
+    |
+    */
+
+    'somerset_council' => [
+        'roadworks_url' => env('SOMERSET_COUNCIL_ROADWORKS_URL', 'https://www.somerset.gov.uk/roads-travel-and-parking/roadworks-and-travel/'),
+        'enabled' => env('SOMERSET_COUNCIL_ROADWORKS_ENABLED', true),
+        'timeout' => (int) env('SOMERSET_COUNCIL_ROADWORKS_TIMEOUT', 15),
+        'cache_minutes' => (int) env('SOMERSET_COUNCIL_ROADWORKS_CACHE_MINUTES', 30),
     ],
 
     /*
