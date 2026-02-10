@@ -1,3 +1,6 @@
+@php
+    request()->session()->put('flood_watch_loaded', true);
+@endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="scroll-smooth">
     <head>
@@ -299,7 +302,7 @@
                                 const ids = this.floods.map(f => f.floodAreaID).filter(Boolean);
                                 if (ids.length > 0) {
                                     try {
-                                        const res = await fetch(this.polygonsUrl + '?ids=' + encodeURIComponent(ids.join(',')));
+                                        const res = await fetch(this.polygonsUrl + '?ids=' + encodeURIComponent(ids.join(',')), { credentials: 'same-origin' });
                                         if (res.ok) {
                                             const data = await res.json();
                                             this.floods = this.floods.map(f => {

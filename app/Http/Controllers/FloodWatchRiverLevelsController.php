@@ -15,6 +15,7 @@ class FloodWatchRiverLevelsController extends Controller
     /**
      * Return river level stations and readings for the given map center/area.
      * Used by the map to load stations for the visible viewport after zoom/pan.
+     * Rate-limited via throttle:flood-watch-api (see routes).
      */
     public function __invoke(Request $request): JsonResponse
     {

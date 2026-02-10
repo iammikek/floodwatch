@@ -9,6 +9,7 @@ use App\Flood\Services\FloodForecastService;
 use App\Flood\Services\RiverLevelService;
 use App\Roads\Services\NationalHighwaysService;
 use App\Roads\Services\SomersetCouncilRoadworksService;
+use App\Support\CoordinateMapper;
 use App\Support\LogMasker;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Concurrency;
@@ -168,6 +169,8 @@ class FloodWatchService
                     'incidents' => $incidents,
                     'riverLevels' => $riverLevels,
                     'region' => $region,
+                    'centerLat' => $lat,
+                    'centerLng' => $lng,
                 ];
                 $result = $this->executeTool($toolName, $toolCall->function->arguments, $context);
                 if ($toolName === 'GetFloodData' && is_array($result)) {
@@ -312,9 +315,13 @@ class FloodWatchService
             ),
             'GetHighwaysIncidents' => $this->sortIncidentsByPriority(
                 $this->filterMotorwaysFromDisplay(
-                    $this->filterIncidentsByRegion(
-                        $this->mergedHighwaysIncidents($context['region'] ?? null),
-                        $context['region'] ?? null
+                    $this->filterIncidentsByProximity(
+                        $this->filterIncidentsByRegion(
+                            $this->mergedHighwaysIncidents($context['region'] ?? null),
+                            $context['region'] ?? null
+                        ),
+                        $context['centerLat'] ?? null,
+                        $context['centerLng'] ?? null
                     )
                 )
             ),
@@ -592,6 +599,43 @@ class FloodWatchService
 
             return in_array($baseRoad, $allowed, true);
         }));
+    }
+
+    /**
+     * Filter incidents to those within radius of the search location so the AI summary only mentions nearby incidents.
+     *
+     * @param  array<int, array<string, mixed>>  $incidents
+     * @return array<int, array<string, mixed>>
+     */
+    private function filterIncidentsByProximity(array $incidents, ?float $centerLat, ?float $centerLng): array
+    {
+        $radiusKm = config('flood-watch.incident_summary_proximity_km', 80);
+        if ($radiusKm <= 0 || $centerLat === null || $centerLng === null) {
+            return $incidents;
+        }
+
+        return array_values(array_filter($incidents, function (array $incident) use ($centerLat, $centerLng, $radiusKm): bool {
+            $coords = CoordinateMapper::normalize($incident);
+            $lat = $coords['lat'] ?? null;
+            $lng = $coords['lng'] ?? null;
+            if ($lat === null || $lng === null) {
+                return false;
+            }
+
+            return $this->haversineKm($centerLat, $centerLng, (float) $lat, (float) $lng) <= $radiusKm;
+        }));
+    }
+
+    private function haversineKm(float $lat1, float $lng1, float $lat2, float $lng2): float
+    {
+        $earthRadiusKm = 6371.0;
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLng = deg2rad($lng2 - $lng1);
+        $a = sin($dLat / 2) ** 2
+            + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLng / 2) ** 2;
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        return $earthRadiusKm * $c;
     }
 
     /**
