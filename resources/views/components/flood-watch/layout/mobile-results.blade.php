@@ -28,6 +28,9 @@
         :last-checked="$lastChecked"
     />
 
+    {{-- AI advice (Option B): collapsible teaser at top, expand for full summary --}}
+    <x-flood-watch.results.summary-collapsible-mobile :assistant-response="$assistantResponse" />
+
     {{-- Risk block (stacked) --}}
     <x-flood-watch.results.risk-block-mobile
         :house-risk="$houseRisk"
@@ -48,17 +51,12 @@
         :has-user-location="$hasUserLocation"
     />
 
-    <nav class="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-600" aria-label="{{ __('flood-watch.dashboard.summary') }}">
-        <a href="#road-status" class="underline hover:text-slate-800">{{ __('flood-watch.dashboard.road_status') }}</a>
-        <span aria-hidden="true">·</span>
-        <a href="#weather" class="underline hover:text-slate-800">{{ __('flood-watch.dashboard.weather_forecast') }}</a>
-        <span aria-hidden="true">·</span>
-        <a href="#map-section" class="underline hover:text-slate-800">{{ __('flood-watch.dashboard.river_levels') }}</a>
-    </nav>
+    <x-flood-watch.section-jump-nav />
 
     <x-flood-watch.results.weather :weather="$weather" variant="mobile" />
 
     <x-flood-watch.results.road-status :incidents="$incidents" />
 
-    <x-flood-watch.results.summary :assistant-response="$assistantResponse" />
+    {{-- Sticky summary bar (Option C): appears when scrolling, tap to open full AI advice --}}
+    <x-flood-watch.results.summary-sticky-bar-mobile :assistant-response="$assistantResponse" />
 </div>
