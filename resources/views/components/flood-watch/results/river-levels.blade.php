@@ -11,7 +11,7 @@
                     <p class="font-medium text-slate-900">{{ $level['station'] ?? '' }}</p>
                     <p class="text-sm text-slate-600">{{ $level['river'] ?? '' }}</p>
                     <p class="text-sm mt-1">
-                        <span class="font-medium">{{ $level['value'] ?? '—' }} {{ $level['unit'] ?? 'm' }}</span>
+                        <span class="font-medium">{{ isset($level['value']) && is_numeric($level['value']) ? number_format((float) $level['value'], 2) : '—' }} {{ $level['unit'] ?? 'm' }}</span>
                         @if (!empty($level['levelStatus']) && $level['levelStatus'] !== 'unknown')
                             <span class="ml-2 text-xs {{ $level['levelStatus'] === 'elevated' ? 'text-red-600 font-medium' : ($level['levelStatus'] === 'expected' ? 'text-blue-600' : 'text-slate-500') }}">
                                 {{ match($level['levelStatus']) {
