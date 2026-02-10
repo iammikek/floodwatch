@@ -140,6 +140,8 @@
                     :river-levels="$riverLevels"
                     :floods="$floods"
                     :incidents="$incidents"
+                    :floods-in-view="$this->floodsInView"
+                    :incidents-in-view="$this->incidentsInView"
                     :has-user-location="$hasUserLocation"
                     :route-geometry="$routeGeometry"
                     :route-key="$routeKey"
