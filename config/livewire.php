@@ -274,7 +274,7 @@ return [
     */
 
     'payload' => [
-        'max_size' => 3 * 1024 * 1024,   // 3MB - Flood Watch stores flood/incident/forecast data in component state
+        'max_size' => 4 * 1024 * 1024,   // 4MB - Flood Watch stores flood/incident/forecast data in component state
         'max_nesting_depth' => 10,   // Maximum depth of dot-notation property paths
         'max_calls' => 50,           // Maximum method calls per request
         'max_components' => 20,      // Maximum components per batch request

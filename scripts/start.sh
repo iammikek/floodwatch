@@ -14,18 +14,21 @@ php artisan view:cache
 php artisan queue:work --tries=3 --timeout=60 &
 WORKER_PID=$!
 
+# Start scheduler (runs schedule:run every minute)
+php artisan schedule:work &
+SCHEDULER_PID=$!
+
 # Start web server in background so we can wait and handle signals
 php artisan serve --host=0.0.0.0 --port=${PORT:-80} &
 SERVER_PID=$!
 
-# On SIGTERM/SIGINT, kill both and exit
-trap 'kill $WORKER_PID $SERVER_PID 2>/dev/null; exit 0' TERM INT
+# On SIGTERM/SIGINT, kill all and exit
+trap 'kill $WORKER_PID $SCHEDULER_PID $SERVER_PID 2>/dev/null; exit 0' TERM INT
 
-# On exit, kill both (one may already be gone)
-trap 'kill $WORKER_PID $SERVER_PID 2>/dev/null' EXIT
+# On exit, kill all (one may already be gone)
+trap 'kill $WORKER_PID $SCHEDULER_PID $SERVER_PID 2>/dev/null' EXIT
 
-# Wait for either process to exit (triggers container restart).
-# Uses POSIX-compatible loop; wait -n is bash-specific and not available in busybox ash.
-while kill -0 $WORKER_PID 2>/dev/null && kill -0 $SERVER_PID 2>/dev/null; do
+# Wait for any process to exit (triggers container restart).
+while kill -0 $WORKER_PID 2>/dev/null && kill -0 $SCHEDULER_PID 2>/dev/null && kill -0 $SERVER_PID 2>/dev/null; do
     sleep 1
 done

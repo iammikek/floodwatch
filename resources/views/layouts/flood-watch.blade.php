@@ -214,7 +214,7 @@
                     this.$nextTick(() => {
                         const el = document.getElementById('flood-map');
                         if (!el) return;
-                        (window.__loadLeaflet ? window.__loadLeaflet() : Promise.resolve(window.L)).then((L) => {
+                        (window.__loadLeaflet ? window.__loadLeaflet() : Promise.resolve(window.L)).then(async (L) => {
                             if (!L) return;
                             if (this.map) {
                                 this.map.remove();
@@ -225,6 +225,21 @@
                                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                             }).addTo(this.map);
                             this.map.invalidateSize();
+                            if (this.polygonsUrl && this.floods && this.floods.length > 0) {
+                                const ids = this.floods.map(f => f.floodAreaID).filter(Boolean);
+                                if (ids.length > 0) {
+                                    try {
+                                        const res = await fetch(this.polygonsUrl + '?ids=' + encodeURIComponent(ids.join(',')));
+                                        if (res.ok) {
+                                            const data = await res.json();
+                                            this.floods = this.floods.map(f => {
+                                                const poly = f.floodAreaID ? data[f.floodAreaID] : null;
+                                                return poly ? { ...f, polygon: poly } : f;
+                                            });
+                                        }
+                                    } catch (e) {}
+                                }
+                            }
                             (typeof requestIdleCallback !== 'undefined'
                                 ? (cb) => requestIdleCallback(cb, { timeout: 100 })
                                 : (cb) => setTimeout(cb, 100))(() => addMarkers(L));
