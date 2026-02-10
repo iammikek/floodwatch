@@ -47,6 +47,11 @@
         />
     </div>
 
+    {{-- AI summary / advice (reuses summary component) --}}
+    @if ($assistantResponse !== null && $assistantResponse !== '')
+        <x-flood-watch.results.summary :assistant-response="$assistantResponse" />
+    @endif
+
     {{-- Row 2: Map full width --}}
     <div class="w-full min-w-0">
         <x-flood-watch.results.flood-map
