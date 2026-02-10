@@ -161,11 +161,12 @@ class EnvironmentAgencyFloodService
             }
         }
 
+        $cache = Cache::store(config('flood-watch.cache_store'));
         $result = [];
         $toFetch = [];
 
         foreach ($areaIds as $areaId) {
-            $cached = Cache::get("{$cacheKeyPrefix}{$areaId}");
+            $cached = $cache->get("{$cacheKeyPrefix}{$areaId}");
             if ($cached !== null) {
                 $result[$areaId] = $cached;
             } else {
@@ -190,7 +191,7 @@ class EnvironmentAgencyFloodService
             $geojson = $response->json();
             if (is_array($geojson) && isset($geojson['type'], $geojson['features'])) {
                 $result[$areaId] = $geojson;
-                Cache::put("{$cacheKeyPrefix}{$areaId}", $geojson, now()->addHours($cacheHours));
+                $cache->put("{$cacheKeyPrefix}{$areaId}", $geojson, now()->addHours($cacheHours));
             }
         }
 

@@ -15,8 +15,14 @@
     style="display: none;"
     x-data="{ show: false }"
     x-init="
-        window.addEventListener('scroll', () => { show = window.scrollY > 280 });
-        $watch('show', v => document.body.style.paddingBottom = v ? '4rem' : '0')
+        const onScroll = () => { show = window.scrollY > 280 };
+        window.addEventListener('scroll', onScroll);
+        const unwatch = $watch('show', v => { document.body.style.paddingBottom = v ? '4rem' : '0'; });
+        return () => {
+            window.removeEventListener('scroll', onScroll);
+            document.body.style.paddingBottom = '0';
+            if (typeof unwatch === 'function') unwatch();
+        }
     "
     x-show="show"
     x-cloak

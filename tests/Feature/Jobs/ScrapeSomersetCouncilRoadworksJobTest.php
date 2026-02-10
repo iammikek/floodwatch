@@ -14,7 +14,7 @@ class ScrapeSomersetCouncilRoadworksJobTest extends TestCase
 {
     protected function tearDown(): void
     {
-        Cache::forget(SomersetCouncilRoadworksService::CACHE_KEY);
+        Cache::store(config('flood-watch.cache_store'))->forget(SomersetCouncilRoadworksService::cacheKey());
         parent::tearDown();
     }
 
@@ -32,7 +32,7 @@ class ScrapeSomersetCouncilRoadworksJobTest extends TestCase
         $job = new ScrapeSomersetCouncilRoadworksJob;
         $job->handle(app(SomersetCouncilRoadworksService::class));
 
-        $cached = Cache::get(SomersetCouncilRoadworksService::CACHE_KEY);
+        $cached = Cache::store(config('flood-watch.cache_store'))->get(SomersetCouncilRoadworksService::cacheKey());
         $this->assertIsArray($cached);
         $this->assertCount(2, $cached);
         $this->assertSame('A361 Main Road', $cached[0]['road']);

@@ -14,7 +14,7 @@ class FetchNationalHighwaysIncidentsJobTest extends TestCase
 {
     protected function tearDown(): void
     {
-        Cache::forget(NationalHighwaysService::CACHE_KEY);
+        Cache::store(config('flood-watch.cache_store'))->forget(NationalHighwaysService::cacheKey());
         parent::tearDown();
     }
 
@@ -56,7 +56,7 @@ class FetchNationalHighwaysIncidentsJobTest extends TestCase
         $job = new FetchNationalHighwaysIncidentsJob;
         $job->handle(app(NationalHighwaysService::class));
 
-        $cached = Cache::get(NationalHighwaysService::CACHE_KEY);
+        $cached = Cache::store(config('flood-watch.cache_store'))->get(NationalHighwaysService::cacheKey());
         $this->assertIsArray($cached);
         $this->assertNotEmpty($cached);
         $this->assertSame('A361', $cached[0]['road']);
