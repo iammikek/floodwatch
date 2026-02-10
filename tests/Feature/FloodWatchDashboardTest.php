@@ -1299,7 +1299,7 @@ class FloodWatchDashboardTest extends TestCase
             ->set('incidents', [])
             ->assertSee(__('flood-watch.dashboard.road_status'), false)
             ->assertSee(__('flood-watch.dashboard.forecast'), false)
-            ->assertSee(__('flood-watch.dashboard.river_levels'), false);
+            ->assertSee(__('flood-watch.dashboard.flood_warnings'), false);
     }
 
     public function test_desktop_grid_layout_when_results_exist(): void
