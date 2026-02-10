@@ -1,5 +1,5 @@
 @guest
-<div class="mb-6 p-4 rounded-lg bg-blue-50 border border-blue-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+<div class="mb-6 p-4 bg-blue-50 border border-blue-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
     <p class="text-sm text-blue-800">
         {{ __('flood-watch.dashboard.guest_banner') }}
     </p>
