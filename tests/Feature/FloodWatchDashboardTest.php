@@ -29,6 +29,7 @@ class FloodWatchDashboardTest extends TestCase
         Livewire::test('flood-watch-dashboard')
             ->set('assistantResponse', 'Summary.')
             ->set('mapCenter', ['lat' => 51.0358, 'lng' => -2.8318])
+            ->set('layoutVariant', 'desktop')
             ->assertSee(__('flood-watch.dashboard.flood_risk'))
             ->assertSee(__('flood-watch.dashboard.road_status'))
             ->assertSee(__('flood-watch.dashboard.forecast_outlook'));

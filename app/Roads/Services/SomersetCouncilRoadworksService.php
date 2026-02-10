@@ -2,10 +2,11 @@
 
 namespace App\Roads\Services;
 
+use DOMXPath;
 use Illuminate\Http\Client\ConnectionException;
-use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Psr\SimpleCache\InvalidArgumentException;
 
 /**
  * Somerset Council roadworks and travel incidents. Scraping is run by
@@ -27,6 +28,8 @@ class SomersetCouncilRoadworksService
      * Returns the same shape as National Highways for merging.
      *
      * @return array<int, array{road: string, status: string, incidentType: string, delayTime: string, managementType?: string}>
+     *
+     * @throws InvalidArgumentException
      */
     public function getIncidents(): array
     {
@@ -71,7 +74,7 @@ class SomersetCouncilRoadworksService
             }
 
             return $response->body();
-        } catch (ConnectionException|RequestException $e) {
+        } catch (ConnectionException $e) {
             report($e);
 
             return null;
@@ -94,7 +97,7 @@ class SomersetCouncilRoadworksService
                 return [];
             }
 
-            $xpath = new \DOMXPath($dom);
+            $xpath = new DOMXPath($dom);
 
             foreach ($xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' inrix-feed__alert ')]") as $alert) {
                 $title = $this->textContent($xpath, ".//*[contains(concat(' ', normalize-space(@class), ' '), ' inrix-feed__alert-title ')]", $alert);
@@ -125,7 +128,7 @@ class SomersetCouncilRoadworksService
         }
     }
 
-    private function textContent(\DOMXPath $xpath, string $expr, \DOMNode $context): string
+    private function textContent(DOMXPath $xpath, string $expr, \DOMNode $context): string
     {
         $nodes = $xpath->query($expr, $context);
         $node = $nodes->item(0);

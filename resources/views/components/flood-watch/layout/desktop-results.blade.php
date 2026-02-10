@@ -59,7 +59,7 @@
         $incidentsForList = $incidentsInView ?? $incidents;
     @endphp
     {{-- Row 2: Map full width (wire:ignore so map is not recreated when viewport-filtered lists update; key so new search gets fresh map) --}}
-    <div class="w-full min-w-0" wire:ignore wire:key="map-{{ $lastChecked ?? 'initial' }}-{{ $routeKey ?? 'none' }}">
+    <div class="w-full min-w-0" wire:ignore wire:key="desktop-map-wrapper-{{ $lastChecked ?? 'initial' }}-{{ $routeKey ?? 'none' }}">
         <x-flood-watch.results.flood-map
             :map-center="$mapCenter"
             :river-levels="$riverLevels"
