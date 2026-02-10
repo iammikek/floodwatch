@@ -42,6 +42,15 @@
             Alpine.data('floodMap', (config) => ({
                 ...config,
                 map: null,
+                tileLayer: null,
+                mapStyleOpen: false,
+                selectedTileId: (() => {
+                    try {
+                        const saved = typeof localStorage !== 'undefined' && localStorage.getItem('flood-watch-map-style');
+                        if (saved && config.tileLayers && config.tileLayers.some(l => l.id === saved)) return saved;
+                    } catch (e) {}
+                    return (config.tileLayers && config.tileLayers[0]) ? config.tileLayers[0].id : null;
+                })(),
                 esc(s) {
                     if (s == null || s === '') return '';
                     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -259,6 +268,19 @@
                         const bounds = L.latLngBounds(coords);
                         this.map.fitBounds(bounds, { padding: [30, 30], maxZoom: 14 });
                     };
+                    this.setBaseLayer = (url, attribution, id) => {
+                        if (!this.map || !window.L) return;
+                        const L = window.L;
+                        if (this.tileLayer) {
+                            this.map.removeLayer(this.tileLayer);
+                            this.tileLayer = null;
+                        }
+                        this.tileLayer = L.tileLayer(url, { attribution: attribution, maxZoom: 19 }).addTo(this.map);
+                        if (id != null) {
+                            this.selectedTileId = id;
+                            try { localStorage.setItem('flood-watch-map-style', id); } catch (e) {}
+                        }
+                    };
                     this.$nextTick(() => {
                         const el = document.getElementById('flood-map');
                         if (!el) return;
@@ -269,10 +291,16 @@
                                 this.map = null;
                             }
                             this.map = L.map('flood-map', { zoomSnap: 0.5 }).setView([this.center.lat, lng], 13);
-                            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-                                maxZoom: 19
-                            }).addTo(this.map);
+                            let tileUrl = this.tileUrl;
+                            let tileAttribution = this.tileAttribution;
+                            if (this.tileLayers && this.tileLayers.length > 0) {
+                                const selected = this.tileLayers.find(l => l.id === this.selectedTileId) || this.tileLayers[0];
+                                tileUrl = selected.url;
+                                tileAttribution = selected.attribution;
+                            }
+                            if (!tileUrl) tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+                            if (!tileAttribution) tileAttribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+                            this.tileLayer = L.tileLayer(tileUrl, { attribution: tileAttribution, maxZoom: 19 }).addTo(this.map);
                             L.control.scale({ imperial: false }).addTo(this.map);
                             this.map.invalidateSize();
                             if (this.polygonsUrl && this.floods && this.floods.length > 0) {

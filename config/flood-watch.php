@@ -208,6 +208,52 @@ return [
 
     'cache_key_prefix' => env('FLOOD_WATCH_CACHE_PREFIX', 'flood-watch'),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Map base layer (tiles)
+    |--------------------------------------------------------------------------
+    |
+    | Tile URL and attribution for the Leaflet map. Use a style that suits
+    | overlays (flood, roads, river levels). Options:
+    |
+    | - positron: CartoDB Positron (light, minimal labels) – good for data overlay
+    | - voyager:  CartoDB Voyager (clean, less city detail)
+    | - opentopomap: OpenTopoMap (terrain/topographic, natural features)
+    | - osm:      OpenStreetMap standard (default, more city detail)
+    |
+    */
+
+    'map' => [
+        'tile_url' => env('FLOOD_WATCH_MAP_TILE_URL', 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'),
+        'tile_attribution' => env('FLOOD_WATCH_MAP_TILE_ATTRIBUTION', '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'),
+        'tile_layers' => [
+            [
+                'id' => 'positron',
+                'label' => 'Light',
+                'url' => 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+                'attribution' => '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            ],
+            [
+                'id' => 'voyager_nolabels',
+                'label' => 'Minimal (no labels)',
+                'url' => 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png',
+                'attribution' => '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            ],
+            [
+                'id' => 'topo',
+                'label' => 'Terrain',
+                'url' => 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+                'attribution' => 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, SRTM | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a>',
+            ],
+            [
+                'id' => 'osm',
+                'label' => 'Streets',
+                'url' => 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                'attribution' => '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+            ],
+        ],
+    ],
+
     'route_check' => [
         'osrm_url' => env('FLOOD_WATCH_OSRM_URL', 'https://router.project-osrm.org'),
         'osrm_timeout' => (int) env('FLOOD_WATCH_OSRM_TIMEOUT', 15),
