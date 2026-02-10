@@ -12,11 +12,10 @@
                     <div class="flex items-center gap-4 p-3">
                         <p class="text-sm font-medium text-slate-600 w-24 shrink-0">{{ \Carbon\Carbon::parse($day['date'])->format('D j M') }}</p>
                         <span class="text-2xl shrink-0" title="{{ $day['description'] ?? '' }}">{{ $day['icon'] ?? '🌤️' }}</span>
-                        <p class="text-slate-900 font-semibold text-2s">{{ round($day['temp_max'] ?? 0) }}° / {{ round($day['temp_min'] ?? 0) }}°</p>
+                        <p class="text-slate-900 font-semibold text-2xl">{{ round($day['temp_max'] ?? 0) }}° / {{ round($day['temp_min'] ?? 0) }}°</p>
                         @if (($day['precipitation'] ?? 0) > 0)
                             <p class="text-sm text-sky-600">💧 {{ round($day['precipitation'], 1) }} mm</p>
                         @endif
-                        <p class="text-sm text-slate-500 truncate">{{ $day['description'] ?? '' }}</p>
                     </div>
                 @endforeach
             </div>
