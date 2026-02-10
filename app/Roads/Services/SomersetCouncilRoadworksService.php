@@ -141,11 +141,11 @@ class SomersetCouncilRoadworksService
         if (str_contains($lower, 'flood')) {
             return 'flooding';
         }
+        if ((str_contains($lower, 'lane') && str_contains($lower, 'close')) || str_contains($lower, 'lane closure')) {
+            return 'laneClosures';
+        }
         if (str_contains($lower, 'closed') || str_contains($lower, 'closure')) {
             return 'roadClosed';
-        }
-        if (str_contains($lower, 'lane') && str_contains($lower, 'close')) {
-            return 'laneClosures';
         }
         if (str_contains($lower, 'roadworks') || str_contains($lower, 'road works')) {
             return 'constructionWork';

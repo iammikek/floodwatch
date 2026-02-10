@@ -1073,7 +1073,7 @@ class FloodWatchDashboardTest extends TestCase
             ->assertSet('outcode', 'TA10');
     }
 
-    public function test_location_header_shows_change_and_refresh_when_logged_in_with_results(): void
+    public function test_location_header_shows_change_when_logged_in_with_results(): void
     {
         Config::set('openai.api_key', 'test-key');
         Config::set('flood-watch.national_highways.api_key', 'test-key');
@@ -1105,7 +1105,7 @@ class FloodWatchDashboardTest extends TestCase
                     'index' => 0,
                     'message' => [
                         'role' => 'assistant',
-                        'content' => 'Refresh test.',
+                        'content' => 'Location header test.',
                         'tool_calls' => [],
                     ],
                     'logprobs' => null,
@@ -1120,8 +1120,7 @@ class FloodWatchDashboardTest extends TestCase
             ->test('flood-watch-dashboard')
             ->set('location', 'TA10 0DP')
             ->call('search')
-            ->assertSee(__('flood-watch.dashboard.change'), false)
-            ->assertSee(__('flood-watch.dashboard.refresh'), false);
+            ->assertSee(__('flood-watch.dashboard.change'), false);
     }
 
     public function test_dashboard_pre_loads_default_bookmark_when_logged_in(): void

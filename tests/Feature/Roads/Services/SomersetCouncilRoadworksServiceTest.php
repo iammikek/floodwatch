@@ -78,7 +78,7 @@ class SomersetCouncilRoadworksServiceTest extends TestCase
         $this->assertStringContainsString('closed due to flooding', $cached[0]['delayTime']);
 
         $this->assertSame('M5', $cached[1]['road']);
-        $this->assertSame('roadClosed', $cached[1]['incidentType']);
+        $this->assertSame('laneClosures', $cached[1]['incidentType']);
     }
 
     public function test_scrape_and_store_in_cache_stores_empty_array_on_fetch_failure(): void
