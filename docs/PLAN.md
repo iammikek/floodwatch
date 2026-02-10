@@ -139,6 +139,26 @@ flowchart LR
 
 ---
 
+## Summary (AI advice) on mobile – Plan
+
+**Current state**: The **Summary** is the LLM’s final narrative (flood/road correlation, advice, risk). On mobile it is rendered at the **bottom** of the results (after risk block, route check, flood warnings, nav links, weather, road status). Users may scroll past it or never see it, even though it’s the main “so what?” output.
+
+**Goal**: Surface the Summary more effectively on mobile so the AI advice is visible and useful without burying detail.
+
+**Options to consider**:
+
+| Option | Description | Pros | Cons |
+|--------|-------------|------|------|
+| **Move Summary higher** | Place Summary immediately after Risk block (and optionally Route check), before Flood Warnings / Weather / Road Status. | User sees the narrative first; aligns with “advice then detail”. | Long summary can push detail far down; may want a “Read more” or height cap. |
+| **Collapsible “AI advice” at top** | Add an “AI summary” or “Advisory” block at top (below summary bar) with first 1–2 sentences or a short bullet list; tap to expand full Summary. | High visibility; full text still available. | Requires truncation or extraction (e.g. first paragraph); two places for same content if we keep full Summary below. |
+| **Sticky / floating summary** | After first scroll, show a compact “AI advice” bar that sticks or floats; tap opens full Summary in sheet/modal. | Always accessible; doesn’t take initial space. | More UI complexity; risk of overlapping content. |
+| **Replace or augment summary bar** | Use the LLM to generate the one-line summary bar text (e.g. “2 flood warnings · A361 closed · 3:45 pm”) or add a second line “AI: …” under it. | Single line of high-value context at very top. | Token/UX trade-off; may need short dedicated LLM output or template. |
+| **Two-phase layout** | “Overview” tab/section: Risk + Summary + key bullets; “Details” tab/section: Flood list, Road status, Weather, etc. | Clear separation of “what to do” vs “raw data”. | Tab/section UX; more navigation. |
+
+**Recommendation for plan**: Decide whether **priority is “advice first”** (move or duplicate Summary higher) or **“glanceable + expand”** (short teaser at top, full Summary expandable). Then add a concrete backlog item (e.g. “Mobile: surface LLM Summary higher or as expandable AI advice”) and reference this section.
+
+---
+
 ## Donations (Plan)
 
 Users support the project via **donations**. The app stays free; donations offset API and hosting costs.

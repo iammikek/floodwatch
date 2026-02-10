@@ -83,3 +83,4 @@ flowchart LR
 
 - `public/wireframes/revised-brief.html` – MVP (includes Route Check component states: empty, loading, clear, blocked, at risk, delays, error)
 - `public/wireframes/situational-awareness.html` – Phase 2
+- `public/wireframes/mobile-wireframe-with-summary.html` – Mobile: 3 options for Summary (AI advice) placement (moved higher, collapsible teaser, sticky bar). Ref: docs/PLAN.md § Summary on mobile – Plan
