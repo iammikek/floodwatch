@@ -12,7 +12,13 @@ window.__loadLeaflet = function () {
             import('leaflet.markercluster/dist/MarkerCluster.css'),
             import('leaflet.markercluster/dist/MarkerCluster.Default.css'),
             import('leaflet.markercluster'),
-        ]).then(() => window.L);
+        ]).then(([, , clusterModule]) => {
+            if (clusterModule?.MarkerClusterGroup) {
+                window.L.MarkerClusterGroup = clusterModule.MarkerClusterGroup;
+                window.L.markerClusterGroup = (opts) => new clusterModule.MarkerClusterGroup(opts);
+            }
+            return window.L;
+        });
     });
 };
 
