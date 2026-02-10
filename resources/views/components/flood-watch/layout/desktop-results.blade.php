@@ -65,16 +65,30 @@
         </div>
     </div>
 
-    {{-- Row 2: 3 columns = Road Status | Forecast | River Levels --}}
-    <div class="grid grid-cols-3 gap-6">
-        <div class="min-w-0">
-            <x-flood-watch.results.road-status :incidents="$incidents" />
+    {{-- Row 2: 3 columns = Flood Warnings | Road Status | Forecast (compact cards) --}}
+    @php
+        $floodSummary = count($floods) > 0
+            ? collect($floods)->map(fn ($f) => trim(($f['description'] ?? '') . (isset($f['severity']) ? ' (' . $f['severity'] . ')' : '')))->filter()->implode(', ')
+            : __('flood-watch.dashboard.no_flood_warnings');
+        $roadSummary = count($incidents) > 0
+            ? collect($incidents)->map(fn ($i) => trim(($i['road'] ?? '') . (isset($i['statusLabel']) ? ' ' . $i['statusLabel'] : '')))->filter()->implode('; ')
+            : __('flood-watch.dashboard.roads_clear');
+        $forecastSummary = !empty($forecast['england_forecast'])
+            ? \Illuminate\Support\Str::limit($forecast['england_forecast'], 120)
+            : __('flood-watch.dashboard.no_forecast');
+    @endphp
+    <div class="p-4 border-t border-slate-200 grid grid-cols-3 gap-4">
+        <div class="p-3 rounded bg-white border border-slate-200">
+            <h4 class="text-xs font-semibold text-slate-500">{{ __('flood-watch.dashboard.flood_warnings') }}</h4>
+            <p class="text-sm mt-1">{{ $floodSummary }}</p>
         </div>
-        <div class="min-w-0">
-            <x-flood-watch.results.forecast :forecast="$forecast" />
+        <div class="p-3 rounded bg-white border border-slate-200">
+            <h4 class="text-xs font-semibold text-slate-500">{{ __('flood-watch.dashboard.road_status') }}</h4>
+            <p class="text-sm mt-1">{{ $roadSummary }}</p>
         </div>
-        <div class="min-w-0">
-            <x-flood-watch.results.river-levels :river-levels="$riverLevels" />
+        <div class="p-3 rounded bg-white border border-slate-200">
+            <h4 class="text-xs font-semibold text-slate-500">{{ __('flood-watch.dashboard.forecast_outlook') }}</h4>
+            <p class="text-sm mt-1">{{ $forecastSummary }}</p>
         </div>
     </div>
 

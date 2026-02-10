@@ -185,6 +185,21 @@
                         }
                         this.map.invalidateSize();
                     };
+                    this.fitToIncidents = () => {
+                        if (!this.map || !this.incidents || this.incidents.length === 0) return;
+                        const coords = this.incidents
+                            .map(i => {
+                                const lat = i.lat ?? i.latitude;
+                                const lng = i.lng ?? i.long ?? i.longitude;
+                                return (lat != null && lng != null) ? [lat, lng] : null;
+                            })
+                            .filter(Boolean);
+                        if (coords.length === 0) return;
+                        const L = window.L;
+                        if (!L) return;
+                        const bounds = L.latLngBounds(coords);
+                        this.map.fitBounds(bounds, { padding: [30, 30], maxZoom: 14 });
+                    };
                     this.$nextTick(() => {
                         const el = document.getElementById('flood-map');
                         if (!el) return;

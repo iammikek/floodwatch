@@ -19,7 +19,13 @@
         <div id="flood-map" class="h-72 sm:h-80 md:h-96 lg:h-[28rem] w-full bg-slate-100"></div>
         @if (count($incidents) > 0)
             <div class="px-3 py-2 bg-blue-50/50 border-t border-slate-200">
-                <p class="text-xs font-medium text-blue-800 mb-1.5">{{ __('flood-watch.dashboard.road_incidents_on_map') }}</p>
+                <button
+                    type="button"
+                    @click="fitToIncidents()"
+                    class="text-xs font-medium text-blue-800 mb-1.5 hover:text-blue-900 hover:underline cursor-pointer text-left"
+                >
+                    {{ __('flood-watch.dashboard.road_incidents_on_map') }}
+                </button>
                 <div class="flex flex-wrap gap-2">
                     @foreach ($incidents as $incident)
                         <span class="inline-flex items-center gap-1 px-2 py-1 rounded text-xs bg-blue-100 text-blue-800">
