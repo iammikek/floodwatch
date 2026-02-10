@@ -1311,7 +1311,7 @@ class FloodWatchDashboardTest extends TestCase
             ->html();
 
         expect($html)->toContain('hidden lg:block')
-            ->toContain('grid-cols-[1fr_1.5fr]')
+            ->toContain('grid-cols-2')
             ->toContain('grid-cols-3');
     }
 
