@@ -15,7 +15,12 @@ use Illuminate\Support\Facades\Http;
  */
 class SomersetCouncilRoadworksService
 {
-    public const CACHE_KEY = 'flood-watch:somerset-roadworks:incidents';
+    public static function cacheKey(): string
+    {
+        $prefix = config('flood-watch.cache_key_prefix', 'flood-watch');
+
+        return "{$prefix}:somerset-roadworks:incidents";
+    }
 
     /**
      * Get incidents from cache (populated by ScrapeSomersetCouncilRoadworksJob).
@@ -29,7 +34,8 @@ class SomersetCouncilRoadworksService
             return [];
         }
 
-        $cached = Cache::get(self::CACHE_KEY);
+        $cache = Cache::store(config('flood-watch.cache_store'));
+        $cached = $cache->get(self::cacheKey());
 
         return is_array($cached) ? $cached : [];
     }
@@ -50,7 +56,7 @@ class SomersetCouncilRoadworksService
         $html = $this->fetchHtml($url, $timeout);
         $incidents = $html !== null && $html !== '' ? $this->parseIncidentsFromHtml($html) : [];
 
-        Cache::put(self::CACHE_KEY, $incidents, now()->addMinutes($cacheMinutes));
+        Cache::store(config('flood-watch.cache_store'))->put(self::cacheKey(), $incidents, now()->addMinutes($cacheMinutes));
     }
 
     private function fetchHtml(string $url, int $timeout): ?string

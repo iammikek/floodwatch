@@ -23,8 +23,9 @@ class FloodWatchServiceTest extends TestCase
 
     protected function tearDown(): void
     {
-        Cache::forget(NationalHighwaysService::CACHE_KEY);
-        Cache::forget(SomersetCouncilRoadworksService::CACHE_KEY);
+        $store = Cache::store(config('flood-watch.cache_store'));
+        $store->forget(NationalHighwaysService::cacheKey());
+        $store->forget(SomersetCouncilRoadworksService::cacheKey());
         parent::tearDown();
     }
 
@@ -825,10 +826,10 @@ class FloodWatchServiceTest extends TestCase
         Config::set('openai.api_key', 'test-key');
         Config::set('flood-watch.national_highways.api_key', null);
 
-        Cache::put(NationalHighwaysService::CACHE_KEY, [
+        Cache::store(config('flood-watch.cache_store'))->put(NationalHighwaysService::cacheKey(), [
             ['road' => 'A361', 'status' => 'closed', 'incidentType' => 'flooding', 'delayTime' => ''],
         ], now()->addMinutes(15));
-        Cache::put(SomersetCouncilRoadworksService::CACHE_KEY, [
+        Cache::store(config('flood-watch.cache_store'))->put(SomersetCouncilRoadworksService::cacheKey(), [
             ['road' => 'A372', 'status' => 'active', 'incidentType' => 'roadClosed', 'delayTime' => 'Road closed'],
         ], now()->addMinutes(30));
 
@@ -1022,7 +1023,7 @@ class FloodWatchServiceTest extends TestCase
         Config::set('flood-watch.national_highways.api_key', null);
         Config::set('flood-watch.exclude_motorways_from_display', true);
 
-        Cache::put(NationalHighwaysService::CACHE_KEY, [
+        Cache::store(config('flood-watch.cache_store'))->put(NationalHighwaysService::cacheKey(), [
             ['road' => 'M5', 'status' => 'closed', 'incidentType' => 'roadClosed', 'delayTime' => 'J14-15'],
             ['road' => 'A361', 'status' => 'active', 'incidentType' => 'laneClosures', 'delayTime' => ''],
         ], now()->addMinutes(15));
@@ -1090,7 +1091,7 @@ class FloodWatchServiceTest extends TestCase
         Config::set('flood-watch.national_highways.api_key', null);
         Config::set('flood-watch.exclude_motorways_from_display', false);
 
-        Cache::put(NationalHighwaysService::CACHE_KEY, [
+        Cache::store(config('flood-watch.cache_store'))->put(NationalHighwaysService::cacheKey(), [
             ['road' => 'M5', 'status' => 'closed', 'incidentType' => 'roadClosed', 'delayTime' => 'J14-15'],
             ['road' => 'A361', 'status' => 'active', 'incidentType' => 'laneClosures', 'delayTime' => ''],
         ], now()->addMinutes(15));

@@ -29,29 +29,35 @@ class CircuitBreaker
         return config('flood-watch.circuit_breaker.enabled', true);
     }
 
+    protected function cache(): \Illuminate\Contracts\Cache\Repository
+    {
+        return Cache::store(config('flood-watch.cache_store'));
+    }
+
     public function isOpen(): bool
     {
         $key = $this->openKey();
 
-        return Cache::get($key, false);
+        return $this->cache()->get($key, false);
     }
 
     public function recordSuccess(): void
     {
-        Cache::forget($this->failureKey());
+        $this->cache()->forget($this->failureKey());
     }
 
     public function recordFailure(): void
     {
         $failureKey = $this->failureKey();
         $openKey = $this->openKey();
+        $cache = $this->cache();
 
-        $failures = (int) Cache::get($failureKey, 0) + 1;
-        Cache::put($failureKey, $failures, now()->addSeconds($this->cooldownSeconds * 2));
+        $failures = (int) $cache->get($failureKey, 0) + 1;
+        $cache->put($failureKey, $failures, now()->addSeconds($this->cooldownSeconds * 2));
 
         if ($failures >= $this->failureThreshold) {
-            Cache::put($openKey, true, now()->addSeconds($this->cooldownSeconds));
-            Cache::forget($failureKey);
+            $cache->put($openKey, true, now()->addSeconds($this->cooldownSeconds));
+            $cache->forget($failureKey);
         }
     }
 

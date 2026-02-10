@@ -12,7 +12,7 @@ class SomersetCouncilRoadworksServiceTest extends TestCase
 {
     protected function tearDown(): void
     {
-        Cache::forget(SomersetCouncilRoadworksService::CACHE_KEY);
+        Cache::store(config('flood-watch.cache_store'))->forget(SomersetCouncilRoadworksService::cacheKey());
         parent::tearDown();
     }
 
@@ -33,7 +33,7 @@ class SomersetCouncilRoadworksServiceTest extends TestCase
         $cached = [
             ['road' => 'A361', 'status' => 'active', 'incidentType' => 'flooding', 'delayTime' => 'Closed due to flooding'],
         ];
-        Cache::put(SomersetCouncilRoadworksService::CACHE_KEY, $cached, now()->addMinutes(30));
+        Cache::store(config('flood-watch.cache_store'))->put(SomersetCouncilRoadworksService::cacheKey(), $cached, now()->addMinutes(30));
 
         $service = new SomersetCouncilRoadworksService;
         $result = $service->getIncidents();
@@ -45,7 +45,7 @@ class SomersetCouncilRoadworksServiceTest extends TestCase
     public function test_get_incidents_returns_empty_when_disabled(): void
     {
         Config::set('flood-watch.somerset_council.enabled', false);
-        Cache::put(SomersetCouncilRoadworksService::CACHE_KEY, [['road' => 'A361']], now()->addMinutes(30));
+        Cache::store(config('flood-watch.cache_store'))->put(SomersetCouncilRoadworksService::cacheKey(), [['road' => 'A361']], now()->addMinutes(30));
 
         $service = new SomersetCouncilRoadworksService;
         $result = $service->getIncidents();
@@ -68,7 +68,7 @@ class SomersetCouncilRoadworksServiceTest extends TestCase
         $service = new SomersetCouncilRoadworksService;
         $service->scrapeAndStoreInCache();
 
-        $cached = Cache::get(SomersetCouncilRoadworksService::CACHE_KEY);
+        $cached = Cache::store(config('flood-watch.cache_store'))->get(SomersetCouncilRoadworksService::cacheKey());
         $this->assertIsArray($cached);
         $this->assertCount(2, $cached);
 
@@ -94,7 +94,7 @@ class SomersetCouncilRoadworksServiceTest extends TestCase
         $service = new SomersetCouncilRoadworksService;
         $service->scrapeAndStoreInCache();
 
-        $cached = Cache::get(SomersetCouncilRoadworksService::CACHE_KEY);
+        $cached = Cache::store(config('flood-watch.cache_store'))->get(SomersetCouncilRoadworksService::cacheKey());
         $this->assertIsArray($cached);
         $this->assertEmpty($cached);
     }

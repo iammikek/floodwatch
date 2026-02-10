@@ -13,7 +13,12 @@ use Illuminate\Support\Facades\Http;
 
 class NationalHighwaysService
 {
-    public const CACHE_KEY = 'flood-watch:national-highways:incidents';
+    public static function cacheKey(): string
+    {
+        $prefix = config('flood-watch.cache_key_prefix', 'flood-watch');
+
+        return "{$prefix}:national-highways:incidents";
+    }
 
     public function __construct(
         protected ?CircuitBreaker $circuitBreaker = null
@@ -28,7 +33,8 @@ class NationalHighwaysService
      */
     public function getIncidents(): array
     {
-        $cached = Cache::get(self::CACHE_KEY);
+        $cache = Cache::store(config('flood-watch.cache_store'));
+        $cached = $cache->get(self::cacheKey());
         if (is_array($cached)) {
             return $cached;
         }
@@ -53,7 +59,7 @@ class NationalHighwaysService
         try {
             $incidents = $this->circuitBreaker->execute(fn () => $this->fetchIncidents($apiKey));
             if ($cacheMinutes > 0) {
-                Cache::put(self::CACHE_KEY, $incidents, now()->addMinutes($cacheMinutes));
+                Cache::store(config('flood-watch.cache_store'))->put(self::cacheKey(), $incidents, now()->addMinutes($cacheMinutes));
             }
 
             return $incidents;

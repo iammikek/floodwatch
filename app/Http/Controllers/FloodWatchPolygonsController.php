@@ -25,10 +25,11 @@ class FloodWatchPolygonsController extends Controller
 
         $prefix = config('flood-watch.cache_key_prefix', 'flood-watch');
         $cacheKeyPrefix = "{$prefix}:polygon:";
+        $cache = Cache::store(config('flood-watch.cache_store'));
 
         $polygons = [];
         foreach ($ids as $areaId) {
-            $cached = Cache::get("{$cacheKeyPrefix}{$areaId}");
+            $cached = $cache->get("{$cacheKeyPrefix}{$areaId}");
             if (is_array($cached) && isset($cached['type'], $cached['features'])) {
                 $polygons[$areaId] = $cached;
             }

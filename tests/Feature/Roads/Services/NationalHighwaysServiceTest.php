@@ -12,14 +12,14 @@ class NationalHighwaysServiceTest extends TestCase
 {
     protected function tearDown(): void
     {
-        Cache::forget(NationalHighwaysService::CACHE_KEY);
+        Cache::store(config('flood-watch.cache_store'))->forget(NationalHighwaysService::cacheKey());
         parent::tearDown();
     }
 
     public function test_get_incidents_returns_from_cache_when_populated(): void
     {
         $cached = [['road' => 'A361', 'status' => 'active', 'incidentType' => 'roadClosed', 'delayTime' => '']];
-        Cache::put(NationalHighwaysService::CACHE_KEY, $cached, now()->addMinutes(15));
+        Cache::store(config('flood-watch.cache_store'))->put(NationalHighwaysService::cacheKey(), $cached, now()->addMinutes(15));
 
         Config::set('flood-watch.national_highways.api_key', 'test-key');
         $service = new NationalHighwaysService;
@@ -69,7 +69,7 @@ class NationalHighwaysServiceTest extends TestCase
 
         $this->assertNotEmpty($result);
         $this->assertSame('A361', $result[0]['road']);
-        $this->assertSame($result, Cache::get(NationalHighwaysService::CACHE_KEY));
+        $this->assertSame($result, Cache::store(config('flood-watch.cache_store'))->get(NationalHighwaysService::cacheKey()));
     }
 
     public function test_returns_empty_array_when_no_api_key_configured(): void
