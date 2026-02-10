@@ -14,10 +14,12 @@ beforeEach(function () {
     Config::set('flood-watch.circuit_breaker.cooldown_seconds', 60);
 });
 
-afterEach(function () {
+$cacheStore = fn () => Cache::store(Config::get('flood-watch.cache_store', 'flood-watch'));
+
+afterEach(function () use ($cacheStore) {
     $prefix = Config::get('flood-watch.cache_key_prefix', 'flood-watch');
-    Cache::forget("{$prefix}:circuit:environment_agency:failures");
-    Cache::forget("{$prefix}:circuit:environment_agency:open");
+    $cacheStore()->forget("{$prefix}:circuit:environment_agency:failures");
+    $cacheStore()->forget("{$prefix}:circuit:environment_agency:open");
 });
 
 test('circuit breaker returns empty when open', function () {
@@ -40,10 +42,10 @@ test('circuit breaker returns empty when open', function () {
         ->toThrow(CircuitOpenException::class);
 });
 
-test('environment agency service returns empty when circuit is open', function () {
+test('environment agency service returns empty when circuit is open', function () use ($cacheStore) {
     $circuit = new CircuitBreaker('environment_agency', 1, 60);
     $circuit->recordFailure();
-    Cache::put('flood-watch-test:circuit:environment_agency:open', true, 60);
+    $cacheStore()->put('flood-watch-test:circuit:environment_agency:open', true, 60);
 
     $service = new EnvironmentAgencyFloodService($circuit);
 
@@ -54,11 +56,11 @@ test('environment agency service returns empty when circuit is open', function (
     expect($result)->toBe([]);
 });
 
-test('circuit breaker disabled bypasses open state', function () {
+test('circuit breaker disabled bypasses open state', function () use ($cacheStore) {
     Config::set('flood-watch.circuit_breaker.enabled', false);
 
     $circuit = new CircuitBreaker('environment_agency', 1, 60);
-    Cache::put('flood-watch-test:circuit:environment_agency:open', true, 60);
+    $cacheStore()->put('flood-watch-test:circuit:environment_agency:open', true, 60);
 
     $result = $circuit->execute(fn () => 'ok');
 

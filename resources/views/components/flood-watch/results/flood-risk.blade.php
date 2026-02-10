@@ -21,8 +21,7 @@
                     @if (!empty($flood['timeRaised']) || !empty($flood['timeMessageChanged']))
                         <p class="text-xs text-slate-500 mt-1">
                             @if (!empty($flood['timeRaised']))
-                                {{ __('flood-watch.dashboard.raised') }}
-                                : {{ Carbon::parse($flood['timeRaised'])->format('j M Y, g:i a') }}
+                                {{ __('flood-watch.dashboard.raised') }}: {{ Carbon::parse($flood['timeRaised'])->format('j M Y, g:i a') }}
                             @endif
                             @if (!empty($flood['timeMessageChanged']))
                                 @if (!empty($flood['timeRaised']))
