@@ -186,7 +186,7 @@ See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for deployment targets and runbooks
 - **[Usage](docs/usage.md)** — How to use the app
 - **[API](docs/api.md)** — Public endpoints and protection
 - **[Tests](docs/tests.md)** — How to run and write tests
-- **[Deployment](docs/DEPLOYMENT.md)** — Deployment instructions and runbook
+- **[Deployment](docs/DEPLOYMENT.md)** — Railway runbook and pre‑deployment checklist
 - **[Risk Correlation](docs/RISK_CORRELATION.md)** — How flood warnings are correlated with road incidents
 - **[API Optimization Guide](docs/API_OPTIMIZATION_GUIDE.md)** — Performance optimization strategies and best practices
 - **[Contributing](CONTRIBUTING.md)** — Development guidelines and workflow
