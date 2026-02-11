@@ -62,4 +62,4 @@ Once started, the application is available at [http://localhost](http://localhos
 
 - [Architecture](architecture.md)
 - [Testing](tests.md)
-- [Contributing](../contributing.md)
+- [Contributing](/contributing.md)
