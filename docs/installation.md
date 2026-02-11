@@ -46,7 +46,7 @@ This guide covers prerequisites, initial setup, and first-run steps for Flood Wa
 
 ## Configuration
 
-See [Architecture](architecture.md) for detailed configuration options.
+See [Architecture](ARCHITECTURE.md) for detailed configuration options.
 
 - **OpenAI**: `OPENAI_API_KEY` is required.
 - **National Highways**: `NATIONAL_HIGHWAYS_API_KEY` is optional but recommended.
