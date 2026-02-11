@@ -1,5 +1,7 @@
 # Flood Watch
 
+A fast, region‑aware flood and road status assistant for the South West — one clear, correlated summary from official sources.
+
 Laravel 12 application integrating flood data with National Highways road status for the **South West** (Bristol, Somerset, Devon, Cornwall). Correlates Environment Agency flood warnings, river and sea levels, and road incidents into a **Single Source of Truth** for flood and road viability.
 
 ## Scope: South West
@@ -42,6 +44,16 @@ The assistant uses a base prompt plus **region-specific guidance** injected from
 - **Prioritization**: "Danger to Life" → road closures → general flood alerts
 - **Output Format**: "Current Status" section + "Action Steps" bulleted list
 
+## Architecture overview
+
+- Location input → `LocationResolver` resolves coordinates and region
+- Orchestration in `FloodWatchService::chat()` with OpenAI tool calling
+- Tools/services per data source (EA floods, river levels; National Highways; forecast; correlation)
+- Token/cost control via result trimming and caching (Redis)
+- Dashboard renders authoritative tool data; LLM provides the narrative
+
+See [docs/architecture.md](docs/architecture.md) for details and extension points.
+
 ## Technical: LLM Tool Calling
 
 The assistant uses **OpenAI tool calling** (openai-php/laravel). The LLM receives GetFloodData, GetHighwaysIncidents, GetFloodForecast, and GetRiverLevels, and orchestrates API calls to synthesize a correlated response.
@@ -52,6 +64,14 @@ The assistant uses **OpenAI tool calling** (openai-php/laravel). The LLM receive
 - **Dashboard**: Flood warnings (expandable full message, times), 5-day flood outlook, 5-day weather forecast with icons, road status, LLM summary.
 - **Caching**: Redis (configurable TTL); falls back to array cache when Redis unavailable.
 - **Graceful Degradation**: API timeouts and errors return empty data; the assistant states what it cannot access.
+
+## Example flow
+
+- User enters a South West postcode (e.g. BS1)
+- App geocodes to lat/lng and determines region
+- LLM calls tools (floods, incidents, forecast, river levels) as needed
+- Correlation service links floods ↔ key routes; LLM writes summary
+- Dashboard shows authoritative lists + concise narrative
 
 ## AI Development
 
@@ -72,6 +92,10 @@ The assistant uses **OpenAI tool calling** (openai-php/laravel). The LLM receive
 
 - Docker & Docker Compose
 - Composer
+- Node.js 18+ and Yarn (for frontend build)
+- Redis (included with Sail)
+
+See [CONTRIBUTING](CONTRIBUTING.md) for the full prerequisites list.
 
 ## Getting Started
 
@@ -80,13 +104,20 @@ The assistant uses **OpenAI tool calling** (openai-php/laravel). The LLM receive
 composer install
 yarn install
 
-# Start Sail
+# Copy environment and generate app key
+cp .env.example .env
+./vendor/bin/sail artisan key:generate
+
+# Start Sail (Docker services: app, MySQL, Redis, Mailpit)
 ./vendor/bin/sail up -d
 
-# Run migrations
+# Run database migrations
 ./vendor/bin/sail artisan migrate
 
-# Install Laravel Boost (for AI agents)
+# Build frontend assets (Vite/Tailwind)
+./vendor/bin/sail yarn build
+
+# (Optional) Install Laravel Boost (MCP server for docs/tools)
 ./vendor/bin/sail composer require laravel/boost --dev
 ./vendor/bin/sail artisan boost:install
 ```
@@ -94,6 +125,8 @@ yarn install
 Optional: add a `sail` alias to your shell for shorter commands.
 
 ## Development
+
+Run tests: `sail test`
 
 ```bash
 sail up -d          # Start containers
@@ -141,13 +174,22 @@ Data use requires attribution. The dashboard displays a footer with:
 - **National Highways API key**: Register at the [National Highways Developer Portal](https://developer.data.nationalhighways.co.uk/) and add `NATIONAL_HIGHWAYS_API_KEY` to `.env`. API v2.0: `GET /roads/v2.0/closures?closureType=planned|unplanned`
 - **Redis**: Use `REDIS_HOST=redis` with Sail; `flood-watch-array` cache store for tests
 
+## Deployment
+
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for deployment targets and runbooks (e.g. Railway) and pre‑deployment checklist.
+
 ## Documentation
 
-- **[Agents and LLM](docs/agents-and-llm.md)** - Tools, APIs, outputs, limitations, fallbacks, and example request/response
-- **[API Optimization Guide](docs/API_OPTIMIZATION_GUIDE.md)** - Performance optimization strategies and best practices
-- **[Architecture](docs/architecture.md)** - System design, data flow, and extension points
-- **[Risk Correlation](docs/RISK_CORRELATION.md)** - How flood warnings are correlated with road incidents
-- **[Contributing](CONTRIBUTING.md)** - Development guidelines and workflow
+- **[Installation](docs/installation.md)** — Prerequisites and full setup
+- **[Architecture](docs/architecture.md)** — System design, data flow, and extension points
+- **[Agents & LLM](docs/agents-and-llm.md)** — Tools, APIs, outputs, limitations, fallbacks, and example request/response
+- **[Usage](docs/usage.md)** — How to use the app
+- **[API](docs/api.md)** — Public endpoints and protection
+- **[Tests](docs/tests.md)** — How to run and write tests
+- **[Deployment](docs/DEPLOYMENT.md)** — Deployment instructions and runbook
+- **[Risk Correlation](docs/RISK_CORRELATION.md)** — How flood warnings are correlated with road incidents
+- **[API Optimization Guide](docs/API_OPTIMIZATION_GUIDE.md)** — Performance optimization strategies and best practices
+- **[Contributing](CONTRIBUTING.md)** — Development guidelines and workflow
 
 ## License
 
