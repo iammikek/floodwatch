@@ -11,7 +11,9 @@
         "laravel/pulse": "^1.5",
         "laravel/tinker": "^2.10.1",
         "livewire/livewire": "^4.1",
-        "openai-php/laravel": "^0.18.0"
+        "openai-php/laravel": "^0.18.0",
+        "ext-dom": "*",
+        "ext-libxml": "*"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

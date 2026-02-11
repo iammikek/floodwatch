@@ -2,11 +2,14 @@
 
 namespace App\Services;
 
+use App\Enums\Region;
 use App\Flood\DTOs\FloodWarning;
 use App\Flood\Services\EnvironmentAgencyFloodService;
 use App\Flood\Services\FloodForecastService;
 use App\Flood\Services\RiverLevelService;
 use App\Roads\Services\NationalHighwaysService;
+use App\Roads\Services\SomersetCouncilRoadworksService;
+use App\Support\CoordinateMapper;
 use App\Support\LogMasker;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Concurrency;
@@ -19,6 +22,7 @@ class FloodWatchService
     public function __construct(
         protected EnvironmentAgencyFloodService $floodService,
         protected NationalHighwaysService $highwaysService,
+        protected SomersetCouncilRoadworksService $somersetRoadworksService,
         protected FloodForecastService $forecastService,
         protected WeatherService $weatherService,
         protected RiverLevelService $riverLevelService,
@@ -165,6 +169,8 @@ class FloodWatchService
                     'incidents' => $incidents,
                     'riverLevels' => $riverLevels,
                     'region' => $region,
+                    'centerLat' => $lat,
+                    'centerLng' => $lng,
                 ];
                 $result = $this->executeTool($toolName, $toolCall->function->arguments, $context);
                 if ($toolName === 'GetFloodData' && is_array($result)) {
@@ -308,9 +314,15 @@ class FloodWatchService
                 $args['radius_km'] ?? null
             ),
             'GetHighwaysIncidents' => $this->sortIncidentsByPriority(
-                $this->filterIncidentsByRegion(
-                    $this->highwaysService->getIncidents(),
-                    $context['region'] ?? null
+                $this->filterMotorwaysFromDisplay(
+                    $this->filterIncidentsByProximity(
+                        $this->filterIncidentsByRegion(
+                            $this->mergedHighwaysIncidents($context['region'] ?? null),
+                            $context['region'] ?? null
+                        ),
+                        $context['centerLat'] ?? null,
+                        $context['centerLng'] ?? null
+                    )
                 )
             ),
             'GetFloodForecast' => $this->forecastService->getForecast(),
@@ -500,6 +512,23 @@ class FloodWatchService
     }
 
     /**
+     * Merged incidents from cache: National Highways + Somerset Council (when region is Somerset).
+     *
+     * @return array<int, array{road?: string, status?: string, incidentType?: string, delayTime?: string}>
+     */
+    private function mergedHighwaysIncidents(?string $region): array
+    {
+        $incidents = $this->highwaysService->getIncidents();
+
+        if ($region === Region::Somerset->value) {
+            $somerset = $this->somersetRoadworksService->getIncidents();
+            $incidents = array_merge($incidents, $somerset);
+        }
+
+        return $incidents;
+    }
+
+    /**
      * Sort incidents by priority: flood-related first, then roadClosed before laneClosures.
      *
      * @param  array<int, array<string, mixed>>  $incidents
@@ -513,8 +542,8 @@ class FloodWatchService
             if ($aFlood !== $bFlood) {
                 return $aFlood ? -1 : 1;
             }
-            $aClosed = ($a['managementType'] ?? '') === 'roadClosed';
-            $bClosed = ($b['managementType'] ?? '') === 'roadClosed';
+            $aClosed = ($a['managementType'] ?? $a['incidentType'] ?? '') === 'roadClosed';
+            $bClosed = ($b['managementType'] ?? $b['incidentType'] ?? '') === 'roadClosed';
             if ($aClosed !== $bClosed) {
                 return $aClosed ? -1 : 1;
             }
@@ -523,6 +552,29 @@ class FloodWatchService
         });
 
         return array_values($incidents);
+    }
+
+    /**
+     * Filter out motorway incidents when config excludes them (hyperlocal focus).
+     *
+     * @param  array<int, array{road?: string}>  $incidents
+     * @return array<int, array{road?: string}>
+     */
+    private function filterMotorwaysFromDisplay(array $incidents): array
+    {
+        if (! config('flood-watch.exclude_motorways_from_display', true)) {
+            return $incidents;
+        }
+
+        return array_values(array_filter($incidents, function (array $incident): bool {
+            $road = trim((string) ($incident['road'] ?? ''));
+            if ($road === '') {
+                return true;
+            }
+            $baseRoad = $this->extractBaseRoad($road);
+
+            return ! preg_match('/^M\d+/', $baseRoad);
+        }));
     }
 
     /**
@@ -547,6 +599,43 @@ class FloodWatchService
 
             return in_array($baseRoad, $allowed, true);
         }));
+    }
+
+    /**
+     * Filter incidents to those within radius of the search location so the AI summary only mentions nearby incidents.
+     *
+     * @param  array<int, array<string, mixed>>  $incidents
+     * @return array<int, array<string, mixed>>
+     */
+    private function filterIncidentsByProximity(array $incidents, ?float $centerLat, ?float $centerLng): array
+    {
+        $radiusKm = config('flood-watch.incident_summary_proximity_km', 80);
+        if ($radiusKm <= 0 || $centerLat === null || $centerLng === null) {
+            return $incidents;
+        }
+
+        return array_values(array_filter($incidents, function (array $incident) use ($centerLat, $centerLng, $radiusKm): bool {
+            $coords = CoordinateMapper::normalize($incident);
+            $lat = $coords['lat'] ?? null;
+            $lng = $coords['lng'] ?? null;
+            if ($lat === null || $lng === null) {
+                return false;
+            }
+
+            return $this->haversineKm($centerLat, $centerLng, (float) $lat, (float) $lng) <= $radiusKm;
+        }));
+    }
+
+    private function haversineKm(float $lat1, float $lng1, float $lat2, float $lng2): float
+    {
+        $earthRadiusKm = 6371.0;
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLng = deg2rad($lng2 - $lng1);
+        $a = sin($dLat / 2) ** 2
+            + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLng / 2) ** 2;
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+        return $earthRadiusKm * $c;
     }
 
     /**

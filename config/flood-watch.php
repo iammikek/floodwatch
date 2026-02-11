@@ -144,6 +144,24 @@ return [
         'retry_sleep_ms' => (int) env('FLOOD_WATCH_NH_RETRY_SLEEP_MS', 100),
         'closures_path' => env('NATIONAL_HIGHWAYS_CLOSURES_PATH', 'closures'),
         'fetch_unplanned' => env('NATIONAL_HIGHWAYS_FETCH_UNPLANNED', true),
+        'cache_minutes' => (int) env('NATIONAL_HIGHWAYS_CACHE_MINUTES', 15),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Somerset Council roadworks and travel (scraped)
+    |--------------------------------------------------------------------------
+    |
+    | Scrapes https://www.somerset.gov.uk/roads-travel-and-parking/roadworks-and-travel/
+    | for travel updates. Merged with National Highways incidents for Somerset region.
+    |
+    */
+
+    'somerset_council' => [
+        'roadworks_url' => env('SOMERSET_COUNCIL_ROADWORKS_URL', 'https://www.somerset.gov.uk/roads-travel-and-parking/roadworks-and-travel/'),
+        'enabled' => env('SOMERSET_COUNCIL_ROADWORKS_ENABLED', true),
+        'timeout' => (int) env('SOMERSET_COUNCIL_ROADWORKS_TIMEOUT', 15),
+        'cache_minutes' => (int) env('SOMERSET_COUNCIL_ROADWORKS_CACHE_MINUTES', 30),
     ],
 
     /*
@@ -163,12 +181,18 @@ return [
     | Cache Store
     |--------------------------------------------------------------------------
     |
-    | Cache store for flood/road data. Use "flood-watch" (Redis) in production,
-    | "flood-watch-array" in testing (no Redis required).
+    | Cache store for flood/road data. Defaults to the app cache store (e.g.
+    | database on Railway without Redis). Set FLOOD_WATCH_CACHE_STORE=flood-watch
+    | when Redis is available; use "flood-watch-array" in testing.
+    |
+    | Required for scheduled jobs: FetchNationalHighwaysIncidentsJob and
+    | ScrapeSomersetCouncilRoadworksJob use onOneServer() and withoutOverlapping(),
+    | which require a store that supports atomic locks (database or Redis). The
+    | file driver does not support locks and will cause jobs to behave inconsistently.
     |
     */
 
-    'cache_store' => env('FLOOD_WATCH_CACHE_STORE', 'flood-watch'),
+    'cache_store' => env('FLOOD_WATCH_CACHE_STORE', env('CACHE_STORE', 'database')),
 
     /*
     |--------------------------------------------------------------------------
@@ -181,6 +205,52 @@ return [
     */
 
     'cache_key_prefix' => env('FLOOD_WATCH_CACHE_PREFIX', 'flood-watch'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Map base layer (tiles)
+    |--------------------------------------------------------------------------
+    |
+    | Tile URL and attribution for the Leaflet map. Use a style that suits
+    | overlays (flood, roads, river levels). Options:
+    |
+    | - positron: CartoDB Positron (light, minimal labels) – good for data overlay
+    | - voyager:  CartoDB Voyager (clean, less city detail)
+    | - opentopomap: OpenTopoMap (terrain/topographic, natural features)
+    | - osm:      OpenStreetMap standard (default, more city detail)
+    |
+    */
+
+    'map' => [
+        'tile_url' => env('FLOOD_WATCH_MAP_TILE_URL', 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'),
+        'tile_attribution' => env('FLOOD_WATCH_MAP_TILE_ATTRIBUTION', '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'),
+        'tile_layers' => [
+            [
+                'id' => 'positron',
+                'label' => 'Light',
+                'url' => 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+                'attribution' => '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            ],
+            [
+                'id' => 'voyager_nolabels',
+                'label' => 'Minimal (no labels)',
+                'url' => 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png',
+                'attribution' => '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            ],
+            [
+                'id' => 'topo',
+                'label' => 'Terrain',
+                'url' => 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
+                'attribution' => 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, SRTM | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a>',
+            ],
+            [
+                'id' => 'osm',
+                'label' => 'Streets',
+                'url' => 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                'attribution' => '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+            ],
+        ],
+    ],
 
     'route_check' => [
         'osrm_url' => env('FLOOD_WATCH_OSRM_URL', 'https://router.project-osrm.org'),
@@ -301,6 +371,34 @@ return [
     'incident_allowed_roads' => [
         'A30', 'A303', 'A361', 'A372', 'A38', 'M4', 'M5',
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Exclude Motorways from Display (Hyperlocal)
+    |--------------------------------------------------------------------------
+    |
+    | For hyperlocal flood monitoring, motorway closures are less relevant than
+    | A-road closures. When true, incidents on motorways (M1, M4, M5, etc.)
+    | are excluded from the incident list shown to users.
+    | Set FLOOD_WATCH_EXCLUDE_MOTORWAYS_FROM_DISPLAY=false to show motorways.
+    |
+    */
+
+    'exclude_motorways_from_display' => env('FLOOD_WATCH_EXCLUDE_MOTORWAYS_FROM_DISPLAY', true),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Incident Proximity for AI Summary (Miles from Search Location)
+    |--------------------------------------------------------------------------
+    |
+    | When the user has a search location (postcode or GPS), only road incidents
+    | within this radius (km) of that location are included in the AI summary.
+    | Prevents e.g. A38 incidents in Cornwall appearing when the user is in Bristol.
+    | Set to 0 to disable (show all region-filtered incidents). 50 miles ≈ 80 km.
+    |
+    */
+
+    'incident_summary_proximity_km' => (float) env('FLOOD_WATCH_INCIDENT_SUMMARY_PROXIMITY_KM', 80),
 
     /*
     |--------------------------------------------------------------------------

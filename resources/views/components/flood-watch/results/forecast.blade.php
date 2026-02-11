@@ -5,7 +5,7 @@
 <div id="forecast">
     <h2 class="text-lg font-medium text-slate-900 mb-3">{{ __('flood-watch.dashboard.forecast_outlook') }}</h2>
     @if (count($forecast) > 0 && !empty($forecast['england_forecast']))
-        <div class="p-4 rounded-lg bg-white shadow-sm border border-slate-200">
+        <div class="p-4 bg-white shadow-sm border border-slate-200">
             <p class="text-slate-600">{{ $forecast['england_forecast'] }}</p>
             @if (!empty($forecast['flood_risk_trend']))
                 <p class="text-sm text-slate-500 mt-2">
@@ -17,6 +17,6 @@
             @endif
         </div>
     @else
-        <p class="p-4 rounded-lg bg-white shadow-sm border border-slate-200 text-slate-600">{{ __('flood-watch.dashboard.no_forecast') }}</p>
+        <p class="p-4 bg-white shadow-sm border border-slate-200 text-slate-600">{{ __('flood-watch.dashboard.no_forecast') }}</p>
     @endif
 </div>

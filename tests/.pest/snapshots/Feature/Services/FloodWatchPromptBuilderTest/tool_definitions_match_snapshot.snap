@@ -38,7 +38,7 @@
         "type": "function",
         "function": {
             "name": "GetFloodForecast",
-            "description": "Fetch the latest 5-day flood risk forecast from the Flood Forecasting Centre. Returns England-wide outlook, risk trend (day1\u2013day5), and source summaries (river, coastal, ground) relevant to the South West.",
+            "description": "Fetch the latest 5-day flood risk forecast from the Flood Forecasting Centre. Returns England-wide narrative (risk trend day1\u2013day5, sources). When summarising for the user, focus on South West\u2013relevant parts only; do not highlight areas outside the South West (e.g. River Trent, Midlands).",
             "parameters": {
                 "type": "object",
                 "properties": {}

@@ -7,4 +7,21 @@
         background: transparent !important;
         border: none !important;
     }
+    .flood-map-marker-inner {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        font-size: 2em;
+    }
+    .flood-map-legend-elevated {
+        color: #dc2626; /* red-600 */
+    }
+    .flood-map-legend-expected {
+        color: #2563eb; /* blue-600 */
+    }
+    .flood-map-legend-low {
+        color: #64748b; /* slate-500 */
+    }
 }

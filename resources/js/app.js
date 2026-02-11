@@ -2,13 +2,23 @@ import './bootstrap';
 
 // Leaflet is lazy-loaded when map is needed; preload on search start for parallel load
 window.__loadLeaflet = function () {
-    if (window.L) return Promise.resolve(window.L);
+    if (window.L && window.L.MarkerClusterGroup) return Promise.resolve(window.L);
     return Promise.all([
         import('leaflet/dist/leaflet.css'),
         import('leaflet'),
     ]).then(([, m]) => {
         window.L = m.default;
-        return m.default;
+        return Promise.all([
+            import('leaflet.markercluster/dist/MarkerCluster.css'),
+            import('leaflet.markercluster/dist/MarkerCluster.Default.css'),
+            import('leaflet.markercluster'),
+        ]).then(([, , clusterModule]) => {
+            if (clusterModule?.MarkerClusterGroup) {
+                window.L.MarkerClusterGroup = clusterModule.MarkerClusterGroup;
+                window.L.markerClusterGroup = (opts) => new clusterModule.MarkerClusterGroup(opts);
+            }
+            return window.L;
+        });
     });
 };
 

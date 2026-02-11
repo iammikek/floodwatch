@@ -1,4 +1,11 @@
+@props([
+    'showSectionLinks' => false,
+])
+
 <footer class="mt-12 pt-6 border-t border-slate-200">
+    @if ($showSectionLinks)
+        <x-flood-watch.section-jump-nav class="mb-4" />
+    @endif
     @if (config('flood-watch.donation_url'))
         <p class="text-xs text-slate-500 mb-2">
             {{ __('flood-watch.dashboard.free_to_use') }}

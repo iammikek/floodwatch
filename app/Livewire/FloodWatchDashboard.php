@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Enums\IncidentType;
 use App\Models\LocationBookmark;
 use App\Models\UserSearch;
 use App\Services\FloodWatchService;
@@ -43,6 +44,13 @@ class FloodWatchDashboard extends Component
 
     public ?array $mapCenter = null;
 
+    /**
+     * Map viewport bounds (set by map moveend). When set, lists/cards show only items in view.
+     *
+     * @var array{n: float, s: float, e: float, w: float}|null
+     */
+    public ?array $mapBounds = null;
+
     public bool $hasUserLocation = false;
 
     public ?string $lastChecked = null;
@@ -60,6 +68,15 @@ class FloodWatchDashboard extends Component
     public bool $routeCheckLoading = false;
 
     public ?array $routeCheckResult = null;
+
+    public ?string $displayLocation = null;
+
+    public ?string $outcode = null;
+
+    /**
+     * Which results layout to render: 'mobile' or 'desktop'. Set from client by viewport so only one layout is in the DOM (no duplicate IDs).
+     */
+    public string $layoutVariant = 'mobile';
 
     /**
      * User's location bookmarks (when logged in).
@@ -90,7 +107,8 @@ class FloodWatchDashboard extends Component
     }
 
     /**
-     * Last 5 searches for the current user or session.
+     * Last 5 unique searches for the current user or session.
+     * Same location (by lat/lng) appears only once, most recent first.
      *
      * @return array<int, array{location: string, lat: float, lng: float, region: ?string}>
      */
@@ -98,7 +116,7 @@ class FloodWatchDashboard extends Component
     {
         $query = UserSearch::query()
             ->latest('searched_at')
-            ->limit(5);
+            ->limit(20);
 
         if (Auth::check()) {
             $query->where('user_id', Auth::id());
@@ -107,6 +125,8 @@ class FloodWatchDashboard extends Component
         }
 
         return $query->get()
+            ->unique(fn (UserSearch $s) => round($s->lat, 4).','.round($s->lng, 4))
+            ->take(5)
             ->map(fn (UserSearch $s) => [
                 'location' => $s->location,
                 'lat' => $s->lat,
@@ -115,6 +135,178 @@ class FloodWatchDashboard extends Component
             ])
             ->values()
             ->all();
+    }
+
+    /**
+     * House risk status derived from floods (at_risk or clear).
+     */
+    public function getHouseRiskProperty(): string
+    {
+        $activeFloods = $this->getActiveFloods();
+
+        return count($activeFloods) > 0 ? 'at_risk' : 'clear';
+    }
+
+    /**
+     * Roads risk status derived from incidents (closed, delays, or clear).
+     */
+    public function getRoadsRiskProperty(): string
+    {
+        $hasBlocking = $this->hasBlockingClosure();
+        $hasDelays = $this->hasDelaysOrLaneClosures();
+
+        if ($hasBlocking) {
+            return 'closed';
+        }
+        if ($hasDelays) {
+            return 'delays';
+        }
+
+        return 'clear';
+    }
+
+    /**
+     * Update map viewport bounds so lists/cards favour data in the visible area.
+     */
+    public function setMapBounds(float $north, float $south, float $east, float $west): void
+    {
+        $this->mapBounds = [
+            'n' => $north,
+            's' => $south,
+            'e' => $east,
+            'w' => $west,
+        ];
+    }
+
+    /**
+     * Floods to display in lists/cards: viewport-filtered when map bounds are set, otherwise all.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function getFloodsInViewProperty(): array
+    {
+        return $this->filterItemsInBounds(
+            $this->floods,
+            fn (array $f) => [
+                isset($f['lat']) ? (float) $f['lat'] : null,
+                isset($f['lng']) ? (float) $f['lng'] : (isset($f['long']) ? (float) $f['long'] : null),
+            ]
+        );
+    }
+
+    /**
+     * Incidents to display in lists/cards: viewport-filtered when map bounds are set, otherwise all.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function getIncidentsInViewProperty(): array
+    {
+        return $this->filterItemsInBounds(
+            $this->incidents,
+            fn (array $i) => [
+                isset($i['lat']) ? (float) $i['lat'] : (isset($i['latitude']) ? (float) $i['latitude'] : null),
+                isset($i['lng']) ? (float) $i['lng'] : (isset($i['longitude']) ? (float) $i['longitude'] : null),
+            ]
+        );
+    }
+
+    /**
+     * Filter items to those inside mapBounds. Items without coords are included when bounds are set.
+     *
+     * @param  array<int, array<string, mixed>>  $items
+     * @param  callable(array): array{0: ?float, 1: ?float}  $getLatLng
+     * @return array<int, array<string, mixed>>
+     */
+    private function filterItemsInBounds(array $items, callable $getLatLng): array
+    {
+        if ($this->mapBounds === null) {
+            return $items;
+        }
+        $b = $this->mapBounds;
+        $inBounds = function (array $item) use ($b, $getLatLng): bool {
+            [$lat, $lng] = $getLatLng($item);
+            if ($lat === null || $lng === null) {
+                return true;
+            }
+
+            return $lat >= $b['s'] && $lat <= $b['n'] && $lng >= $b['w'] && $lng <= $b['e'];
+        };
+
+        return array_values(array_filter($items, $inBounds));
+    }
+
+    /**
+     * Action steps derived from floods and incidents.
+     *
+     * @return array<int, string>
+     */
+    public function getActionStepsProperty(): array
+    {
+        $steps = [];
+        $activeFloods = $this->getActiveFloods();
+        $hasBlocking = $this->hasBlockingClosure();
+
+        if (count($activeFloods) > 0) {
+            $steps[] = 'deploy_defences';
+            $steps[] = 'monitor_updates';
+        }
+        if ($hasBlocking) {
+            $steps[] = 'avoid_routes';
+        }
+        if (count($steps) === 0) {
+            $steps[] = 'none';
+        }
+
+        return $steps;
+    }
+
+    /**
+     * Whether any flood has severityLevel === 1 (Danger to Life).
+     */
+    public function getHasDangerToLifeProperty(): bool
+    {
+        foreach ($this->floods as $flood) {
+            $level = (int) ($flood['severityLevel'] ?? 4);
+            if ($level === 1) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Floods with severityLevel 1, 2, or 3 (active; 4 = inactive).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function getActiveFloods(): array
+    {
+        return array_values(array_filter($this->floods, fn (array $f) => ((int) ($f['severityLevel'] ?? 4)) < 4));
+    }
+
+    private function hasBlockingClosure(): bool
+    {
+        foreach ($this->incidents as $incident) {
+            $type = (string) ($incident['managementType'] ?? $incident['incidentType'] ?? $incident['incident_type'] ?? '');
+            if (IncidentType::isBlockingClosure($type)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function hasDelaysOrLaneClosures(): bool
+    {
+        foreach ($this->incidents as $incident) {
+            $type = strtolower((string) ($incident['incidentType'] ?? $incident['incident_type'] ?? ''));
+            if (str_contains($type, 'lane') || str_contains($type, 'closure') || ! empty($incident['delayTime'] ?? $incident['delay_time'] ?? null)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function selectRecentSearch(string $location): void
@@ -143,6 +335,7 @@ class FloodWatchDashboard extends Component
             'lng' => $bookmark->lng,
             'region' => $bookmark->region ?? 'somerset',
             'display_name' => $bookmark->location,
+            'outcode' => $this->extractOutcode($bookmark->location),
         ];
 
         $this->performSearch(
@@ -253,14 +446,14 @@ class FloodWatchDashboard extends Component
             $this->stream(to: 'searchStatus', content: __('flood-watch.progress.looking_up_location'), replace: true);
             $validation = $locationResolver->resolve($locationTrimmed);
             if (! $validation['valid']) {
-                $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
+                $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'mapBounds', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
                 $this->error = $validation['error'] ?? __('flood-watch.error.invalid_location');
                 $this->loading = false;
 
                 return;
             }
             if (! $validation['in_area']) {
-                $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
+                $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'mapBounds', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
                 $this->error = $validation['error'] ?? __('flood-watch.error.outside_area');
                 $this->loading = false;
 
@@ -278,7 +471,7 @@ class FloodWatchDashboard extends Component
         $result = $locationResolver->reverseFromCoords($lat, $lng);
 
         if (! $result['valid']) {
-            $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
+            $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'mapBounds', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
             $this->error = $result['error'] ?? __('flood-watch.dashboard.gps_error');
             $this->loading = false;
 
@@ -286,7 +479,7 @@ class FloodWatchDashboard extends Component
         }
 
         if (! $result['in_area']) {
-            $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
+            $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'mapBounds', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
             $this->error = __('flood-watch.error.outside_area');
             $this->loading = false;
 
@@ -316,7 +509,7 @@ class FloodWatchDashboard extends Component
         UserSearchService $userSearchService,
         ?array $validation
     ): void {
-        $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'hasUserLocation', 'lastChecked', 'error', 'retryAfterTimestamp']);
+        $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'mapBounds', 'hasUserLocation', 'lastChecked', 'error', 'retryAfterTimestamp', 'displayLocation', 'outcode']);
         $this->loading = true;
 
         if (Auth::guest()) {
@@ -350,10 +543,12 @@ class FloodWatchDashboard extends Component
             $onProgress = fn (string $status) => $streamStatus($status);
             $result = $assistant->chat($message, [], $cacheKey, $userLat, $userLng, $region, auth()->id(), $onProgress);
             $this->assistantResponse = $result['response'];
-            $this->floods = $this->enrichFloodsWithDistance(
-                $result['floods'],
-                $userLat,
-                $userLng
+            $this->floods = $this->stripPolygonsFromFloods(
+                $this->enrichFloodsWithDistance(
+                    $result['floods'],
+                    $userLat,
+                    $userLng
+                )
             );
             $this->incidents = IncidentIcon::enrichIncidents($result['incidents']);
             $this->forecast = $result['forecast'] ?? [];
@@ -364,6 +559,8 @@ class FloodWatchDashboard extends Component
             $this->mapCenter = ['lat' => $lat, 'lng' => $lng];
             $this->hasUserLocation = $userLat !== null && $userLng !== null;
             $this->lastChecked = $result['lastChecked'] ?? null;
+            $this->displayLocation = data_get($validation, 'display_name') ?? $locationTrimmed;
+            $this->outcode = data_get($validation, 'outcode');
 
             $trendService->record(
                 $locationTrimmed !== '' ? $locationTrimmed : null,
@@ -398,6 +595,22 @@ class FloodWatchDashboard extends Component
     }
 
     /**
+     * Remove polygon GeoJSON from each flood to keep Livewire payload small; polygons are loaded from cache by the map.
+     *
+     * @param  array<int, array<string, mixed>>  $floods
+     * @return array<int, array<string, mixed>>
+     */
+    private function stripPolygonsFromFloods(array $floods): array
+    {
+        return array_map(function (array $flood) {
+            $out = $flood;
+            unset($out['polygon']);
+
+            return $out;
+        }, $floods);
+    }
+
+    /**
      * Enrich floods with distance from user location and sort by proximity (closest first).
      *
      * @param  array<int, array<string, mixed>>  $floods
@@ -429,6 +642,16 @@ class FloodWatchDashboard extends Component
             ->sortByDesc(fn (array $f) => $f['timeMessageChanged'] ?? $f['timeRaised'] ?? '')
             ->values()
             ->all();
+    }
+
+    private function extractOutcode(string $location): ?string
+    {
+        $trimmed = trim($location);
+        if (preg_match('/^([A-Za-z]{1,2}[0-9][0-9A-Za-z]?)(?:\s+[0-9][A-Za-z]{2})?$/i', $trimmed, $m)) {
+            return $m[1];
+        }
+
+        return null;
     }
 
     private function haversineDistanceKm(float $lat1, float $lng1, float $lat2, float $lng2): float
@@ -545,7 +768,7 @@ class FloodWatchDashboard extends Component
     public function restoreFromStorage(array $data): void
     {
         $this->assistantResponse = is_string($data['assistantResponse'] ?? null) ? $data['assistantResponse'] : null;
-        $this->floods = is_array($data['floods'] ?? null) ? $data['floods'] : [];
+        $this->floods = $this->stripPolygonsFromFloods(is_array($data['floods'] ?? null) ? $data['floods'] : []);
         $this->incidents = IncidentIcon::enrichIncidents(is_array($data['incidents'] ?? null) ? $data['incidents'] : []);
         $this->forecast = is_array($data['forecast'] ?? null) ? $data['forecast'] : [];
         $this->weather = is_array($data['weather'] ?? null) ? $data['weather'] : [];
