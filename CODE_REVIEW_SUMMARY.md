@@ -277,7 +277,7 @@ private function trimMessagesToTokenBudget(array $messages): array
 
 ## Testing Recommendations
 
-Since PHP 8.4 is required but the CI environment has PHP 8.3, the code changes have been **syntax-validated** but not **test-executed locally**.
+CI is configured to run PHP 8.4; however, during this review the changes were only **syntax-validated** and the full test suite was **not executed locally**.
 
 ### Before Merging
 
