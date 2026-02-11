@@ -214,12 +214,13 @@ CONCURRENCY_DRIVER=process  # Use 'process' for true parallelism in production
 
 ### 3. Caching Strategy
 
-**Cache Key Structure**:
-```
-flood-watch:chat:{md5(cacheKey|userMessage)}
-```
+**Cache Key Structure** (`FloodWatchService::cacheKey()`):
+- When `$cacheKey` is provided (e.g. postcode or place name): `flood-watch:chat:{md5($cacheKey)}`
+- When `$cacheKey` is null or empty: `flood-watch:chat:{md5($userMessage)}`
 
-**TTL**: 15 minutes (configurable via `FLOOD_WATCH_CACHE_TTL_MINUTES`)
+So the key is derived from the cache key **or** the user message, not both combined.
+
+**TTL**: Default is **0** (caching disabled). Set `FLOOD_WATCH_CACHE_TTL_MINUTES=15` (or desired minutes) in `.env` to enable. Config: `config('flood-watch.cache_ttl_minutes')`.
 
 **Cache Stores**:
 - **Production**: Redis (`flood-watch` store)

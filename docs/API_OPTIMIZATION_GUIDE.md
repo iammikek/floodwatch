@@ -28,9 +28,12 @@ Start here for immediate performance improvements:
 ```env
 # .env
 FLOOD_WATCH_CACHE_TTL_MINUTES=15
-FLOOD_WATCH_CACHE_STORE=redis
+# Dedicated store (config/cache.php: flood-watch) avoids key collisions with other app cache usage
+FLOOD_WATCH_CACHE_STORE=flood-watch
 REDIS_HOST=redis
 ```
+
+**Note**: Use `flood-watch` (the app’s dedicated Redis-backed store). Use `redis` only if you prefer the default Redis store. The dedicated store is documented in `config/flood-watch.php` and `config/cache.php`.
 
 **Impact**: Reduces OpenAI API calls by ~80% for repeated postcodes
 
@@ -354,7 +357,8 @@ public function chat(string $userMessage, ...): array
 └─────────────────────────────────────────┘
               ↓
 ┌─────────────────────────────────────────┐
-│  Layer 1: Result Cache (Redis)          │
+│  Layer 1: Result Cache (flood-watch)    │
+│  Store: flood-watch (Redis-backed)      │
 │  TTL: 15 minutes                        │
 │  Key: flood-watch:chat:{hash}          │
 └─────────────────────────────────────────┘

@@ -44,7 +44,7 @@ class FloodWatchService
      * @param  string|null  $region  User's region (e.g., 'somerset', 'bristol') for region-specific prompt injection (optional).
      * @param  int|null  $userId  User ID for LLM request recording in analytics (optional).
      * @param  callable(string): void|null  $onProgress  Optional callback for progress updates (e.g., for streaming status to UI). Receives progress message strings.
-     * @return array{response: string, floods: array, incidents: array, forecast: array, weather: array, riverLevels: array, lastChecked: string}  The LLM response and all collected data
+     * @return array{response: string, floods: array, incidents: array, forecast: array, weather: array, riverLevels: array, lastChecked: string} The LLM response and all collected data
      */
     public function chat(string $userMessage, array $conversation = [], ?string $cacheKey = null, ?float $userLat = null, ?float $userLng = null, ?string $region = null, ?int $userId = null, ?callable $onProgress = null): array
     {
@@ -124,12 +124,14 @@ class FloodWatchService
                     'error' => $e->getMessage(),
                     'iteration' => $iteration + 1,
                 ]);
+
                 return $emptyResult(__('flood-watch.error.api_error'), now()->toIso8601String());
             } catch (Throwable $e) {
                 Log::error('FloodWatch unexpected error during LLM call', [
                     'error' => $e->getMessage(),
                     'iteration' => $iteration + 1,
                 ]);
+
                 return $emptyResult(__('flood-watch.error.unexpected'), now()->toIso8601String());
             }
 
@@ -191,7 +193,7 @@ class FloodWatchService
                     'riverLevels' => $riverLevels,
                     'region' => $region,
                 ];
-                
+
                 try {
                     $result = $this->executeTool($toolName, $toolCall->function->arguments, $context);
                 } catch (Throwable $e) {
@@ -199,9 +201,9 @@ class FloodWatchService
                         'tool' => $toolName,
                         'error' => $e->getMessage(),
                     ]);
-                    $result = ['error' => 'Tool execution failed: ' . $e->getMessage()];
+                    $result = ['error' => __('flood-watch.error.tool_failed'), 'code' => 'tool_error'];
                 }
-                
+
                 if ($toolName === 'GetFloodData' && is_array($result) && ! isset($result['error'])) {
                     $floods = $result;
                 }
@@ -368,6 +370,10 @@ class FloodWatchService
             return $result;
         }
 
+        if (isset($result['error'])) {
+            return $result;
+        }
+
         if ($toolName === 'GetFloodData') {
             $max = config('flood-watch.llm_max_floods', 25);
             $maxMsg = config('flood-watch.llm_max_flood_message_chars', 300);
@@ -462,13 +468,13 @@ class FloodWatchService
     /**
      * Trim messages to stay under the model's context limit. Keeps system, user,
      * and only the most recent assistant+tool block when over budget.
-     * 
+     *
      * This implements a token budget management strategy:
      * 1. First, estimate current token count (crude but fast: bytes/4)
      * 2. If under budget, return messages as-is
      * 3. If over budget, keep system prompt + user message + last assistant+tool exchange
      * 4. If still over budget after trimming, truncate individual tool contents
-     * 
+     *
      * This ensures we maintain conversation context while avoiding "context length exceeded" errors.
      *
      * @param  array<int, array{role: string, content?: string|null, tool_calls?: array, tool_call_id?: string}>  $messages
@@ -496,15 +502,23 @@ class FloodWatchService
             }
         }
 
-        // Keep only: system prompt + user message + last assistant+tool exchange
-        // This preserves the most recent context while discarding older iterations
-        // Note: $messages ALWAYS has at least 2 elements (system + user) from buildMessages()
-        // Check that $lastAssistantIndex >= 2 ensures we have at least one iteration to trim
+        // Keep only: system prompt + most recent user message + last assistant+tool exchange
+        // buildMessages() can prepend conversation history, so index 1 is not always the current user
+        // message—find the last role === 'user' before the last assistant/tool block.
         if ($lastAssistantIndex !== null && $lastAssistantIndex >= 2) {
+            $lastUserIndex = null;
+            for ($i = $lastAssistantIndex - 1; $i >= 0; $i--) {
+                if (($messages[$i]['role'] ?? '') === 'user') {
+                    $lastUserIndex = $i;
+                    break;
+                }
+            }
+            $userMessage = $lastUserIndex !== null ? $messages[$lastUserIndex] : $messages[1];
+
             $messages = [
-                $messages[0],  // System prompt
-                $messages[1],  // User message
-                ...array_slice($messages, $lastAssistantIndex),  // Last assistant + subsequent tool responses
+                $messages[0],
+                $userMessage,
+                ...array_slice($messages, $lastAssistantIndex),
             ];
             Log::warning('FloodWatch trimmed to last assistant+tool block', [
                 'estimated_tokens' => $estimate($messages),
@@ -516,7 +530,7 @@ class FloodWatchService
 
     /**
      * When messages are still over budget, truncate tool message contents until under limit.
-     * 
+     *
      * This is a fallback strategy when keeping only the last assistant+tool block isn't enough.
      * It progressively shortens tool response contents until we're under the token budget.
      *

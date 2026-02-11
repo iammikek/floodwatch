@@ -1,8 +1,8 @@
-# Code Review Summary
+# FloodWatch LLM Integration Review
 
-**Date**: 2026-02-11  
-**Reviewed by**: GitHub Copilot  
-**Focus Areas**: LLM Integration, Documentation, Code Quality
+**Last updated**: 2026-02-11  
+**Maintainer**: FloodWatch Core Team  
+**Scope**: LLM integration, documentation, and code quality
 
 ---
 
