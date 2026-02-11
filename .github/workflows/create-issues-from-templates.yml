@@ -1,0 +1,133 @@
+name: Create Issues from Templates
+
+on:
+  workflow_dispatch:
+    inputs:
+      template_pattern:
+        description: 'Pattern to match template files (e.g., docs/*-issue-*.md)'
+        required: false
+        default: 'docs/*-issue-*.md'
+      dry_run:
+        description: 'Dry run mode (will not create issues, only show what would be created)'
+        required: false
+        default: 'false'
+        type: boolean
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  create-issues:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Parse and create issues
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+
+          echo "🔍 Searching for issue templates matching pattern: ${{ inputs.template_pattern }}"
+
+          # Find all matching template files
+          template_files=$(find . -path "./${{ inputs.template_pattern }}" -type f 2>/dev/null || true)
+
+          if [ -z "$template_files" ]; then
+            echo "❌ No template files found matching pattern: ${{ inputs.template_pattern }}"
+            exit 0
+          fi
+
+          echo "📋 Found template files:"
+          echo "$template_files"
+          echo ""
+
+          # Process each template file
+          for template_file in $template_files; do
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo "📄 Processing: $template_file"
+
+            # Extract title (first heading after "# Issue:")
+            title=$(grep -m 1 "^# Issue:" "$template_file" | sed 's/^# Issue: //' || true)
+
+            # If no "# Issue:" heading, try to get first heading
+            if [ -z "$title" ]; then
+              title=$(grep -m 1 "^# " "$template_file" | sed 's/^# //' || true)
+            fi
+
+            # Extract labels from the Labels section
+            labels=""
+            in_labels_section=false
+            while IFS= read -r line; do
+              if [[ "$line" == "## Labels" ]]; then
+                in_labels_section=true
+                continue
+              fi
+              if [[ "$in_labels_section" == true ]]; then
+                if [[ "$line" =~ ^## ]]; then
+                  break
+                fi
+                if [[ "$line" =~ ^-[[:space:]]*(.*) ]]; then
+                  label="${BASH_REMATCH[1]}"
+                  if [ -z "$labels" ]; then
+                    labels="$label"
+                  else
+                    labels="$labels,$label"
+                  fi
+                fi
+              fi
+            done < "$template_file"
+
+            # Read the entire file as the body
+            body=$(cat "$template_file")
+
+            if [ -z "$title" ]; then
+              echo "⚠️  Warning: Could not extract title from $template_file, skipping..."
+              continue
+            fi
+
+            echo "  Title: $title"
+            echo "  Labels: ${labels:-none}"
+
+            # Check if issue with same title already exists
+            existing_issue=$(gh issue list --repo ${{ github.repository }} --search "in:title \"$title\"" --json number --jq '.[0].number' 2>/dev/null || true)
+
+            if [ -n "$existing_issue" ]; then
+              echo "  ℹ️  Issue already exists: #$existing_issue"
+              echo "  Skipping creation to avoid duplicates"
+              continue
+            fi
+
+            if [ "${{ inputs.dry_run }}" == "true" ]; then
+              echo "  🏃 DRY RUN - Would create issue with:"
+              echo "     Title: $title"
+              echo "     Labels: ${labels:-none}"
+              echo "     Body length: $(echo "$body" | wc -c) characters"
+            else
+              echo "  ✅ Creating issue..."
+
+              # Create the issue
+              if [ -n "$labels" ]; then
+                issue_number=$(gh issue create \
+                  --title "$title" \
+                  --body "$body" \
+                  --label "$labels" \
+                  --repo ${{ github.repository }} \
+                  | grep -o '#[0-9]*' | tr -d '#')
+              else
+                issue_number=$(gh issue create \
+                  --title "$title" \
+                  --body "$body" \
+                  --repo ${{ github.repository }} \
+                  | grep -o '#[0-9]*' | tr -d '#')
+              fi
+
+              echo "  ✨ Created issue #$issue_number"
+            fi
+            echo ""
+          done
+
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "✅ Done processing templates!"
