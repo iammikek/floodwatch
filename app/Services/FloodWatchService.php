@@ -37,7 +37,7 @@ class FloodWatchService
      * 4. Repeats until LLM returns final response (max 8 iterations)
      *
      * @param  string  $userMessage  The user's query (e.g., "Check status for BA1 1AA")
-     * @param  array<int, array{role: string, content: string, tool_calls?: array}>  $conversation  Previous messages for multi-turn chat (optional). Each message must have 'role' and 'content'. Assistant messages may include 'tool_calls' array.
+     * @param  array<int, array{role: string, content: string}>  $conversation  Previous messages for multi-turn chat (optional). Each message requires 'role' and 'content' keys.
      * @param  string|null  $cacheKey  Custom cache key (optional). If not provided, message hash is used.
      * @param  float|null  $userLat  User's latitude (optional). Defaults to config('flood-watch.default_lat').
      * @param  float|null  $userLng  User's longitude (optional). Defaults to config('flood-watch.default_lng').
@@ -477,8 +477,9 @@ class FloodWatchService
     private function trimMessagesToTokenBudget(array $messages): array
     {
         $maxTokens = config('flood-watch.llm_max_context_tokens', 110000);
-        // Estimate tokens using byte count / 4 (OpenAI's rule: 1 token ≈ 4 bytes in UTF-8)
-        // Note: strlen() returns bytes, not characters - this is correct for token estimation
+        // Crude token estimation: bytes / 4 (OpenAI's rule: ~1 token per 4 chars for English)
+        // Note: strlen() counts bytes, which approximates character count for ASCII/English.
+        // For multi-byte UTF-8, this estimate is less accurate but conservative (overestimates).
         $estimate = fn (array $m): int => (int) ceil(strlen(json_encode(['messages' => $m])) / 4);
         $estimatedTokens = $estimate($messages);
 
