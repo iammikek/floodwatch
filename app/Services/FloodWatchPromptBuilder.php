@@ -10,6 +10,16 @@ use Illuminate\Support\Facades\File;
  */
 class FloodWatchPromptBuilder
 {
+    /**
+     * Cached base prompt to avoid repeated file reads
+     */
+    protected ?string $cachedBasePrompt = null;
+
+    /**
+     * Cached tool definitions to avoid repeated array construction
+     */
+    protected ?array $cachedToolDefinitions = null;
+
     public function __construct(
         protected string $version = 'v1'
     ) {}
@@ -30,13 +40,19 @@ class FloodWatchPromptBuilder
 
     public function loadBasePrompt(): string
     {
+        if ($this->cachedBasePrompt !== null) {
+            return $this->cachedBasePrompt;
+        }
+
         $path = resource_path("prompts/{$this->version}/system.txt");
 
         if (! File::exists($path)) {
             throw new \RuntimeException("Prompt file not found: {$path}");
         }
 
-        return trim(File::get($path));
+        $this->cachedBasePrompt = trim(File::get($path));
+
+        return $this->cachedBasePrompt;
     }
 
     /**
@@ -44,7 +60,11 @@ class FloodWatchPromptBuilder
      */
     public function getToolDefinitions(): array
     {
-        return [
+        if ($this->cachedToolDefinitions !== null) {
+            return $this->cachedToolDefinitions;
+        }
+
+        $this->cachedToolDefinitions = [
             [
                 'type' => 'function',
                 'function' => [
@@ -127,5 +147,7 @@ class FloodWatchPromptBuilder
                 ],
             ],
         ];
+
+        return $this->cachedToolDefinitions;
     }
 }
