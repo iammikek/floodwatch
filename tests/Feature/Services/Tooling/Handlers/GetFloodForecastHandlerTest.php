@@ -40,7 +40,7 @@ it('presents forecast with truncated narrative and limited extras', function () 
     $presented = $handler->presentForLlm($toolResult, new TokenBudget(0));
 
     expect($presented)->toBeArray();
-    expect(strlen($presented['england_forecast'] ?? ''))
+    expect(mb_strlen($presented['england_forecast'] ?? ''))
         ->toBeLessThanOrEqual(11); // 10 + ellipsis or equal when exact
 });
 
