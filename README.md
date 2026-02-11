@@ -141,6 +141,14 @@ Data use requires attribution. The dashboard displays a footer with:
 - **National Highways API key**: Register at the [National Highways Developer Portal](https://developer.data.nationalhighways.co.uk/) and add `NATIONAL_HIGHWAYS_API_KEY` to `.env`. API v2.0: `GET /roads/v2.0/closures?closureType=planned|unplanned`
 - **Redis**: Use `REDIS_HOST=redis` with Sail; `flood-watch-array` cache store for tests
 
+## Documentation
+
+- **[LLM Integration Guide](docs/LLM_INTEGRATION_GUIDE.md)** - Comprehensive guide to using and optimizing the OpenAI integration
+- **[API Optimization Guide](docs/API_OPTIMIZATION_GUIDE.md)** - Performance optimization strategies and best practices
+- **[Architecture](docs/ARCHITECTURE.md)** - System design, data flow, and extension points
+- **[Risk Correlation](docs/RISK_CORRELATION.md)** - How flood warnings are correlated with road incidents
+- **[Contributing](CONTRIBUTING.md)** - Development guidelines and workflow
+
 ## License
 
 Approved for non-commercial use.
