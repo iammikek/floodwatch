@@ -193,3 +193,21 @@ An **analytics layer** is planned for reporting. See `docs/PLAN.md` – Analytic
 | Map API protection | `EnsureFloodWatchSession` middleware, `ThrottleFloodWatch` |
 | Cache warm | `flood-watch:warm-cache` command |
 | Development plan | `docs/PLAN.md` |
+
+
+---
+
+## Configuration & Conventions
+
+- Configuration namespace: All application‑specific configuration lives under `flood-watch.*` (see `config/flood-watch.php`).
+  - Examples: `flood-watch.default_lat`, `flood-watch.environment_agency.*`, `flood-watch.llm_max_*` caps, `flood-watch.prompt_version`.
+- Environment variables use the `FLOOD_WATCH_*` prefix.
+  - Examples: `FLOOD_WATCH_CACHE_TTL_MINUTES`, `FLOOD_WATCH_LLM_MAX_INCIDENTS`, `FLOOD_WATCH_PROMPT_VERSION`.
+- Services pattern: One service per external data source or LLM tool.
+  - Flood domain: `EnvironmentAgencyFloodService`, `RiverLevelService`, `FloodForecastService`.
+  - Roads domain: `NationalHighwaysService`.
+  - Cross‑cutting: `RiskCorrelationService`, `FloodWatchService` (orchestrator), `FloodWatchPromptBuilder`.
+- DTOs: Prefer DTOs at service boundaries (e.g. `FloodWarning`) and keep polygons/heavy fields out of the LLM context.
+- Prompt files: `resources/prompts/{version}/system.txt` with version set via `flood-watch.prompt_version`.
+- Token limits and trimming: Before sending to the LLM, results are reduced according to config caps (see Agents & LLM → Token and prompt management). Keep tool‑specific rules in a single place to avoid duplication.
+- Tool names (planned): Centralize registered tool names in an enum/constant list and consume it across prompt builder and orchestrator to ensure consistency (see Code Quality & Architecture Plan §2.3).

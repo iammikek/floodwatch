@@ -138,3 +138,40 @@ The LLM **orchestrates** tool calls and **synthesises** a short narrative (Curre
 5. Result (narrative + `floods`, `incidents`, etc.) is cached (if enabled) and returned. Dashboard renders from these fields; the narrative is shown as the AI summary.
 
 **Pre-fetch vs on-demand**: Forecast, weather, and river levels are pre-fetched so the final result always includes them. GetFloodData and GetHighwaysIncidents run only when the LLM calls those tools. When the LLM does call GetFloodForecast or GetRiverLevels, the tools perform fresh API calls (pre-fetched values are used for the returned result, not for the tool response payload to the LLM).
+
+
+---
+
+## Token and prompt management
+
+- Context limits: The model context is finite (e.g. ~128k tokens). We actively bound the size of tool payloads sent to the LLM.
+- Trimming strategy (implemented in `FloodWatchService::prepareToolResultForLlm()`):
+  - Floods: keep up to `config('flood-watch.llm_max_floods')` items; truncate each `message` to `config('flood-watch.llm_max_flood_message_chars')`; polygons are never sent to the LLM.
+  - Incidents: keep up to `config('flood-watch.llm_max_incidents')` items.
+  - River levels: keep up to `config('flood-watch.llm_max_river_levels')` items.
+  - Forecast: truncate `england_forecast` to `config('flood-watch.llm_max_forecast_chars')` characters; cap auxiliary arrays when needed.
+  - Correlation payload: overall cap `config('flood-watch.llm_max_correlation_chars')`; floods/incidents are reduced iteratively to remain under the limit.
+- Prompt versioning: Prompts live in `resources/prompts/{version}/system.txt` and the active version is `config('flood-watch.prompt_version')`. When evolving prompts, bump the version and document notable changes.
+
+## Correlation workflow (deeper)
+
+- Purpose: Provide deterministic links between flood warnings, river levels, and road incidents for the LLM to reference in its summary.
+- Flow:
+  - LLM typically calls `GetFloodData` and `GetHighwaysIncidents` first.
+  - When both are available, it calls `GetCorrelationSummary`.
+  - `RiskCorrelationService::correlate()` produces:
+    - `severe_floods`, `flood_warnings` (reduced shape; messages truncated)
+    - `road_incidents` (filtered to SW key routes)
+    - `cross_references` (pairs like “North Moor ↔ A361”)
+    - `predictive_warnings` (e.g. Muchelney access risk when Parrett elevated)
+  - The correlation block is size‑bounded before being sent to the LLM (see caps above).
+- Display rule: UI renders authoritative lists from tool results; the narrative is text only and should not be parsed for facts.
+
+## Tool names: single source of truth (planned)
+
+- Rationale: Tool strings like `GetFloodData` are referenced in prompt definitions and orchestrator switches. Centralizing them avoids typos and simplifies future changes.
+- Plan: Introduce a `ToolName` enum (or `ToolNames` constants) and use it in:
+  - `FloodWatchPromptBuilder::getToolDefinitions()`
+  - `FloodWatchService::executeTool()` and `prepareToolResultForLlm()`
+  - Logging and any UI copy that references tool names
+- Reference: See `docs/CODE_QUALITY_AND_ARCHITECTURE_PLAN.md` §1.3 and §2.3 for the migration steps.

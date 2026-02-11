@@ -173,7 +173,7 @@ The page should clearly describe the following. Use clear headers, tables, and c
   - [ ] **Fallback behaviours**: What happens when each API fails; what happens when the LLM fails.
   - [ ] **Example request/response**: At least one full request (message + coords + region) and result shape; optionally one tool call example.
 - [ ] **Style**: Clear headers, bullet points, short sentences; example blocks are concise and realistic.
-- [ ] **Cross-links**: From README and from `docs/DOCUMENTATION_STRUCTURE_PLAN.md` (Documentation table) to `docs/agents-and-llm.md`; from this doc to LLM_INTEGRATION_GUIDE, LLM_DATA_FLOW, ARCHITECTURE.
+- [ ] **Cross-links**: From README (Documentation table) to `docs/agents-and-llm.md`; from this doc to LLM_INTEGRATION_GUIDE, LLM_DATA_FLOW, ARCHITECTURE.
 
 ### 6.4 Source of truth for “what each tool does”
 
@@ -192,4 +192,4 @@ When filling the per-tool sections, use:
 - **Existing**: `docs/LLM_INTEGRATION_GUIDE.md`, `docs/LLM_DATA_FLOW.md` — keep; link from agents-and-llm or merge summaries into agents-and-llm and keep these as deep dives.
 - **Code quality**: `docs/CODE_QUALITY_AND_ARCHITECTURE_PLAN.md` — testing and modularity; LLM tests and tool→service mapping align with that plan.
 - **Schema**: `docs/SCHEMA.md` — update when adding `prompt_version` to `llm_requests`.
-- **Documentation plan**: `docs/DOCUMENTATION_STRUCTURE_PLAN.md` — topic split lists `agents-and-llm.md`; ensure its required content matches §6 above.
+- **Documentation plan**: Completed — see the README Documentation section for canonical links; ensure required content in `agents-and-llm.md` matches §6 above.
