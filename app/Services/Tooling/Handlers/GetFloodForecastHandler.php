@@ -13,6 +13,7 @@ use App\Support\Tooling\TokenBudget;
 use App\Support\Tooling\ToolArguments;
 use App\Support\Tooling\ToolContext;
 use App\Support\Tooling\ToolResult;
+use Illuminate\Support\Facades\Log;
 
 final class GetFloodForecastHandler implements ToolHandler
 {
@@ -43,13 +44,23 @@ final class GetFloodForecastHandler implements ToolHandler
 
     public function execute(ToolArguments $args, ToolContext $ctx): ToolResult
     {
-        return ToolResult::ok($this->forecastService->getForecast());
+        $data = $this->forecastService->getForecast();
+
+        Log::info('Tool execute', [
+            'tool' => ToolName::GetFloodForecast->value,
+            'provider' => 'flood_forecasting_centre',
+            'region' => $ctx->region,
+            'lat' => $ctx->centerLat,
+            'lng' => $ctx->centerLng,
+        ]);
+
+        return ToolResult::ok($data);
     }
 
     public function presentForLlm(ToolResult $result, TokenBudget $budget): array|string
     {
         if (! $result->isOk()) {
-            return ['getError' => $result->error()];
+            return ['getError' => $result->getError()];
         }
 
         $data = $result->data();

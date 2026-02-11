@@ -30,7 +30,7 @@ class FloodWatchServiceBoundaryTest extends TestCase
             $this->createMock(FloodForecastService::class),
             $this->createMock(WeatherService::class),
             $this->createMock(RiverLevelService::class),
-            $this->createMock(RiskCorrelationService::class),
+            new RiskCorrelationService,
             $this->createMock(FloodWatchPromptBuilder::class)
         );
     }

@@ -11,6 +11,7 @@ use App\Support\Tooling\TokenBudget;
 use App\Support\Tooling\ToolArguments;
 use App\Support\Tooling\ToolContext;
 use App\Support\Tooling\ToolResult;
+use Illuminate\Support\Facades\Log;
 
 final class GetCorrelationSummaryHandler implements ToolHandler
 {
@@ -48,13 +49,26 @@ final class GetCorrelationSummaryHandler implements ToolHandler
             $ctx->region ?? null,
         );
 
-        return ToolResult::ok($assessment->toArray());
+        $arr = $assessment->toArray();
+
+        Log::info('Tool execute', [
+            'tool' => ToolName::GetCorrelationSummary->value,
+            'provider' => 'flood_watch_correlation',
+            'region' => $ctx->region,
+            'lat' => $ctx->centerLat,
+            'lng' => $ctx->centerLng,
+            'count' => is_array($ctx->floods) ? count($ctx->floods) : 0,
+            'incidents' => is_array($ctx->incidents) ? count($ctx->incidents) : 0,
+            'river_levels' => is_array($ctx->riverLevels) ? count($ctx->riverLevels) : 0,
+        ]);
+
+        return ToolResult::ok($arr);
     }
 
     public function presentForLlm(ToolResult $result, TokenBudget $budget): array|string
     {
         if (! $result->isOk()) {
-            return ['getError' => $result->error()];
+            return ['getError' => $result->getError()];
         }
 
         // Correlation output is already succinct and LLM-facing; return as-is.

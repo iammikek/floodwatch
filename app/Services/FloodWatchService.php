@@ -139,6 +139,7 @@ class FloodWatchService
             $payloadBytes = strlen($payloadJson);
             $estimatedTokens = (int) ceil($payloadBytes / 4);
             Log::info('FloodWatch OpenAI payload', [
+                'provider' => 'openai',
                 'size_bytes' => $payloadBytes,
                 'estimated_tokens' => $estimatedTokens,
                 'message_count' => count($messages),
@@ -147,7 +148,10 @@ class FloodWatchService
                 'lat' => $lat,
                 'lng' => $lng,
             ]);
-            Log::debug('FloodWatch OpenAI payload content', ['payload' => LogMasker::maskOpenAiPayload($payload)]);
+            Log::debug('FloodWatch OpenAI payload content', [
+                'provider' => 'openai',
+                'payload' => LogMasker::maskOpenAiPayload($payload),
+            ]);
 
             try {
                 $response = OpenAI::chat()->create($payload);
@@ -274,7 +278,10 @@ class FloodWatchService
                 } catch (Throwable $e) {
                     Log::warning('FloodWatch tool execution failed', [
                         'tool' => $toolName,
+                        'provider' => 'tooling',
                         'region' => $region,
+                        'lat' => $lat,
+                        'lng' => $lng,
                         'getError' => $e->getMessage(),
                     ]);
                     $result = ['getError' => __('flood-watch.getError.tool_failed'), 'code' => 'tool_error'];

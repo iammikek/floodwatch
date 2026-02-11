@@ -14,6 +14,7 @@ use App\Support\Tooling\TokenBudget;
 use App\Support\Tooling\ToolArguments;
 use App\Support\Tooling\ToolContext;
 use App\Support\Tooling\ToolResult;
+use Illuminate\Support\Facades\Log;
 
 final class GetFloodDataHandler implements ToolHandler
 {
@@ -56,13 +57,22 @@ final class GetFloodDataHandler implements ToolHandler
     {
         $data = $this->ea->getFloods($args->lat, $args->lng, $args->radiusKm);
 
+        Log::info('Tool execute', [
+            'tool' => ToolName::GetFloodData->value,
+            'provider' => 'environment_agency',
+            'region' => $ctx->region,
+            'lat' => $args->lat,
+            'lng' => $args->lng,
+            'count' => is_array($data) ? count($data) : 0,
+        ]);
+
         return ToolResult::ok($data);
     }
 
     public function presentForLlm(ToolResult $result, TokenBudget $budget): array|string
     {
         if (! $result->isOk()) {
-            return ['getError' => $result->error()];
+            return ['getError' => $result->getError()];
         }
 
         $max = (int) config(ConfigKey::LLM_MAX_FLOODS, 25);

@@ -161,8 +161,9 @@ Goal: Improve confidence via unit tests for services, integration tests for orch
 Implementation checklist
 
 - [x] Add/expand Pest tests for each service with mocked HTTP (covered happy and failure paths).
-- [ ] Add orchestrator boundary tests for tool result trimming logic and token budgeting.
+- [x] Add orchestrator boundary tests for tool result trimming logic and token budgeting.
 - [x] Provide fixtures for EA/Highways/Forecast sample payloads.
+- [x] Add handler contract tests for all tool handlers (execute + presentForLlm).
 
 ---
 
@@ -177,7 +178,7 @@ Implementation checklist
 Implementation checklist
 
 - [x] Ensure each external service has explicit timeouts and retries configurable via `flood-watch.*`.
-- [ ] Add log context keys consistently: `tool`, `provider`, `region`, `lat`, `lng`.
+- [x] Add log context keys consistently: `tool`, `provider`, `region`, `lat`, `lng`.
 - [x] Tests for failure paths (timeouts, 500s, CB open) returning safe empty structures.
 
 ---
@@ -191,7 +192,7 @@ Implementation checklist
 Implementation checklist
 
 - [x] Extract `App\Support\LlmTrim` for list limiting to reduce duplication.
-- [ ] Add tests asserting truncation for floods (message chars), forecast narrative, and correlation total char budget.
+- [x] Add tests asserting truncation for floods (message chars), forecast narrative, and correlation total char budget (via handler tests).
 
 ---
 
@@ -230,8 +231,13 @@ Implementation checklist
 3. [x] Add/expand service unit tests with fixtures and failure-path coverage.
 4. [x] Improve docs: Architecture conventions and Contributing code standards.
 5. [x] Add CI gates (Pint + tests).
-6. [ ] Add targeted orchestrator boundary tests.
-7. [ ] Monitor logs for token usage, timeouts, and CB openings; iterate limits.
+6. [x] Add targeted orchestrator boundary tests.
+7. [x] Implement ToolHandler contract with tagged registry; migrate all tools to handlers.
+8. [x] DRY tool JSON schemas via ToolRegistry in PromptBuilder.
+9. [x] Add handler contract tests and PromptBuilder registry test.
+10. [ ] Monitor logs for token usage, timeouts, and CB openings; iterate limits.
+11. [ ] Optional: Add PHPStan with baseline for gradual improvement.
+12. [ ] Optional: Implement cross-tool BudgetAllocator for proportional trimming.
 
 Success metrics
 

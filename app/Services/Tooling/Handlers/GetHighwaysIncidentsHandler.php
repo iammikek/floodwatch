@@ -13,6 +13,7 @@ use App\Support\Tooling\TokenBudget;
 use App\Support\Tooling\ToolArguments;
 use App\Support\Tooling\ToolContext;
 use App\Support\Tooling\ToolResult;
+use Illuminate\Support\Facades\Log;
 
 final class GetHighwaysIncidentsHandler implements ToolHandler
 {
@@ -42,13 +43,22 @@ final class GetHighwaysIncidentsHandler implements ToolHandler
     {
         $data = $this->orchestrator->getFilteredIncidents($ctx->region, $ctx->centerLat, $ctx->centerLng);
 
+        Log::info('Tool execute', [
+            'tool' => ToolName::GetHighwaysIncidents->value,
+            'provider' => 'national_highways',
+            'region' => $ctx->region,
+            'lat' => $ctx->centerLat,
+            'lng' => $ctx->centerLng,
+            'count' => is_array($data) ? count($data) : 0,
+        ]);
+
         return ToolResult::ok($data);
     }
 
     public function presentForLlm(ToolResult $result, TokenBudget $budget): array|string
     {
         if (! $result->isOk()) {
-            return ['getError' => $result->error()];
+            return ['getError' => $result->getError()];
         }
 
         return LlmTrim::limitItems($result->data(), (int) config(ConfigKey::LLM_MAX_INCIDENTS, 25));
