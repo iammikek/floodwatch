@@ -21,7 +21,7 @@ PR #8 (Feature/07 UI rebuild) has **2 unresolved review comments** that require 
 
 ## How to Create Issues
 
-Since automated issue creation is not available, please create these issues manually:
+If you prefer not to use GitHub CLI, please create these issues manually as follows:
 
 ### For Issue #1: Somerset incidents filtered out
 
