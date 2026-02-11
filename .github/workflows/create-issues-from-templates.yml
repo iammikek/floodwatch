@@ -32,20 +32,19 @@ jobs:
 
           echo "🔍 Searching for issue templates matching pattern: ${{ inputs.template_pattern }}"
 
-          # Find all matching template files
-          template_files=$(find . -path "./${{ inputs.template_pattern }}" -type f 2>/dev/null || true)
+          # Count matching template files
+          template_count=$(find . -path "./${{ inputs.template_pattern }}" -type f 2>/dev/null | wc -l)
 
-          if [ -z "$template_files" ]; then
+          if [ "$template_count" -eq 0 ]; then
             echo "❌ No template files found matching pattern: ${{ inputs.template_pattern }}"
             exit 0
           fi
 
-          echo "📋 Found template files:"
-          echo "$template_files"
+          echo "📋 Found $template_count template file(s)"
           echo ""
 
-          # Process each template file
-          for template_file in $template_files; do
+          # Process each template file (using null-delimited input to handle spaces in filenames)
+          while IFS= read -r -d '' template_file; do
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             echo "📄 Processing: $template_file"
 
@@ -91,8 +90,8 @@ jobs:
             echo "  Title: $title"
             echo "  Labels: ${labels:-none}"
 
-            # Check if issue with same title already exists
-            existing_issue=$(gh issue list --repo ${{ github.repository }} --search "in:title \"$title\"" --json number --jq '.[0].number' 2>/dev/null || true)
+            # Check if issue with exact same title already exists
+            existing_issue=$(gh issue list --repo ${{ github.repository }} --search "is:issue in:title" --json number,title --jq ".[] | select(.title == \"$title\") | .number" 2>/dev/null | head -1 || true)
 
             if [ -n "$existing_issue" ]; then
               echo "  ℹ️  Issue already exists: #$existing_issue"
@@ -110,24 +109,22 @@ jobs:
 
               # Create the issue
               if [ -n "$labels" ]; then
-                issue_number=$(gh issue create \
+                issue_url=$(gh issue create \
                   --title "$title" \
                   --body "$body" \
                   --label "$labels" \
-                  --repo ${{ github.repository }} \
-                  | grep -o '#[0-9]*' | tr -d '#')
+                  --repo ${{ github.repository }})
               else
-                issue_number=$(gh issue create \
+                issue_url=$(gh issue create \
                   --title "$title" \
                   --body "$body" \
-                  --repo ${{ github.repository }} \
-                  | grep -o '#[0-9]*' | tr -d '#')
+                  --repo ${{ github.repository }})
               fi
 
-              echo "  ✨ Created issue #$issue_number"
+              echo "  ✨ Created issue: $issue_url"
             fi
             echo ""
-          done
+          done < <(find . -path "./${{ inputs.template_pattern }}" -type f -print0 2>/dev/null)
 
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "✅ Done processing templates!"
