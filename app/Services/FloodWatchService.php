@@ -113,7 +113,7 @@ class FloodWatchService
             fn () => app(FloodForecastService::class)->getForecast(),
             fn () => app(WeatherService::class)->getForecast($lat, $lng),
             fn () => app(RiverLevelService::class)->getLevels($lat, $lng),
-        ]);
+        ], 120);
 
         $report(__('flood-watch.progress.calling_assistant'));
         $messages = $this->buildMessages($userMessage, $conversation, $region);
