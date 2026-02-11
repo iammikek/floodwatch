@@ -496,7 +496,9 @@ class FloodWatchService
 
         // Keep only: system prompt + user message + last assistant+tool exchange
         // This preserves the most recent context while discarding older iterations
-        if ($lastAssistantIndex !== null && count($messages) >= 2) {
+        // Note: $messages ALWAYS has at least 2 elements (system + user) from buildMessages()
+        // The count check is defensive to guard against unexpected edge cases
+        if ($lastAssistantIndex !== null && count($messages) >= 2 && $lastAssistantIndex >= 2) {
             $messages = [
                 $messages[0],  // System prompt
                 $messages[1],  // User message
