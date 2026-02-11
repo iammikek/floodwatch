@@ -10,9 +10,9 @@ This document has moved to `docs/architecture.md`. Please update your bookmarks 
 
 Flood Watch correlates Environment Agency flood data with National Highways road status to provide a single source of truth for flood and road viability in the South West (Bristol, Somerset, Devon, Cornwall).
 
-**Product brief**: See `docs/BRIEF.md` for the revised scope – user decision support (house/car at risk), location lookup (postcode, place name, **Use my location** via GPS), route check, backend polling, and LLM cost control.
+**Product brief**: See `docs/brief.md` for the revised scope – user decision support (house/car at risk), location lookup (postcode, place name, **Use my location** via GPS), route check, backend polling, and LLM cost control.
 
-**Planned**: Search history in `user_searches`; bookmarks in `location_bookmarks`. See **`docs/SCHEMA.md`** for full schema and object map.
+**Planned**: Search history in `user_searches`; bookmarks in `location_bookmarks`. See **`docs/schema.md`** for full schema and object map.
 
 **Connectivity constraint**: Users may check at home then go to the Levels with limited data. The app must be fast to load, cache aggressively, and persist to localStorage so last-known state is available when offline or connectivity is poor.
 
@@ -74,7 +74,7 @@ flowchart TB
 1. **User input** → LocationResolver (postcode/place) → coordinates + region
 2. **FloodWatchService.chat()** pre-fetches in parallel via `Concurrency::run()`: forecast, weather, river levels (flood alerts are not pre-fetched)
 3. **LLM** receives system prompt + tools; calls GetFloodData (flood alerts), GetHighwaysIncidents (road status), GetCorrelationSummary, etc. Tool calls are LLM-driven
-4. **RiskCorrelationService** applies deterministic rules (flood↔road pairs, predictive warnings). See **`docs/RISK_CORRELATION.md`** for full documentation.
+4. **RiskCorrelationService** applies deterministic rules (flood↔road pairs, predictive warnings). See **`docs/risk_correlation.md`** for full documentation.
 5. **Response** synthesized by LLM, cached, returned with floods/incidents/forecast
 
 ## Extension Points
@@ -134,7 +134,7 @@ Run `php artisan flood-watch:warm-cache` to pre-populate the cache for common lo
 Schedule::command('flood-watch:warm-cache --locations=Langport,TA10,Bristol')->everyFifteenMinutes();
 ```
 
-**Plan**: `docs/PLAN.md` – region-based cache warming (config per region, schedule every 15 min).
+**Plan**: `docs/plan.md` – region-based cache warming (config per region, schedule every 15 min).
 
 ### Background Refresh
 
@@ -174,11 +174,11 @@ See **`docs/agents-and-llm.md`** for a detailed description of how data flows to
 
 ## Data Schema
 
-See **`docs/SCHEMA.md`** for table definitions, object map diagram, and entity relationships.
+See **`docs/schema.md`** for table definitions, object map diagram, and entity relationships.
 
 ## Analytics (Planned)
 
-An **analytics layer** is planned for reporting. See `docs/PLAN.md` – Analytics Layer. Data: `user_searches` (search volume, top regions/postcodes), optional event tables (API calls, cache hits, errors), optional API snapshots for historical trend charts. Outputs: admin dashboard reports, CSV export, alerts.
+An **analytics layer** is planned for reporting. See `docs/plan.md` – Analytics Layer. Data: `user_searches` (search volume, top regions/postcodes), optional event tables (API calls, cache hits, errors), optional API snapshots for historical trend charts. Outputs: admin dashboard reports, CSV export, alerts.
 
 ---
 
@@ -192,7 +192,7 @@ An **analytics layer** is planned for reporting. See `docs/PLAN.md` – Analytic
 | Prompts | `FloodWatchPromptBuilder` + `resources/prompts/` |
 | Map API protection | `EnsureFloodWatchSession` middleware, `ThrottleFloodWatch` |
 | Cache warm | `flood-watch:warm-cache` command |
-| Development plan | `docs/PLAN.md` |
+| Development plan | `docs/plan.md` |
 
 
 ---

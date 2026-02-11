@@ -160,7 +160,7 @@ The page should clearly describe the following. Use clear headers, tables, and c
 - **Diagram**: A single diagram (e.g. Mermaid) of the flow: user message → LLM → tool calls → APIs → tool results → LLM → final response. Can reuse or adapt from `docs/LLM_DATA_FLOW.md`.
 - **Prompt versioning**: Short note that we log model and prompt_version per request; link to §3.
 - **Hallucination guard**: One sentence that critical data is from tool results only; narrative from LLM. Link to §4.
-- **Links**: To `LLM_INTEGRATION_GUIDE.md` (optimization, caching, errors), `LLM_DATA_FLOW.md` (data flow), and `ARCHITECTURE.md` (circuit breaker, config).
+- **Links**: To `LLM_INTEGRATION_GUIDE.md` (optimization, caching, errors), `LLM_DATA_FLOW.md` (data flow), and `architecture.md` (circuit breaker, config).
 
 ### 6.3 Implementation checklist
 
@@ -190,6 +190,6 @@ When filling the per-tool sections, use:
 
 - **Agents & LLM**: `docs/agents-and-llm.md` — main place for prompt design, versioning, validation rules, **and** the dedicated LLM docs content above (§6).
 - **Existing**: `docs/LLM_INTEGRATION_GUIDE.md`, `docs/LLM_DATA_FLOW.md` — keep; link from agents-and-llm or merge summaries into agents-and-llm and keep these as deep dives.
-- **Code quality**: `docs/CODE_QUALITY_AND_ARCHITECTURE_PLAN.md` — testing and modularity; LLM tests and tool→service mapping align with that plan.
-- **Schema**: `docs/SCHEMA.md` — update when adding `prompt_version` to `llm_requests`.
+- **Code quality**: `docs/CODE_QUALITY_AND_ARCHITECTURE_plan.md` — testing and modularity; LLM tests and tool→service mapping align with that plan.
+- **Schema**: `docs/schema.md` — update when adding `prompt_version` to `llm_requests`.
 - **Documentation plan**: Completed — see the README Documentation section for canonical links; ensure required content in `agents-and-llm.md` matches §6 above.

@@ -2,7 +2,7 @@
 
 Implementation specs for Cursor agentic development. Build in order; each spec is self-contained.
 
-**Ref**: `docs/PLAN.md`, `docs/BRIEF.md`, `docs/SCHEMA.md`, `agents.md`
+**Ref**: `docs/plan.md`, `docs/brief.md`, `docs/schema.md`, `agents.md`
 
 ---
 

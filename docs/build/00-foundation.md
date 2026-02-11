@@ -15,7 +15,7 @@ sail artisan make:migration create_user_searches_table
 sail artisan make:migration create_location_bookmarks_table
 ```
 
-**user_searches** (see `docs/SCHEMA.md`):
+**user_searches** (see `docs/schema.md`):
 - `user_id` (nullable FK), `session_id` (nullable), `location`, `lat`, `lng`, `region` (nullable), `searched_at`
 - Indexes: `user_id`, `session_id`, `searched_at`
 

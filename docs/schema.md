@@ -1,6 +1,6 @@
 # Flood Watch – Data Schema
 
-**Ref**: `docs/BRIEF.md`, `docs/PLAN.md`
+**Ref**: `docs/brief.md`, `docs/plan.md`
 
 Schema and object map for Flood Watch database tables.
 
@@ -134,7 +134,7 @@ Registered users can bookmark multiple locations (home, work, parents). One per 
 
 ## Analytics (Planned)
 
-Tables to support the analytics layer (see `docs/PLAN.md`):
+Tables to support the analytics layer (see `docs/plan.md`):
 
 | Table | Purpose |
 |-------|---------|
@@ -177,6 +177,6 @@ flowchart LR
 | Doc | Purpose |
 |-----|---------|
 | `docs/architecture.md` | System structure, data flow |
-| `docs/PLAN.md` | Search history, bookmarks implementation plan |
-| `docs/BRIEF.md` | User needs, persistence requirements |
+| `docs/plan.md` | Search history, bookmarks implementation plan |
+| `docs/brief.md` | User needs, persistence requirements |
 | `docs/DATA_RETENTION.md` | Retention policies, pruning, future tasks |

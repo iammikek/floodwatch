@@ -138,7 +138,7 @@ The LLM **chooses** which tools to call. It is not given pre-fetched flood or ro
 
 ## 5. Correlation (Deterministic, Not LLM)
 
-`RiskCorrelationService` runs when the LLM calls GetCorrelationSummary. See **`docs/RISK_CORRELATION.md`** for full documentation.
+`RiskCorrelationService` runs when the LLM calls GetCorrelationSummary. See **`docs/risk_correlation.md`** for full documentation.
 
 - **Cross-references**: `flood_area_road_pairs` from config (e.g. "North Moor" ↔ "A361") – checks if flood exists and if road has incident.
 - **Predictive warnings**: `predictive_rules` – e.g. River Parrett elevated → "Muchelney may be cut off"; flood pattern + severity → custom warning.

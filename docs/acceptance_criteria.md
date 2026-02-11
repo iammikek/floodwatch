@@ -1,6 +1,6 @@
 # Acceptance Criteria (Revised Brief)
 
-Success checklist for Flood Watch per `docs/BRIEF.md`. Criteria are phrased so they can be verified or tested.
+Success checklist for Flood Watch per `docs/brief.md`. Criteria are phrased so they can be verified or tested.
 
 ```mermaid
 flowchart TD
@@ -229,15 +229,15 @@ All resolve to coordinates used for flood, road, and forecast checks. **Use my l
 
 ## Deployment Verification
 
-See `docs/DEPLOYMENT.md` **Pre-Launch Checklist**:
+See `docs/deployment.md` **Pre-Launch Checklist**:
 - Verify API keys, run `sail test --coverage` (>80%), test graceful failure, regional postcodes.
 
 ---
 
 ## Reference
 
-- **Brief**: `docs/BRIEF.md`
-- **Plan**: `docs/PLAN.md`
+- **Brief**: `docs/brief.md`
+- **Plan**: `docs/plan.md`
 - **Wireframes**: `docs/WIREFRAMES.md`
 - **Architecture**: `docs/architecture.md`
 - **LLM data flow**: `docs/agents-and-llm.md`

@@ -1,6 +1,6 @@
 # Data Retention
 
-Overview of data that grows over time, retention policies, and pruning. See `docs/SCHEMA.md` for table definitions.
+Overview of data that grows over time, retention policies, and pruning. See `docs/schema.md` for table definitions.
 
 ---
 
@@ -77,7 +77,7 @@ Overview of data that grows over time, retention policies, and pruning. See `doc
 
 | Doc | Purpose |
 |-----|---------|
-| `docs/SCHEMA.md` | Table definitions, indexes |
+| `docs/schema.md` | Table definitions, indexes |
 | `docs/build/01-search-history.md` | user_searches retention note |
 | `config/flood-watch.php` | Retention config keys |
 | `bootstrap/app.php` | Scheduled commands |

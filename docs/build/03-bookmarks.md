@@ -8,7 +8,7 @@ Registered users can bookmark multiple locations (home, work, parents). One can 
 
 **Prerequisite**: [00-foundation.md](00-foundation.md) – migration and model already exist.
 
-**Schema**: `docs/SCHEMA.md` – `location_bookmarks` table
+**Schema**: `docs/schema.md` – `location_bookmarks` table
 
 **Key files**: `LocationBookmarkController`, `StoreLocationBookmarkRequest`, `profile/partials/bookmarks-form.blade.php`, `config/flood-watch.php` (`bookmarks_max_per_user`)
 

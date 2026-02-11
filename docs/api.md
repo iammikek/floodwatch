@@ -63,6 +63,6 @@ An OpenAPI specification for these endpoints is available at [docs/openapi.yaml]
 ---
 
 ## See also
-- [Architecture](ARCHITECTURE.md) — System design and data flow.
+- [Architecture](architecture.md) — System design and data flow.
 - [Usage](usage.md) — User-facing application guide.
 - [Installation](installation.md) — Setup and environment variables.

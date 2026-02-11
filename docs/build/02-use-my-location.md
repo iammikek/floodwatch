@@ -4,7 +4,7 @@ Button that uses browser Geolocation API to get user's position and run a search
 
 **Prerequisite**: [00-foundation.md](00-foundation.md) – `LocationResolver::reverseFromCoords()` and lang keys exist.
 
-**Ref**: `docs/BRIEF.md` §3.1, `docs/WIREFRAMES.md`
+**Ref**: `docs/brief.md` §3.1, `docs/WIREFRAMES.md`
 
 ---
 

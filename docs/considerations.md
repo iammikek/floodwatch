@@ -45,7 +45,7 @@ Review findings and recommendations for production readiness.
 **Recommendation**:
 - Add deployment checklist: verify `NATIONAL_HIGHWAYS_API_KEY` is set for production
 - Consider failing health check in production if key is missing (or explicit "degraded" status)
-- Document in DEPLOYMENT.md under "Optional" → clarify when road data is required
+- Document in deployment.md under "Optional" → clarify when road data is required
 
 ---
 

@@ -1,6 +1,6 @@
 # Agents and LLM
 
-Single reference for how Flood Watch uses the LLM: tools, APIs, outputs, limitations, and fallbacks. For correlation rules see [Risk Correlation](RISK_CORRELATION.md). For architecture see [Architecture](ARCHITECTURE.md).
+Single reference for how Flood Watch uses the LLM: tools, APIs, outputs, limitations, and fallbacks. For correlation rules see [Risk Correlation](risk_correlation.md). For architecture see [Architecture](architecture.md).
 
 ---
 
@@ -66,7 +66,7 @@ The LLM **orchestrates** tool calls and **synthesises** a short narrative (Curre
 - **Call**: `RiskCorrelationService::correlate($floods, $incidents, $riverLevels, $region)`. Uses in-memory data from prior tool calls in the same chat.
 - **Params**: None (context from conversation).
 - **Output**: `RiskAssessment` with `severeFloods`, `floodWarnings`, `roadIncidents`, `crossReferences`, `predictiveWarnings`, `keyRoutes`. Rendered for the LLM; total size limited by `llm_max_correlation_chars`.
-- **See**: [RISK_CORRELATION.md](RISK_CORRELATION.md) for rules and config.
+- **See**: [risk_correlation.md](risk_correlation.md) for rules and config.
 
 ---
 
@@ -174,4 +174,4 @@ The LLM **orchestrates** tool calls and **synthesises** a short narrative (Curre
   - `FloodWatchPromptBuilder::getToolDefinitions()`
   - `FloodWatchService::executeTool()` and `prepareToolResultForLlm()`
   - Logging and any UI copy that references tool names
-- Reference: See `docs/CODE_QUALITY_AND_ARCHITECTURE_PLAN.md` §1.3 and §2.3 for the migration steps.
+- Reference: See `docs/CODE_QUALITY_AND_ARCHITECTURE_plan.md` §1.3 and §2.3 for the migration steps.

@@ -35,5 +35,5 @@ Overview of current and planned APIs. Full research (National Rail, emergency se
 | Doc | Purpose |
 |-----|---------|
 | `docs/archive/DATA_SOURCES.md` | Full research, National Rail, emergency services |
-| `docs/PLAN.md` | Backlog, National Rail priority |
+| `docs/plan.md` | Backlog, National Rail priority |
 | `config/flood-watch.php` | Regions, correlation, future `rail_stations` structure |

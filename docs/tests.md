@@ -28,7 +28,7 @@ sail test --filter=FloodWatchServiceTest
 
 ## Mocking
 
-We use Pest and Laravel's built-in mocking to avoid hitting external APIs (OpenAI, Environment Agency, etc.) during tests. See `CONTRIBUTING.md` for mocking patterns.
+We use Pest and Laravel's built-in mocking to avoid hitting external APIs (OpenAI, Environment Agency, etc.) during tests. See `contributing.md` for mocking patterns.
 
 ## Snapshot Testing
 
@@ -41,5 +41,5 @@ PEST_UPDATE_SNAPSHOTS=1 sail test tests/Feature/Services/FloodWatchPromptBuilder
 
 ## See also
 
-- [Contributing](../CONTRIBUTING.md)
-- [Architecture](ARCHITECTURE.md)
+- [Contributing](../contributing.md)
+- [Architecture](architecture.md)

@@ -4,7 +4,7 @@ Scheduled job fetches from APIs and stores in cache. Required for geographic cac
 
 **Prerequisite**: [00-foundation.md](00-foundation.md) – `warm_cache_locations` config exists.
 
-**Ref**: `docs/PLAN.md`, `docs/BRIEF.md` §5.1
+**Ref**: `docs/plan.md`, `docs/brief.md` §5.1
 
 ---
 
@@ -70,7 +70,7 @@ Existing `flood-watch:warm-cache` already does similar. Options:
 
 ## Scheduler
 
-Railway/cron must run `php artisan schedule:run` every minute. Document in `docs/DEPLOYMENT.md`.
+Railway/cron must run `php artisan schedule:run` every minute. Document in `docs/deployment.md`.
 
 ---
 

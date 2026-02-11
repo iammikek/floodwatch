@@ -1,6 +1,6 @@
 # Wireframe – Revised Brief (Mobile + Desktop)
 
-**Ref**: `docs/BRIEF.md`  
+**Ref**: `docs/brief.md`  
 **Date**: 2026-02-05
 
 ---

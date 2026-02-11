@@ -26,7 +26,7 @@ flowchart TD
 ## Pre-deployment Checklist
 
 - [ ] All acceptance criteria met (`docs/ACCEPTANCE_CRITERIA.md`)
-- [ ] QA: `sail test --coverage` >80%; see `docs/PLAN.md` Quality Assurance
+- [ ] QA: `sail test --coverage` >80%; see `docs/plan.md` Quality Assurance
 - [ ] Verify `OPENAI_API_KEY` works: `php artisan flood-watch:test-openai`
 - [ ] Verify `NATIONAL_HIGHWAYS_API_KEY` is valid
 - [ ] Run `sail test --coverage` and confirm >80% coverage
@@ -212,6 +212,6 @@ Railway injects `REDIS_URL` when the Redis service is linked. Laravel uses it fo
 
 - **Railway free tier:** $5 credits for 30 days, then $1/month
 - **OpenAI:** Pay-per-use (gpt-4o-mini ~$0.01–0.10 per request). Monitor via admin dashboard when implemented. Many unique postcodes = more cache misses = higher cost.
-- **Real-time (planned):** Laravel Reverb adds minimal compute; push notifications (FCM) are free. See `docs/PLAN.md`.
+- **Real-time (planned):** Laravel Reverb adds minimal compute; push notifications (FCM) are free. See `docs/plan.md`.
 
 See `docs/CONSIDERATIONS.md` for API dependency, regional scope, and cost risks.

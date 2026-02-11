@@ -1,6 +1,6 @@
 # Flood Watch – Wireframes
 
-**Ref**: `docs/BRIEF.md`, `docs/PLAN.md`
+**Ref**: `docs/brief.md`, `docs/plan.md`
 
 ---
 
@@ -46,7 +46,7 @@ flowchart LR
 - **API health**: EA, Flood Forecast, Weather, National Highways, Cache
 - **LLM cost**: Requests today/month, est. spend, budget alert
 - **User metrics**: Total users, active (7d), searches, default locations, top regions/postcodes
-- **Analytics / Reports**: Time-series (searches/day, cost/day), top regions/postcodes, CSV export; see `docs/PLAN.md` Analytics Layer
+- **Analytics / Reports**: Time-series (searches/day, cost/day), top regions/postcodes, CSV export; see `docs/plan.md` Analytics Layer
 
 ### Support (Donations)
 
@@ -83,4 +83,4 @@ flowchart LR
 
 - `public/wireframes/revised-brief.html` – MVP (includes Route Check component states: empty, loading, clear, blocked, at risk, delays, error)
 - `public/wireframes/situational-awareness.html` – Phase 2
-- `public/wireframes/mobile-wireframe-with-summary.html` – Mobile: 3 options for Summary (AI advice) placement (moved higher, collapsible teaser, sticky bar). Ref: docs/PLAN.md § Summary on mobile – Plan
+- `public/wireframes/mobile-wireframe-with-summary.html` – Mobile: 3 options for Summary (AI advice) placement (moved higher, collapsible teaser, sticky bar). Ref: docs/plan.md § Summary on mobile – Plan

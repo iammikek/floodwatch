@@ -1,6 +1,6 @@
 # Flood Watch – Development Plan
 
-**Ref**: `docs/BRIEF.md`  
+**Ref**: `docs/brief.md`  
 **Date**: 2026-02-05
 
 Single development plan consolidating roadmap, backlog, data sources, and implementation notes.
@@ -172,7 +172,7 @@ Users support the project via **donations**. The app stays free; donations offse
 
 **Approach**: Soft ask, non-intrusive. No in-app payment processing; link to external donation page.
 
-**Ref**: `docs/archive/MONETISATION_PLAN.md` for platform comparison.
+**Ref**: `docs/archive/MONETISATION_plan.md` for platform comparison.
 
 ---
 
@@ -195,7 +195,7 @@ Use scheduled cache warming to improve first-request latency and reduce cold-cac
 
 Store locations users have searched in a database for quick re-search, analytics, and admin metrics.
 
-**Schema**: See **`docs/SCHEMA.md`** – `user_searches` table (user_id nullable, session_id for guests, lat, long, region, searched_at).
+**Schema**: See **`docs/schema.md`** – `user_searches` table (user_id nullable, session_id for guests, lat, long, region, searched_at).
 
 - **Guests**: Store with `user_id = null`, `session_id` for deduplication; retention e.g. 90 days
 - **Registered**: Associate with `user_id`; show "Recent searches" in UI (dropdown or quick-pick)
@@ -277,7 +277,7 @@ Define granularity for cache key scoping:
 |------|--------|-------|
 | **Test coverage** | >80% | Run `sail test --coverage`; critical paths: FloodWatchService, RiskCorrelationService, LocationResolver |
 | **CI** | `.github/workflows/tests.yml` | Build frontend, run Pest on push/PR |
-| **Deployment verification** | Pre-deploy checklist | See `docs/DEPLOYMENT.md` – API keys, coverage, graceful failure, regional test |
+| **Deployment verification** | Pre-deploy checklist | See `docs/deployment.md` – API keys, coverage, graceful failure, regional test |
 | **Critical paths** | Documented | FloodWatchService (tool calling, cache), RiskCorrelationService, circuit breaker |
 
 ---
@@ -313,16 +313,16 @@ Reverb as second service or process; Redis if scaling. Alternative: Pusher (free
 
 | Doc | Purpose |
 |-----|---------|
-| `docs/BRIEF.md` | Product brief |
+| `docs/brief.md` | Product brief |
 | `docs/ACCEPTANCE_CRITERIA.md` | Success checklist |
 | `docs/WIREFRAMES.md` | UI wireframes |
 | `docs/architecture.md` | System structure, data flow |
 | `docs/agents-and-llm.md` | How LLM consumes data (tools, APIs, flow) |
-| `docs/DEPLOYMENT.md` | Railway runbook, pre-launch checklist |
-| `docs/PERFORMANCE.md` | OSRM limits, self-hosting, scaling options |
+| `docs/deployment.md` | Railway runbook, pre-launch checklist |
+| `docs/performance.md` | OSRM limits, self-hosting, scaling options |
 | `docs/TROUBLESHOOTING.md` | LLM timeout, circuit breaker, cache |
 | `docs/CONSIDERATIONS.md` | Risks, API dependency, regional scope, costs |
 | `docs/DATA_SOURCES.md` | Current + planned APIs; National Rail implementation plan |
 | `docs/NEXT_STEPS.md` | Success metrics, extended next steps |
-| `docs/SCHEMA.md` | Database schema, object map, entity relationships |
+| `docs/schema.md` | Database schema, object map, entity relationships |
 | `docs/build/` | Implementation specs for Cursor (per-feature build order) |
