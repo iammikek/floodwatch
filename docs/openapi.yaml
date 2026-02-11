@@ -126,8 +126,7 @@ components:
           type: string
           enum: [ok, degraded, unhealthy, skipped]
         message:
-          type: string
-          nullable: true
+          type: ['string', 'null']
     RiverStation:
       type: object
       properties:
@@ -136,8 +135,7 @@ components:
         river:
           type: string
         town:
-          type: string
-          nullable: true
+          type: ['string', 'null']
         level:
           type: number
         unit:
