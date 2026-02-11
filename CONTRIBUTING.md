@@ -145,6 +145,21 @@ perf: Cache tool definitions to avoid repeated array construction
 
 ---
 
+### Naming Conventions
+
+We follow consistent naming patterns across the application to ensure maintainability.
+
+| Area | Convention | Example |
+|------|------------|---------|
+| **Config keys** | `flood-watch.<domain>.<purpose>` | `flood-watch.llm_max_floods` |
+| **Env vars** | `FLOOD_WATCH_*` (SCREAMING_SNAKE) | `FLOOD_WATCH_CACHE_TTL_MINUTES` |
+| **PHP variables** | camelCase (descriptive) | `$centerLat`, `$maxFloods` |
+| **PHP methods** | camelCase (verb-noun) | `getFloods`, `executeTool` |
+| **Service classes** | Noun + Service | `EnvironmentAgencyFloodService` |
+| **Tool names** | PascalCase (via `ToolName` enum) | `GetFloodData`, `GetRiverLevels` |
+
+---
+
 ## Code Standards
 
 ### PHP

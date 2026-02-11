@@ -37,8 +37,8 @@ Plan to improve code quality, readability, modularity, and test coverage. **Scop
 
 **Implementation checklist**
 
-- [ ] Document naming conventions and architecture patterns in `docs/contributing.md` with dedicated "Code Conventions" section.
-- [ ] Add a short "Config keys" subsection in `docs/architecture.md` or installation: all app-specific config under `flood-watch.*`, env vars `FLOOD_WATCH_*`.
+- [x] Document naming conventions and architecture patterns in `docs/contributing.md` with dedicated "Code Conventions" section.
+- [x] Add a short "Config keys" subsection in `docs/architecture.md` or installation: all app-specific config under `flood-watch.*`, env vars `FLOOD_WATCH_*`.
 - [ ] Optional: Light pass over `FloodWatchService`, `FloodWatchPromptBuilder`, and call sites to rename unclear variables (no behaviour change).
 
 ### 1.2 PSR-12 and Laravel style
@@ -59,8 +59,8 @@ Plan to improve code quality, readability, modularity, and test coverage. **Scop
 
 **Implementation checklist**
 
-- [ ] Confirm Pint is run in CI (e.g. `.github/workflows/tests.yml` or a dedicated lint job).
-- [ ] In `docs/contributing.md`: Document code conventions including strict types, type hints, PHPDoc, and method focus principles.
+- [x] Confirm Pint is run in CI (e.g. `.github/workflows/style.yml` enforces it on code paths).
+- [x] In `CONTRIBUTING.md`: Document code conventions including strict types, type hints, PHPDoc, and method focus principles.
 
 ### 1.3 DRY (reduce duplication)
 
@@ -76,9 +76,9 @@ Plan to improve code quality, readability, modularity, and test coverage. **Scop
 
 **Implementation checklist**
 
-- [ ] **prepareToolResultForLlm**: Refactor to shared "limit/truncate for LLM" logic; keep tool-specific behaviour explicit but avoid copy-paste.
-- [ ] **Tool names**: Introduce a single source of truth (enum or const list) and use it in FloodWatchService, FloodWatchPromptBuilder, and any progress/UI copy.
-- [ ] **Config keys**: Optional constants for `flood-watch.*` keys used in services; document in architecture.
+- [x] **prepareToolResultForLlm**: Refactor to shared "limit/truncate for LLM" logic (extracted to `App\Support\LlmTrim`).
+- [x] **Tool names**: Introduced `App\Enums\ToolName` as a single source of truth used in FloodWatchService and FloodWatchPromptBuilder.
+- [x] **Config keys**: Introduced `App\Support\ConfigKey` constants for frequently used keys.
 
 ---
 
@@ -119,9 +119,9 @@ So most tools already map to a service. The main orchestration and tool-specific
 
 Implementation checklist
 
-- [ ] Create `App\Enums\ToolName` or `App\Support\ToolNames` with: `GetFloodData`, `GetHighwaysIncidents`, `GetFloodForecast`, `GetRiverLevels`, `GetCorrelationSummary`.
-- [ ] Use central tool names in `executeTool()` and `prepareToolResultForLlm()`.
-- [ ] Reference central names in `FloodWatchPromptBuilder` to ensure exact matches.
+- [x] Create `App\Enums\ToolName` with: `GetFloodData`, `GetHighwaysIncidents`, `GetFloodForecast`, `GetRiverLevels`, `GetCorrelationSummary`.
+- [x] Use central tool names in `executeTool()` and `prepareToolResultForLlm()`.
+- [x] Reference central names in `FloodWatchPromptBuilder` to ensure exact matches.
 
 ### 2.4 Configuration keys and constants
 
@@ -131,8 +131,8 @@ Implementation checklist
 
 Implementation checklist
 
-- [ ] Document key config entries (timeouts, limits, defaults, cache TTLs) in Architecture docs.
-- [ ] Optional: Introduce a `ConfigKeys` constants class where duplication is high.
+- [x] Document key config entries (timeouts, limits, defaults, cache TTLs) in Architecture docs.
+- [x] Introduce a `ConfigKey` constants class where duplication is high.
 
 ---
 
@@ -160,9 +160,9 @@ Goal: Improve confidence via unit tests for services, integration tests for orch
 
 Implementation checklist
 
-- [ ] Add/expand Pest tests for each service with mocked HTTP.
-- [ ] Add orchestrator tests for tool execution + trimming logic.
-- [ ] Provide fixtures for EA/Highways/Forecast sample payloads.
+- [x] Add/expand Pest tests for each service with mocked HTTP (covered happy and failure paths).
+- [ ] Add orchestrator boundary tests for tool result trimming logic and token budgeting.
+- [x] Provide fixtures for EA/Highways/Forecast sample payloads.
 
 ---
 
@@ -176,9 +176,9 @@ Implementation checklist
 
 Implementation checklist
 
-- [ ] Ensure each external service has explicit timeouts and retries configurable via `flood-watch.*`.
+- [x] Ensure each external service has explicit timeouts and retries configurable via `flood-watch.*`.
 - [ ] Add log context keys consistently: `tool`, `provider`, `region`, `lat`, `lng`.
-- [ ] Tests for failure paths (timeouts, 500s, CB open) returning safe empty structures.
+- [x] Tests for failure paths (timeouts, 500s, CB open) returning safe empty structures.
 
 ---
 
@@ -190,7 +190,7 @@ Implementation checklist
 
 Implementation checklist
 
-- [ ] Extract a small helper for list limiting to reduce duplication while keeping per-tool specifics explicit.
+- [x] Extract `App\Support\LlmTrim` for list limiting to reduce duplication.
 - [ ] Add tests asserting truncation for floods (message chars), forecast narrative, and correlation total char budget.
 
 ---
@@ -203,9 +203,9 @@ Implementation checklist
 
 Implementation checklist
 
-- [ ] Document current caches and TTLs in Architecture docs.
-- [ ] Verify cache store selection logic (e.g., `array` vs `redis`) matches environment.
-- [ ] Add cache-hit/miss counters in logs for visibility.
+- [x] Document current caches and TTLs in Architecture docs.
+- [x] Verify cache store selection logic (e.g., `array` vs `redis`) matches environment.
+- [x] Add cache-hit/miss counters in logs for visibility.
 
 ---
 
@@ -217,20 +217,21 @@ Implementation checklist
 
 Implementation checklist
 
-- [ ] CI job: `vendor/bin/pint --dirty` then fail if changes.
-- [ ] Add/verify `php artisan test --compact` workflow.
+- [x] CI job: `.github/workflows/style.yml` enforces Pint on code paths.
+- [x] Verify `php artisan test --compact` workflow in `.github/workflows/tests.yml`.
 - [ ] Optional: add PHPStan with baseline for gradual improvement.
 
 ---
 
 ## 8. Incremental rollout plan
 
-1. Centralize tool names (no behaviour change) and add tests around `executeTool()` mapping.  
-2. Refactor `prepareToolResultForLlm()` to pull out shared limiting helper.  
-3. Add/expand service unit tests with fixtures and error-path coverage.  
-4. Improve docs: Architecture → tool/service pattern, config keys; Contributing → code conventions.  
-5. Add CI gates (Pint + tests).  
-6. Monitor logs for token usage, timeouts, and CB openings; iterate limits.
+1. [x] Centralize tool names via enum.
+2. [x] Refactor `prepareToolResultForLlm()` to use `LlmTrim` helper.
+3. [x] Add/expand service unit tests with fixtures and failure-path coverage.
+4. [x] Improve docs: Architecture conventions and Contributing code standards.
+5. [x] Add CI gates (Pint + tests).
+6. [ ] Add targeted orchestrator boundary tests.
+7. [ ] Monitor logs for token usage, timeouts, and CB openings; iterate limits.
 
 Success metrics
 

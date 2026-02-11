@@ -21,7 +21,8 @@ class FloodWatchPromptBuilder
     protected ?array $cachedToolDefinitions = null;
 
     public function __construct(
-        protected string $version = 'v1'
+        protected string $version = 'v1',
+        protected ?\App\Support\Tooling\ToolRegistry $registry = null,
     ) {}
 
     public function buildSystemPrompt(?string $region = null): string
@@ -64,6 +65,15 @@ class FloodWatchPromptBuilder
             return $this->cachedToolDefinitions;
         }
 
+        if ($this->registry !== null) {
+            $defs = $this->registry->definitions();
+            // Optional: keep stable order
+            usort($defs, fn ($a, $b) => strcmp($a['function']['name'] ?? '', $b['function']['name'] ?? ''));
+
+            return $this->cachedToolDefinitions = $defs;
+        }
+
+        // Fallback to legacy inline definitions when registry not provided
         $this->cachedToolDefinitions = [
             [
                 'type' => 'function',

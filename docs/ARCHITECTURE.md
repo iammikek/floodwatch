@@ -197,6 +197,27 @@ An **analytics layer** is planned for reporting. See `docs/PLAN.md` – Analytic
 
 ---
 
+### Caches & TTLs
+
+The application caches external API results and synthesised summaries to improve performance and reduce LLM costs.
+
+| Data Type | Cache Store | TTL | Description |
+|-----------|-------------|-----|-------------|
+| **Flood Data** | `flood-watch` | 15 min | Active flood warnings/alerts (Environment Agency) |
+| **Road Incidents** | `flood-watch` | 15 min | Planned/unplanned closures (National Highways) |
+| **River Levels** | `flood-watch` | 15 min | Real-time monitoring station readings |
+| **Forecast** | `flood-watch` | 15 min | 5-day flood risk guidance statement |
+| **Weather** | `flood-watch` | 15 min | 5-day weather forecast (Open-Meteo) |
+| **LLM Chat** | `flood-watch` | 15 min | Synthesised response keyed by message/location/context |
+| **Polygons** | `flood-watch` | 7 days | GeoJSON geometry for flood areas (long-lived) |
+
+**Store Selection**: 
+- In **development (Sail)**, the `redis` store is used via the `flood-watch` cache driver.
+- In **production (Railway)**, it defaults to `database` if Redis is unavailable, or `redis` when provisioned.
+- In **testing**, `flood-watch-array` is used to ensure isolation.
+
+---
+
 ## Configuration & Conventions
 
 - Configuration namespace: All application‑specific configuration lives under `flood-watch.*` (see `config/flood-watch.php`).

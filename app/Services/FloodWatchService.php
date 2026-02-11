@@ -2,17 +2,18 @@
 
 namespace App\Services;
 
-use App\Enums\Region;
 use App\Enums\ToolName;
 use App\Flood\DTOs\FloodWarning;
 use App\Flood\Services\EnvironmentAgencyFloodService;
 use App\Flood\Services\FloodForecastService;
 use App\Flood\Services\RiverLevelService;
-use App\Roads\Services\NationalHighwaysService;
-use App\Roads\Services\SomersetCouncilRoadworksService;
+use App\Roads\Services\RoadIncidentOrchestrator;
 use App\Support\ConfigKey;
 use App\Support\LlmTrim;
 use App\Support\LogMasker;
+use App\Support\Tooling\TokenBudget;
+use App\Support\Tooling\ToolRegistry;
+use App\Support\Tooling\ToolResult;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Concurrency;
 use Illuminate\Support\Facades\Log;
@@ -26,13 +27,13 @@ class FloodWatchService
 {
     public function __construct(
         protected EnvironmentAgencyFloodService $floodService,
-        protected NationalHighwaysService $highwaysService,
-        protected SomersetCouncilRoadworksService $somersetRoadworksService,
+        protected RoadIncidentOrchestrator $roadIncidentOrchestrator,
         protected FloodForecastService $forecastService,
         protected WeatherService $weatherService,
         protected RiverLevelService $riverLevelService,
         protected RiskCorrelationService $correlationService,
-        protected FloodWatchPromptBuilder $promptBuilder
+        protected FloodWatchPromptBuilder $promptBuilder,
+        protected ?ToolRegistry $toolRegistry = null,
     ) {}
 
     /**
@@ -85,8 +86,21 @@ class FloodWatchService
         if ($cacheEnabled) {
             $cached = $this->cacheGet($store, $key);
             if ($cached !== null) {
+                Log::info('FloodWatch cache hit', [
+                    'provider' => 'flood-watch',
+                    'store' => $store,
+                    'key' => $key,
+                    'region' => $region,
+                ]);
+
                 return $cached;
             }
+            Log::info('FloodWatch cache miss', [
+                'provider' => 'flood-watch',
+                'store' => $store,
+                'key' => $key,
+                'region' => $region,
+            ]);
         }
 
         $report = static function (string $status) use ($onProgress): void {
@@ -131,6 +145,9 @@ class FloodWatchService
                 'estimated_tokens' => $estimatedTokens,
                 'message_count' => count($messages),
                 'iteration' => $iteration + 1,
+                'region' => $region,
+                'lat' => $lat,
+                'lng' => $lng,
             ]);
             Log::debug('FloodWatch OpenAI payload content', ['payload' => LogMasker::maskOpenAiPayload($payload)]);
 
@@ -138,16 +155,20 @@ class FloodWatchService
                 $response = OpenAI::chat()->create($payload);
             } catch (OpenAIRateLimitException $e) {
                 Log::error('FloodWatch OpenAI rate limit', [
+                    'provider' => 'openai',
                     'error' => $e->getMessage(),
                     'iteration' => $iteration + 1,
+                    'region' => $region,
                 ]);
 
                 return $emptyResult(__('flood-watch.error.rate_limit'), now()->toIso8601String(), 'rate_limit');
             } catch (OpenAIErrorException $e) {
                 Log::error('FloodWatch OpenAI API error', [
+                    'provider' => 'openai',
                     'error' => $e->getMessage(),
                     'status_code' => $e->getStatusCode(),
                     'iteration' => $iteration + 1,
+                    'region' => $region,
                 ]);
 
                 $status = $e->getStatusCode();
@@ -165,8 +186,10 @@ class FloodWatchService
                 return $emptyResult(__($messageKey), now()->toIso8601String(), $errorKey);
             } catch (OpenAITransporterException $e) {
                 Log::error('FloodWatch OpenAI transport error', [
+                    'provider' => 'openai',
                     'error' => $e->getMessage(),
                     'iteration' => $iteration + 1,
+                    'region' => $region,
                 ]);
 
                 $msg = $this->userMessageForLlmException($e);
@@ -175,8 +198,10 @@ class FloodWatchService
                 return $emptyResult($msg, now()->toIso8601String(), $errorKey);
             } catch (Throwable $e) {
                 Log::error('FloodWatch unexpected error during LLM call', [
+                    'provider' => 'openai',
                     'error' => $e->getMessage(),
                     'iteration' => $iteration + 1,
+                    'region' => $region,
                 ]);
 
                 $msg = $this->userMessageForLlmException($e);
@@ -251,6 +276,7 @@ class FloodWatchService
                 } catch (Throwable $e) {
                     Log::warning('FloodWatch tool execution failed', [
                         'tool' => $toolName,
+                        'region' => $region,
                         'error' => $e->getMessage(),
                     ]);
                     $result = ['error' => __('flood-watch.error.tool_failed'), 'code' => 'tool_error'];
@@ -273,6 +299,9 @@ class FloodWatchService
                     'tool' => $toolName,
                     'size_bytes' => $contentBytes,
                     'estimated_tokens' => (int) ceil($contentBytes / 4),
+                    'region' => $region,
+                    'lat' => $lat,
+                    'lng' => $lng,
                 ]);
                 Log::debug('FloodWatch tool result content', ['tool' => $toolName, 'content' => LogMasker::maskToolContent($toolName, $content)]);
                 $messages[] = [
@@ -435,17 +464,10 @@ class FloodWatchService
                 $args['lng'] ?? null,
                 $args['radius_km'] ?? null
             ),
-            ToolName::GetHighwaysIncidents->value => $this->sortIncidentsByPriority(
-                $this->filterMotorwaysFromDisplay(
-                    $this->filterIncidentsByProximity(
-                        $this->filterIncidentsByRegion(
-                            $this->mergedHighwaysIncidents($context['region'] ?? null),
-                            $context['region'] ?? null
-                        ),
-                        $context['centerLat'] ?? null,
-                        $context['centerLng'] ?? null
-                    )
-                )
+            ToolName::GetHighwaysIncidents->value => $this->roadIncidentOrchestrator->getFilteredIncidents(
+                $context['region'] ?? null,
+                $context['centerLat'] ?? null,
+                $context['centerLng'] ?? null
             ),
             ToolName::GetFloodForecast->value => $this->forecastService->getForecast(),
             ToolName::GetRiverLevels->value => $this->riverLevelService->getLevels(
@@ -459,6 +481,24 @@ class FloodWatchService
 
     private function prepareToolResultForLlm(string $toolName, array|string $result): array|string
     {
+        // Prefer handler presenter when available (pragmatic bridge)
+        if ($this->toolRegistry !== null) {
+            try {
+                $handler = $this->toolRegistry->get(ToolName::from($toolName));
+                $toolResult = is_array($result)
+                    ? (isset($result['error']) ? ToolResult::error((string) ($result['error'])) : ToolResult::ok($result))
+                    : ToolResult::ok($result);
+
+                $presented = $handler->presentForLlm($toolResult, new TokenBudget(0));
+                // If handler returns something, use it directly
+                if ($presented !== null) {
+                    return $presented;
+                }
+            } catch (\Throwable) {
+                // Fallback to legacy branches below
+            }
+        }
+
         if (is_string($result)) {
             return $result;
         }
@@ -659,148 +699,6 @@ class FloodWatchService
         }
 
         return $messages;
-    }
-
-    /**
-     * Merged incidents from cache: National Highways + Somerset Council (when region is Somerset).
-     *
-     * @return array<int, array{road?: string, status?: string, incidentType?: string, delayTime?: string}>
-     */
-    private function mergedHighwaysIncidents(?string $region): array
-    {
-        $incidents = $this->highwaysService->getIncidents();
-
-        if ($region === Region::Somerset->value) {
-            $somerset = $this->somersetRoadworksService->getIncidents();
-            $incidents = array_merge($incidents, $somerset);
-        }
-
-        return $incidents;
-    }
-
-    /**
-     * Sort incidents by priority: flood-related first, then roadClosed before laneClosures.
-     *
-     * @param  array<int, array<string, mixed>>  $incidents
-     * @return array<int, array<string, mixed>>
-     */
-    private function sortIncidentsByPriority(array $incidents): array
-    {
-        usort($incidents, function (array $a, array $b): int {
-            $aFlood = (bool) ($a['isFloodRelated'] ?? false);
-            $bFlood = (bool) ($b['isFloodRelated'] ?? false);
-            if ($aFlood !== $bFlood) {
-                return $aFlood ? -1 : 1;
-            }
-            $aClosed = ($a['managementType'] ?? $a['incidentType'] ?? '') === 'roadClosed';
-            $bClosed = ($b['managementType'] ?? $b['incidentType'] ?? '') === 'roadClosed';
-            if ($aClosed !== $bClosed) {
-                return $aClosed ? -1 : 1;
-            }
-
-            return 0;
-        });
-
-        return array_values($incidents);
-    }
-
-    /**
-     * Filter out motorway incidents when config excludes them (hyperlocal focus).
-     *
-     * @param  array<int, array{road?: string}>  $incidents
-     * @return array<int, array{road?: string}>
-     */
-    private function filterMotorwaysFromDisplay(array $incidents): array
-    {
-        if (! config('flood-watch.exclude_motorways_from_display', true)) {
-            return $incidents;
-        }
-
-        return array_values(array_filter($incidents, function (array $incident): bool {
-            $road = trim((string) ($incident['road'] ?? ''));
-            if ($road === '') {
-                return true;
-            }
-            $baseRoad = $this->extractBaseRoad($road);
-
-            return ! preg_match('/^M\d+/', $baseRoad);
-        }));
-    }
-
-    /**
-     * Filter incidents to only those on roads within the region's county limits (M4, M5, A roads in the South West).
-     *
-     * @param  array<int, array{road?: string, status?: string, incidentType?: string, delayTime?: string}>  $incidents
-     * @return array<int, array{road?: string, status?: string, incidentType?: string, delayTime?: string}>
-     */
-    private function filterIncidentsByRegion(array $incidents, ?string $region): array
-    {
-        $allowed = $this->getAllowedRoadsForRegion($region);
-        if (empty($allowed)) {
-            return $incidents;
-        }
-
-        return array_values(array_filter($incidents, function (array $incident) use ($allowed): bool {
-            $road = trim((string) ($incident['road'] ?? ''));
-            if ($road === '') {
-                return false;
-            }
-            $baseRoad = $this->extractBaseRoad($road);
-
-            return in_array($baseRoad, $allowed, true);
-        }));
-    }
-
-    /**
-     * Filter incidents to those within radius of the search location so the AI summary only mentions nearby incidents.
-     *
-     * @param  array<int, array<string, mixed>>  $incidents
-     * @return array<int, array<string, mixed>>
-     */
-    private function filterIncidentsByProximity(array $incidents, ?float $centerLat, ?float $centerLng): array
-    {
-        $radiusKm = config('flood-watch.incident_summary_proximity_km', 80);
-        if ($radiusKm <= 0 || $centerLat === null || $centerLng === null) {
-            return $incidents;
-        }
-
-        return array_values(array_filter($incidents, function (array $incident) use ($centerLat, $centerLng, $radiusKm): bool {
-            $coords = CoordinateMapper::normalize($incident);
-            $lat = $coords['lat'] ?? null;
-            $lng = $coords['lng'] ?? null;
-            if ($lat === null || $lng === null) {
-                return false;
-            }
-
-            return $this->haversineKm($centerLat, $centerLng, (float) $lat, (float) $lng) <= $radiusKm;
-        }));
-    }
-
-    private function haversineKm(float $lat1, float $lng1, float $lat2, float $lng2): float
-    {
-        $earthRadiusKm = 6371.0;
-        $dLat = deg2rad($lat2 - $lat1);
-        $dLng = deg2rad($lng2 - $lng1);
-        $a = sin($dLat / 2) ** 2
-            + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLng / 2) ** 2;
-        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
-
-        return $earthRadiusKm * $c;
-    }
-
-    /**
-     * @return array<int, string>
-     */
-    private function getAllowedRoadsForRegion(?string $region): array
-    {
-        if ($region !== null && $region !== '') {
-            $keyRoutes = config("flood-watch.correlation.{$region}.key_routes", []);
-            if (! empty($keyRoutes)) {
-                return array_values(array_unique($this->extractBaseRoads($keyRoutes)));
-            }
-        }
-
-        return config('flood-watch.incident_allowed_roads', []);
     }
 
     /**
