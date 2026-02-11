@@ -91,7 +91,7 @@ jobs:
             echo "  Labels: ${labels:-none}"
 
             # Check if issue with exact same title already exists
-            existing_issue=$(gh issue list --repo ${{ github.repository }} --search "is:issue in:title" --json number,title --jq ".[] | select(.title == \"$title\") | .number" 2>/dev/null | head -1 || true)
+            existing_issue=$(gh issue list --repo ${{ github.repository }} --search "is:issue \"$title\" in:title" --json number,title --jq ".[] | select(.title == \"$title\") | .number" 2>/dev/null | head -1 || true)
 
             if [ -n "$existing_issue" ]; then
               echo "  ℹ️  Issue already exists: #$existing_issue"
