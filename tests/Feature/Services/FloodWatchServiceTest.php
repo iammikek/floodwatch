@@ -11,8 +11,10 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
+use OpenAI\Exceptions\ErrorException;
 use OpenAI\Laravel\Facades\OpenAI;
 use OpenAI\Responses\Chat\CreateResponse;
+use Psr\Http\Message\ResponseInterface;
 use Tests\TestCase;
 
 class FloodWatchServiceTest extends TestCase
@@ -886,6 +888,133 @@ class FloodWatchServiceTest extends TestCase
         $this->assertContains('A361', $roads, 'Incidents should include National Highways cached A361');
         $this->assertContains('A372', $roads, 'Incidents should include Somerset Council cached A372');
         $this->assertGreaterThanOrEqual(2, count($result['incidents']));
+    }
+
+    public function test_chat_returns_empty_result_with_api_error_message_when_openai_throws_error_exception(): void
+    {
+        Config::set('openai.api_key', 'test-key');
+
+        Http::fake([
+            '*api.ffc-environment-agency.fgs.metoffice.gov.uk*' => Http::response(['statement' => []], 200),
+            '*api.open-meteo.com*' => Http::response(['daily' => ['time' => [], 'weathercode' => [], 'temperature_2m_max' => [], 'temperature_2m_min' => [], 'precipitation_sum' => []]], 200),
+            '*environment.data.gov.uk*' => Http::response(['items' => []], 200),
+        ]);
+
+        $response = $this->createMock(ResponseInterface::class);
+        $response->method('getStatusCode')->willReturn(500);
+        OpenAI::fake([new ErrorException('Server error', $response)]);
+
+        $service = app(FloodWatchService::class);
+        $result = $service->chat('Check status');
+
+        $this->assertSame(__('flood-watch.error.api_error'), $result['response']);
+        $this->assertSame([], $result['floods']);
+        $this->assertSame([], $result['incidents']);
+        $this->assertSame([], $result['forecast']);
+        $this->assertArrayHasKey('lastChecked', $result);
+    }
+
+    public function test_chat_returns_empty_result_with_connection_message_when_openai_throws_connection_error(): void
+    {
+        Config::set('openai.api_key', 'test-key');
+
+        Http::fake([
+            '*api.ffc-environment-agency.fgs.metoffice.gov.uk*' => Http::response(['statement' => []], 200),
+            '*api.open-meteo.com*' => Http::response(['daily' => ['time' => [], 'weathercode' => [], 'temperature_2m_max' => [], 'temperature_2m_min' => [], 'precipitation_sum' => []]], 200),
+            '*environment.data.gov.uk*' => Http::response(['items' => []], 200),
+        ]);
+
+        OpenAI::fake([new \RuntimeException('Connection reset by peer')]);
+
+        $service = app(FloodWatchService::class);
+        $result = $service->chat('Check status');
+
+        $this->assertSame(__('flood-watch.error.connection'), $result['response']);
+        $this->assertSame([], $result['floods']);
+        $this->assertSame([], $result['incidents']);
+        $this->assertSame([], $result['forecast']);
+        $this->assertArrayHasKey('lastChecked', $result);
+    }
+
+    public function test_chat_returns_empty_result_with_unexpected_message_when_openai_throws_generic_throwable(): void
+    {
+        Config::set('openai.api_key', 'test-key');
+
+        Http::fake([
+            '*api.ffc-environment-agency.fgs.metoffice.gov.uk*' => Http::response(['statement' => []], 200),
+            '*api.open-meteo.com*' => Http::response(['daily' => ['time' => [], 'weathercode' => [], 'temperature_2m_max' => [], 'temperature_2m_min' => [], 'precipitation_sum' => []]], 200),
+            '*environment.data.gov.uk*' => Http::response(['items' => []], 200),
+        ]);
+
+        OpenAI::fake([new \RuntimeException('Internal server error')]);
+
+        $service = app(FloodWatchService::class);
+        $result = $service->chat('Check status');
+
+        $this->assertSame(__('flood-watch.error.unexpected'), $result['response']);
+        $this->assertSame([], $result['floods']);
+        $this->assertSame([], $result['incidents']);
+        $this->assertSame([], $result['forecast']);
+        $this->assertArrayHasKey('lastChecked', $result);
+    }
+
+    public function test_chat_continues_when_tool_execution_throws_and_returns_error_to_llm(): void
+    {
+        Config::set('openai.api_key', 'test-key');
+        Config::set('flood-watch.national_highways.api_key', 'test-key');
+        Config::set('flood-watch.national_highways.base_url', 'https://api.example.com');
+
+        $floodServiceMock = $this->createMock(\App\Flood\Services\EnvironmentAgencyFloodService::class);
+        $floodServiceMock->method('getFloods')->willThrowException(new \RuntimeException('EA API unavailable'));
+
+        $this->app->instance(\App\Flood\Services\EnvironmentAgencyFloodService::class, $floodServiceMock);
+
+        Http::fake([
+            '*api.example.com*' => Http::response(['D2Payload' => ['situation' => []]], 200),
+            '*fgs.metoffice.gov.uk*' => Http::response(['statement' => []], 200),
+            '*open-meteo.com*' => Http::response(['daily' => ['time' => [], 'weathercode' => [], 'temperature_2m_max' => [], 'temperature_2m_min' => [], 'precipitation_sum' => []]], 200),
+        ]);
+
+        $toolCallResponse = CreateResponse::fake([
+            'choices' => [
+                [
+                    'index' => 0,
+                    'message' => [
+                        'role' => 'assistant',
+                        'content' => null,
+                        'tool_calls' => [
+                            ['id' => 'call_1', 'type' => 'function', 'function' => ['name' => 'GetFloodData', 'arguments' => '{}']],
+                            ['id' => 'call_2', 'type' => 'function', 'function' => ['name' => 'GetHighwaysIncidents', 'arguments' => '{}']],
+                        ],
+                    ],
+                    'logprobs' => null,
+                    'finish_reason' => 'tool_calls',
+                ],
+            ],
+        ]);
+        $finalResponse = CreateResponse::fake([
+            'choices' => [
+                [
+                    'index' => 0,
+                    'message' => [
+                        'role' => 'assistant',
+                        'content' => 'I was unable to fetch flood data (service error). Road status is clear.',
+                        'tool_calls' => [],
+                    ],
+                    'logprobs' => null,
+                    'finish_reason' => 'stop',
+                ],
+            ],
+        ]);
+
+        OpenAI::fake([$toolCallResponse, $finalResponse]);
+
+        $service = app(FloodWatchService::class);
+        $result = $service->chat('Check status');
+
+        $this->assertSame('I was unable to fetch flood data (service error). Road status is clear.', $result['response']);
+        $this->assertSame([], $result['floods']);
+        $this->assertIsArray($result['incidents']);
     }
 
     public function test_get_highways_incidents_excludes_motorways_from_display_when_config_true(): void

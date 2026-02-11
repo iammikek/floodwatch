@@ -26,6 +26,9 @@ return [
         'timeout' => 'The request took too long. The AI service may be busy. Please try again in a moment.',
         'connection' => 'Unable to reach the service. Please check your connection and try again.',
         'generic' => 'Unable to get a response. Please try again.',
+        'api_error' => 'The AI service returned an error. Please try again in a moment.',
+        'unexpected' => 'Something went wrong while contacting the AI service. Please try again.',
+        'tool_failed' => 'Tool execution failed.',
     ],
     'message' => [
         'check_status_default' => 'Check flood and road status for the South West (Bristol, Somerset, Devon, Cornwall).',
