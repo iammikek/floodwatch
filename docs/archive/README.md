@@ -1,17 +1,16 @@
 # Archived Documentation
 
-Detailed docs moved here when consolidating to a smaller set. See `docs/PLAN.md` for the current plan.
+This directory contains historical planning documents, early design specs, and superseded guides.
 
-| File | Original purpose |
-|------|------------------|
-| NEXT_STEPS.md | Road, rail, real-time plans; merged into PLAN.md |
-| DEVELOPMENT.md | Backlog, milestones; merged into PLAN.md |
-| DATA_SOURCES.md | Current + planned APIs; summary in PLAN.md |
-| ROAD_DATA_STRATEGY.md | Flood-road relevance; key points in PLAN.md |
-| SITUATIONAL_AWARENESS_DASHBOARD.md | Phase 2 vision; summary in PLAN.md |
-| WIREFRAME_REVISED_BRIEF.md | MVP wireframes; condensed in WIREFRAMES.md |
-| WIREFRAME_SITUATIONAL_AWARENESS.md | Phase 2 wireframes; condensed in WIREFRAMES.md |
-| MAP_AND_CACHE_ARCHITECTURE.md | Map/cache implementation details |
-| PLAN_SPLIT_DATA_FASTER_MAP.md | Split data architecture |
-| RISK_INDEX_FORMULA.md | Risk gauge formula |
-| MONETISATION_PLAN.md | Revenue options |
+These files are preserved for reference but are **not actively maintained**. For current documentation, see the parent `docs/` directory.
+
+## Contents
+
+- **LLM_INTEGRATION_GUIDE.md** — Early LLM integration approach (superseded by `../LLM_INTEGRATION_PLAN.md`)
+- **DEVELOPMENT.md** — Original development setup notes
+- **WIREFRAME_*.md** — Early UI wireframes and briefs
+- **PLAN_SPLIT_DATA_FASTER_MAP.md** — Performance optimization planning
+- **ROAD_DATA_STRATEGY.md** — Road data integration research
+- **MONETISATION_PLAN.md** — Business model exploration
+- **RISK_INDEX_FORMULA.md** — Risk scoring algorithm design
+- **DATA_SOURCES.md** — Extended data source research (National Rail, emergency services)
