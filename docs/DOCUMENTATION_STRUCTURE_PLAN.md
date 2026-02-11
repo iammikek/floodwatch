@@ -45,23 +45,23 @@ Plan to align top-level documentation with OSS best practices. **Scope**: README
 
 Use this to track changes. All edits in **README.md**, **CONTRIBUTING.md**, or **docs/** only.
 
-- [ ] **README**
-  - [ ] Add a one-sentence elevator pitch at the top (below or as part of the title block).
-  - [ ] Expand **Prerequisites** (or reference CONTRIBUTING for full list) and ensure **Getting Started** includes: copy `.env.example` → `.env`, `key:generate`, and `yarn build` (or "See CONTRIBUTING for full setup").
-  - [ ] Add **Architecture overview**: 3–5 bullet points (e.g. user input → LocationResolver; FloodWatchService + LLM tools; cache; dashboard). Link to `docs/architecture.md`.
-  - [ ] Add **Running locally & tests**: explicit "Run tests: `sail test`" (and optionally `sail test --coverage`).
-  - [ ] Add **Deployment**: one sentence (e.g. pilot on Railway), link to `docs/DEPLOYMENT.md`.
-  - [ ] Add **Example flow**: short bullet list or minimal mermaid (e.g. postcode → geocode → LLM tools → summary + dashboard); or link to `docs/architecture.md` / new `docs/EXAMPLE_FLOWS.md` if we prefer long form in docs only.
-  - [ ] Ensure **Documentation** section includes link to `docs/DEPLOYMENT.md` if missing.
-  - [ ] Optional: add a clear **Contributing** line/section pointing to CONTRIBUTING.md.
-- [ ] **CONTRIBUTING.md**
-  - [ ] Optional: add a short note that top-level doc structure is described in `docs/DOCUMENTATION_STRUCTURE_PLAN.md`.
-- [ ] **docs/**
+- [x] **README**
+  - [x] Add a one-sentence elevator pitch at the top (below or as part of the title block).
+  - [x] Expand **Prerequisites** (or reference CONTRIBUTING for full list) and ensure **Getting Started** includes: copy `.env.example` → `.env`, `key:generate`, and `yarn build` (or "See CONTRIBUTING for full setup").
+  - [x] Add **Architecture overview**: 3–5 bullet points (e.g. user input → LocationResolver; FloodWatchService + LLM tools; cache; dashboard). Link to `docs/architecture.md`.
+  - [x] Add **Running locally & tests**: explicit "Run tests: `sail test`" (and optionally `sail test --coverage`).
+  - [x] Add **Deployment**: one sentence (e.g. pilot on Railway), link to `docs/DEPLOYMENT.md`.
+  - [x] Add **Example flow**: short bullet list or minimal mermaid (e.g. postcode → geocode → LLM tools → summary + dashboard); or link to `docs/architecture.md` / new `docs/EXAMPLE_FLOWS.md` if we prefer long form in docs only.
+  - [x] Ensure **Documentation** section includes link to `docs/DEPLOYMENT.md` if missing.
+  - [x] Optional: add a clear **Contributing** line/section pointing to CONTRIBUTING.md.
+- [x] **CONTRIBUTING.md**
+  - [x] Optional: add a short note that top-level doc structure is described in `docs/DOCUMENTATION_STRUCTURE_PLAN.md`.
+- [x] **docs/**
   - [ ] If we add a longer "Example API/UX flows" doc, add `docs/EXAMPLE_FLOWS.md` and link from README (optional).
-  - [ ] No other structural changes required for this plan.
-  - [ ] Reference IDE agent directories: `.cursor/rules` and `.cursor/skills` in README/CONTRIBUTING.
-  - [ ] Ensure key notes from `.cursor` are mirrored into `.junie/guidelines.md` for portability.
-  - [ ] Add PR checklist item: when agent rules/skills change, sync `.junie/guidelines.md`.
+  - [x] No other structural changes required for this plan.
+  - [x] Reference IDE agent directories: `.cursor/rules` and `.cursor/skills` in README/CONTRIBUTING.
+  - [x] Ensure key notes from `.cursor` are mirrored into `.junie/guidelines.md` for portability.
+  - [x] Add PR checklist item: when agent rules/skills change, sync `.junie/guidelines.md`.
 
 ---
 
@@ -142,23 +142,23 @@ README should:
 
 ### Implementation checklist (topic split)
 
-- [ ] **Create/migrate topic docs**
-  - [ ] **docs/installation.md** — Prerequisites, full install steps, env vars, Sail, first run. Link from README.
-  - [ ] **docs/architecture.md** — Move/rename from ARCHITECTURE.md or consolidate; ensure one canonical architecture doc.
-  - [ ] **docs/agents-and-llm.md** — New file merging README LLM bits + LLM_INTEGRATION_GUIDE + LLM_DATA_FLOW + API_OPTIMIZATION (LLM parts) + RISK_CORRELATION; or summary + links to existing guides.
-  - [ ] **docs/usage.md** — New file: user-facing usage, regions, dashboard, example flow. Content from README “User Experience” and “Scope”.
-  - [ ] **docs/api.md** — New file: health, map endpoints, protection, rate limits. Source: ARCHITECTURE “Public map API endpoints” and routes.
-  - [ ] **docs/contributing.md** — Copy or move content from root CONTRIBUTING.md.
-  - [ ] **docs/tests.md** — New file: run tests, write tests, Pest, mocking, coverage. Source: CONTRIBUTING “Testing”, README “Run tests”.
-- [ ] **README**
-  - [ ] Trim to elevator pitch + short intro + “Quick start” (minimal) + “Documentation” table linking to the seven topic docs and other key docs (Deployment, Plan, Wireframes, etc.).
-- [ ] **Root CONTRIBUTING.md**
-  - [ ] Replace body with short pointer to `docs/contributing.md` (or keep full content and add a note that the canonical doc is in docs/ — prefer pointer to avoid duplication).
-- [ ] **Cross-links**
-  - [ ] In each topic doc, add “See also” links to related topic docs where useful (e.g. architecture → agents-and-llm, installation → tests).
-  - [ ] Update any existing docs that link to ARCHITECTURE.md or CONTRIBUTING.md to use the new paths (architecture.md, contributing.md).
-- [ ] **Archive or retain**
-  - [ ] Decide for each of LLM_INTEGRATION_GUIDE, LLM_DATA_FLOW, API_OPTIMIZATION_GUIDE, RISK_CORRELATION: merge into agents-and-llm only, or keep and add “Summary in agents-and-llm” at top. Same for ARCHITECTURE → architecture.
+- [x] **Create/migrate topic docs**
+  - [x] **docs/installation.md** — Prerequisites, full install steps, env vars, Sail, first run. Link from README.
+  - [x] **docs/architecture.md** — Move/rename from ARCHITECTURE.md or consolidate; ensure one canonical architecture doc.
+  - [x] **docs/agents-and-llm.md** — New file merging README LLM bits + LLM_INTEGRATION_GUIDE + LLM_DATA_FLOW + API_OPTIMIZATION (LLM parts) + RISK_CORRELATION; or summary + links to existing guides.
+  - [x] **docs/usage.md** — New file: user-facing usage, regions, dashboard, example flow. Content from README “User Experience” and “Scope”.
+  - [x] **docs/api.md** — New file: health, map endpoints, protection, rate limits. Source: ARCHITECTURE “Public map API endpoints” and routes.
+  - [x] **docs/contributing.md** — Copy or move content from root CONTRIBUTING.md.
+  - [x] **docs/tests.md** — New file: run tests, write tests, Pest, mocking, coverage. Source: CONTRIBUTING “Testing”, README “Run tests”.
+- [x] **README**
+  - [x] Trim to elevator pitch + short intro + “Quick start” (minimal) + “Documentation” table linking to the seven topic docs and other key docs (Deployment, Plan, Wireframes, etc.).
+- [x] **Root CONTRIBUTING.md**
+  - [x] Replace body with short pointer to `docs/contributing.md` (or keep full content and add a note that the canonical doc is in docs/ — prefer pointer to avoid duplication).
+- [x] **Cross-links**
+  - [x] In each topic doc, add “See also” links to related topic docs where useful (e.g. architecture → agents-and-llm, installation → tests).
+  - [x] Update any existing docs that link to ARCHITECTURE.md or CONTRIBUTING.md to use the new paths (architecture.md, contributing.md).
+- [x] **Archive or retain**
+  - [x] Decide for each of LLM_INTEGRATION_GUIDE, LLM_DATA_FLOW, API_OPTIMIZATION_GUIDE, RISK_CORRELATION: merge into agents-and-llm only, or keep and add “Summary in agents-and-llm” at top. Same for ARCHITECTURE → architecture.
 
 ### Order of work (combined plan)
 
@@ -216,13 +216,13 @@ Result: Contributors see a consistent PR form and are prompted to document their
 
 ### Implementation checklist (contributing and templates)
 
-- [ ] **docs/contributing.md** — Ensure a “Documenting your changes” subsection: when to update README vs docs/, and that PRs should tick doc updates in the PR template.
-- [ ] **Root CONTRIBUTING.md** — Short pointer to `docs/contributing.md` (per §7).
-- [ ] **.github/ISSUE_TEMPLATE/config.yml** — Create with name/description and list of templates (bug, feature, docs).
-- [ ] **.github/ISSUE_TEMPLATE/bug_report.md** — Environment, steps, expected/actual, “Documentation updated?” N/A.
-- [ ] **.github/ISSUE_TEMPLATE/feature_request.md** — Problem, solution, alternatives, “Documentation impact”.
-- [ ] **.github/ISSUE_TEMPLATE/documentation.md** (optional) — Doc-only issue form: which doc, what’s wrong, suggested fix.
-- [ ] **.github/PULL_REQUEST_TEMPLATE.md** — Add general section (what, why, how tested) and Documentation checklist; link to docs style guide. Keep or generalize existing review checklist.
+- [x] **docs/contributing.md** — Ensure a “Documenting your changes” subsection: when to update README vs docs/, and that PRs should tick doc updates in the PR template.
+- [x] **Root CONTRIBUTING.md** — Short pointer to `docs/contributing.md` (per §7).
+- [x] **.github/ISSUE_TEMPLATE/config.yml** — Create with name/description and list of templates (bug, feature, docs).
+- [x] **.github/ISSUE_TEMPLATE/bug_report.md** — Environment, steps, expected/actual, “Documentation updated?” N/A.
+- [x] **.github/ISSUE_TEMPLATE/feature_request.md** — Problem, solution, alternatives, “Documentation impact”.
+- [x] **.github/ISSUE_TEMPLATE/documentation.md** (optional) — Doc-only issue form: which doc, what’s wrong, suggested fix.
+- [x] **.github/PULL_REQUEST_TEMPLATE.md** — Add general section (what, why, how tested) and Documentation checklist; link to docs style guide. Keep or generalize existing review checklist.
 
 ---
 
@@ -264,10 +264,10 @@ Use `paths` filter so the job only runs when these paths are modified (optional:
 
 ### Implementation checklist (docs QA)
 
-- [ ] **.github/workflows/docs-qa.yml** — New workflow.
-  - [ ] `on: pull_request` with `paths: ['docs/**', 'README.md', 'CONTRIBUTING.md', '.github/ISSUE_TEMPLATE/**', '.github/PULL_REQUEST_TEMPLATE.md']`.
-  - [ ] One job: install link checker (e.g. lychee or markdown-link-check), run over docs + README + CONTRIBUTING.
-  - [ ] Fail on broken internal links; optionally allow external link failures or exclude list.
+- [x] **.github/workflows/docs-qa.yml** — New workflow.
+  - [x] `on: pull_request` with `paths: ['docs/**', 'README.md', 'CONTRIBUTING.md', '.github/ISSUE_TEMPLATE/**', '.github/PULL_REQUEST_TEMPLATE.md']`.
+  - [x] One job: install link checker (e.g. lychee or markdown-link-check), run over docs + README + CONTRIBUTING.
+  - [x] Fail on broken internal links; optionally allow external link failures or exclude list.
 - [ ] **Optional**: Second job or step for “stale” grep (TODO/FIXME/OUTDATED) in docs; or script for old path references after topic rename.
 
 ---
@@ -294,9 +294,9 @@ Recommendation: **Option B** — create `docs/DOCS_STYLE.md` so the style guide 
 
 ### Implementation checklist (docs style)
 
-- [ ] **docs/DOCS_STYLE.md** — New file: concise, scannable; clear headers; bullet points; short sentences; tables where useful; tone; consistency. Include 1–2 “good vs avoid” examples.
-- [ ] **docs/contributing.md** — Add “When updating documentation” that links to `docs/DOCS_STYLE.md` and summarises the main rules.
-- [ ] **.github/PULL_REQUEST_TEMPLATE.md** — In the Documentation checklist, link to `docs/DOCS_STYLE.md` for “docs only” or “doc updates” (see §8).
+- [x] **docs/DOCS_STYLE.md** — New file: concise, scannable; clear headers; bullet points; short sentences; tables where useful; tone; consistency. Include 1–2 “good vs avoid” examples.
+- [x] **docs/contributing.md** — Add “When updating documentation” that links to `docs/DOCS_STYLE.md` and summarises the main rules.
+- [x] **.github/PULL_REQUEST_TEMPLATE.md** — In the Documentation checklist, link to `docs/DOCS_STYLE.md` for “docs only” or “doc updates” (see §8).
 
 ---
 
