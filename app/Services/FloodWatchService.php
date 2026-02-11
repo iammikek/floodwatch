@@ -10,6 +10,7 @@ use App\Flood\Services\FloodForecastService;
 use App\Flood\Services\RiverLevelService;
 use App\Roads\Services\NationalHighwaysService;
 use App\Roads\Services\SomersetCouncilRoadworksService;
+use App\Support\ConfigKey;
 use App\Support\LlmTrim;
 use App\Support\LogMasker;
 use Illuminate\Support\Facades\Cache;
@@ -80,7 +81,7 @@ class FloodWatchService
 
         $store = $this->resolveCacheStore();
         $key = $this->cacheKey($userMessage, $cacheKey);
-        $cacheEnabled = config('flood-watch.cache_ttl_minutes', 15) > 0;
+        $cacheEnabled = config(ConfigKey::CACHE_TTL_MINUTES, 15) > 0;
         if ($cacheEnabled) {
             $cached = $this->cacheGet($store, $key);
             if ($cached !== null) {
@@ -92,8 +93,8 @@ class FloodWatchService
             $onProgress !== null && $onProgress($status);
         };
 
-        $lat = $userLat ?? config('flood-watch.default_lat');
-        $lng = $userLng ?? config('flood-watch.default_lng');
+        $lat = $userLat ?? config(ConfigKey::DEFAULT_LAT);
+        $lng = $userLng ?? config(ConfigKey::DEFAULT_LNG);
 
         $report(__('flood-watch.progress.fetching_prefetch'));
         [$forecast, $weather, $riverLevels] = Concurrency::run([
@@ -294,7 +295,7 @@ class FloodWatchService
 
     private function cacheKey(string $userMessage, ?string $cacheKey): string
     {
-        $prefix = config('flood-watch.cache_key_prefix', 'flood-watch');
+        $prefix = config(ConfigKey::CACHE_KEY_PREFIX, 'flood-watch');
 
         if ($cacheKey !== null && $cacheKey !== '') {
             return "{$prefix}:chat:".md5($cacheKey);
@@ -467,8 +468,8 @@ class FloodWatchService
         }
 
         if ($toolName === ToolName::GetFloodData->value) {
-            $max = config('flood-watch.llm_max_floods', 25);
-            $maxMsg = config('flood-watch.llm_max_flood_message_chars', 300);
+            $max = (int) config(ConfigKey::LLM_MAX_FLOODS, 25);
+            $maxMsg = (int) config(ConfigKey::LLM_MAX_FLOOD_MESSAGE_CHARS, 300);
 
             return LlmTrim::trimList($result, $max, function ($flood) use ($maxMsg) {
                 $arr = FloodWarning::fromArray($flood)->withoutPolygon()->toArray();
@@ -481,18 +482,18 @@ class FloodWatchService
         }
 
         if ($toolName === ToolName::GetHighwaysIncidents->value) {
-            return LlmTrim::limitItems($result, config('flood-watch.llm_max_incidents', 25));
+            return LlmTrim::limitItems($result, (int) config(ConfigKey::LLM_MAX_INCIDENTS, 25));
         }
 
         if ($toolName === ToolName::GetRiverLevels->value) {
-            return LlmTrim::limitItems($result, config('flood-watch.llm_max_river_levels', 15));
+            return LlmTrim::limitItems($result, (int) config(ConfigKey::LLM_MAX_RIVER_LEVELS, 15));
         }
 
         if ($toolName === ToolName::GetFloodForecast->value) {
             if (isset($result['england_forecast'])) {
                 $result['england_forecast'] = LlmTrim::truncate(
                     $result['england_forecast'],
-                    config('flood-watch.llm_max_forecast_chars', 1200)
+                    (int) config(ConfigKey::LLM_MAX_FORECAST_CHARS, 1200)
                 );
             }
 
@@ -509,10 +510,10 @@ class FloodWatchService
         }
 
         if ($toolName === ToolName::GetCorrelationSummary->value) {
-            $maxFloods = config('flood-watch.llm_max_floods', 12);
-            $maxIncidents = config('flood-watch.llm_max_incidents', 12);
-            $maxMsgChars = config('flood-watch.llm_max_flood_message_chars', 150);
-            $maxTotalChars = config('flood-watch.llm_max_correlation_chars', 8000);
+            $maxFloods = (int) config(ConfigKey::LLM_MAX_FLOODS, 12);
+            $maxIncidents = (int) config(ConfigKey::LLM_MAX_INCIDENTS, 12);
+            $maxMsgChars = (int) config(ConfigKey::LLM_MAX_FLOOD_MESSAGE_CHARS, 150);
+            $maxTotalChars = (int) config(ConfigKey::LLM_MAX_CORRELATION_CHARS, 8000);
 
             $stripFlood = function (array $f) use ($maxMsgChars): array {
                 try {
