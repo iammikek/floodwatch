@@ -42,6 +42,7 @@ Primary dev environment. All commands run via Sail. Use `./vendor/bin/sail` or c
 - **Commands**: `sail artisan make:test <Name>`, `sail artisan make:test <Name> --unit`
 - **Database**: Tests use `RefreshDatabase`; `.env.testing` for test env
 - **Coverage**: Use `--coverage` when needed
+- **Run tests in Docker**: Always run tests via Sail to ensure consistent environment: `sail test` or `sail artisan test`
 
 ## Cursor Skills & Rules
 
