@@ -39,7 +39,7 @@ Plan to improve code quality, readability, modularity, and test coverage. **Scop
 
 - [x] Document naming conventions and architecture patterns in `docs/contributing.md` with dedicated "Code Conventions" section.
 - [x] Add a short "Config keys" subsection in `docs/architecture.md` or installation: all app-specific config under `flood-watch.*`, env vars `FLOOD_WATCH_*`.
-- [ ] Optional: Light pass over `FloodWatchService`, `FloodWatchPromptBuilder`, and call sites to rename unclear variables (no behaviour change).
+- [x] Optional: Light pass over `FloodWatchService`, `FloodWatchPromptBuilder`, and call sites to rename unclear variables (no behaviour change). *(Skipped — naming is already clear after handler migration.)*
 
 ### 1.2 PSR-12 and Laravel style
 
@@ -220,7 +220,7 @@ Implementation checklist
 
 - [x] CI job: `.github/workflows/style.yml` enforces Pint on code paths.
 - [x] Verify `php artisan test --compact` workflow in `.github/workflows/tests.yml`.
-- [ ] Optional: add PHPStan with baseline for gradual improvement.
+- [x] PHPStan with Larastan added at level 6 with baseline (110 errors baselined); CI workflow updated.
 
 ---
 
@@ -236,8 +236,8 @@ Implementation checklist
 8. [x] DRY tool JSON schemas via ToolRegistry in PromptBuilder.
 9. [x] Add handler contract tests and PromptBuilder registry test.
 10. [ ] Monitor logs for token usage, timeouts, and CB openings; iterate limits.
-11. [ ] Optional: Add PHPStan with baseline for gradual improvement.
-12. [ ] Optional: Implement cross-tool BudgetAllocator for proportional trimming.
+11. [x] PHPStan with Larastan added at level 6 with baseline; CI workflow updated.
+12. [x] Implemented cross-tool `BudgetAllocator` for proportional trimming with tests.
 
 Success metrics
 

@@ -33,6 +33,8 @@ final class ConfigKey
 
     public const LLM_MAX_CORRELATION_CHARS = 'flood-watch.llm_max_correlation_chars';
 
+    public const LLM_ESTIMATED_CHARS_PER_ITEM = 'flood-watch.llm_estimated_chars_per_item';
+
     // Defaults / location
     public const DEFAULT_LAT = 'flood-watch.default_lat';
 
