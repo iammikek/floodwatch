@@ -43,7 +43,7 @@ class FloodWatchServiceTrimTest extends TestCase
         $this->assertIsArray($trimmed);
         $this->assertCount(3, $trimmed, 'Flood list should be capped to llm_max_floods');
         $this->assertArrayHasKey('message', $trimmed[0]);
-        $this->assertLessThanOrEqual(10 + 1, strlen($trimmed[0]['message']), 'Message should be truncated with ellipsis (<= max + 1)');
+        $this->assertLessThanOrEqual(10 + 1, mb_strlen($trimmed[0]['message']), 'Message should be truncated with ellipsis (<= max + 1)');
         $this->assertArrayNotHasKey('polygon', $trimmed[0], 'Polygon should never be present in LLM payload');
     }
 
