@@ -54,7 +54,7 @@ it('presents trimmed floods for LLM and removes polygon', function () {
     expect($presented)->toBeArray()->toHaveCount(1);
     expect($presented[0])->toHaveKey('description', 'Flood A');
     expect($presented[0])->not->toHaveKey('polygon');
-    expect(strlen($presented[0]['message'] ?? ''))->toBeLessThanOrEqual(11); // 10 + ellipsis or equal when exact
+    expect(mb_strlen($presented[0]['message'] ?? ''))->toBeLessThanOrEqual(11); // 10 + ellipsis or equal when exact
 });
 
 it('presents error shape when ToolResult is error', function () {
