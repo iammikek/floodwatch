@@ -26,7 +26,7 @@ class PostcodeValidator
     /**
      * Validate and optionally geocode a UK postcode for the South West.
      *
-     * @return array{valid: bool, in_area: bool, error?: string, lat?: float, lng?: float, outcode?: string, region?: string|null}
+     * @return array{valid: bool, in_area: bool, getError?: string, lat?: float, lng?: float, outcode?: string, region?: string|null}
      */
     public function validate(string $postcode, bool $geocode = true): array
     {
@@ -38,14 +38,14 @@ class PostcodeValidator
                 return [
                     'valid' => false,
                     'in_area' => false,
-                    'error' => 'Please enter a postcode.',
+                    'getError' => 'Please enter a postcode.',
                 ];
             }
 
             return [
                 'valid' => false,
                 'in_area' => false,
-                'error' => 'Invalid postcode format. Use a valid UK postcode (e.g. TA10 0DP).',
+                'getError' => 'Invalid postcode format. Use a valid UK postcode (e.g. TA10 0DP).',
             ];
         }
 
@@ -53,7 +53,7 @@ class PostcodeValidator
             return [
                 'valid' => true,
                 'in_area' => false,
-                'error' => 'This postcode is outside the South West. Flood Watch covers Bristol, Somerset, Devon and Cornwall.',
+                'getError' => 'This postcode is outside the South West. Flood Watch covers Bristol, Somerset, Devon and Cornwall.',
                 'outcode' => $postcodeObj->outcode(),
             ];
         }
@@ -67,11 +67,11 @@ class PostcodeValidator
 
         if ($geocode) {
             $coords = $this->geocode($postcodeObj->normalize());
-            if ($coords !== null && isset($coords['error'])) {
+            if ($coords !== null && isset($coords['getError'])) {
                 return [
                     'valid' => false,
                     'in_area' => false,
-                    'error' => $coords['error'],
+                    'getError' => $coords['getError'],
                 ];
             }
             if ($coords !== null && isset($coords['lat'], $coords['lng'])) {
@@ -133,7 +133,7 @@ class PostcodeValidator
     /**
      * Geocode postcode via postcodes.io (free, no API key).
      *
-     * @return array{lat: float, lng: float}|array{error: string}|null
+     * @return array{lat: float, lng: float}|array{getError: string}|null
      */
     public function geocode(string $postcode): ?array
     {
@@ -144,7 +144,7 @@ class PostcodeValidator
             $response = Http::timeout(5)->get($url);
 
             if ($response->tooManyRequests()) {
-                return ['error' => 'Postcode lookup rate limit exceeded. Please wait a minute and try again.'];
+                return ['getError' => 'Postcode lookup rate limit exceeded. Please wait a minute and try again.'];
             }
 
             if (! $response->successful()) {

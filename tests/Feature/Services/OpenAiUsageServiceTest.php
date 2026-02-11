@@ -41,8 +41,8 @@ class OpenAiUsageServiceTest extends TestCase
         $service = app(OpenAiUsageService::class);
         $result = $service->getUsage();
 
-        $this->assertStringContainsString('Admin API key', $result['error']);
-        $this->assertStringContainsString('OPENAI_ORG_ADMIN_KEY', $result['error']);
+        $this->assertStringContainsString('Admin API key', $result['getError']);
+        $this->assertStringContainsString('OPENAI_ORG_ADMIN_KEY', $result['getError']);
         $this->assertSame(0, $result['requests_today']);
         $this->assertSame(0, $result['requests_this_month']);
         $this->assertSame([], $result['chart_daily']);
@@ -64,7 +64,7 @@ class OpenAiUsageServiceTest extends TestCase
         $service = app(OpenAiUsageService::class);
         $result = $service->getUsage();
 
-        $this->assertNull($result['error']);
+        $this->assertNull($result['getError']);
         $this->assertSame(5, $result['requests_today']);
         $this->assertSame(5, $result['requests_this_month']);
         $this->assertSame(2000, $result['input_tokens_this_month']);
@@ -78,7 +78,7 @@ class OpenAiUsageServiceTest extends TestCase
 
         Http::fake(function ($request) {
             if (str_contains($request->url(), 'api.openai.com/v1/organization/usage')) {
-                return Http::response(['error' => 'Forbidden'], 403);
+                return Http::response(['getError' => 'Forbidden'], 403);
             }
 
             return Http::response([], 404);
@@ -87,8 +87,8 @@ class OpenAiUsageServiceTest extends TestCase
         $service = app(OpenAiUsageService::class);
         $result = $service->getUsage();
 
-        $this->assertNotNull($result['error']);
-        $this->assertStringContainsString('Admin API key', $result['error']);
+        $this->assertNotNull($result['getError']);
+        $this->assertStringContainsString('Admin API key', $result['getError']);
         $this->assertSame(0, $result['requests_today']);
     }
 
@@ -98,7 +98,7 @@ class OpenAiUsageServiceTest extends TestCase
 
         Http::fake(function ($request) {
             if (str_contains($request->url(), 'api.openai.com/v1/organization/usage')) {
-                return Http::response(['error' => 'Server error'], 500);
+                return Http::response(['getError' => 'Server getError'], 500);
             }
 
             return Http::response([], 404);
@@ -107,7 +107,7 @@ class OpenAiUsageServiceTest extends TestCase
         $service = app(OpenAiUsageService::class);
         $result = $service->getUsage();
 
-        $this->assertNotNull($result['error']);
+        $this->assertNotNull($result['getError']);
         $this->assertSame(0, $result['requests_today']);
     }
 
@@ -153,7 +153,7 @@ class OpenAiUsageServiceTest extends TestCase
         $service = app(OpenAiUsageService::class);
         $result = $service->getUsage();
 
-        $this->assertNull($result['error']);
+        $this->assertNull($result['getError']);
         $this->assertNotNull($result['remaining_budget']);
         $this->assertLessThanOrEqual(10.0, $result['remaining_budget']);
         $this->assertGreaterThanOrEqual(0.0, $result['remaining_budget']);

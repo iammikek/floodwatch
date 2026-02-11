@@ -112,7 +112,7 @@ test('admin dashboard displays llm usage from openai api', function () {
                 'cost_this_month' => 0.27,
                 'remaining_budget' => null,
                 'chart_daily' => [],
-                'error' => null,
+                'getError' => null,
             ]);
     });
 
@@ -169,7 +169,7 @@ test('admin dashboard displays remaining budget when llm_budget_initial is set',
                 'cost_this_month' => 0.14,
                 'remaining_budget' => 9.86,
                 'chart_daily' => [],
-                'error' => null,
+                'getError' => null,
             ]);
     });
 

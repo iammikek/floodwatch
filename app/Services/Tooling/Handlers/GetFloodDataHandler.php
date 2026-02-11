@@ -62,7 +62,7 @@ final class GetFloodDataHandler implements ToolHandler
     public function presentForLlm(ToolResult $result, TokenBudget $budget): array|string
     {
         if (! $result->isOk()) {
-            return ['error' => $result->error()];
+            return ['getError' => $result->error()];
         }
 
         $max = (int) config(ConfigKey::LLM_MAX_FLOODS, 25);

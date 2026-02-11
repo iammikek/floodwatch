@@ -31,7 +31,7 @@ class LocationResolver
     /**
      * Resolve a location string (postcode or place name) to coordinates and region.
      *
-     * @return array{valid: bool, in_area: bool, error?: string, lat?: float, lng?: float, region?: string, outcode?: string, display_name?: string}
+     * @return array{valid: bool, in_area: bool, getError?: string, lat?: float, lng?: float, region?: string, outcode?: string, display_name?: string}
      */
     public function resolve(string $input): array
     {
@@ -41,7 +41,7 @@ class LocationResolver
             return [
                 'valid' => false,
                 'in_area' => false,
-                'error' => 'Please enter a postcode or location.',
+                'getError' => 'Please enter a postcode or location.',
             ];
         }
 
@@ -56,7 +56,7 @@ class LocationResolver
     /**
      * Geocode a place name via Nominatim (OpenStreetMap).
      *
-     * @return array{valid: bool, in_area: bool, error?: string, lat?: float, lng?: float, region?: string, display_name?: string}
+     * @return array{valid: bool, in_area: bool, getError?: string, lat?: float, lng?: float, region?: string, display_name?: string}
      */
     private function geocodePlaceName(string $placeName): array
     {
@@ -80,7 +80,7 @@ class LocationResolver
                 return [
                     'valid' => false,
                     'in_area' => false,
-                    'error' => 'Location lookup rate limit exceeded. Please wait a minute and try again.',
+                    'getError' => 'Location lookup rate limit exceeded. Please wait a minute and try again.',
                 ];
             }
 
@@ -88,7 +88,7 @@ class LocationResolver
                 return [
                     'valid' => false,
                     'in_area' => false,
-                    'error' => 'Unable to find that location. Try a postcode or a town name in the South West.',
+                    'getError' => 'Unable to find that location. Try a postcode or a town name in the South West.',
                 ];
             }
 
@@ -99,7 +99,7 @@ class LocationResolver
                 return [
                     'valid' => false,
                     'in_area' => false,
-                    'error' => 'Location not found. Try a postcode or town name (e.g. Langport, Bristol, Exeter).',
+                    'getError' => 'Location not found. Try a postcode or town name (e.g. Langport, Bristol, Exeter).',
                 ];
             }
 
@@ -110,7 +110,7 @@ class LocationResolver
                 return [
                     'valid' => false,
                     'in_area' => false,
-                    'error' => 'Unable to get coordinates for that location.',
+                    'getError' => 'Unable to get coordinates for that location.',
                 ];
             }
 
@@ -123,7 +123,7 @@ class LocationResolver
                 return [
                     'valid' => true,
                     'in_area' => false,
-                    'error' => 'That location is outside the South West. Flood Watch covers Bristol, Somerset, Devon and Cornwall.',
+                    'getError' => 'That location is outside the South West. Flood Watch covers Bristol, Somerset, Devon and Cornwall.',
                     'lat' => $lat,
                     'lng' => $lon,
                     'display_name' => $displayName,
@@ -144,7 +144,7 @@ class LocationResolver
             return [
                 'valid' => false,
                 'in_area' => false,
-                'error' => 'Unable to look up that location. Please try again.',
+                'getError' => 'Unable to look up that location. Please try again.',
             ];
         }
     }
@@ -179,7 +179,7 @@ class LocationResolver
     /**
      * Reverse geocode coordinates to a location string and region.
      *
-     * @return array{valid: bool, in_area: bool, location: string, region: ?string, error: ?string}
+     * @return array{valid: bool, in_area: bool, location: string, region: ?string, getError: ?string}
      */
     public function reverseFromCoords(float $lat, float $lng): array
     {
@@ -202,7 +202,7 @@ class LocationResolver
                     'in_area' => false,
                     'location' => '',
                     'region' => null,
-                    'error' => 'Location lookup rate limit exceeded. Please wait a minute and try again.',
+                    'getError' => 'Location lookup rate limit exceeded. Please wait a minute and try again.',
                 ];
             }
 
@@ -212,7 +212,7 @@ class LocationResolver
                     'in_area' => false,
                     'location' => '',
                     'region' => null,
-                    'error' => 'Could not get location. Try entering a postcode.',
+                    'getError' => 'Could not get location. Try entering a postcode.',
                 ];
             }
 
@@ -226,7 +226,7 @@ class LocationResolver
                     'in_area' => false,
                     'location' => '',
                     'region' => null,
-                    'error' => 'Could not get location. Try entering a postcode.',
+                    'getError' => 'Could not get location. Try entering a postcode.',
                 ];
             }
 
@@ -241,7 +241,7 @@ class LocationResolver
                 'in_area' => $inArea,
                 'location' => $location,
                 'region' => $region,
-                'error' => null,
+                'getError' => null,
             ];
         } catch (Throwable $e) {
             report($e);
@@ -251,7 +251,7 @@ class LocationResolver
                 'in_area' => false,
                 'location' => '',
                 'region' => null,
-                'error' => 'Could not get location. Try entering a postcode.',
+                'getError' => 'Could not get location. Try entering a postcode.',
             ];
         }
     }

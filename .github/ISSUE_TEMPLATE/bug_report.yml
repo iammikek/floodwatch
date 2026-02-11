@@ -46,4 +46,4 @@ body:
     id: logs
     attributes:
       label: Logs or Screenshots
-      description: Add any relevant logs, error messages, or screenshots here.
+      description: Add any relevant logs, getError messages, or screenshots here.

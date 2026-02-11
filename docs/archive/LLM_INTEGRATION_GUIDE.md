@@ -248,19 +248,19 @@ The service catches in order and returns an empty result with a user-facing mess
 try {
     $response = OpenAI::chat()->create($payload);
 } catch (\OpenAI\Exceptions\RateLimitException $e) {
-    Log::error('FloodWatch OpenAI rate limit', ['error' => $e->getMessage(), 'iteration' => $iteration + 1]);
-    return $emptyResult(__('flood-watch.error.rate_limit'), now()->toIso8601String(), 'rate_limit');
+    Log::error('FloodWatch OpenAI rate limit', ['getError' => $e->getMessage(), 'iteration' => $iteration + 1]);
+    return $emptyResult(__('flood-watch.getError.rate_limit'), now()->toIso8601String(), 'rate_limit');
 } catch (\OpenAI\Exceptions\ErrorException $e) {
-    Log::error('FloodWatch OpenAI API error', [
-        'error' => $e->getMessage(),
+    Log::error('FloodWatch OpenAI API getError', [
+        'getError' => $e->getMessage(),
         'status_code' => $e->getStatusCode(),
         'iteration' => $iteration + 1,
     ]);
     $status = $e->getStatusCode();
     $messageKey = match ($status) {
-        429 => 'flood-watch.error.rate_limit',
-        408, 504 => 'flood-watch.error.timeout',
-        default => 'flood-watch.error.api_error',
+        429 => 'flood-watch.getError.rate_limit',
+        408, 504 => 'flood-watch.getError.timeout',
+        default => 'flood-watch.getError.api_error',
     };
     $errorKey = match ($status) {
         429 => 'rate_limit',
@@ -269,12 +269,12 @@ try {
     };
     return $emptyResult(__($messageKey), now()->toIso8601String(), $errorKey);
 } catch (\OpenAI\Exceptions\TransporterException $e) {
-    Log::error('FloodWatch OpenAI transport error', ['error' => $e->getMessage(), 'iteration' => $iteration + 1]);
+    Log::error('FloodWatch OpenAI transport getError', ['getError' => $e->getMessage(), 'iteration' => $iteration + 1]);
     $msg = $this->userMessageForLlmException($e);
     $errorKey = $this->errorKeyFromMessage($msg);
     return $emptyResult($msg, now()->toIso8601String(), $errorKey);
 } catch (Throwable $e) {
-    Log::error('FloodWatch unexpected error during LLM call', ['error' => $e->getMessage(), 'iteration' => $iteration + 1]);
+    Log::error('FloodWatch unexpected getError during LLM call', ['getError' => $e->getMessage(), 'iteration' => $iteration + 1]);
     $msg = $this->userMessageForLlmException($e);
     $errorKey = $this->errorKeyFromMessage($msg);
     return $emptyResult($msg, now()->toIso8601String(), $errorKey);
@@ -294,10 +294,10 @@ try {
 } catch (Throwable $e) {
     Log::warning('FloodWatch tool execution failed', [
         'tool' => $toolName,
-        'error' => $e->getMessage(),
+        'getError' => $e->getMessage(),
     ]);
     // Generic message to LLM only; detailed message stays in logs to avoid leaking internals
-    $result = ['error' => __('flood-watch.error.tool_failed'), 'code' => 'tool_error'];
+    $result = ['getError' => __('flood-watch.getError.tool_failed'), 'code' => 'tool_error'];
 }
 ```
 
@@ -338,7 +338,7 @@ When the failure is an LLM/transport error (rate limit, timeout, connection, api
     'weather' => [],
     'riverLevels' => [],
     'lastChecked' => '2026-02-11T08:00:00Z',
-    'error' => true,
+    'getError' => true,
     'error_key' => 'rate_limit',
 ]
 ```
@@ -523,8 +523,8 @@ Log::warning('FloodWatch trimmed to last assistant+tool block', [
 
 **ERROR** - API failures:
 ```php
-Log::error('FloodWatch OpenAI API error', [
-    'error' => 'Rate limit exceeded',
+Log::error('FloodWatch OpenAI API getError', [
+    'getError' => 'Rate limit exceeded',
     'iteration' => 3,
 ]);
 ```

@@ -149,7 +149,7 @@ class FloodWatchDashboardTest extends TestCase
             ->set('routeTo', 'BS1 1AA')
             ->call('checkRoute')
             ->assertSet('routeCheckLoading', false)
-            ->assertSet('routeCheckResult.verdict', 'error')
+            ->assertSet('routeCheckResult.verdict', 'getError')
             ->assertSet('routeCheckResult.summary', __('flood-watch.route_check.error_route_failed'))
             ->assertSet('routeCheckResult.route_geometry', null)
             ->assertSet('routeCheckResult.route_key', null);
@@ -161,7 +161,7 @@ class FloodWatchDashboardTest extends TestCase
 
         Http::fake(function ($request) {
             if (str_contains($request->url(), 'api.postcodes.io')) {
-                return Http::response(['status' => 404, 'error' => 'Postcode not found'], 404);
+                return Http::response(['status' => 404, 'getError' => 'Postcode not found'], 404);
             }
             if (str_contains($request->url(), 'nominatim.openstreetmap.org')) {
                 return Http::response([], 200);
@@ -176,7 +176,7 @@ class FloodWatchDashboardTest extends TestCase
             ->set('routeTo', 'TA10 0DP')
             ->call('checkRoute')
             ->assertSet('routeCheckLoading', false)
-            ->assertSet('routeCheckResult.verdict', 'error')
+            ->assertSet('routeCheckResult.verdict', 'getError')
             ->get('routeCheckResult');
 
         expect($result)->toHaveKey('summary')
@@ -189,7 +189,7 @@ class FloodWatchDashboardTest extends TestCase
 
         Http::fake(function ($request) {
             if (str_contains($request->url(), 'api.postcodes.io')) {
-                return Http::response(['status' => 404, 'error' => 'Postcode not found'], 404);
+                return Http::response(['status' => 404, 'getError' => 'Postcode not found'], 404);
             }
             if (str_contains($request->url(), 'nominatim.openstreetmap.org')) {
                 return Http::response([], 200);
@@ -203,7 +203,7 @@ class FloodWatchDashboardTest extends TestCase
             ->set('routeFrom', 'InvalidPlace99')
             ->set('routeTo', 'TA10 0DP')
             ->call('checkRoute')
-            ->assertSet('routeCheckResult.verdict', 'error')
+            ->assertSet('routeCheckResult.verdict', 'getError')
             ->assertSee(__('flood-watch.route_check.verdict_error'), false);
     }
 
@@ -514,7 +514,7 @@ class FloodWatchDashboardTest extends TestCase
         ]);
 
         OpenAI::fake([
-            new \RuntimeException('cURL error 28: Operation timed out after 30005 milliseconds with 0 bytes received'),
+            new \RuntimeException('cURL getError 28: Operation timed out after 30005 milliseconds with 0 bytes received'),
         ]);
 
         $component = Livewire::test('flood-watch-dashboard')
@@ -695,7 +695,7 @@ class FloodWatchDashboardTest extends TestCase
         RateLimiter::hit($key, 60);
 
         $component = Livewire::test('flood-watch-dashboard')
-            ->assertSet('error', __('flood-watch.error.guest_rate_limit', ['action' => 'request']))
+            ->assertSet('error', __('flood-watch.getError.guest_rate_limit', ['action' => 'request']))
             ->assertSet('retryAfterTimestamp', fn ($v) => $v !== null && $v > time());
     }
 
@@ -744,7 +744,7 @@ class FloodWatchDashboardTest extends TestCase
             ->assertSet('assistantResponse', 'First search OK.');
 
         $component->call('search')
-            ->assertSet('error', __('flood-watch.error.guest_rate_limit', ['action' => 'request']))
+            ->assertSet('error', __('flood-watch.getError.guest_rate_limit', ['action' => 'request']))
             ->assertSet('retryAfterTimestamp', fn ($v) => $v !== null && $v > time());
     }
 

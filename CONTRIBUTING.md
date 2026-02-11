@@ -274,7 +274,7 @@ it('caches flood watch results', function () {
 });
 
 it('handles OpenAI errors gracefully', function () {
-    // Mock OpenAI to throw error
+    // Mock OpenAI to throw getError
     OpenAI::fake([
         'chat/completions' => throw new \Exception('API Error'),
     ]);
@@ -282,7 +282,7 @@ it('handles OpenAI errors gracefully', function () {
     $service = app(FloodWatchService::class);
     $result = $service->chat('Check Bristol');
 
-    expect($result['response'])->toContain('error');
+    expect($result['response'])->toContain('getError');
 });
 ```
 

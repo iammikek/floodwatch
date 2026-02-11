@@ -902,12 +902,12 @@ class FloodWatchServiceTest extends TestCase
 
         $response = $this->createMock(ResponseInterface::class);
         $response->method('getStatusCode')->willReturn(500);
-        OpenAI::fake([new ErrorException('Server error', $response)]);
+        OpenAI::fake([new ErrorException('Server getError', $response)]);
 
         $service = app(FloodWatchService::class);
         $result = $service->chat('Check status');
 
-        $this->assertSame(__('flood-watch.error.api_error'), $result['response']);
+        $this->assertSame(__('flood-watch.getError.api_error'), $result['response']);
         $this->assertSame([], $result['floods']);
         $this->assertSame([], $result['incidents']);
         $this->assertSame([], $result['forecast']);
@@ -929,7 +929,7 @@ class FloodWatchServiceTest extends TestCase
         $service = app(FloodWatchService::class);
         $result = $service->chat('Check status');
 
-        $this->assertSame(__('flood-watch.error.connection'), $result['response']);
+        $this->assertSame(__('flood-watch.getError.connection'), $result['response']);
         $this->assertSame([], $result['floods']);
         $this->assertSame([], $result['incidents']);
         $this->assertSame([], $result['forecast']);
@@ -946,12 +946,12 @@ class FloodWatchServiceTest extends TestCase
             '*environment.data.gov.uk*' => Http::response(['items' => []], 200),
         ]);
 
-        OpenAI::fake([new \RuntimeException('Internal server error')]);
+        OpenAI::fake([new \RuntimeException('Internal server getError')]);
 
         $service = app(FloodWatchService::class);
         $result = $service->chat('Check status');
 
-        $this->assertSame(__('flood-watch.error.unexpected'), $result['response']);
+        $this->assertSame(__('flood-watch.getError.unexpected'), $result['response']);
         $this->assertSame([], $result['floods']);
         $this->assertSame([], $result['incidents']);
         $this->assertSame([], $result['forecast']);
@@ -998,7 +998,7 @@ class FloodWatchServiceTest extends TestCase
                     'index' => 0,
                     'message' => [
                         'role' => 'assistant',
-                        'content' => 'I was unable to fetch flood data (service error). Road status is clear.',
+                        'content' => 'I was unable to fetch flood data (service getError). Road status is clear.',
                         'tool_calls' => [],
                     ],
                     'logprobs' => null,
@@ -1012,7 +1012,7 @@ class FloodWatchServiceTest extends TestCase
         $service = app(FloodWatchService::class);
         $result = $service->chat('Check status');
 
-        $this->assertSame('I was unable to fetch flood data (service error). Road status is clear.', $result['response']);
+        $this->assertSame('I was unable to fetch flood data (service getError). Road status is clear.', $result['response']);
         $this->assertSame([], $result['floods']);
         $this->assertIsArray($result['incidents']);
     }

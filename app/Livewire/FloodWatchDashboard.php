@@ -363,7 +363,7 @@ class FloodWatchDashboard extends Component
             $key = $this->guestRateLimitKey();
             if (RateLimiter::tooManyAttempts($key, 1)) {
                 $seconds = RateLimiter::availableIn($key);
-                $this->error = __('flood-watch.error.guest_rate_limit', ['action' => 'request']);
+                $this->error = __('flood-watch.getError.guest_rate_limit', ['action' => 'request']);
                 $this->retryAfterTimestamp = time() + $seconds;
             }
         } else {
@@ -388,8 +388,8 @@ class FloodWatchDashboard extends Component
                 $this->routeCheckLoading = false;
                 $this->retryAfterTimestamp = time() + RateLimiter::availableIn($key);
                 $this->routeCheckResult = [
-                    'verdict' => 'error',
-                    'summary' => __('flood-watch.error.guest_rate_limit', ['action' => 'request']),
+                    'verdict' => 'getError',
+                    'summary' => __('flood-watch.getError.guest_rate_limit', ['action' => 'request']),
                     'floods_on_route' => [],
                     'incidents_on_route' => [],
                     'alternatives' => [],
@@ -447,14 +447,14 @@ class FloodWatchDashboard extends Component
             $validation = $locationResolver->resolve($locationTrimmed);
             if (! $validation['valid']) {
                 $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'mapBounds', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
-                $this->error = $validation['error'] ?? __('flood-watch.error.invalid_location');
+                $this->error = $validation['getError'] ?? __('flood-watch.getError.invalid_location');
                 $this->loading = false;
 
                 return;
             }
             if (! $validation['in_area']) {
                 $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'mapBounds', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
-                $this->error = $validation['error'] ?? __('flood-watch.error.outside_area');
+                $this->error = $validation['getError'] ?? __('flood-watch.getError.outside_area');
                 $this->loading = false;
 
                 return;
@@ -472,7 +472,7 @@ class FloodWatchDashboard extends Component
 
         if (! $result['valid']) {
             $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'mapBounds', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
-            $this->error = $result['error'] ?? __('flood-watch.dashboard.gps_error');
+            $this->error = $result['getError'] ?? __('flood-watch.dashboard.gps_error');
             $this->loading = false;
 
             return;
@@ -480,7 +480,7 @@ class FloodWatchDashboard extends Component
 
         if (! $result['in_area']) {
             $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'mapBounds', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
-            $this->error = __('flood-watch.error.outside_area');
+            $this->error = __('flood-watch.getError.outside_area');
             $this->loading = false;
 
             return;
@@ -518,7 +518,7 @@ class FloodWatchDashboard extends Component
 
             if (RateLimiter::tooManyAttempts($key, 1)) {
                 $seconds = RateLimiter::availableIn($key);
-                $this->error = __('flood-watch.error.guest_rate_limit', ['action' => 'request']);
+                $this->error = __('flood-watch.getError.guest_rate_limit', ['action' => 'request']);
                 $this->retryAfterTimestamp = time() + $seconds;
                 $this->loading = false;
 
@@ -543,7 +543,7 @@ class FloodWatchDashboard extends Component
             $onProgress = fn (string $status) => $streamStatus($status);
             $result = $assistant->chat($message, [], $cacheKey, $userLat, $userLng, $region, auth()->id(), $onProgress);
 
-            if (! empty($result['error'])) {
+            if (! empty($result['getError'])) {
                 $this->error = $result['response'];
                 if (($result['error_key'] ?? '') === 'rate_limit') {
                     $this->logOpenAiRateLimit(new \RuntimeException('Rate limit returned from service'));
@@ -748,19 +748,19 @@ class FloodWatchDashboard extends Component
     {
         $message = $e->getMessage();
         if (str_contains(strtolower($message), 'rate limit') || str_contains(strtolower($message), '429')) {
-            return __('flood-watch.error.rate_limit');
+            return __('flood-watch.getError.rate_limit');
         }
-        if (str_contains($message, 'timed out') || str_contains($message, 'cURL error 28') || str_contains($message, 'Operation timed out')) {
-            return __('flood-watch.error.timeout');
+        if (str_contains($message, 'timed out') || str_contains($message, 'cURL getError 28') || str_contains($message, 'Operation timed out')) {
+            return __('flood-watch.getError.timeout');
         }
         if (str_contains($message, 'Connection') && (str_contains($message, 'refused') || str_contains($message, 'reset'))) {
-            return __('flood-watch.error.connection');
+            return __('flood-watch.getError.connection');
         }
         if (config('app.debug')) {
             return $message;
         }
 
-        return __('flood-watch.error.generic');
+        return __('flood-watch.getError.generic');
     }
 
     /**

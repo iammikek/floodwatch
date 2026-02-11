@@ -42,11 +42,11 @@ $response = OpenAI::chat()->create($payload);
 try {
     $response = OpenAI::chat()->create($payload);
 } catch (\OpenAI\Exceptions\ErrorException $e) {
-    Log::error('OpenAI API error', ['error' => $e->getMessage()]);
-    return $emptyResult(__('flood-watch.error.api_error'));
+    Log::error('OpenAI API getError', ['getError' => $e->getMessage()]);
+    return $emptyResult(__('flood-watch.getError.api_error'));
 } catch (Throwable $e) {
-    Log::error('Unexpected LLM error', ['error' => $e->getMessage()]);
-    return $emptyResult(__('flood-watch.error.unexpected'));
+    Log::error('Unexpected LLM getError', ['getError' => $e->getMessage()]);
+    return $emptyResult(__('flood-watch.getError.unexpected'));
 }
 ```
 

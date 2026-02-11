@@ -14,7 +14,7 @@ return [
         'correlating' => 'Correlating flood and road data…',
         'loading' => 'Loading data…',
     ],
-    'error' => [
+    'getError' => [
         'no_response' => 'Unable to get a response from the assistant.',
         'no_content' => 'No response generated.',
         'no_api_key' => 'Flood Watch is not configured with an OpenAI API key. Please add OPENAI_API_KEY to your environment.',
@@ -26,7 +26,7 @@ return [
         'timeout' => 'The request took too long. The AI service may be busy. Please try again in a moment.',
         'connection' => 'Unable to reach the service. Please check your connection and try again.',
         'generic' => 'Unable to get a response. Please try again.',
-        'api_error' => 'The AI service returned an error. Please try again in a moment.',
+        'api_error' => 'The AI service returned an getError. Please try again in a moment.',
         'unexpected' => 'Something went wrong while contacting the AI service. Please try again.',
         'tool_failed' => 'Tool execution failed.',
     ],

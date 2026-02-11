@@ -32,7 +32,7 @@ final class ToolResult
         return $this->data;
     }
 
-    public function error(): ?string
+    public function getError(): ?string
     {
         return $this->error;
     }

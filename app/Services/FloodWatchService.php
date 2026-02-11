@@ -3,13 +3,11 @@
 namespace App\Services;
 
 use App\Enums\ToolName;
-use App\Flood\DTOs\FloodWarning;
 use App\Flood\Services\EnvironmentAgencyFloodService;
 use App\Flood\Services\FloodForecastService;
 use App\Flood\Services\RiverLevelService;
 use App\Roads\Services\RoadIncidentOrchestrator;
 use App\Support\ConfigKey;
-use App\Support\LlmTrim;
 use App\Support\LogMasker;
 use App\Support\Tooling\TokenBudget;
 use App\Support\Tooling\ToolRegistry;
@@ -54,7 +52,7 @@ class FloodWatchService
      * @param  string|null  $region  User's region (e.g., 'somerset', 'bristol') for region-specific prompt injection (optional).
      * @param  int|null  $userId  User ID for LLM request recording in analytics (optional).
      * @param  callable(string): void|null  $onProgress  Optional callback for progress updates (e.g., for streaming status to UI). Receives progress message strings.
-     * @return array{response: string, floods: array, incidents: array, forecast: array, weather: array, riverLevels: array, lastChecked: string, error?: bool, error_key?: string} The LLM response and all collected data
+     * @return array{response: string, floods: array, incidents: array, forecast: array, weather: array, riverLevels: array, lastChecked: string, getError?: bool, error_key?: string} The LLM response and all collected data
      */
     public function chat(string $userMessage, array $conversation = [], ?string $cacheKey = null, ?float $userLat = null, ?float $userLng = null, ?string $region = null, ?int $userId = null, ?callable $onProgress = null): array
     {
@@ -69,7 +67,7 @@ class FloodWatchService
                 'lastChecked' => $lastChecked ?? now()->toIso8601String(),
             ];
             if ($errorKey !== null) {
-                $result['error'] = true;
+                $result['getError'] = true;
                 $result['error_key'] = $errorKey;
             }
 
@@ -77,7 +75,7 @@ class FloodWatchService
         };
 
         if (empty(config('openai.api_key'))) {
-            return $emptyResult(__('flood-watch.error.no_api_key'));
+            return $emptyResult(__('flood-watch.getError.no_api_key'));
         }
 
         $store = $this->resolveCacheStore();
@@ -156,16 +154,16 @@ class FloodWatchService
             } catch (OpenAIRateLimitException $e) {
                 Log::error('FloodWatch OpenAI rate limit', [
                     'provider' => 'openai',
-                    'error' => $e->getMessage(),
+                    'getError' => $e->getMessage(),
                     'iteration' => $iteration + 1,
                     'region' => $region,
                 ]);
 
-                return $emptyResult(__('flood-watch.error.rate_limit'), now()->toIso8601String(), 'rate_limit');
+                return $emptyResult(__('flood-watch.getError.rate_limit'), now()->toIso8601String(), 'rate_limit');
             } catch (OpenAIErrorException $e) {
-                Log::error('FloodWatch OpenAI API error', [
+                Log::error('FloodWatch OpenAI API getError', [
                     'provider' => 'openai',
-                    'error' => $e->getMessage(),
+                    'getError' => $e->getMessage(),
                     'status_code' => $e->getStatusCode(),
                     'iteration' => $iteration + 1,
                     'region' => $region,
@@ -173,9 +171,9 @@ class FloodWatchService
 
                 $status = $e->getStatusCode();
                 $messageKey = match ($status) {
-                    429 => 'flood-watch.error.rate_limit',
-                    408, 504 => 'flood-watch.error.timeout',
-                    default => 'flood-watch.error.api_error',
+                    429 => 'flood-watch.getError.rate_limit',
+                    408, 504 => 'flood-watch.getError.timeout',
+                    default => 'flood-watch.getError.api_error',
                 };
                 $errorKey = match ($status) {
                     429 => 'rate_limit',
@@ -185,9 +183,9 @@ class FloodWatchService
 
                 return $emptyResult(__($messageKey), now()->toIso8601String(), $errorKey);
             } catch (OpenAITransporterException $e) {
-                Log::error('FloodWatch OpenAI transport error', [
+                Log::error('FloodWatch OpenAI transport getError', [
                     'provider' => 'openai',
-                    'error' => $e->getMessage(),
+                    'getError' => $e->getMessage(),
                     'iteration' => $iteration + 1,
                     'region' => $region,
                 ]);
@@ -197,9 +195,9 @@ class FloodWatchService
 
                 return $emptyResult($msg, now()->toIso8601String(), $errorKey);
             } catch (Throwable $e) {
-                Log::error('FloodWatch unexpected error during LLM call', [
+                Log::error('FloodWatch unexpected getError during LLM call', [
                     'provider' => 'openai',
-                    'error' => $e->getMessage(),
+                    'getError' => $e->getMessage(),
                     'iteration' => $iteration + 1,
                     'region' => $region,
                 ]);
@@ -214,7 +212,7 @@ class FloodWatchService
 
             $choice = $response->choices[0] ?? null;
             if (! $choice) {
-                return $emptyResult(__('flood-watch.error.no_response'), now()->toIso8601String());
+                return $emptyResult(__('flood-watch.getError.no_response'), now()->toIso8601String());
             }
 
             $message = $choice->message;
@@ -224,7 +222,7 @@ class FloodWatchService
                 $report(__('flood-watch.progress.preparing_summary'));
 
                 return $this->storeAndReturn($key, [
-                    'response' => trim($message->content ?? __('flood-watch.error.no_content')),
+                    'response' => trim($message->content ?? __('flood-watch.getError.no_content')),
                     'floods' => $floods,
                     'incidents' => $incidents,
                     'forecast' => $forecast,
@@ -237,7 +235,7 @@ class FloodWatchService
                 $report(__('flood-watch.progress.preparing_summary'));
 
                 return $this->storeAndReturn($key, [
-                    'response' => trim($message->content ?? __('flood-watch.error.no_content')),
+                    'response' => trim($message->content ?? __('flood-watch.getError.no_content')),
                     'floods' => $floods,
                     'incidents' => $incidents,
                     'forecast' => $forecast,
@@ -277,18 +275,18 @@ class FloodWatchService
                     Log::warning('FloodWatch tool execution failed', [
                         'tool' => $toolName,
                         'region' => $region,
-                        'error' => $e->getMessage(),
+                        'getError' => $e->getMessage(),
                     ]);
-                    $result = ['error' => __('flood-watch.error.tool_failed'), 'code' => 'tool_error'];
+                    $result = ['getError' => __('flood-watch.getError.tool_failed'), 'code' => 'tool_error'];
                 }
 
-                if ($toolName === ToolName::GetFloodData->value && is_array($result) && ! isset($result['error'])) {
+                if ($toolName === ToolName::GetFloodData->value && is_array($result) && ! isset($result['getError'])) {
                     $floods = $result;
                 }
-                if ($toolName === ToolName::GetHighwaysIncidents->value && is_array($result) && ! isset($result['error'])) {
+                if ($toolName === ToolName::GetHighwaysIncidents->value && is_array($result) && ! isset($result['getError'])) {
                     $incidents = $result;
                 }
-                if ($toolName === ToolName::GetFloodForecast->value && is_array($result) && ! isset($result['error'])) {
+                if ($toolName === ToolName::GetFloodForecast->value && is_array($result) && ! isset($result['getError'])) {
                     $forecast = $result;
                 }
 
@@ -314,7 +312,7 @@ class FloodWatchService
             $iteration++;
         }
 
-        return $emptyResult(__('flood-watch.error.max_tool_calls'), now()->toIso8601String());
+        return $emptyResult(__('flood-watch.getError.max_tool_calls'), now()->toIso8601String());
     }
 
     private function buildSystemPrompt(?string $region): string
@@ -342,30 +340,30 @@ class FloodWatchService
         $msg = strtolower($e->getMessage());
 
         if (str_contains($msg, 'rate limit') || str_contains($msg, '429')) {
-            return __('flood-watch.error.rate_limit');
+            return __('flood-watch.getError.rate_limit');
         }
         if (str_contains($msg, 'timed out') || str_contains($msg, 'timeout')) {
-            return __('flood-watch.error.timeout');
+            return __('flood-watch.getError.timeout');
         }
         if (str_contains($msg, 'connection') || str_contains($msg, 'resolve host') || str_contains($msg, 'connection refused')) {
-            return __('flood-watch.error.connection');
+            return __('flood-watch.getError.connection');
         }
 
-        return __('flood-watch.error.unexpected');
+        return __('flood-watch.getError.unexpected');
     }
 
     /**
-     * Return error_key for the given user-facing message (for dashboard error/retry state).
+     * Return error_key for the given user-facing message (for dashboard getError/retry state).
      */
     private function errorKeyFromMessage(string $message): string
     {
-        if ($message === __('flood-watch.error.rate_limit')) {
+        if ($message === __('flood-watch.getError.rate_limit')) {
             return 'rate_limit';
         }
-        if ($message === __('flood-watch.error.timeout')) {
+        if ($message === __('flood-watch.getError.timeout')) {
             return 'timeout';
         }
-        if ($message === __('flood-watch.error.connection')) {
+        if ($message === __('flood-watch.getError.connection')) {
             return 'connection';
         }
 
@@ -445,153 +443,35 @@ class FloodWatchService
      */
     private function executeTool(string $name, string $argumentsJson, array $context = []): array|string
     {
-        $args = json_decode($argumentsJson, true) ?? [];
-
-        if ($name === ToolName::GetCorrelationSummary->value) {
-            $assessment = $this->correlationService->correlate(
-                $context['floods'] ?? [],
-                $context['incidents'] ?? [],
-                $context['riverLevels'] ?? [],
-                $context['region'] ?? null
-            );
-
-            return $assessment->toArray();
+        if ($this->toolRegistry === null) {
+            return ['getError' => 'Tool registry not available'];
         }
 
-        return match ($name) {
-            ToolName::GetFloodData->value => $this->floodService->getFloods(
-                $args['lat'] ?? null,
-                $args['lng'] ?? null,
-                $args['radius_km'] ?? null
-            ),
-            ToolName::GetHighwaysIncidents->value => $this->roadIncidentOrchestrator->getFilteredIncidents(
-                $context['region'] ?? null,
-                $context['centerLat'] ?? null,
-                $context['centerLng'] ?? null
-            ),
-            ToolName::GetFloodForecast->value => $this->forecastService->getForecast(),
-            ToolName::GetRiverLevels->value => $this->riverLevelService->getLevels(
-                $args['lat'] ?? null,
-                $args['lng'] ?? null,
-                $args['radius_km'] ?? null
-            ),
-            default => ['error' => "Unknown tool: {$name}"],
-        };
+        try {
+            $handler = $this->toolRegistry->get(ToolName::from($name));
+            $args = \App\Support\Tooling\ToolArguments::fromJson($argumentsJson);
+            $ctx = \App\Support\Tooling\ToolContext::fromArray($context);
+            $result = $handler->execute($args, $ctx);
+
+            return $result->isOk() ? ($result->data() ?? []) : ['getError' => $result->error() ?? 'Unknown getError'];
+        } catch (\Throwable $e) {
+            return ['getError' => "Unknown tool or execution getError: {$name}"];
+        }
     }
 
     private function prepareToolResultForLlm(string $toolName, array|string $result): array|string
     {
-        // Prefer handler presenter when available (pragmatic bridge)
         if ($this->toolRegistry !== null) {
             try {
                 $handler = $this->toolRegistry->get(ToolName::from($toolName));
                 $toolResult = is_array($result)
-                    ? (isset($result['error']) ? ToolResult::error((string) ($result['error'])) : ToolResult::ok($result))
+                    ? (isset($result['getError']) ? ToolResult::error((string) ($result['getError'])) : ToolResult::ok($result))
                     : ToolResult::ok($result);
 
-                $presented = $handler->presentForLlm($toolResult, new TokenBudget(0));
-                // If handler returns something, use it directly
-                if ($presented !== null) {
-                    return $presented;
-                }
+                return $handler->presentForLlm($toolResult, new TokenBudget(0));
             } catch (\Throwable) {
-                // Fallback to legacy branches below
+                // Fall back to passthrough if presenter fails
             }
-        }
-
-        if (is_string($result)) {
-            return $result;
-        }
-
-        if (isset($result['error'])) {
-            return $result;
-        }
-
-        if ($toolName === ToolName::GetFloodData->value) {
-            $max = (int) config(ConfigKey::LLM_MAX_FLOODS, 25);
-            $maxMsg = (int) config(ConfigKey::LLM_MAX_FLOOD_MESSAGE_CHARS, 300);
-
-            return LlmTrim::trimList($result, $max, function ($flood) use ($maxMsg) {
-                $arr = FloodWarning::fromArray($flood)->withoutPolygon()->toArray();
-                if (isset($arr['message'])) {
-                    $arr['message'] = LlmTrim::truncate($arr['message'], $maxMsg);
-                }
-
-                return $arr;
-            });
-        }
-
-        if ($toolName === ToolName::GetHighwaysIncidents->value) {
-            return LlmTrim::limitItems($result, (int) config(ConfigKey::LLM_MAX_INCIDENTS, 25));
-        }
-
-        if ($toolName === ToolName::GetRiverLevels->value) {
-            return LlmTrim::limitItems($result, (int) config(ConfigKey::LLM_MAX_RIVER_LEVELS, 15));
-        }
-
-        if ($toolName === ToolName::GetFloodForecast->value) {
-            if (isset($result['england_forecast'])) {
-                $result['england_forecast'] = LlmTrim::truncate(
-                    $result['england_forecast'],
-                    (int) config(ConfigKey::LLM_MAX_FORECAST_CHARS, 1200)
-                );
-            }
-
-            $maxExtraChars = 800;
-            foreach (['flood_risk_trend', 'sources'] as $key) {
-                if (isset($result[$key]) && is_array($result[$key])) {
-                    if (strlen(json_encode($result[$key])) > $maxExtraChars) {
-                        $result[$key] = LlmTrim::limitItems($result[$key], 3);
-                    }
-                }
-            }
-
-            return $result;
-        }
-
-        if ($toolName === ToolName::GetCorrelationSummary->value) {
-            $maxFloods = (int) config(ConfigKey::LLM_MAX_FLOODS, 12);
-            $maxIncidents = (int) config(ConfigKey::LLM_MAX_INCIDENTS, 12);
-            $maxMsgChars = (int) config(ConfigKey::LLM_MAX_FLOOD_MESSAGE_CHARS, 150);
-            $maxTotalChars = (int) config(ConfigKey::LLM_MAX_CORRELATION_CHARS, 8000);
-
-            $stripFlood = function (array $f) use ($maxMsgChars): array {
-                try {
-                    $arr = FloodWarning::fromArray($f)->withoutPolygon()->toArray();
-                } catch (Throwable) {
-                    return [
-                        'description' => $f['description'] ?? '',
-                        'severity' => $f['severity'] ?? '',
-                        'message' => LlmTrim::truncate((string) ($f['message'] ?? ''), $maxMsgChars),
-                    ];
-                }
-
-                if (isset($arr['message'])) {
-                    $arr['message'] = LlmTrim::truncate($arr['message'], $maxMsgChars);
-                }
-
-                return $arr;
-            };
-
-            $result['severe_floods'] = LlmTrim::trimList($result['severe_floods'] ?? [], $maxFloods, $stripFlood);
-            $result['flood_warnings'] = LlmTrim::trimList($result['flood_warnings'] ?? [], $maxFloods, $stripFlood);
-            $result['road_incidents'] = LlmTrim::limitItems($result['road_incidents'] ?? [], $maxIncidents);
-            $result['cross_references'] = LlmTrim::limitItems($result['cross_references'] ?? [], 15);
-            $result['predictive_warnings'] = LlmTrim::limitItems($result['predictive_warnings'] ?? [], 10);
-
-            while (strlen(json_encode($result)) > $maxTotalChars && ($maxFloods > 2 || $maxIncidents > 2)) {
-                if ($maxFloods > 2) {
-                    $maxFloods--;
-                    $result['severe_floods'] = LlmTrim::limitItems($result['severe_floods'], $maxFloods);
-                    $result['flood_warnings'] = LlmTrim::limitItems($result['flood_warnings'], $maxFloods);
-                }
-                if (strlen(json_encode($result)) > $maxTotalChars && $maxIncidents > 2) {
-                    $maxIncidents--;
-                    $result['road_incidents'] = LlmTrim::limitItems($result['road_incidents'], $maxIncidents);
-                }
-            }
-
-            return $result;
         }
 
         return $result;
@@ -742,7 +622,7 @@ class FloodWatchService
 
             \App\Jobs\RecordLlmRequestJob::dispatch($payload);
         } catch (Throwable $e) {
-            Log::warning('FloodWatch failed to record LLM request', ['error' => $e->getMessage()]);
+            Log::warning('FloodWatch failed to record LLM request', ['getError' => $e->getMessage()]);
         }
     }
 }
