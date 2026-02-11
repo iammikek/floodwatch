@@ -153,4 +153,34 @@ class RiverLevelServiceTest extends TestCase
         $this->assertIsArray($result);
         $this->assertEmpty($result);
     }
+
+    public function test_returns_empty_array_on_readings_api_failure(): void
+    {
+        Http::fake([
+            '*/flood-monitoring/id/stations*' => Http::response([
+                'items' => [
+                    ['notation' => '52119', 'label' => 'Test Station', 'lat' => 51, 'long' => -2],
+                ],
+            ], 200),
+            '*/stations/52119/readings*' => Http::response(null, 500),
+        ]);
+
+        $service = new RiverLevelService;
+        $result = $service->getLevels();
+
+        $this->assertIsArray($result);
+        $this->assertEmpty($result);
+    }
+
+    public function test_returns_empty_array_when_circuit_is_open(): void
+    {
+        $cb = \Mockery::mock(\App\Support\CircuitBreaker::class);
+        $cb->shouldReceive('execute')
+            ->andThrow(new \App\Support\CircuitOpenException);
+
+        $service = new RiverLevelService($cb);
+        $result = $service->getLevels();
+
+        $this->assertSame([], $result);
+    }
 }

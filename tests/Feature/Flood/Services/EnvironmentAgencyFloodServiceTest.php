@@ -69,6 +69,32 @@ class EnvironmentAgencyFloodServiceTest extends TestCase
         $this->assertEmpty($result);
     }
 
+    public function test_returns_empty_array_on_connection_exception(): void
+    {
+        Http::fake([
+            '*/flood-monitoring/id/floods*' => function () {
+                throw new \Illuminate\Http\Client\ConnectionException('network');
+            },
+        ]);
+
+        $service = new EnvironmentAgencyFloodService;
+        $result = $service->getFloods();
+
+        $this->assertSame([], $result);
+    }
+
+    public function test_returns_empty_array_when_circuit_is_open(): void
+    {
+        $cb = \Mockery::mock(\App\Support\CircuitBreaker::class);
+        $cb->shouldReceive('execute')
+            ->andThrow(new \App\Support\CircuitOpenException);
+
+        $service = new EnvironmentAgencyFloodService($cb);
+        $result = $service->getFloods();
+
+        $this->assertSame([], $result);
+    }
+
     public function test_includes_polygon_geojson_when_flood_area_has_polygon_endpoint(): void
     {
         Http::fake(function ($request) {

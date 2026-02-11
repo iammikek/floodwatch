@@ -49,5 +49,5 @@ jobs:
         run: composer install --no-interaction --prefer-dist
 
       - name: Run Pint (format project code)
-        # Pint doesn't lint Markdown directly; this formats PHP across the repo to keep examples consistent.
-        run: ./vendor/bin/pint
+        # Only run on the changed files to keep CI fast and focused on the PR.
+        run: ./vendor/bin/pint --dirty

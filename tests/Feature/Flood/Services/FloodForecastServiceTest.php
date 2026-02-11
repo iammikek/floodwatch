@@ -3,8 +3,11 @@
 namespace Tests\Feature\Flood\Services;
 
 use App\Flood\Services\FloodForecastService;
+use App\Support\CircuitBreaker;
+use App\Support\CircuitOpenException;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
+use Mockery;
 use Tests\TestCase;
 
 class FloodForecastServiceTest extends TestCase
@@ -54,6 +57,34 @@ class FloodForecastServiceTest extends TestCase
         Http::fake(['api.example.com/*' => Http::response(null, 500)]);
 
         $service = app(FloodForecastService::class);
+        $result = $service->getForecast();
+
+        $this->assertSame([], $result);
+    }
+
+    public function test_returns_empty_array_on_connection_exception(): void
+    {
+        Config::set('flood-watch.flood_forecast.base_url', 'https://api.example.com');
+
+        Http::fake([
+            'api.example.com/*' => function () {
+                throw new \Illuminate\Http\Client\ConnectionException('network');
+            },
+        ]);
+
+        $service = new FloodForecastService;
+        $result = $service->getForecast();
+
+        $this->assertSame([], $result);
+    }
+
+    public function test_returns_empty_array_when_circuit_is_open(): void
+    {
+        $cb = Mockery::mock(CircuitBreaker::class);
+        $cb->shouldReceive('execute')
+            ->andThrow(new CircuitOpenException);
+
+        $service = new FloodForecastService($cb);
         $result = $service->getForecast();
 
         $this->assertSame([], $result);
