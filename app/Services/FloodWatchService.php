@@ -3,13 +3,14 @@
 namespace App\Services;
 
 use App\Enums\Region;
+use App\Enums\ToolName;
 use App\Flood\DTOs\FloodWarning;
 use App\Flood\Services\EnvironmentAgencyFloodService;
 use App\Flood\Services\FloodForecastService;
 use App\Flood\Services\RiverLevelService;
 use App\Roads\Services\NationalHighwaysService;
 use App\Roads\Services\SomersetCouncilRoadworksService;
-use App\Support\CoordinateMapper;
+use App\Support\LlmTrim;
 use App\Support\LogMasker;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Concurrency;
@@ -228,11 +229,11 @@ class FloodWatchService
             foreach ($message->toolCalls as $toolCall) {
                 $toolName = $toolCall->function->name;
                 $report(match ($toolName) {
-                    \App\Enums\ToolName::GetFloodData->value => __('flood-watch.progress.fetching_floods'),
-                    \App\Enums\ToolName::GetHighwaysIncidents->value => __('flood-watch.progress.checking_roads'),
-                    \App\Enums\ToolName::GetFloodForecast->value => __('flood-watch.progress.getting_forecast'),
-                    \App\Enums\ToolName::GetRiverLevels->value => __('flood-watch.progress.fetching_river_levels'),
-                    \App\Enums\ToolName::GetCorrelationSummary->value => __('flood-watch.progress.correlating'),
+                    ToolName::GetFloodData->value => __('flood-watch.progress.fetching_floods'),
+                    ToolName::GetHighwaysIncidents->value => __('flood-watch.progress.checking_roads'),
+                    ToolName::GetFloodForecast->value => __('flood-watch.progress.getting_forecast'),
+                    ToolName::GetRiverLevels->value => __('flood-watch.progress.fetching_river_levels'),
+                    ToolName::GetCorrelationSummary->value => __('flood-watch.progress.correlating'),
                     default => __('flood-watch.progress.loading'),
                 });
                 $context = [
@@ -254,13 +255,13 @@ class FloodWatchService
                     $result = ['error' => __('flood-watch.error.tool_failed'), 'code' => 'tool_error'];
                 }
 
-                if ($toolName === \App\Enums\ToolName::GetFloodData->value && is_array($result) && ! isset($result['error'])) {
+                if ($toolName === ToolName::GetFloodData->value && is_array($result) && ! isset($result['error'])) {
                     $floods = $result;
                 }
-                if ($toolName === \App\Enums\ToolName::GetHighwaysIncidents->value && is_array($result) && ! isset($result['error'])) {
+                if ($toolName === ToolName::GetHighwaysIncidents->value && is_array($result) && ! isset($result['error'])) {
                     $incidents = $result;
                 }
-                if ($toolName === \App\Enums\ToolName::GetFloodForecast->value && is_array($result) && ! isset($result['error'])) {
+                if ($toolName === ToolName::GetFloodForecast->value && is_array($result) && ! isset($result['error'])) {
                     $forecast = $result;
                 }
 
@@ -416,7 +417,7 @@ class FloodWatchService
     {
         $args = json_decode($argumentsJson, true) ?? [];
 
-        if ($name === \App\Enums\ToolName::GetCorrelationSummary->value) {
+        if ($name === ToolName::GetCorrelationSummary->value) {
             $assessment = $this->correlationService->correlate(
                 $context['floods'] ?? [],
                 $context['incidents'] ?? [],
@@ -428,12 +429,12 @@ class FloodWatchService
         }
 
         return match ($name) {
-            \App\Enums\ToolName::GetFloodData->value => $this->floodService->getFloods(
+            ToolName::GetFloodData->value => $this->floodService->getFloods(
                 $args['lat'] ?? null,
                 $args['lng'] ?? null,
                 $args['radius_km'] ?? null
             ),
-            \App\Enums\ToolName::GetHighwaysIncidents->value => $this->sortIncidentsByPriority(
+            ToolName::GetHighwaysIncidents->value => $this->sortIncidentsByPriority(
                 $this->filterMotorwaysFromDisplay(
                     $this->filterIncidentsByProximity(
                         $this->filterIncidentsByRegion(
@@ -445,8 +446,8 @@ class FloodWatchService
                     )
                 )
             ),
-            \App\Enums\ToolName::GetFloodForecast->value => $this->forecastService->getForecast(),
-            \App\Enums\ToolName::GetRiverLevels->value => $this->riverLevelService->getLevels(
+            ToolName::GetFloodForecast->value => $this->forecastService->getForecast(),
+            ToolName::GetRiverLevels->value => $this->riverLevelService->getLevels(
                 $args['lat'] ?? null,
                 $args['lng'] ?? null,
                 $args['radius_km'] ?? null
@@ -455,10 +456,6 @@ class FloodWatchService
         };
     }
 
-    /**
-     * Prepare tool result for LLM consumption by stripping large/unnecessary data and applying limits.
-     * Reduces token usage and avoids context length exceeded errors (128k tokens).
-     */
     private function prepareToolResultForLlm(string $toolName, array|string $result): array|string
     {
         if (is_string($result)) {
@@ -469,45 +466,41 @@ class FloodWatchService
             return $result;
         }
 
-        if ($toolName === \App\Enums\ToolName::GetFloodData->value) {
+        if ($toolName === ToolName::GetFloodData->value) {
             $max = config('flood-watch.llm_max_floods', 25);
             $maxMsg = config('flood-watch.llm_max_flood_message_chars', 300);
-            $floods = array_slice($result, 0, $max);
-            $out = [];
-            foreach ($floods as $flood) {
+
+            return LlmTrim::trimList($result, $max, function ($flood) use ($maxMsg) {
                 $arr = FloodWarning::fromArray($flood)->withoutPolygon()->toArray();
-                if (isset($arr['message']) && strlen($arr['message']) > $maxMsg) {
-                    $arr['message'] = substr($arr['message'], 0, $maxMsg).'…';
+                if (isset($arr['message'])) {
+                    $arr['message'] = LlmTrim::truncate($arr['message'], $maxMsg);
                 }
-                $out[] = $arr;
+
+                return $arr;
+            });
+        }
+
+        if ($toolName === ToolName::GetHighwaysIncidents->value) {
+            return LlmTrim::limitItems($result, config('flood-watch.llm_max_incidents', 25));
+        }
+
+        if ($toolName === ToolName::GetRiverLevels->value) {
+            return LlmTrim::limitItems($result, config('flood-watch.llm_max_river_levels', 15));
+        }
+
+        if ($toolName === ToolName::GetFloodForecast->value) {
+            if (isset($result['england_forecast'])) {
+                $result['england_forecast'] = LlmTrim::truncate(
+                    $result['england_forecast'],
+                    config('flood-watch.llm_max_forecast_chars', 1200)
+                );
             }
 
-            return $out;
-        }
-
-        if ($toolName === \App\Enums\ToolName::GetHighwaysIncidents->value) {
-            $max = config('flood-watch.llm_max_incidents', 25);
-
-            return array_slice($result, 0, $max);
-        }
-
-        if ($toolName === \App\Enums\ToolName::GetRiverLevels->value) {
-            $max = config('flood-watch.llm_max_river_levels', 15);
-
-            return array_slice($result, 0, $max);
-        }
-
-        if ($toolName === \App\Enums\ToolName::GetFloodForecast->value) {
-            $maxChars = config('flood-watch.llm_max_forecast_chars', 1200);
-            if (isset($result['england_forecast']) && strlen($result['england_forecast']) > $maxChars) {
-                $result['england_forecast'] = substr($result['england_forecast'], 0, $maxChars).'…';
-            }
             $maxExtraChars = 800;
             foreach (['flood_risk_trend', 'sources'] as $key) {
                 if (isset($result[$key]) && is_array($result[$key])) {
-                    $encoded = json_encode($result[$key]);
-                    if (strlen($encoded) > $maxExtraChars) {
-                        $result[$key] = array_slice($result[$key], 0, 3, true);
+                    if (strlen(json_encode($result[$key])) > $maxExtraChars) {
+                        $result[$key] = LlmTrim::limitItems($result[$key], 3);
                     }
                 }
             }
@@ -515,7 +508,7 @@ class FloodWatchService
             return $result;
         }
 
-        if ($toolName === \App\Enums\ToolName::GetCorrelationSummary->value) {
+        if ($toolName === ToolName::GetCorrelationSummary->value) {
             $maxFloods = config('flood-watch.llm_max_floods', 12);
             $maxIncidents = config('flood-watch.llm_max_incidents', 12);
             $maxMsgChars = config('flood-watch.llm_max_flood_message_chars', 150);
@@ -525,33 +518,36 @@ class FloodWatchService
                 try {
                     $arr = FloodWarning::fromArray($f)->withoutPolygon()->toArray();
                 } catch (Throwable) {
-                    return ['description' => $f['description'] ?? '', 'severity' => $f['severity'] ?? '', 'message' => substr((string) ($f['message'] ?? ''), 0, $maxMsgChars)];
+                    return [
+                        'description' => $f['description'] ?? '',
+                        'severity' => $f['severity'] ?? '',
+                        'message' => LlmTrim::truncate((string) ($f['message'] ?? ''), $maxMsgChars),
+                    ];
                 }
-                if (isset($arr['message']) && strlen($arr['message']) > $maxMsgChars) {
-                    $arr['message'] = substr($arr['message'], 0, $maxMsgChars).'…';
+
+                if (isset($arr['message'])) {
+                    $arr['message'] = LlmTrim::truncate($arr['message'], $maxMsgChars);
                 }
 
                 return $arr;
             };
 
-            $result['severe_floods'] = array_map($stripFlood, array_slice($result['severe_floods'] ?? [], 0, $maxFloods));
-            $result['flood_warnings'] = array_map($stripFlood, array_slice($result['flood_warnings'] ?? [], 0, $maxFloods));
-            $result['road_incidents'] = array_slice($result['road_incidents'] ?? [], 0, $maxIncidents);
-            $result['cross_references'] = array_slice($result['cross_references'] ?? [], 0, 15);
-            $result['predictive_warnings'] = array_slice($result['predictive_warnings'] ?? [], 0, 10);
+            $result['severe_floods'] = LlmTrim::trimList($result['severe_floods'] ?? [], $maxFloods, $stripFlood);
+            $result['flood_warnings'] = LlmTrim::trimList($result['flood_warnings'] ?? [], $maxFloods, $stripFlood);
+            $result['road_incidents'] = LlmTrim::limitItems($result['road_incidents'] ?? [], $maxIncidents);
+            $result['cross_references'] = LlmTrim::limitItems($result['cross_references'] ?? [], 15);
+            $result['predictive_warnings'] = LlmTrim::limitItems($result['predictive_warnings'] ?? [], 10);
 
-            $encoded = json_encode($result);
-            while (strlen($encoded) > $maxTotalChars && ($maxFloods > 2 || $maxIncidents > 2)) {
+            while (strlen(json_encode($result)) > $maxTotalChars && ($maxFloods > 2 || $maxIncidents > 2)) {
                 if ($maxFloods > 2) {
                     $maxFloods--;
-                    $result['severe_floods'] = array_slice($result['severe_floods'], 0, $maxFloods);
-                    $result['flood_warnings'] = array_slice($result['flood_warnings'], 0, $maxFloods);
+                    $result['severe_floods'] = LlmTrim::limitItems($result['severe_floods'], $maxFloods);
+                    $result['flood_warnings'] = LlmTrim::limitItems($result['flood_warnings'], $maxFloods);
                 }
                 if (strlen(json_encode($result)) > $maxTotalChars && $maxIncidents > 2) {
                     $maxIncidents--;
-                    $result['road_incidents'] = array_slice($result['road_incidents'], 0, $maxIncidents);
+                    $result['road_incidents'] = LlmTrim::limitItems($result['road_incidents'], $maxIncidents);
                 }
-                $encoded = json_encode($result);
             }
 
             return $result;
