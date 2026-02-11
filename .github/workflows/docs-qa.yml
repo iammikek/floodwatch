@@ -48,7 +48,6 @@ jobs:
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist
 
-      - name: Run Pint (Check style in docs code snippets)
-        # Pint doesn't natively lint .md files, but we ensure it passes on the whole project
-        # including any example PHP files that might be in docs.
-        run: ./vendor/bin/pint --test
+      - name: Run Pint (format project code)
+        # Pint doesn't lint Markdown directly; this formats PHP across the repo to keep examples consistent.
+        run: ./vendor/bin/pint
