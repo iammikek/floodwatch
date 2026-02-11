@@ -1,6 +1,6 @@
 # Agents and LLM
 
-Single reference for how Flood Watch uses the LLM: tools, APIs, outputs, limitations, and fallbacks. For correlation rules see [Risk Correlation](RISK_CORRELATION.md). For architecture see [ARCHITECTURE](ARCHITECTURE.md).
+Single reference for how Flood Watch uses the LLM: tools, APIs, outputs, limitations, and fallbacks. For correlation rules see [Risk Correlation](RISK_CORRELATION.md). For architecture see [architecture](architecture.md).
 
 ---
 

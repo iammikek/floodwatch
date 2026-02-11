@@ -296,7 +296,7 @@ it('handles OpenAI errors gracefully', function () {
 docs/
 ├── agents-and-llm.md           # Tools, APIs, outputs, limitations (LLM)
 ├── API_OPTIMIZATION_GUIDE.md   # Performance optimization strategies
-├── ARCHITECTURE.md              # System design, data flow
+├── architecture.md              # System design, data flow
 ├── SCHEMA.md                    # Database schema, entity relationships
 ├── RISK_CORRELATION.md          # Flood/road correlation logic
 ├── DEPLOYMENT.md                # Deployment instructions
@@ -388,11 +388,18 @@ FloodWatch is built with **AI-assisted development** tools. We encourage their u
 **Configuration**: `.cursor/mcp.json`
 
 ### Cursor Skills
-
 Located in `.cursor/skills/`:
 - **livewire-development**: Component patterns, wire:model, etc.
 - **pest-testing**: Testing patterns, Pest syntax
 - **tailwindcss-development**: Utility-first CSS patterns
+
+### Junie Guidelines
+- Canonical agent guidelines live in `.junie/guidelines.md`.
+- We mirror important `.cursor/rules` and `.cursor/skills` notes into `.junie` for agent portability.
+- When updating agent rules or skills, update both:
+  - `.cursor/rules/laravel-boost.mdc` ↔ `.junie/guidelines.md`
+  - `.cursor/skills/*/SKILL.md` → add a brief summary/link in `.junie/guidelines.md` (or reference from docs).
+- PR checklist: if you change agent rules/skills, confirm `.junie/guidelines.md` remains in sync.
 
 ### Best Practices with AI
 
@@ -455,7 +462,7 @@ if ($toolName === 'GetNewData') {
 
 ### Working with External APIs
 
-**Read first**: `docs/ARCHITECTURE.md` (External APIs section)
+**Read first**: `docs/architecture.md` (External APIs section)
 
 **Principles**:
 1. **Circuit breakers**: Already configured, respect them

@@ -1,5 +1,7 @@
 # LLM Integration — Best Practices Plan
 
+> NOTE: This plan has been consolidated into the single canonical page: **[Agents & LLM](agents-and-llm.md)**. Please update your bookmarks and open PRs against `docs/agents-and-llm.md`. The content below is retained for historical context and deeper background until fully merged.
+
 Plan to improve how the project uses LLM tool calls (OpenAI) to synthesise data from multiple sources (flood warnings, river levels, road status) and produce correlated output. **Scope**: Prompts, context design, versioning, validation, and optional RAG. This document is a plan only; implementation is done in separate work.
 
 **Reference**: Canonical LLM doc — `docs/agents-and-llm.md`. Deep dives archived in `docs/archive/` (LLM_INTEGRATION_GUIDE.md, LLM_DATA_FLOW.md).

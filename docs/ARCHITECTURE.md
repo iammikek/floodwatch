@@ -1,3 +1,9 @@
+# Flood Watch Architecture (Moved)
+
+This document has moved to `docs/architecture.md`. Please update your bookmarks and links.
+
+---
+
 # Flood Watch Architecture
 
 ## Overview

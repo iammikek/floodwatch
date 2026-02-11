@@ -51,7 +51,7 @@ flowchart LR
 
 ## Reference
 
-- Architecture: `docs/ARCHITECTURE.md`
+- Architecture: `docs/architecture.md`
 - Case study: `CASE_STUDY.md`
 - AI agents: `agents.md`
 - **Acceptance criteria**: `docs/ACCEPTANCE_CRITERIA.md`

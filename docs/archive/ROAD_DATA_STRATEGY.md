@@ -246,7 +246,7 @@ flowchart TD
 
 ## References
 
-- `docs/ARCHITECTURE.md` – Data flow, correlation config
+- `docs/architecture.md` – Data flow, correlation config
 - `docs/DEVELOPMENT.md` – Backlog, future work
 - `config/flood-watch.php` – `correlation` config, `flood_area_road_pairs`
 - `app/Services/RiskCorrelationService.php` – Current correlation logic

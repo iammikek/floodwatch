@@ -8,7 +8,7 @@ Plan to align top-level documentation with OSS best practices. **Scope**: README
 
 **Also in this plan**: §8 CONTRIBUTING and issue/PR templates; §9 Automate documentation QA (GitHub Actions); §10 Docs style and language.
 
-**Related**: For code quality, architecture modularity, and testing improvements, see **[Code Quality and Architecture Plan](CODE_QUALITY_AND_ARCHITECTURE_PLAN.md)**. For LLM integration best practices (prompts, RAG, versioning, hallucinations), see **[LLM Integration Plan](LLM_INTEGRATION_PLAN.md)**.
+**Related**: For code quality, architecture modularity, and testing improvements, see **[Code Quality and Architecture Plan](CODE_QUALITY_AND_ARCHITECTURE_PLAN.md)**. For LLM integration best practices (prompts, RAG, versioning, hallucinations), see **[Agents & LLM](agents-and-llm.md)**.
 
 ---
 
@@ -18,7 +18,7 @@ Plan to align top-level documentation with OSS best practices. **Scope**: README
 |-------------------|---------------|--------------|
 | **What the project is (elevator pitch)** | First paragraph describes the app and scope. | **Partial.** Add a single-sentence elevator pitch at the very top (one line), then keep existing paragraph. |
 | **Quick start (prerequisites & install)** | "Requirements" (Docker, Composer) + "Getting Started" (composer, yarn, sail up, migrate, boost). | **Partial.** Prerequisites are light; CONTRIBUTING has full list (PHP, Node/Yarn, Redis). In README: add a short "Prerequisites" list (or "see CONTRIBUTING for full list") and ensure first-run steps include `cp .env.example .env`, `key:generate`, and `yarn build` (or point to CONTRIBUTING for full setup). |
-| **Architecture overview (high-level)** | No architecture section in README; link to `docs/ARCHITECTURE.md`. | **Gap.** Add an "Architecture overview" section with a brief bullet list of main components (LocationResolver → FloodWatchService/LLM → tools, cache, dashboard) and one sentence + link to `docs/ARCHITECTURE.md`. |
+| **Architecture overview (high-level)** | No architecture section in README; link to `docs/architecture.md`. | **Gap.** Add an "Architecture overview" section with a brief bullet list of main components (LocationResolver → FloodWatchService/LLM → tools, cache, dashboard) and one sentence + link to `docs/architecture.md`. |
 | **LLM usage (how AI integrates, tool roles)** | Strong: "LLM Tools" table, "Technical: LLM Tool Calling", "System Prompt", "Correlated Scenarios". | **Met.** Optional: add one sentence that the LLM orchestrates tool calls (not pre-scripted). No change required. |
 | **Running locally & tests** | "Development" has `sail up -d`, `sail test`, `sail artisan`. | **Partial.** Explicitly add "Run tests: `sail test`" (or "Run tests: `sail test`; with coverage: `sail test --coverage`") so it's obvious. |
 | **Deployment & infra** | Not in README; full content in `docs/DEPLOYMENT.md`. | **Gap.** Add a short "Deployment" section: one sentence (e.g. pilot on Railway), link to `docs/DEPLOYMENT.md`. |
@@ -48,10 +48,10 @@ Use this to track changes. All edits in **README.md**, **CONTRIBUTING.md**, or *
 - [ ] **README**
   - [ ] Add a one-sentence elevator pitch at the top (below or as part of the title block).
   - [ ] Expand **Prerequisites** (or reference CONTRIBUTING for full list) and ensure **Getting Started** includes: copy `.env.example` → `.env`, `key:generate`, and `yarn build` (or "See CONTRIBUTING for full setup").
-  - [ ] Add **Architecture overview**: 3–5 bullet points (e.g. user input → LocationResolver; FloodWatchService + LLM tools; cache; dashboard). Link to `docs/ARCHITECTURE.md`.
+  - [ ] Add **Architecture overview**: 3–5 bullet points (e.g. user input → LocationResolver; FloodWatchService + LLM tools; cache; dashboard). Link to `docs/architecture.md`.
   - [ ] Add **Running locally & tests**: explicit "Run tests: `sail test`" (and optionally `sail test --coverage`).
   - [ ] Add **Deployment**: one sentence (e.g. pilot on Railway), link to `docs/DEPLOYMENT.md`.
-  - [ ] Add **Example flow**: short bullet list or minimal mermaid (e.g. postcode → geocode → LLM tools → summary + dashboard); or link to `docs/ARCHITECTURE.md` / new `docs/EXAMPLE_FLOWS.md` if we prefer long form in docs only.
+  - [ ] Add **Example flow**: short bullet list or minimal mermaid (e.g. postcode → geocode → LLM tools → summary + dashboard); or link to `docs/architecture.md` / new `docs/EXAMPLE_FLOWS.md` if we prefer long form in docs only.
   - [ ] Ensure **Documentation** section includes link to `docs/DEPLOYMENT.md` if missing.
   - [ ] Optional: add a clear **Contributing** line/section pointing to CONTRIBUTING.md.
 - [ ] **CONTRIBUTING.md**
@@ -59,6 +59,9 @@ Use this to track changes. All edits in **README.md**, **CONTRIBUTING.md**, or *
 - [ ] **docs/**
   - [ ] If we add a longer "Example API/UX flows" doc, add `docs/EXAMPLE_FLOWS.md` and link from README (optional).
   - [ ] No other structural changes required for this plan.
+  - [ ] Reference IDE agent directories: `.cursor/rules` and `.cursor/skills` in README/CONTRIBUTING.
+  - [ ] Ensure key notes from `.cursor` are mirrored into `.junie/guidelines.md` for portability.
+  - [ ] Add PR checklist item: when agent rules/skills change, sync `.junie/guidelines.md`.
 
 ---
 
@@ -106,10 +109,10 @@ Other existing docs (PLAN.md, DEPLOYMENT.md, WIREFRAMES.md, SCHEMA.md, build/, a
 | New doc | Source content | Notes |
 |---------|----------------|-------|
 | **installation.md** | README “Requirements” + “Getting Started”; CONTRIBUTING “Prerequisites” + “Initial Setup” + “Configuration”. | Single place for prerequisites (Docker, PHP, Composer, Node/Yarn, Redis), clone, `composer install`, `yarn install`, `cp .env.example .env`, `key:generate`, `sail up`, `migrate`, `yarn build`, optional Boost. Env vars (OPENAI, NATIONAL_HIGHWAYS, Redis, cache). |
-| **architecture.md** | Current `docs/ARCHITECTURE.md`. | Keep content; optionally rename file to `architecture.md` for consistency with topic naming, or keep `ARCHITECTURE.md` and add a short “See also” in plan. Plan treats `architecture.md` as the canonical name; existing file can be moved/renamed. |
+| **architecture.md** | Current `docs/architecture.md`. | Keep content; ensure this is the canonical name. Update all references from `ARCHITECTURE.md` to `architecture.md`. |
 | **agents-and-llm.md** | README “LLM Tools”, “System Prompt”, “Technical: LLM Tool Calling”, “Correlated Scenarios”; `docs/LLM_INTEGRATION_GUIDE.md`; `docs/LLM_DATA_FLOW.md`; `docs/API_OPTIMIZATION_GUIDE.md` (LLM/caching parts); `docs/RISK_CORRELATION.md`. | One place for: tool list and roles, how the LLM orchestrates calls, system prompt and regions, correlation behaviour, data flow to/from LLM, optimization (caching, tokens), risk correlation rules. Deep-dive guides can be merged or linked as “See also” sections. |
 | **usage.md** | README “User Experience”, “Scope: South West”, “Example flow”; optional `docs/EXAMPLE_FLOWS.md` if created. | End-user focus: regions/postcodes, dashboard (floods, roads, map, forecast, weather), postcode vs place vs “Use my location”, example UX flow (postcode → geocode → LLM → summary). No implementation detail. |
-| **api.md** | `docs/ARCHITECTURE.md` “Public map API endpoints” and “Security”; routes: `/health`, `/flood-watch/polygons`, `/flood-watch/river-levels`; rate limits, session protection. | Document app’s HTTP API: health check, map data endpoints (params, responses, session + throttle), links to ARCHITECTURE for implementation. Add auth/bookmark routes if we want them in “API” (or keep them in contributing/architecture). |
+| **api.md** | `docs/architecture.md` “Public map API endpoints” and “Security”; routes: `/health`, `/flood-watch/polygons`, `/flood-watch/river-levels`; rate limits, session protection. | Document app’s HTTP API: health check, map data endpoints (params, responses, session + throttle), links to architecture for implementation. Add auth/bookmark routes if we want them in “API” (or keep them in contributing/architecture). |
 | **contributing.md** | Current root `CONTRIBUTING.md`. | Move or copy full content into `docs/contributing.md`. Root `CONTRIBUTING.md` can become a short pointer: “See [Contributing](docs/contributing.md).” so GitHub/git still find it. |
 | **tests.md** | CONTRIBUTING “Testing”; README “Run tests”. | How to run tests (`sail test`, `sail test --coverage`, filter), where tests live, Pest conventions, mocking (e.g. OpenAI, APIs), coverage expectations. |
 

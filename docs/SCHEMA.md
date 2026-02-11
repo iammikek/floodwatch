@@ -176,7 +176,7 @@ flowchart LR
 
 | Doc | Purpose |
 |-----|---------|
-| `docs/ARCHITECTURE.md` | System structure, data flow |
+| `docs/architecture.md` | System structure, data flow |
 | `docs/PLAN.md` | Search history, bookmarks implementation plan |
 | `docs/BRIEF.md` | User needs, persistence requirements |
 | `docs/DATA_RETENTION.md` | Retention policies, pruning, future tasks |

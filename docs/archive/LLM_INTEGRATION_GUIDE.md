@@ -718,7 +718,7 @@ FLOOD_WATCH_LLM_BUDGET_MONTHLY=10       # $10/month
 - **Cost Calculator**: https://openai.com/pricing
 - **FloodWatch Docs**:
   - [Agents and LLM](../agents-and-llm.md) (canonical LLM doc)
-  - [Architecture](../ARCHITECTURE.md)
+  - [Architecture](../architecture.md)
   - [Risk Correlation](../RISK_CORRELATION.md)
   - [Performance](../PERFORMANCE.md)
 

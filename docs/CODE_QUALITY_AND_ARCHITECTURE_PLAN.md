@@ -98,70 +98,143 @@ So most tools already map to a service. The main orchestration and tool-specific
 
 ### 2.2 Recommendations
 
-- **Keep the pattern**: One service per data source / tool. Document it in `docs/architecture.md`: "Each LLM tool is implemented by a dedicated service (e.g. GetFloodData → EnvironmentAgencyFloodService)."
-- **Reduce orchestration clutter**: Move tool execution and "prepare for LLM" out of `FloodWatchService` only if the class grows too large (e.g. a dedicated `ToolExecutor` or per-tool handler classes). For now, a clear `match` in `executeTool` and a well-factored `prepareToolResultForLlm` (see DRY above) may be enough.
-- **Highways incidents**: Filtering (region, proximity, motorways, priority) is in `FloodWatchService`. Consider moving to a dedicated helper (e.g. `HighwaysIncidentFilter` or methods on `NationalHighwaysService`) so orchestration stays thin and filtering is unit-testable in isolation.
-- **New tools**: When adding a tool, add a new service (or extend an existing one) and register it in the tool definitions and in `executeTool`; document in agents-and-llm.
+- Keep the pattern: One service per data source / tool. Document it in `docs/architecture.md`: "Each LLM tool is implemented by a dedicated service (e.g. GetFloodData → EnvironmentAgencyFloodService) and orchestrated by `FloodWatchService`"
+- Move any tool-specific shaping from the orchestrator into the owning service when possible (e.g. small DTO transforms). Keep LLM-focused truncation in one place (see DRY plan 1.3).
+- Prefer DTOs over raw arrays at service boundaries where practical (already used for `FloodWarning`). Add lightweight DTOs if we expand tools.
+- Keep domain separation: Flood → `app/Flood`, Roads → `app/Roads`, Shared/Correlations → `app/Services`.
 
-**Implementation checklist**
+### 2.3 Centralize tool names (single source of truth)
 
-- [ ] Document in `docs/architecture.md`: tool → service mapping table; "one service per tool/data source."
-- [ ] Optional: Extract highways filtering into a testable class/module; call it from `FloodWatchService`.
-- [ ] Optional: If `FloodWatchService` grows further, consider extracting `executeTool` + `prepareToolResultForLlm` into a `FloodWatchToolExecutor` (or similar) that receives the service instances and config.
+- Introduce a single source of truth for tool names used across:
+  - `FloodWatchPromptBuilder::getToolDefinitions()`
+  - `FloodWatchService::executeTool()` and `prepareToolResultForLlm()`
+  - Logging/progress messages and any UI copy
+- Options:
+  - PHP enum `ToolName` with string values matching the OpenAI function names
+  - Or a constants class `ToolNames` if we want to avoid enums
+- Migration approach (no behaviour change):
+  1. Add enum/constants.
+  2. Type tool switches against the central list.
+  3. Update prompt builder to reference the central list to avoid drift.
 
----
+Implementation checklist
 
-## 3. Testing surface
+- [ ] Create `App\Enums\ToolName` or `App\Support\ToolNames` with: `GetFloodData`, `GetHighwaysIncidents`, `GetFloodForecast`, `GetRiverLevels`, `GetCorrelationSummary`.
+- [ ] Use central tool names in `executeTool()` and `prepareToolResultForLlm()`.
+- [ ] Reference central names in `FloodWatchPromptBuilder` to ensure exact matches.
 
-**Goal**: More unit and integration tests, especially where LLM responses are combined with data sources; and solid coverage of error paths (timeouts, API failures, fallbacks).
+### 2.4 Configuration keys and constants
 
-### 3.1 Current coverage (reference)
+- Keep all app settings under `flood-watch.*` with environment variables `FLOOD_WATCH_*`.
+- For frequently-used keys in code paths (limits/timeouts), consider central config constants for discoverability.
+- Document core keys in `docs/architecture.md`.
 
-- **FloodWatchServiceTest**: Chat flow, caching, tool calls, OpenAI fakes, partial responses, rate limit handling.
-- **CircuitBreakerIntegrationTest**: Circuit breaker open/disabled; Environment Agency returning empty when circuit open.
-- **FloodWatchDashboardTest**: Includes timeout error message (e.g. `test_search_displays_friendly_message_for_timeout_error`).
-- Other feature/unit tests for services, Livewire, and APIs.
+Implementation checklist
 
-### 3.2 Gaps to address
-
-| Area | What to add | Priority |
-|------|--------------|----------|
-| **LLM + data combination** | Integration-style tests: given real (or faked) tool responses (floods, incidents, river levels), assert that the combined response or correlation summary is shaped correctly and that the LLM receives truncated/limited data as configured. | High |
-| **Error paths** | Explicit tests for: (1) **Timeouts**: external API timeout → user sees friendly message; (2) **API failures**: e.g. EA or National Highways returns 5xx → circuit breaker or fallback; (3) **Fallback behaviour**: one tool fails → rest of response still returned; correlation still runs on available data. | High |
-| **prepareToolResultForLlm** | Unit tests: for each tool, given a large payload, assert output is limited/truncated per config (max items, max chars). Protects DRY refactor and config changes. | Medium |
-| **Tool name / config consistency** | If you introduce a ToolName enum or config constants, add a test that all tools in the enum are handled in `executeTool` and in `prepareToolResultForLlm` (no missing branch). | Low |
-
-### 3.3 Concrete test ideas
-
-- **Timeout**: Mock an HTTP client or service to throw `ConnectionException` or timeout; call `FloodWatchService::chat()` or the dashboard search; assert response contains a timeout/friendly error message and no exception.
-- **API failure**: Mock EA or National Highways to return 500; assert circuit breaker records failure (or service returns empty); assert chat still returns a response (e.g. "Flood data temporarily unavailable") and other tools’ data still appear.
-- **Fallback**: Simulate GetFloodData returning empty and GetHighwaysIncidents returning data; assert correlation and summary still run and include highways info.
-- **LLM + data**: Use OpenAI fake with a fixed completion; with faked tool results (e.g. a few floods, a few incidents), assert final `chat()` result structure (e.g. `response`, `floods`, `incidents`) and that truncation limits were applied (e.g. at most `llm_max_floods` in the payload sent to the model).
-
-**Implementation checklist**
-
-- [ ] **Error paths**: Add or extend tests for timeout, API failure (5xx), and fallback (one tool fails, others succeed). Prefer feature tests that go through `FloodWatchService::chat()` or the dashboard.
-- [ ] **LLM + data**: Add tests that fake tool responses and assert combined result shape and truncation (config-driven limits).
-- [ ] **prepareToolResultForLlm**: Unit tests per tool for "large input → limited output" with current config keys.
-- [ ] **Optional**: Consistency test for tool names (enum vs executeTool/prepareToolResultForLlm branches) when that refactor is done.
-- [ ] Document in `docs/tests.md`: where to add tests for new tools, how to fake OpenAI and external APIs, and how to test error paths.
+- [ ] Document key config entries (timeouts, limits, defaults, cache TTLs) in Architecture docs.
+- [ ] Optional: Introduce a `ConfigKeys` constants class where duplication is high.
 
 ---
 
-## 4. Order of work
+## 3. Testing strategy
 
-1. **Document** conventions (naming, PSR-12/Pint, config) in contributing and architecture.
-2. **DRY** refactors: tool names single source of truth; prepareToolResultForLlm helpers; optional config constants.
-3. **Modular** doc and optional extraction: document tool → service; optionally extract highways filtering or ToolExecutor.
-4. **Tests**: Error-path tests (timeout, API failure, fallback); LLM + data combination tests; prepareToolResultForLlm unit tests.
-5. **CI**: Ensure Pint (and any other lint) runs on PRs.
+Goal: Improve confidence via unit tests for services, integration tests for orchestrator, and edge-case coverage (timeouts, empty data, truncation, token budgeting).
+
+3.1 Unit tests (services)
+
+- EnvironmentAgencyFloodService: happy path mapping, polygon/centroid handling, failure (HTTP 500), timeout/CB open returns [].
+- RiverLevelService: parsing/limits around station lists.
+- FloodForecastService: narrative parsing, character-limit truncation behaviour.
+- NationalHighwaysService + merging/filtering rules (region, proximity, motorway filter).
+- RiskCorrelationService: deterministic outputs with fixed inputs.
+
+3.2 Orchestrator tests (`FloodWatchService`)
+
+- Tool dispatch mapping: each tool called with expected args.
+- `prepareToolResultForLlm()` shared-limit behaviour for each tool, including message truncation and overall correlation char budget.
+- Token budget trimming: retains system + last exchange, then truncates tool contents if still over budget.
+
+3.3 Livewire/UI smoke (optional if present)
+
+- Dashboard component minimal render with seeded data (no network) to ensure no regressions.
+
+Implementation checklist
+
+- [ ] Add/expand Pest tests for each service with mocked HTTP.
+- [ ] Add orchestrator tests for tool execution + trimming logic.
+- [ ] Provide fixtures for EA/Highways/Forecast sample payloads.
 
 ---
 
-## 5. Cross-references
+## 4. Error handling, observability, and resilience
 
-- **Architecture**: `docs/architecture.md` (or `docs/ARCHITECTURE.md`) — tool → service mapping, config layout.
-- **Contributing**: `docs/contributing.md` — code conventions, testing expectations.
-- **Tests**: `docs/tests.md` — how to run tests, how to fake APIs and LLM, where to add tests for new tools and error paths.
-- **Documentation plan**: `docs/DOCUMENTATION_STRUCTURE_PLAN.md` — docs structure only; this plan is for code quality and architecture.
-- **LLM integration**: `docs/LLM_INTEGRATION_PLAN.md` — prompt design, versioning, RAG, guarding against hallucinations; aligns with testing and tool→service architecture here.
+- External calls: enforce timeouts and retries (already present in services like EA via `retry`).
+- Circuit breaker: keep for flakier providers; ensure metrics/logs surface open/close.
+- Logging: prefer structured logs. Mask sensitive content with `LogMasker` (already used) for large tool payloads.
+- Graceful degradation: when a provider fails, return empty arrays and inform the LLM in correlation summaries.
+- Rate limits: catch OpenAI rate-limit and transporter exceptions in orchestrator (already handled) and convert to user-friendly messages.
+
+Implementation checklist
+
+- [ ] Ensure each external service has explicit timeouts and retries configurable via `flood-watch.*`.
+- [ ] Add log context keys consistently: `tool`, `provider`, `region`, `lat`, `lng`.
+- [ ] Tests for failure paths (timeouts, 500s, CB open) returning safe empty structures.
+
+---
+
+## 5. Token and prompt management
+
+- Keep tool result trimming in one place with per-tool rules. Avoid duplication.
+- Provide conservative defaults for max items and char limits; expose via config.
+- Maintain a versioned system prompt. Cache loaded prompt between requests (already cached in builder).
+
+Implementation checklist
+
+- [ ] Extract a small helper for list limiting to reduce duplication while keeping per-tool specifics explicit.
+- [ ] Add tests asserting truncation for floods (message chars), forecast narrative, and correlation total char budget.
+
+---
+
+## 6. Caching and performance
+
+- Cache expensive/slow external results with sensible TTLs to reduce API load.
+- Use per-provider cache namespaces/stores if needed; respect freshness (short TTLs for incidents/levels).
+- Cache LLM chat responses keyed by user message, region, and last tool exchange hash.
+
+Implementation checklist
+
+- [ ] Document current caches and TTLs in Architecture docs.
+- [ ] Verify cache store selection logic (e.g., `array` vs `redis`) matches environment.
+- [ ] Add cache-hit/miss counters in logs for visibility.
+
+---
+
+## 7. CI, linting, and static analysis
+
+- Ensure Pint runs in CI and fails on diff.
+- Optionally add PHPStan/Psalm at a reasonable level focused on services and orchestrator.
+- Run tests in CI with clear job separation: lint → static analysis → tests.
+
+Implementation checklist
+
+- [ ] CI job: `vendor/bin/pint --dirty` then fail if changes.
+- [ ] Add/verify `php artisan test --compact` workflow.
+- [ ] Optional: add PHPStan with baseline for gradual improvement.
+
+---
+
+## 8. Incremental rollout plan
+
+1. Centralize tool names (no behaviour change) and add tests around `executeTool()` mapping.  
+2. Refactor `prepareToolResultForLlm()` to pull out shared limiting helper.  
+3. Add/expand service unit tests with fixtures and error-path coverage.  
+4. Improve docs: Architecture → tool/service pattern, config keys; Contributing → code conventions.  
+5. Add CI gates (Pint + tests).  
+6. Monitor logs for token usage, timeouts, and CB openings; iterate limits.
+
+Success metrics
+
+- Reduced duplication in orchestrator (one helper for list limiting).  
+- All services have unit tests covering happy and failure paths.  
+- Tool-name drift eliminated by central source of truth.  
+- CI enforces style and tests; zero style diffs on main.
