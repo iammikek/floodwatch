@@ -135,7 +135,7 @@ Output:
   Title: Somerset incidents filtered out due to missing coordinates
   Labels: bug,priority: high,component: road-incidents
   ✅ Creating issue...
-  ✨ Created issue #123
+  ✨ Created issue: https://github.com/iammikek/floodwatch/issues/123
 ```
 
 ## Limitations
