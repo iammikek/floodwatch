@@ -228,11 +228,11 @@ class FloodWatchService
             foreach ($message->toolCalls as $toolCall) {
                 $toolName = $toolCall->function->name;
                 $report(match ($toolName) {
-                    'GetFloodData' => __('flood-watch.progress.fetching_floods'),
-                    'GetHighwaysIncidents' => __('flood-watch.progress.checking_roads'),
-                    'GetFloodForecast' => __('flood-watch.progress.getting_forecast'),
-                    'GetRiverLevels' => __('flood-watch.progress.fetching_river_levels'),
-                    'GetCorrelationSummary' => __('flood-watch.progress.correlating'),
+                    \App\Enums\ToolName::GetFloodData->value => __('flood-watch.progress.fetching_floods'),
+                    \App\Enums\ToolName::GetHighwaysIncidents->value => __('flood-watch.progress.checking_roads'),
+                    \App\Enums\ToolName::GetFloodForecast->value => __('flood-watch.progress.getting_forecast'),
+                    \App\Enums\ToolName::GetRiverLevels->value => __('flood-watch.progress.fetching_river_levels'),
+                    \App\Enums\ToolName::GetCorrelationSummary->value => __('flood-watch.progress.correlating'),
                     default => __('flood-watch.progress.loading'),
                 });
                 $context = [
@@ -254,13 +254,13 @@ class FloodWatchService
                     $result = ['error' => __('flood-watch.error.tool_failed'), 'code' => 'tool_error'];
                 }
 
-                if ($toolName === 'GetFloodData' && is_array($result) && ! isset($result['error'])) {
+                if ($toolName === \App\Enums\ToolName::GetFloodData->value && is_array($result) && ! isset($result['error'])) {
                     $floods = $result;
                 }
-                if ($toolName === 'GetHighwaysIncidents' && is_array($result) && ! isset($result['error'])) {
+                if ($toolName === \App\Enums\ToolName::GetHighwaysIncidents->value && is_array($result) && ! isset($result['error'])) {
                     $incidents = $result;
                 }
-                if ($toolName === 'GetFloodForecast' && is_array($result) && ! isset($result['error'])) {
+                if ($toolName === \App\Enums\ToolName::GetFloodForecast->value && is_array($result) && ! isset($result['error'])) {
                     $forecast = $result;
                 }
 
@@ -416,7 +416,7 @@ class FloodWatchService
     {
         $args = json_decode($argumentsJson, true) ?? [];
 
-        if ($name === 'GetCorrelationSummary') {
+        if ($name === \App\Enums\ToolName::GetCorrelationSummary->value) {
             $assessment = $this->correlationService->correlate(
                 $context['floods'] ?? [],
                 $context['incidents'] ?? [],
@@ -428,12 +428,12 @@ class FloodWatchService
         }
 
         return match ($name) {
-            'GetFloodData' => $this->floodService->getFloods(
+            \App\Enums\ToolName::GetFloodData->value => $this->floodService->getFloods(
                 $args['lat'] ?? null,
                 $args['lng'] ?? null,
                 $args['radius_km'] ?? null
             ),
-            'GetHighwaysIncidents' => $this->sortIncidentsByPriority(
+            \App\Enums\ToolName::GetHighwaysIncidents->value => $this->sortIncidentsByPriority(
                 $this->filterMotorwaysFromDisplay(
                     $this->filterIncidentsByProximity(
                         $this->filterIncidentsByRegion(
@@ -445,8 +445,8 @@ class FloodWatchService
                     )
                 )
             ),
-            'GetFloodForecast' => $this->forecastService->getForecast(),
-            'GetRiverLevels' => $this->riverLevelService->getLevels(
+            \App\Enums\ToolName::GetFloodForecast->value => $this->forecastService->getForecast(),
+            \App\Enums\ToolName::GetRiverLevels->value => $this->riverLevelService->getLevels(
                 $args['lat'] ?? null,
                 $args['lng'] ?? null,
                 $args['radius_km'] ?? null
@@ -469,7 +469,7 @@ class FloodWatchService
             return $result;
         }
 
-        if ($toolName === 'GetFloodData') {
+        if ($toolName === \App\Enums\ToolName::GetFloodData->value) {
             $max = config('flood-watch.llm_max_floods', 25);
             $maxMsg = config('flood-watch.llm_max_flood_message_chars', 300);
             $floods = array_slice($result, 0, $max);
@@ -485,19 +485,19 @@ class FloodWatchService
             return $out;
         }
 
-        if ($toolName === 'GetHighwaysIncidents') {
+        if ($toolName === \App\Enums\ToolName::GetHighwaysIncidents->value) {
             $max = config('flood-watch.llm_max_incidents', 25);
 
             return array_slice($result, 0, $max);
         }
 
-        if ($toolName === 'GetRiverLevels') {
+        if ($toolName === \App\Enums\ToolName::GetRiverLevels->value) {
             $max = config('flood-watch.llm_max_river_levels', 15);
 
             return array_slice($result, 0, $max);
         }
 
-        if ($toolName === 'GetFloodForecast') {
+        if ($toolName === \App\Enums\ToolName::GetFloodForecast->value) {
             $maxChars = config('flood-watch.llm_max_forecast_chars', 1200);
             if (isset($result['england_forecast']) && strlen($result['england_forecast']) > $maxChars) {
                 $result['england_forecast'] = substr($result['england_forecast'], 0, $maxChars).'…';
@@ -515,7 +515,7 @@ class FloodWatchService
             return $result;
         }
 
-        if ($toolName === 'GetCorrelationSummary') {
+        if ($toolName === \App\Enums\ToolName::GetCorrelationSummary->value) {
             $maxFloods = config('flood-watch.llm_max_floods', 12);
             $maxIncidents = config('flood-watch.llm_max_incidents', 12);
             $maxMsgChars = config('flood-watch.llm_max_flood_message_chars', 150);

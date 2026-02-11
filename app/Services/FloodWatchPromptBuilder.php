@@ -68,7 +68,7 @@ class FloodWatchPromptBuilder
             [
                 'type' => 'function',
                 'function' => [
-                    'name' => 'GetFloodData',
+                    'name' => \App\Enums\ToolName::GetFloodData->value,
                     'description' => 'Fetch current flood warnings from the Environment Agency for the South West (Bristol, Somerset, Devon, Cornwall). Use the coordinates provided in the user message when a postcode is given; otherwise use default (Langport 51.0358, -2.8318).',
                     'parameters' => [
                         'type' => 'object',
@@ -92,7 +92,7 @@ class FloodWatchPromptBuilder
             [
                 'type' => 'function',
                 'function' => [
-                    'name' => 'GetHighwaysIncidents',
+                    'name' => \App\Enums\ToolName::GetHighwaysIncidents->value,
                     'description' => 'Fetch road and lane closure incidents from National Highways for South West routes (M5, A38, A30, A303, A361, A372, etc.). Returns road, status, incidentType, delayTime, startTime, endTime, locationDescription (e.g. "M5 southbound between J14 and J13"), managementType (roadClosed or laneClosures), and isFloodRelated. Flooding-related incidents are prioritised.',
                     'parameters' => [
                         'type' => 'object',
@@ -103,7 +103,7 @@ class FloodWatchPromptBuilder
             [
                 'type' => 'function',
                 'function' => [
-                    'name' => 'GetFloodForecast',
+                    'name' => \App\Enums\ToolName::GetFloodForecast->value,
                     'description' => 'Fetch the latest 5-day flood risk forecast from the Flood Forecasting Centre. Returns England-wide narrative (risk trend day1–day5, sources). When summarising for the user, focus on South West–relevant parts only; do not highlight areas outside the South West (e.g. River Trent, Midlands).',
                     'parameters' => [
                         'type' => 'object',
@@ -114,7 +114,7 @@ class FloodWatchPromptBuilder
             [
                 'type' => 'function',
                 'function' => [
-                    'name' => 'GetRiverLevels',
+                    'name' => \App\Enums\ToolName::GetRiverLevels->value,
                     'description' => 'Fetch real-time river and sea levels from Environment Agency monitoring stations. Same data source as check-for-flooding.service.gov.uk/river-and-sea-levels. Use coordinates from the user message when a postcode is given; otherwise use default (Langport 51.0358, -2.8318). Returns station name, river, town, current level and unit, and reading time.',
                     'parameters' => [
                         'type' => 'object',
@@ -138,7 +138,7 @@ class FloodWatchPromptBuilder
             [
                 'type' => 'function',
                 'function' => [
-                    'name' => 'GetCorrelationSummary',
+                    'name' => \App\Enums\ToolName::GetCorrelationSummary->value,
                     'description' => 'Get a deterministic correlation of flood warnings with road incidents and river levels. Call this after fetching flood and road data to receive cross-references (e.g. North Moor flood ↔ A361), predictive warnings (e.g. Muchelney cut-off risk when Parrett elevated), and key routes to monitor. Use this to inform your summary.',
                     'parameters' => [
                         'type' => 'object',
