@@ -2,6 +2,8 @@
 
 Flood Watch provides several public HTTP endpoints for health monitoring and front‑end data (polygons, river levels). All endpoints return JSON.
 
+An OpenAPI specification for these endpoints is available at [docs/openapi.yaml](openapi.yaml).
+
 ---
 
 ## Public Endpoints

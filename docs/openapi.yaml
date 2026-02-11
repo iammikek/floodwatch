@@ -1,0 +1,149 @@
+openapi: 3.1.0
+info:
+  title: Flood Watch API
+  description: Public HTTP endpoints for health monitoring and map data (polygons, river levels) for the Flood Watch application.
+  version: 1.0.0
+servers:
+  - url: /
+    description: Current host
+
+paths:
+  /health:
+    get:
+      summary: Health Check
+      description: Monitor the status of external API dependencies and local cache.
+      responses:
+        '200':
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: Degraded or Unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /flood-watch/polygons:
+    get:
+      summary: Flood Area Polygons
+      description: |
+        Fetch GeoJSON geometry for flood areas to render on the map.
+        Requires a valid session (loaded via the dashboard) and is rate-limited.
+      parameters:
+        - name: ids
+          in: query
+          description: Comma-separated string of flood area IDs (e.g., "12-34-56,78-90-12"). Max 20 IDs.
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+                  description: GeoJSON FeatureCollection for the area ID
+        '403':
+          description: Forbidden - Session lock not satisfied
+        '429':
+          description: Too Many Requests - Rate limit exceeded
+
+  /flood-watch/river-levels:
+    get:
+      summary: River Level Stations
+      description: |
+        Fetch real-time river level monitoring stations for a given area.
+        Requires a valid session and is rate-limited.
+      parameters:
+        - name: lat
+          in: query
+          description: Latitude of the center point
+          required: true
+          schema:
+            type: number
+            format: float
+        - name: lng
+          in: query
+          description: Longitude of the center point
+          required: true
+          schema:
+            type: number
+            format: float
+        - name: radius
+          in: query
+          description: Search radius in km (default 15, max 50)
+          required: false
+          schema:
+            type: integer
+            default: 15
+            minimum: 5
+            maximum: 50
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RiverStation'
+        '403':
+          description: Forbidden - Session lock not satisfied
+        '429':
+          description: Too Many Requests - Rate limit exceeded
+
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded]
+        checks:
+          type: object
+          properties:
+            environment_agency:
+              $ref: '#/components/schemas/CheckResult'
+            flood_forecast:
+              $ref: '#/components/schemas/CheckResult'
+            weather:
+              $ref: '#/components/schemas/CheckResult'
+            national_highways:
+              $ref: '#/components/schemas/CheckResult'
+            cache:
+              $ref: '#/components/schemas/CheckResult'
+    CheckResult:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded, unhealthy, skipped]
+        message:
+          type: string
+          nullable: true
+    RiverStation:
+      type: object
+      properties:
+        name:
+          type: string
+        river:
+          type: string
+        town:
+          type: string
+          nullable: true
+        level:
+          type: number
+        unit:
+          type: string
+        levelStatus:
+          type: string
+        dateTime:
+          type: string
+          format: date-time
