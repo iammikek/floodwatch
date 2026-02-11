@@ -51,15 +51,23 @@ class FloodWatchService
      */
     public function chat(string $userMessage, array $conversation = [], ?string $cacheKey = null, ?float $userLat = null, ?float $userLng = null, ?string $region = null, ?int $userId = null, ?callable $onProgress = null): array
     {
-        $emptyResult = fn (string $response, ?string $lastChecked = null): array => [
-            'response' => $response,
-            'floods' => [],
-            'incidents' => [],
-            'forecast' => [],
-            'weather' => [],
-            'riverLevels' => [],
-            'lastChecked' => $lastChecked ?? now()->toIso8601String(),
-        ];
+        $emptyResult = function (string $response, ?string $lastChecked = null, ?string $errorKey = null): array {
+            $result = [
+                'response' => $response,
+                'floods' => [],
+                'incidents' => [],
+                'forecast' => [],
+                'weather' => [],
+                'riverLevels' => [],
+                'lastChecked' => $lastChecked ?? now()->toIso8601String(),
+            ];
+            if ($errorKey !== null) {
+                $result['error'] = true;
+                $result['error_key'] = $errorKey;
+            }
+
+            return $result;
+        };
 
         if (empty(config('openai.api_key'))) {
             return $emptyResult(__('flood-watch.error.no_api_key'));
@@ -128,7 +136,7 @@ class FloodWatchService
                     'iteration' => $iteration + 1,
                 ]);
 
-                return $emptyResult(__('flood-watch.error.rate_limit'), now()->toIso8601String());
+                return $emptyResult(__('flood-watch.error.rate_limit'), now()->toIso8601String(), 'rate_limit');
             } catch (OpenAIErrorException $e) {
                 Log::error('FloodWatch OpenAI API error', [
                     'error' => $e->getMessage(),
@@ -136,27 +144,39 @@ class FloodWatchService
                     'iteration' => $iteration + 1,
                 ]);
 
-                $messageKey = match ($e->getStatusCode()) {
+                $status = $e->getStatusCode();
+                $messageKey = match ($status) {
                     429 => 'flood-watch.error.rate_limit',
                     408, 504 => 'flood-watch.error.timeout',
                     default => 'flood-watch.error.api_error',
                 };
+                $errorKey = match ($status) {
+                    429 => 'rate_limit',
+                    408, 504 => 'timeout',
+                    default => 'api_error',
+                };
 
-                return $emptyResult(__($messageKey), now()->toIso8601String());
+                return $emptyResult(__($messageKey), now()->toIso8601String(), $errorKey);
             } catch (OpenAITransporterException $e) {
                 Log::error('FloodWatch OpenAI transport error', [
                     'error' => $e->getMessage(),
                     'iteration' => $iteration + 1,
                 ]);
 
-                return $emptyResult($this->userMessageForLlmException($e), now()->toIso8601String());
+                $msg = $this->userMessageForLlmException($e);
+                $errorKey = $this->errorKeyFromMessage($msg);
+
+                return $emptyResult($msg, now()->toIso8601String(), $errorKey);
             } catch (Throwable $e) {
                 Log::error('FloodWatch unexpected error during LLM call', [
                     'error' => $e->getMessage(),
                     'iteration' => $iteration + 1,
                 ]);
 
-                return $emptyResult($this->userMessageForLlmException($e), now()->toIso8601String());
+                $msg = $this->userMessageForLlmException($e);
+                $errorKey = $this->errorKeyFromMessage($msg);
+
+                return $emptyResult($msg, now()->toIso8601String(), $errorKey);
             }
 
             $this->dispatchRecordLlmRequest($response, $userId, $region);
@@ -295,6 +315,24 @@ class FloodWatchService
         }
 
         return __('flood-watch.error.unexpected');
+    }
+
+    /**
+     * Return error_key for the given user-facing message (for dashboard error/retry state).
+     */
+    private function errorKeyFromMessage(string $message): string
+    {
+        if ($message === __('flood-watch.error.rate_limit')) {
+            return 'rate_limit';
+        }
+        if ($message === __('flood-watch.error.timeout')) {
+            return 'timeout';
+        }
+        if ($message === __('flood-watch.error.connection')) {
+            return 'connection';
+        }
+
+        return 'unexpected';
     }
 
     /**

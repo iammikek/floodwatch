@@ -349,6 +349,28 @@ class FloodWatchDashboard extends Component
         try {
             $onProgress = fn (string $status) => $streamStatus($status);
             $result = $assistant->chat($message, [], $cacheKey, $userLat, $userLng, $region, auth()->id(), $onProgress);
+
+            if (! empty($result['error'])) {
+                $this->error = $result['response'];
+                if (($result['error_key'] ?? '') === 'rate_limit') {
+                    $this->logOpenAiRateLimit(new \RuntimeException('Rate limit returned from service'));
+                    $this->retryAfterTimestamp = now()->addSeconds(60)->timestamp;
+                }
+                $this->assistantResponse = $result['response'];
+                $this->floods = [];
+                $this->incidents = [];
+                $this->forecast = $result['forecast'] ?? [];
+                $this->weather = $result['weather'] ?? [];
+                $this->riverLevels = $result['riverLevels'] ?? [];
+                $this->lastChecked = $result['lastChecked'] ?? null;
+                $lat = $userLat ?? config('flood-watch.default_lat');
+                $lng = $userLng ?? config('flood-watch.default_lng');
+                $this->mapCenter = ['lat' => $lat, 'lng' => $lng];
+                $this->hasUserLocation = $userLat !== null && $userLng !== null;
+
+                return;
+            }
+
             $this->assistantResponse = $result['response'];
             $this->floods = $this->enrichFloodsWithDistance(
                 $result['floods'],
