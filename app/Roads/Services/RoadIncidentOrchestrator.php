@@ -153,7 +153,9 @@ class RoadIncidentOrchestrator
             return config('flood-watch.incident_allowed_roads', []);
         }
 
-        return config("flood-watch.correlation.{$region}.key_routes", []);
+        $routes = config("flood-watch.correlation.{$region}.key_routes", []);
+
+        return array_map(fn (string $route) => $this->extractBaseRoad($route), $routes);
     }
 
     private function extractBaseRoad(string $road): string
