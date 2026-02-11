@@ -477,7 +477,8 @@ class FloodWatchService
     private function trimMessagesToTokenBudget(array $messages): array
     {
         $maxTokens = config('flood-watch.llm_max_context_tokens', 110000);
-        // Estimate tokens using character count / 4 (OpenAI's rough estimate: 1 token ≈ 4 chars)
+        // Estimate tokens using byte count / 4 (OpenAI's rule: 1 token ≈ 4 bytes in UTF-8)
+        // Note: strlen() returns bytes, not characters - this is correct for token estimation
         $estimate = fn (array $m): int => (int) ceil(strlen(json_encode(['messages' => $m])) / 4);
         $estimatedTokens = $estimate($messages);
 
