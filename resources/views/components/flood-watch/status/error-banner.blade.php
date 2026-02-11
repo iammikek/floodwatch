@@ -1,5 +1,5 @@
 @props([
-    'getError' => null,
+    'error' => null,
     'retryAfterTimestamp' => null,
 ])
 
