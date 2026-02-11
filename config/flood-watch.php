@@ -42,6 +42,13 @@ return [
     | Limits applied to tool results before sending to the LLM to avoid
     | exceeding context length (128k tokens). Reduce these if you hit limits.
     |
+    | Performance Impact:
+    | - Reducing these values decreases token usage and cost (~30-40% savings)
+    | - Set conservatively for production (8, 8, 5, 800, 100, 110000, 5000)
+    | - Current defaults are balanced for quality vs. cost
+    |
+    | Token Estimation: ~4 characters = 1 token (OpenAI's rule of thumb)
+    |
     */
 
     'llm_max_floods' => (int) env('FLOOD_WATCH_LLM_MAX_FLOODS', 12),
