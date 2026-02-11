@@ -31,4 +31,4 @@ The dashboard provides a correlated view of:
 ## See also
 
 - [Agents & LLM](agents-and-llm.md)
-- [Architecture](architecture.md)
+- [Architecture](ARCHITECTURE.md)

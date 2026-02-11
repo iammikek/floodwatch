@@ -41,5 +41,5 @@ PEST_UPDATE_SNAPSHOTS=1 sail test tests/Feature/Services/FloodWatchPromptBuilder
 
 ## See also
 
-- [Contributing](contributing.md)
-- [Architecture](architecture.md)
+- [Contributing](../CONTRIBUTING.md)
+- [Architecture](ARCHITECTURE.md)

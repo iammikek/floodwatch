@@ -60,6 +60,6 @@ Once started, the application is available at [http://localhost](http://localhos
 
 ## See also
 
-- [Architecture](architecture.md)
+- [Architecture](ARCHITECTURE.md)
 - [Testing](tests.md)
-- [Contributing](contributing.md)
+- [Contributing](../CONTRIBUTING.md)
