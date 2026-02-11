@@ -10,8 +10,8 @@ Unresolved
 `filterIncidentsByProximity()` drops any incident that lacks coordinates (`return false` when lat/lng are null). SomersetCouncilRoadworksService incidents currently don't include lat/lng, so Somerset incidents will be silently excluded from GetHighwaysIncidents whenever proximity filtering is enabled (default 80km), undermining the Somerset merge.
 
 ## Location
-- **File**: `app/Services/FloodWatchService.php`
-- **Line**: 622
+- **File** (in PR #8): `app/Services/FloodWatchService.php`
+- **Line** (in PR #8 diff): around 622 — see [PR #8](https://github.com/iammikek/floodwatch/pull/8) for the exact definition of `filterIncidentsByProximity()`
 
 ## Suggested Fix
 Consider keeping incidents with missing coords (apply proximity only when coords exist), or ensure scraped incidents include coordinates before filtering.
