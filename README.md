@@ -189,6 +189,7 @@ See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for deployment targets and runbooks
 - **[Deployment](docs/DEPLOYMENT.md)** — Railway runbook and pre‑deployment checklist
 - **[Risk Correlation](docs/RISK_CORRELATION.md)** — How flood warnings are correlated with road incidents
 - **[API Optimization Guide](docs/API_OPTIMIZATION_GUIDE.md)** — Performance optimization strategies and best practices
+- **[RAG Implementation Plan](docs/rag-implementation-plan.md)** — Plan for Retrieval-Augmented Generation to enhance LLM responses
 - **[Contributing](CONTRIBUTING.md)** — Development guidelines and workflow
 
 ## License
