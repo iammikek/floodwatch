@@ -7,17 +7,17 @@ PR #8 Review Comment: https://github.com/iammikek/floodwatch/pull/8#discussion_r
 Unresolved
 
 ## Description
-This template calls `Str::markdown($body)` but `Str` isn't imported/qualified here (unlike other templates using `\\Illuminate\\Support\\Str::...`). If the `Str` alias isn't available in this runtime, this will error at render time.
+This template calls `Str::markdown($body)` but `Str` isn't imported/qualified here (unlike other templates using `\Illuminate\Support\Str::...`). If the `Str` alias isn't available in this runtime, this will error at render time.
 
 ## Location
 - **File**: `resources/views/components/flood-watch/results/summary-collapsible-mobile.blade.php`
 - **Line**: 26
 
 ## Suggested Fix
-Prefer `\\Illuminate\\Support\\Str::markdown($body)` or add an explicit `@php use Illuminate\\Support\\Str; @endphp` for consistency.
+Prefer `\Illuminate\Support\Str::markdown($body)` or add an explicit `@php use Illuminate\Support\Str; @endphp` for consistency.
 
 ```php
-{!! \\Illuminate\\Support\\Str::markdown($body) !!}
+{!! \Illuminate\Support\Str::markdown($body) !!}
 ```
 
 ## Impact
