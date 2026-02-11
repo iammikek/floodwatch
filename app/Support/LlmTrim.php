@@ -19,6 +19,8 @@ class LlmTrim
      */
     public static function truncate(string $text, int $maxChars, string $ellipsis = '…'): string
     {
+        $maxChars = max(0, $maxChars);
+
         if (mb_strlen($text) <= $maxChars) {
             return $text;
         }
