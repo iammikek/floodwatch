@@ -84,7 +84,7 @@ class FloodWatchService
         if ($cacheEnabled) {
             $cached = $this->cacheGet($store, $key);
             if ($cached !== null) {
-                Log::info('FloodWatch cache hit', [
+                Log::debug('FloodWatch cache hit', [
                     'provider' => 'flood-watch',
                     'store' => $store,
                     'key' => $key,
@@ -93,7 +93,7 @@ class FloodWatchService
 
                 return $cached;
             }
-            Log::info('FloodWatch cache miss', [
+            Log::debug('FloodWatch cache miss', [
                 'provider' => 'flood-watch',
                 'store' => $store,
                 'key' => $key,
