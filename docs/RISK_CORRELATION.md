@@ -157,5 +157,5 @@ The tool returns `$assessment->toPromptContext()` so the LLM can refer to cross-
 ## Reference
 
 - **Config**: `config/flood-watch.php` → `correlation`
-- **LLM flow**: `docs/LLM_DATA_FLOW.md`
+- **LLM flow**: `docs/agents-and-llm.md`
 - **Build 09**: `docs/build/09-smarter-route-verdict.md` (Route Check integration)

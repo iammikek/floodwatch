@@ -1,3 +1,7 @@
+**Superseded by [agents-and-llm.md](../agents-and-llm.md).** Kept for reference.
+
+---
+
 # How Flood Watch Uses Data with the LLM
 
 **Created**: 2026-02-05  

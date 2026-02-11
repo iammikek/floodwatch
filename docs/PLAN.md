@@ -317,7 +317,7 @@ Reverb as second service or process; Redis if scaling. Alternative: Pusher (free
 | `docs/ACCEPTANCE_CRITERIA.md` | Success checklist |
 | `docs/WIREFRAMES.md` | UI wireframes |
 | `docs/ARCHITECTURE.md` | System structure, data flow |
-| `docs/LLM_DATA_FLOW.md` | How LLM consumes data |
+| `docs/agents-and-llm.md` | How LLM consumes data (tools, APIs, flow) |
 | `docs/DEPLOYMENT.md` | Railway runbook, pre-launch checklist |
 | `docs/PERFORMANCE.md` | OSRM limits, self-hosting, scaling options |
 | `docs/TROUBLESHOOTING.md` | LLM timeout, circuit breaker, cache |

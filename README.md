@@ -143,7 +143,7 @@ Data use requires attribution. The dashboard displays a footer with:
 
 ## Documentation
 
-- **[LLM Integration Guide](docs/LLM_INTEGRATION_GUIDE.md)** - Comprehensive guide to using and optimizing the OpenAI integration
+- **[Agents and LLM](docs/agents-and-llm.md)** - Tools, APIs, outputs, limitations, fallbacks, and example request/response
 - **[API Optimization Guide](docs/API_OPTIMIZATION_GUIDE.md)** - Performance optimization strategies and best practices
 - **[Architecture](docs/ARCHITECTURE.md)** - System design, data flow, and extension points
 - **[Risk Correlation](docs/RISK_CORRELATION.md)** - How flood warnings are correlated with road incidents

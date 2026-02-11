@@ -138,7 +138,7 @@ private function trimMessagesToTokenBudget(array $messages): array
 
 ### 1. LLM Integration Guide (18KB)
 
-**Location**: `docs/LLM_INTEGRATION_GUIDE.md`
+**Location**: `docs/agents-and-llm.md`
 
 **Contents**:
 - Architecture overview with sequence diagrams

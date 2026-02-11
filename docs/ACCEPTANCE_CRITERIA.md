@@ -240,4 +240,4 @@ See `docs/DEPLOYMENT.md` **Pre-Launch Checklist**:
 - **Plan**: `docs/PLAN.md`
 - **Wireframes**: `docs/WIREFRAMES.md`
 - **Architecture**: `docs/ARCHITECTURE.md`
-- **LLM data flow**: `docs/LLM_DATA_FLOW.md`
+- **LLM data flow**: `docs/agents-and-llm.md`

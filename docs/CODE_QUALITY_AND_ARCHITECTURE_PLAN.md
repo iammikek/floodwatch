@@ -15,13 +15,29 @@ Plan to improve code quality, readability, modularity, and test coverage. **Scop
 | Area | Convention | Current state / action |
 |------|------------|------------------------|
 | **Config keys** | `flood-watch.<domain>.<purpose>` (e.g. `flood-watch.llm_max_floods`, `flood-watch.circuit_breaker.enabled`). Use snake_case. | Already consistent under `config/flood-watch.php`. Document in `docs/architecture.md` or contributing: "All Flood Watch config lives under `flood-watch.*`." |
-| **PHP variables** | camelCase. Descriptive names (e.g. `$centerLat`, `$maxFloods`). | Audit `FloodWatchService`, `FloodWatchPromptBuilder`, and tool-execution paths for abbreviations or unclear names; rename where it helps. |
-| **PHP methods** | camelCase. Verb-noun for actions (e.g. `getFloods`, `prepareToolResultForLlm`). | Largely consistent. Ensure public methods have clear names; private helpers can be shorter if scope is tiny. |
+| **Environment variables** | `FLOOD_WATCH_*` prefix using SCREAMING_SNAKE_CASE | `FLOOD_WATCH_CACHE_TTL_MINUTES`, `FLOOD_WATCH_LLM_MAX_INCIDENTS` |
+| **PHP variables** | camelCase. Descriptive names (e.g. `$centerLat`, `$maxFloods`, `$toolDefinitions`). | Audit `FloodWatchService`, `FloodWatchPromptBuilder`, and tool-execution paths for abbreviations or unclear names; rename where it helps. |
+| **PHP methods** | camelCase. Verb-noun for actions (e.g. `getFloods`, `prepareToolResultForLlm`, `executeTool`). | Largely consistent. Ensure public methods have clear names; private helpers can be shorter if scope is tiny. |
 | **Service classes** | Noun + Service (e.g. `EnvironmentAgencyFloodService`, `NationalHighwaysService`). One service per external data source or tool. | Already used. Keep and document the pattern: "One service per LLM tool / data source." |
+| **Tool names** | PascalCase with clear, concise descriptions (e.g. `GetFloodData`, `GetRiverLevels`, `GetCorrelationSummary`). | Consider a single source of truth: enum or const array to reduce typos and ease adding tools. |
+
+**Architecture Patterns**:
+
+- **One service per LLM tool/data source**: Each tool in the LLM system maps to a dedicated service class
+- **Domain separation**: Keep flood-related services in `app/Flood/Services/`, road-related in `app/Roads/Services/`
+- **Configuration centralization**: All Flood Watch config lives under the `flood-watch.*` namespace
+- **Tool consistency**: Tool names should be used consistently across `executeTool()`, `prepareToolResultForLlm()`, and prompt definitions
+
+**Code Quality Rules**:
+
+- **DRY principle**: Extract common patterns (especially in tool result preparation and config access)
+- **Error handling**: All external API calls must include timeout handling and graceful degradation
+- **Token efficiency**: Always consider OpenAI token usage when modifying tool outputs
+- **Cache appropriately**: Use TTL values that balance freshness with API rate limits
 
 **Implementation checklist**
 
-- [ ] Document naming conventions in `docs/contributing.md` (or `docs/DOCS_STYLE.md` for doc-only; here we need a "Code conventions" subsection in contributing).
+- [ ] Document naming conventions and architecture patterns in `docs/contributing.md` with dedicated "Code Conventions" section.
 - [ ] Add a short "Config keys" subsection in `docs/architecture.md` or installation: all app-specific config under `flood-watch.*`, env vars `FLOOD_WATCH_*`.
 - [ ] Optional: Light pass over `FloodWatchService`, `FloodWatchPromptBuilder`, and call sites to rename unclear variables (no behaviour change).
 
@@ -31,6 +47,10 @@ Plan to improve code quality, readability, modularity, and test coverage. **Scop
 
 - **PSR-12**: Indentation, braces, line length, use statements, visibility. Enforced by **Laravel Pint** (project already uses Pint).
 - **Laravel**: Prefer Eloquent and contracts; type-hint parameters and return types; use constructor promotion where it helps readability.
+- **Strict typing**: Use `declare(strict_types=1);` at the top of all PHP files.
+- **Type hints**: All parameters and return types must be type-hinted.
+- **PHPDoc**: Add for complex methods explaining parameters, return values, and thrown exceptions.
+- **Method focus**: Keep methods focused on single responsibility; prefer early returns over nested conditionals.
 
 **Action**
 
@@ -40,7 +60,7 @@ Plan to improve code quality, readability, modularity, and test coverage. **Scop
 **Implementation checklist**
 
 - [ ] Confirm Pint is run in CI (e.g. `.github/workflows/tests.yml` or a dedicated lint job).
-- [ ] In `docs/contributing.md`: "PHP style: PSR-12 via Laravel Pint. Run `sail pint` before committing."
+- [ ] In `docs/contributing.md`: Document code conventions including strict types, type hints, PHPDoc, and method focus principles.
 
 ### 1.3 DRY (reduce duplication)
 

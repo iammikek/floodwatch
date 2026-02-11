@@ -294,7 +294,7 @@ it('handles OpenAI errors gracefully', function () {
 
 ```
 docs/
-├── LLM_INTEGRATION_GUIDE.md    # How to use and optimize LLM integration
+├── agents-and-llm.md           # Tools, APIs, outputs, limitations (LLM)
 ├── API_OPTIMIZATION_GUIDE.md   # Performance optimization strategies
 ├── ARCHITECTURE.md              # System design, data flow
 ├── SCHEMA.md                    # Database schema, entity relationships
@@ -308,7 +308,7 @@ docs/
 
 When modifying `FloodWatchService` or prompt builder:
 
-1. Update `docs/LLM_INTEGRATION_GUIDE.md` if changing:
+1. Update `docs/agents-and-llm.md` if changing:
    - Tool definitions
    - Token management
    - Error handling
@@ -414,7 +414,7 @@ Located in `.cursor/skills/`:
 
 ### Working with LLM Integration
 
-**Read first**: `docs/LLM_INTEGRATION_GUIDE.md`
+**Read first**: `docs/agents-and-llm.md`
 
 **Key principles**:
 1. **Token efficiency**: Always consider token usage when adding tool features

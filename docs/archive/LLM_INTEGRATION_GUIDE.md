@@ -1,3 +1,7 @@
+**Superseded by [agents-and-llm.md](../agents-and-llm.md).** Deep-dive content (optimization, error handling, troubleshooting) kept in archive for reference.
+
+---
+
 # LLM Integration Guide
 
 **Purpose**: Comprehensive guide for understanding and optimizing the OpenAI LLM integration in FloodWatch.
@@ -713,10 +717,10 @@ FLOOD_WATCH_LLM_BUDGET_MONTHLY=10       # $10/month
 - **Laravel Concurrency**: https://laravel.com/docs/12.x/concurrency
 - **Cost Calculator**: https://openai.com/pricing
 - **FloodWatch Docs**:
-  - [LLM Data Flow](LLM_DATA_FLOW.md)
-  - [Architecture](ARCHITECTURE.md)
-  - [Risk Correlation](RISK_CORRELATION.md)
-  - [Performance](PERFORMANCE.md)
+  - [Agents and LLM](../agents-and-llm.md) (canonical LLM doc)
+  - [Architecture](../ARCHITECTURE.md)
+  - [Risk Correlation](../RISK_CORRELATION.md)
+  - [Performance](../PERFORMANCE.md)
 
 ---
 

@@ -2,7 +2,7 @@
 
 Plan to improve how the project uses LLM tool calls (OpenAI) to synthesise data from multiple sources (flood warnings, river levels, road status) and produce correlated output. **Scope**: Prompts, context design, versioning, validation, and optional RAG. This document is a plan only; implementation is done in separate work.
 
-**Reference**: Existing docs — `docs/LLM_INTEGRATION_GUIDE.md`, `docs/LLM_DATA_FLOW.md`, `docs/agents-and-llm.md` (topic doc when created).
+**Reference**: Canonical LLM doc — `docs/agents-and-llm.md`. Deep dives archived in `docs/archive/` (LLM_INTEGRATION_GUIDE.md, LLM_DATA_FLOW.md).
 
 ---
 

@@ -164,7 +164,7 @@ The main `chat()` flow is synchronous. For high traffic, consider:
 
 ## LLM and Data Flow
 
-See **`docs/LLM_DATA_FLOW.md`** for a detailed description of how data flows to the LLM, which tools are available, what the LLM receives (and its limits), and how correlation works.
+See **`docs/agents-and-llm.md`** for a detailed description of how data flows to the LLM, which tools are available, what the LLM receives (and its limits), and how correlation works.
 
 ## Data Schema
 
