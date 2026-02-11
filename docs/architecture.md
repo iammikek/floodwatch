@@ -14,6 +14,8 @@ Flood Watch correlates Environment Agency flood data with National Highways road
 
 ```
 app/
+├── Contracts/Tooling/        # Tool handler contract
+│   └── ToolHandler
 ├── Flood/                    # Flood domain
 │   ├── DTOs/FloodWarning
 │   ├── Enums/SeverityLevel
@@ -23,16 +25,30 @@ app/
 │       └── RiverLevelService
 ├── Roads/                    # Roads domain
 │   ├── DTOs/RoadIncident
-│   └── Services/NationalHighwaysService
+│   └── Services/
+│       ├── NationalHighwaysService
+│       ├── RoadIncidentOrchestrator
+│       └── SomersetCouncilRoadworksService
 ├── Services/                 # Orchestration
 │   ├── FloodWatchService     # Main LLM orchestration
 │   ├── FloodWatchPromptBuilder
 │   ├── RiskCorrelationService
 │   ├── LocationResolver
 │   ├── PostcodeValidator
-│   └── WeatherService
+│   ├── WeatherService
+│   └── Tooling/Handlers/     # LLM tool handlers (tagged llm.tool)
+│       ├── GetFloodDataHandler
+│       ├── GetFloodForecastHandler
+│       ├── GetHighwaysIncidentsHandler
+│       ├── GetRiverLevelsHandler
+│       └── GetCorrelationSummaryHandler
+├── Support/Tooling/          # Tooling infrastructure
+│   ├── ToolRegistry          # Auto-discovers tagged handlers
+│   ├── ToolArguments, ToolContext, ToolResult
+│   ├── TokenBudget, BudgetAllocator
+│   └── (LlmTrim in Support/)
 ├── DTOs/RiskAssessment       # Cross-cutting
-├── Enums/Region
+├── Enums/Region, ToolName
 └── ValueObjects/Postcode
 ```
 
