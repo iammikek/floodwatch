@@ -84,8 +84,10 @@ class RoadIncidentOrchestrator
             $coords = CoordinateMapper::normalize($incident);
             $lat = $coords['lat'] ?? null;
             $lng = $coords['lng'] ?? null;
+
+            // Keep incidents without coordinates (e.g., Somerset Council roadworks)
             if ($lat === null || $lng === null) {
-                return false;
+                return true;
             }
 
             return $this->haversineKm($centerLat, $centerLng, (float) $lat, (float) $lng) <= $radiusKm;
