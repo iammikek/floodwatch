@@ -9,10 +9,10 @@ Unresolved
 ## Description
 This template calls `Str::markdown($body)` but `Str` isn't imported/qualified here (unlike other templates using `\Illuminate\Support\Str::...`). If the `Str` alias isn't available in this runtime, this will error at render time.
 
-## Location
-- **File**: `resources/views/components/flood-watch/results/summary-collapsible-mobile.blade.php`
+## Location (in PR #8)
+- **PR Review Context**: [GitHub PR #8 review comment](https://github.com/iammikek/floodwatch/pull/8#discussion_r2790180074)
+- **File path in PR #8**: `resources/views/components/flood-watch/results/summary-collapsible-mobile.blade.php` (may not exist on `main`)
 - **Line**: 26
-
 ## Suggested Fix
 Prefer `\Illuminate\Support\Str::markdown($body)` or add an explicit `@php use Illuminate\Support\Str; @endphp` for consistency.
 
