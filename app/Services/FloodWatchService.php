@@ -11,6 +11,9 @@ use App\Support\LogMasker;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Concurrency;
 use Illuminate\Support\Facades\Log;
+use OpenAI\Exceptions\ErrorException as OpenAIErrorException;
+use OpenAI\Exceptions\RateLimitException as OpenAIRateLimitException;
+use OpenAI\Exceptions\TransporterException as OpenAITransporterException;
 use OpenAI\Laravel\Facades\OpenAI;
 use Throwable;
 
@@ -119,20 +122,41 @@ class FloodWatchService
 
             try {
                 $response = OpenAI::chat()->create($payload);
-            } catch (\OpenAI\Exceptions\ErrorException $e) {
-                Log::error('FloodWatch OpenAI API error', [
+            } catch (OpenAIRateLimitException $e) {
+                Log::error('FloodWatch OpenAI rate limit', [
                     'error' => $e->getMessage(),
                     'iteration' => $iteration + 1,
                 ]);
 
-                return $emptyResult(__('flood-watch.error.api_error'), now()->toIso8601String());
+                return $emptyResult(__('flood-watch.error.rate_limit'), now()->toIso8601String());
+            } catch (OpenAIErrorException $e) {
+                Log::error('FloodWatch OpenAI API error', [
+                    'error' => $e->getMessage(),
+                    'status_code' => $e->getStatusCode(),
+                    'iteration' => $iteration + 1,
+                ]);
+
+                $messageKey = match ($e->getStatusCode()) {
+                    429 => 'flood-watch.error.rate_limit',
+                    408, 504 => 'flood-watch.error.timeout',
+                    default => 'flood-watch.error.api_error',
+                };
+
+                return $emptyResult(__($messageKey), now()->toIso8601String());
+            } catch (OpenAITransporterException $e) {
+                Log::error('FloodWatch OpenAI transport error', [
+                    'error' => $e->getMessage(),
+                    'iteration' => $iteration + 1,
+                ]);
+
+                return $emptyResult($this->userMessageForLlmException($e), now()->toIso8601String());
             } catch (Throwable $e) {
                 Log::error('FloodWatch unexpected error during LLM call', [
                     'error' => $e->getMessage(),
                     'iteration' => $iteration + 1,
                 ]);
 
-                return $emptyResult(__('flood-watch.error.unexpected'), now()->toIso8601String());
+                return $emptyResult($this->userMessageForLlmException($e), now()->toIso8601String());
             }
 
             $this->dispatchRecordLlmRequest($response, $userId, $region);
@@ -250,6 +274,27 @@ class FloodWatchService
         }
 
         return "{$prefix}:chat:".md5($userMessage);
+    }
+
+    /**
+     * Map transport/generic LLM exceptions to user-facing messages.
+     * Prefer rate_limit, timeout, or connection when the exception message indicates it.
+     */
+    private function userMessageForLlmException(Throwable $e): string
+    {
+        $msg = strtolower($e->getMessage());
+
+        if (str_contains($msg, 'rate limit') || str_contains($msg, '429')) {
+            return __('flood-watch.error.rate_limit');
+        }
+        if (str_contains($msg, 'timed out') || str_contains($msg, 'timeout')) {
+            return __('flood-watch.error.timeout');
+        }
+        if (str_contains($msg, 'connection') || str_contains($msg, 'resolve host') || str_contains($msg, 'connection refused')) {
+            return __('flood-watch.error.connection');
+        }
+
+        return __('flood-watch.error.unexpected');
     }
 
     /**

@@ -834,7 +834,7 @@ class FloodWatchServiceTest extends TestCase
         $this->assertArrayHasKey('lastChecked', $result);
     }
 
-    public function test_chat_returns_empty_result_with_unexpected_message_when_openai_throws_generic_throwable(): void
+    public function test_chat_returns_empty_result_with_connection_message_when_openai_throws_connection_error(): void
     {
         Config::set('openai.api_key', 'test-key');
 
@@ -845,6 +845,28 @@ class FloodWatchServiceTest extends TestCase
         ]);
 
         OpenAI::fake([new \RuntimeException('Connection reset by peer')]);
+
+        $service = app(FloodWatchService::class);
+        $result = $service->chat('Check status');
+
+        $this->assertSame(__('flood-watch.error.connection'), $result['response']);
+        $this->assertSame([], $result['floods']);
+        $this->assertSame([], $result['incidents']);
+        $this->assertSame([], $result['forecast']);
+        $this->assertArrayHasKey('lastChecked', $result);
+    }
+
+    public function test_chat_returns_empty_result_with_unexpected_message_when_openai_throws_generic_throwable(): void
+    {
+        Config::set('openai.api_key', 'test-key');
+
+        Http::fake([
+            '*api.ffc-environment-agency.fgs.metoffice.gov.uk*' => Http::response(['statement' => []], 200),
+            '*api.open-meteo.com*' => Http::response(['daily' => ['time' => [], 'weathercode' => [], 'temperature_2m_max' => [], 'temperature_2m_min' => [], 'precipitation_sum' => []]], 200),
+            '*environment.data.gov.uk*' => Http::response(['items' => []], 200),
+        ]);
+
+        OpenAI::fake([new \RuntimeException('Internal server error')]);
 
         $service = app(FloodWatchService::class);
         $result = $service->chat('Check status');
