@@ -238,19 +238,49 @@ php artisan flood-watch:warm-cache
 
 ### Exception Hierarchy
 
+The service catches in order and returns an empty result with a user-facing message and optional `error_key` (so the dashboard can show the error and set `retryAfterTimestamp` for rate limits):
+
 ```php
 try {
     $response = OpenAI::chat()->create($payload);
+} catch (\OpenAI\Exceptions\RateLimitException $e) {
+    Log::error('FloodWatch OpenAI rate limit', ['error' => $e->getMessage(), 'iteration' => $iteration + 1]);
+    return $emptyResult(__('flood-watch.error.rate_limit'), now()->toIso8601String(), 'rate_limit');
 } catch (\OpenAI\Exceptions\ErrorException $e) {
-    // OpenAI API errors: rate limits, auth, model unavailable
-    Log::error('OpenAI API error', ['error' => $e->getMessage()]);
-    return $emptyResult(__('flood-watch.error.api_error'));
+    Log::error('FloodWatch OpenAI API error', [
+        'error' => $e->getMessage(),
+        'status_code' => $e->getStatusCode(),
+        'iteration' => $iteration + 1,
+    ]);
+    $status = $e->getStatusCode();
+    $messageKey = match ($status) {
+        429 => 'flood-watch.error.rate_limit',
+        408, 504 => 'flood-watch.error.timeout',
+        default => 'flood-watch.error.api_error',
+    };
+    $errorKey = match ($status) {
+        429 => 'rate_limit',
+        408, 504 => 'timeout',
+        default => 'api_error',
+    };
+    return $emptyResult(__($messageKey), now()->toIso8601String(), $errorKey);
+} catch (\OpenAI\Exceptions\TransporterException $e) {
+    Log::error('FloodWatch OpenAI transport error', ['error' => $e->getMessage(), 'iteration' => $iteration + 1]);
+    $msg = $this->userMessageForLlmException($e);
+    $errorKey = $this->errorKeyFromMessage($msg);
+    return $emptyResult($msg, now()->toIso8601String(), $errorKey);
 } catch (Throwable $e) {
-    // Network errors, timeouts, unexpected exceptions
-    Log::error('Unexpected LLM error', ['error' => $e->getMessage()]);
-    return $emptyResult(__('flood-watch.error.unexpected'));
+    Log::error('FloodWatch unexpected error during LLM call', ['error' => $e->getMessage(), 'iteration' => $iteration + 1]);
+    $msg = $this->userMessageForLlmException($e);
+    $errorKey = $this->errorKeyFromMessage($msg);
+    return $emptyResult($msg, now()->toIso8601String(), $errorKey);
 }
 ```
+
+- **RateLimitException**: always → `rate_limit` message and `error_key`.
+- **ErrorException**: 429 → rate_limit, 408/504 → timeout, else → api_error (auth, model unavailable, etc.).
+- **TransporterException** / **Throwable**: `userMessageForLlmException($e)` maps by message (rate limit, timeout, connection keywords) to the right lang key; `errorKeyFromMessage()` yields the `error_key` for the dashboard.
+- `$emptyResult($response, $lastChecked, $errorKey)` when `$errorKey` is set adds `'error' => true` and `'error_key' => $errorKey` to the returned array so the Livewire dashboard can set `$this->error` and `retryAfterTimestamp` when the service returns instead of throwing.
 
 ### Tool Execution Errors
 
@@ -258,11 +288,12 @@ try {
 try {
     $result = $this->executeTool($toolName, $args, $context);
 } catch (Throwable $e) {
-    Log::warning('Tool execution failed', [
+    Log::warning('FloodWatch tool execution failed', [
         'tool' => $toolName,
         'error' => $e->getMessage(),
     ]);
-    $result = ['error' => 'Tool execution failed: ' . $e->getMessage()];
+    // Generic message to LLM only; detailed message stays in logs to avoid leaking internals
+    $result = ['error' => __('flood-watch.error.tool_failed'), 'code' => 'tool_error'];
 }
 ```
 
@@ -273,10 +304,19 @@ try {
 
 ### Graceful Degradation
 
-**Empty Result Structure**:
+**Empty Result Structure** (returned on API/transport errors or when no API key):
+
+Always present: `response`, `floods`, `incidents`, `forecast`, `weather`, `riverLevels`, `lastChecked`.
+
+When the failure is an LLM/transport error (rate limit, timeout, connection, api_error, unexpected), the array also includes:
+
+- **`error`** (bool): `true` — indicates this is an error response; callers should treat `response` as a user-facing error message and may show it in an error state (e.g. Livewire `$this->error`).
+- **`error_key`** (string): one of `rate_limit`, `timeout`, `connection`, `api_error`, `unexpected` — allows callers to branch (e.g. set `retryAfterTimestamp` only when `error_key === 'rate_limit'`).
+
 ```php
+// Success or non-exception empty result (e.g. no API key)
 [
-    'response' => 'Error message or partial response',
+    'response' => '…',
     'floods' => [],
     'incidents' => [],
     'forecast' => [],
@@ -284,7 +324,22 @@ try {
     'riverLevels' => [],
     'lastChecked' => '2026-02-11T08:00:00Z',
 ]
+
+// Error response (LLM/transport failure)
+[
+    'response' => 'AI service rate limit exceeded. Please wait a minute and try again.',
+    'floods' => [],
+    'incidents' => [],
+    'forecast' => [],
+    'weather' => [],
+    'riverLevels' => [],
+    'lastChecked' => '2026-02-11T08:00:00Z',
+    'error' => true,
+    'error_key' => 'rate_limit',
+]
 ```
+
+**Callers**: Check `!empty($result['error'])` to detect an error return; use `$result['response']` for the message and `$result['error_key']` for retry/UX logic.
 
 ---
 
