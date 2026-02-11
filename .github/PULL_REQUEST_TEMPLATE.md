@@ -2,6 +2,12 @@
 
 <!-- Brief description of changes -->
 
+## Type of Change
+
+- [ ] **Docs only** — no runtime impact
+- [ ] **Code change** — new feature, refactor, or bug fix (describe below)
+- [ ] **Infrastructure** — CI, build, dependencies
+
 ## Why is this needed?
 
 <!-- Explain the problem being solved or feature being added -->
