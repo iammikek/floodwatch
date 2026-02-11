@@ -10,7 +10,7 @@ The LLM **orchestrates** tool calls and **synthesises** a short narrative (Curre
 
 - **Model**: `config('openai.model')` — default `gpt-4o-mini`.
 - **Orchestration**: `FloodWatchService::chat()` in `app/Services/FloodWatchService.php`.
-- **Prompts**: `resources/prompts/{version}/system.txt`. Version from `config('flood-watch.prompt_version')` (env: `FLOOD_WATCH_PROMPT_VERSION`). Region-specific blocks from `config('flood-watch.regions.{region}.prompt'`.
+- **Prompts**: `resources/prompts/{version}/system.txt`. Version from `config('flood-watch.prompt_version')` (env: `FLOOD_WATCH_PROMPT_VERSION`). Region-specific blocks from `config('flood-watch.regions.{region}.prompt')`.
 
 ---
 
