@@ -126,4 +126,4 @@ Flood Watch currently uses the **Flood Forecast Centre** 5-day outlook (separate
 - **Redirects**: Clients should follow HTTP redirects.
 - **Formats**: JSON default; many endpoints support `.csv`, `.ttl`, `.rdf`, `.html` via suffix or Accept header.
 - **List modifiers**: `_limit`, `_offset`, `_view=full`, `_sorted` where documented.
-- **No SLA**: Open data APIs are not guaranteed for safety-critical use; do not replace official channels (e.g. [gov.uk/check-if-youre-at-risk-of-flooding](https://www.gov.uk/check-if-youre-at-risk-of-flooding)).
+- **No SLA**: Open data APIs are not guaranteed for safety-critical use; do not replace official channels (e.g. [gov.uk/check-flooding](https://www.gov.uk/check-flooding)).

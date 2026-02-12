@@ -109,7 +109,7 @@ National Rail provides real-time train running information via **Darwin**, the G
 ### Technical Notes
 
 - LDB is SOAP/JSON; Darwin Push requires persistent connection
-- Open Rail Data wiki: https://wiki.openraildata.com/
+- Open Rail Data wiki: https://wiki.openraildata.com/index.php/Main_Page
 - Community: Open Rail Data-Talk (Google Groups)
 
 ---
@@ -161,7 +161,7 @@ National Rail provides real-time train running information via **Darwin**, the G
 **Role**: Search and rescue, coastal safety, maritime incidents
 
 - **Website**: https://www.gov.uk/government/organisations/maritime-and-coastguard-agency
-- **HM Coastguard**: https://hmcoastguard.uk/
+- **HM Coastguard overview**: https://www.gov.uk/government/organisations/maritime-and-coastguard-agency/about
 - **Search and rescue stats**: Published datasets (e.g. helicopter statistics)
 
 **Verdict**: No public API for live incidents. Coastal flood events may trigger Coastguard response, but there is no open feed of current incidents. FOI or formal data-sharing would be needed.
@@ -176,7 +176,7 @@ National Rail provides real-time train running information via **Darwin**, the G
 - **Transport**: Some rail, bus, road datasets
 - **Environment**: EA, Met Office, Natural England
 
-Search: https://data.gov.uk/search?q=flood
+Search: https://www.data.gov.uk/search?q=flood
 
 ### Ordnance Survey
 
@@ -332,6 +332,6 @@ Rail services in your area are running normally.
 - National Rail Developers: https://www.nationalrail.co.uk/developers/
 - Rail Data Marketplace: https://raildata.org.uk/
 - Darwin LDB documentation: https://realtime.nationalrail.co.uk/LDBWS/docs/documentation.html
-- Open Rail Data wiki: https://wiki.openraildata.com/
+- Open Rail Data wiki: https://wiki.openraildata.com/index.php/Main_Page
 - data.police.uk: https://data.police.uk/docs/
-- data.gov.uk: https://data.gov.uk/
+- data.gov.uk: https://www.data.gov.uk/

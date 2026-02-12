@@ -1,6 +1,6 @@
 # Flood Watch Deployment (Railway)
 
-Deployment runbook for the pilot on Railway.app.
+Deployment runbook for the pilot on Railway.
 
 ```mermaid
 flowchart TD
@@ -19,7 +19,7 @@ flowchart TD
 
 ## Prerequisites
 
-- Railway account (railway.app)
+- Railway account (railway.com)
 - GitHub repo connected
 - OpenAI API key
 
@@ -39,7 +39,7 @@ flowchart TD
 
 ### 1. Create Railway Project
 
-1. Go to [railway.app](https://railway.app) and sign in
+1. Go to [railway.com](https://railway.com) and sign in
 2. New Project → Deploy from GitHub repo
 3. Select `flood-watch` (or your fork), branch `main`
 4. Railway detects the `Dockerfile` and builds automatically
@@ -96,7 +96,7 @@ For the pilot, SQLite runs in the container. Data is lost on redeploy. To persis
 
 To persist users without Railway volumes (free tier):
 
-1. Create a free account at [neon.tech](https://neon.tech)
+1. Create a free account at [neon.com](https://neon.com)
 2. Create a project and copy the connection string (e.g. `postgresql://user:pass@host/dbname?sslmode=require`)
 3. In Railway Variables, add:
    - `DB_CONNECTION` = `pgsql`

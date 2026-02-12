@@ -1,6 +1,6 @@
 # Data Sources
 
-Overview of current and planned APIs. Full research (National Rail, emergency services) in `docs/archive/DATA_SOURCES.md`.
+Overview of current and planned APIs. Full research (National Rail, emergency services) in `docs/archive/data_sources.md`.
 
 ---
 
@@ -17,7 +17,7 @@ Overview of current and planned APIs. Full research (National Rail, emergency se
 
 ## National Rail (Planned)
 
-**Ref**: `docs/archive/DATA_SOURCES.md` – full research, LDB/Darwin access, surfacing options.
+**Ref**: `docs/archive/data_sources.md` – full research, LDB/Darwin access, surfacing options.
 
 **Implementation plan**:
 
@@ -34,6 +34,6 @@ Overview of current and planned APIs. Full research (National Rail, emergency se
 
 | Doc | Purpose |
 |-----|---------|
-| `docs/archive/DATA_SOURCES.md` | Full research, National Rail, emergency services |
+| `docs/archive/data_sources.md` | Full research, National Rail, emergency services |
 | `docs/plan.md` | Backlog, National Rail priority |
 | `config/flood-watch.php` | Regions, correlation, future `rail_stations` structure |

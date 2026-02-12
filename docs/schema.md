@@ -179,4 +179,4 @@ flowchart LR
 | `docs/architecture.md` | System structure, data flow |
 | `docs/plan.md` | Search history, bookmarks implementation plan |
 | `docs/brief.md` | User needs, persistence requirements |
-| `docs/DATA_RETENTION.md` | Retention policies, pruning, future tasks |
+| `docs/data_retention.md` | Retention policies, pruning, future tasks |
