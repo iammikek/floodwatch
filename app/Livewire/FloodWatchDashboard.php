@@ -388,7 +388,7 @@ class FloodWatchDashboard extends Component
                 $this->routeCheckLoading = false;
                 $this->retryAfterTimestamp = time() + RateLimiter::availableIn($key);
                 $this->routeCheckResult = [
-                    'verdict' => 'getError',
+                    'verdict' => 'error',
                     'summary' => __('flood-watch.getError.guest_rate_limit', ['action' => 'request']),
                     'floods_on_route' => [],
                     'incidents_on_route' => [],

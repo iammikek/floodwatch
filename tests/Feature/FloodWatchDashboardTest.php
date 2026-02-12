@@ -149,7 +149,7 @@ class FloodWatchDashboardTest extends TestCase
             ->set('routeTo', 'BS1 1AA')
             ->call('checkRoute')
             ->assertSet('routeCheckLoading', false)
-            ->assertSet('routeCheckResult.verdict', 'getError')
+            ->assertSet('routeCheckResult.verdict', 'error')
             ->assertSet('routeCheckResult.summary', __('flood-watch.route_check.error_route_failed'))
             ->assertSet('routeCheckResult.route_geometry', null)
             ->assertSet('routeCheckResult.route_key', null);
@@ -176,7 +176,7 @@ class FloodWatchDashboardTest extends TestCase
             ->set('routeTo', 'TA10 0DP')
             ->call('checkRoute')
             ->assertSet('routeCheckLoading', false)
-            ->assertSet('routeCheckResult.verdict', 'getError')
+            ->assertSet('routeCheckResult.verdict', 'error')
             ->get('routeCheckResult');
 
         expect($result)->toHaveKey('summary')
@@ -203,7 +203,7 @@ class FloodWatchDashboardTest extends TestCase
             ->set('routeFrom', 'InvalidPlace99')
             ->set('routeTo', 'TA10 0DP')
             ->call('checkRoute')
-            ->assertSet('routeCheckResult.verdict', 'getError')
+            ->assertSet('routeCheckResult.verdict', 'error')
             ->assertSee(__('flood-watch.route_check.verdict_error'), false);
     }
 

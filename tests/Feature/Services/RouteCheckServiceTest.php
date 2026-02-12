@@ -20,7 +20,7 @@ class RouteCheckServiceTest extends TestCase
         $result = $service->check('', 'Bristol');
 
         $this->assertInstanceOf(RouteCheckResult::class, $result);
-        $this->assertSame('getError', $result->verdict);
+        $this->assertSame('error', $result->verdict);
         $this->assertStringContainsString('locations', $result->summary);
     }
 
@@ -29,7 +29,7 @@ class RouteCheckServiceTest extends TestCase
         $service = app(RouteCheckService::class);
         $result = $service->check('Langport', '');
 
-        $this->assertSame('getError', $result->verdict);
+        $this->assertSame('error', $result->verdict);
     }
 
     public function test_returns_error_when_from_invalid(): void
@@ -42,7 +42,7 @@ class RouteCheckServiceTest extends TestCase
         $service = app(RouteCheckService::class);
         $result = $service->check('InvalidPlace99', 'TA10 0DP');
 
-        $this->assertSame('getError', $result->verdict);
+        $this->assertSame('error', $result->verdict);
     }
 
     public function test_returns_clear_verdict_when_valid_route(): void
@@ -110,7 +110,7 @@ class RouteCheckServiceTest extends TestCase
         $service = app(RouteCheckService::class);
         $result = $service->check('TA10 0DP', 'BS1 1AA');
 
-        $this->assertSame('getError', $result->verdict);
+        $this->assertSame('error', $result->verdict);
         $this->assertNull($result->routeGeometry);
         $this->assertNull($result->routeKey);
     }
