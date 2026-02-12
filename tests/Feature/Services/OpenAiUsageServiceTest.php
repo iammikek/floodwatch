@@ -98,7 +98,7 @@ class OpenAiUsageServiceTest extends TestCase
 
         Http::fake(function ($request) {
             if (str_contains($request->url(), 'api.openai.com/v1/organization/usage')) {
-                return Http::response(['getError' => 'Server getError'], 500);
+                return Http::response(['getError' => 'Server error'], 500);
             }
 
             return Http::response([], 404);

@@ -514,7 +514,7 @@ class FloodWatchDashboardTest extends TestCase
         ]);
 
         OpenAI::fake([
-            new \RuntimeException('cURL getError 28: Operation timed out after 30005 milliseconds with 0 bytes received'),
+            new \RuntimeException('cURL error 28: Operation timed out after 30005 milliseconds with 0 bytes received'),
         ]);
 
         $component = Livewire::test('flood-watch-dashboard')
