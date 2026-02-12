@@ -95,7 +95,7 @@ The assistant uses **OpenAI tool calling** (openai-php/laravel). The LLM receive
 - Node.js 18+ and Yarn (for frontend build)
 - Redis (included with Sail)
 
-See [CONTRIBUTING](CONTRIBUTING.md) for the full prerequisites list.
+See [CONTRIBUTING](contributing.md) for the full prerequisites list.
 
 ## Getting Started
 
@@ -176,7 +176,7 @@ Data use requires attribution. The dashboard displays a footer with:
 
 ## Deployment
 
-See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for deployment targets and runbooks (e.g. Railway) and pre‑deployment checklist.
+See [docs/deployment.md](docs/deployment.md) for deployment targets and runbooks (e.g. Railway) and pre‑deployment checklist.
 
 ## Documentation
 
@@ -186,11 +186,11 @@ See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for deployment targets and runbooks
 - **[Usage](docs/usage.md)** — How to use the app
 - **[API](docs/api.md)** — Public endpoints and protection
 - **[Tests](docs/tests.md)** — How to run and write tests
-- **[Deployment](docs/DEPLOYMENT.md)** — Railway runbook and pre‑deployment checklist
-- **[Risk Correlation](docs/RISK_CORRELATION.md)** — How flood warnings are correlated with road incidents
-- **[API Optimization Guide](docs/API_OPTIMIZATION_GUIDE.md)** — Performance optimization strategies and best practices
+- **[Deployment](docs/deployment.md)** — Railway runbook and pre‑deployment checklist
+- **[Risk Correlation](docs/risk_correlation.md)** — How flood warnings are correlated with road incidents
+- **[API Optimization Guide](docs/api_optimization_guide.md)** — Performance optimization strategies and best practices
 - **[RAG Implementation Plan](docs/rag-implementation-plan.md)** — Plan for Retrieval-Augmented Generation to enhance LLM responses
-- **[Contributing](CONTRIBUTING.md)** — Development guidelines and workflow
+- **[Contributing](contributing.md)** — Development guidelines and workflow
 
 ## License
 
