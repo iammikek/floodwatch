@@ -27,7 +27,7 @@ jobs:
         uses: lycheeverse/lychee-action@v2
         with:
           # Check all markdown files in docs/ and the root README/CONTRIBUTING
-          args: --verbose --no-progress "docs/**/*.md" "README.md" "CONTRIBUTING.md"
+          args: --config .lychee.toml --verbose --no-progress "docs/**/*.md" "README.md" "CONTRIBUTING.md"
           fail: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
