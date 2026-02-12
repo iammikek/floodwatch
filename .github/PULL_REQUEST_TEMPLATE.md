@@ -19,7 +19,7 @@
 ## Documentation
 
 - [ ] If this PR changes user-facing behaviour or APIs, I updated the relevant docs (README and/or `docs/`).
-- [ ] If this PR only touches docs, I checked links and followed the [docs style guide](docs/DOCS_STYLE.md).
+- [ ] If this PR only touches docs, I checked links and followed the [docs style guide](docs/docs_style.md).
 
 ## Review Checklist
 
