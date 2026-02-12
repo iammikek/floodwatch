@@ -12,6 +12,7 @@ use App\Services\FloodWatchService;
 use App\Services\RiskCorrelationService;
 use App\Services\WeatherService;
 use App\Support\ConfigKey;
+use App\Support\Tooling\ToolRegistry;
 use Illuminate\Support\Facades\Config;
 use ReflectionClass;
 use Tests\TestCase;
@@ -31,7 +32,8 @@ class FloodWatchServiceBoundaryTest extends TestCase
             $this->createMock(WeatherService::class),
             $this->createMock(RiverLevelService::class),
             new RiskCorrelationService,
-            $this->createMock(FloodWatchPromptBuilder::class)
+            $this->createMock(FloodWatchPromptBuilder::class),
+            app(ToolRegistry::class)
         );
     }
 
@@ -74,25 +76,23 @@ class FloodWatchServiceBoundaryTest extends TestCase
     }
 
     /**
-     * Test correlation block total size budget (iterative reduction).
+     * Test correlation data is passed through correctly.
      */
-    public function test_prepare_tool_result_for_llm_correlation_budget_boundaries(): void
+    public function test_prepare_tool_result_for_llm_correlation_returns_data(): void
     {
-        Config::set(ConfigKey::LLM_MAX_CORRELATION_CHARS, 200); // Very small budget
-
         $input = [
-            'severe_floods' => array_fill(0, 10, ['description' => 'Severe flood']),
-            'flood_warnings' => array_fill(0, 10, ['description' => 'Flood warning']),
-            'road_incidents' => array_fill(0, 10, ['road' => 'A361']),
+            'severe_floods' => [['description' => 'Severe flood']],
+            'flood_warnings' => [['description' => 'Flood warning']],
+            'road_incidents' => [['road' => 'A361']],
         ];
 
         $result = $this->callPrivateMethod('prepareToolResultForLlm', [ToolName::GetCorrelationSummary->value, $input]);
 
-        $json = json_encode($result);
-        $this->assertLessThanOrEqual(200, strlen($json));
-        // Verify it didn't just empty everything, but reduced counts
-        $this->assertCount(2, $result['severe_floods']);
-        $this->assertCount(2, $result['road_incidents']);
+        // Correlation handler returns data as-is (already succinct)
+        $this->assertArrayHasKey('severe_floods', $result);
+        $this->assertArrayHasKey('flood_warnings', $result);
+        $this->assertArrayHasKey('road_incidents', $result);
+        $this->assertCount(1, $result['severe_floods']);
     }
 
     /**
