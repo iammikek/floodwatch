@@ -1,10 +1,15 @@
 parameters:
-	ignoreErrors:
-		-
-			message: '#^Method App\\Contracts\\Tooling\\ToolHandler\:\:definition\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
-			count: 1
-			path: app/Contracts/Tooling/ToolHandler.php
+        ignoreErrors:
+                -
+                        message: '#^Static method Illuminate\\Support\\Facades\\Concurrency\:\:run\(\) invoked with 2 parameters, 1 required\.$#'
+                        identifier: staticMethod.notFound
+                        count: 1
+                        path: app/Services/FloodWatchService.php
+                -
+                        message: '#^Method App\\Contracts\\Tooling\\ToolHandler\:\:definition\(\) return type has no value type specified in iterable type array\.$#'
+                        identifier: missingType.iterableValue
+                        count: 1
+                        path: app/Contracts/Tooling/ToolHandler.php
 
 		-
 			message: '#^Method App\\Contracts\\Tooling\\ToolHandler\:\:presentForLlm\(\) return type has no value type specified in iterable type array\.$#'
@@ -29,12 +34,6 @@ parameters:
 			identifier: missingType.iterableValue
 			count: 1
 			path: app/Flood/DTOs/FloodWarning.php
-
-		-
-			message: '#^Call to static method error\(\) on an unknown class App\\Flood\\Services\\Log\.$#'
-			identifier: class.notFound
-			count: 2
-			path: app/Flood/Services/EnvironmentAgencyFloodService.php
 
 		-
 			message: '#^Method App\\Roads\\DTOs\\RoadIncident\:\:fromArray\(\) has parameter \$data with no value type specified in iterable type array\.$#'

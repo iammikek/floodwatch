@@ -37,7 +37,7 @@ final class BudgetAllocator
         $totalItems = 0;
 
         foreach ($toolPayloads as $toolName => $items) {
-            $count = is_array($items) ? count($items) : 0;
+            $count = count($items);
             $toolSizes[$toolName] = $count;
             $totalItems += $count;
         }
@@ -59,12 +59,6 @@ final class BudgetAllocator
 
         $result = [];
         foreach ($toolPayloads as $toolName => $items) {
-            if (! is_array($items)) {
-                $result[$toolName] = $items;
-
-                continue;
-            }
-
             $originalCount = count($items);
             $allowedCount = max(1, (int) floor($originalCount * $reductionRatio));
             $result[$toolName] = array_slice($items, 0, $allowedCount);
