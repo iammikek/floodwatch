@@ -2,7 +2,7 @@
 
 **Created**: 2026-02-05  
 **Status**: Brief for review  
-**Related**: [PLAN_SPLIT_DATA_FASTER_MAP.md](./PLAN_SPLIT_DATA_FASTER_MAP.md)
+**Related**: [plan_split_data_faster_map.md](./plan_split_data_faster_map.md)
 
 ## Vision
 
@@ -148,7 +148,7 @@ flowchart LR
 
 ## Integration with Split Data Plan
 
-The [Split Data Faster Map](./PLAN_SPLIT_DATA_FASTER_MAP.md) plan is complementary:
+The [Split Data Faster Map](./plan_split_data_faster_map.md) plan is complementary:
 
 | Concern | Split Data Plan | Situational Awareness |
 |---------|-----------------|------------------------|

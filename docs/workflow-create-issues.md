@@ -176,5 +176,5 @@ If an issue already exists, it will be skipped.
 
 ## Related Documentation
 
-- Full workflow documentation: [.github/workflows/README-create-issues.md](.github/workflows/README-create-issues.md)
+- Full workflow documentation: [.github/workflows/README-create-issues.md](../.github/workflows/README-create-issues.md)
 - Example templates: See PR #10

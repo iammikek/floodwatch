@@ -1,7 +1,7 @@
 # Map and Cache Architecture
 
 **Created**: 2026-02-05  
-**Related**: [PLAN_SPLIT_DATA_FASTER_MAP.md](./PLAN_SPLIT_DATA_FASTER_MAP.md), [SITUATIONAL_AWARENESS_DASHBOARD.md](./SITUATIONAL_AWARENESS_DASHBOARD.md)
+**Related**: [plan_split_data_faster_map.md](./plan_split_data_faster_map.md), [situational_awareness_dashboard.md](./situational_awareness_dashboard.md)
 
 ## Overview
 

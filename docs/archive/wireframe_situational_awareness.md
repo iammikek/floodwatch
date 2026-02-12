@@ -1,7 +1,7 @@
 # Situational Awareness Dashboard – Wireframe
 
 **Created**: 2026-02-05  
-**Related**: [SITUATIONAL_AWARENESS_DASHBOARD.md](./SITUATIONAL_AWARENESS_DASHBOARD.md)
+**Related**: [situational_awareness_dashboard.md](./situational_awareness_dashboard.md)
 
 ---
 
