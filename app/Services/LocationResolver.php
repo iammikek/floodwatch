@@ -254,7 +254,12 @@ class LocationResolver
         $county = strtolower($address['county'] ?? $address['state_district'] ?? $address['state'] ?? '');
         $city = strtolower($address['city'] ?? $address['town'] ?? $address['village'] ?? '');
 
+        $configured = array_keys(config('flood-watch.regions', []));
+
         foreach (Region::cases() as $region) {
+            if (! in_array($region->value, $configured, true)) {
+                continue;
+            }
             $needle = $region->value;
             if (str_contains($county, $needle) || str_contains($city, $needle)) {
                 return $region->value;
