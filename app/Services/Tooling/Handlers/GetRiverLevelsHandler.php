@@ -67,7 +67,7 @@ final class GetRiverLevelsHandler implements ToolHandler
     public function presentForLlm(ToolResult $result, TokenBudget $budget): array|string
     {
         if (! $result->isOk()) {
-            return [ToolResult::ERROR_KEY => $result->getError()];
+            return [ToolResult::ERROR_KEY => $result->getError(), 'getError' => $result->getError()];
         }
 
         $max = (int) config(ConfigKey::LLM_MAX_RIVER_LEVELS, 15);
