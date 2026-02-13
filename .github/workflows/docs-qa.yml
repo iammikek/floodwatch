@@ -26,8 +26,8 @@ jobs:
       - name: Link Checker
         uses: lycheeverse/lychee-action@v2
         with:
-          # Check all markdown files in docs/ and the root README/CONTRIBUTING
-          args: --config .lychee.toml --verbose --no-progress "docs/**/*.md" "README.md" "CONTRIBUTING.md"
+          # Check all markdown files in docs and root files (case-safe for contributing)
+          args: --config .lychee.toml --verbose --no-progress "docs/**/*.md" "README.md" "contributing.md" "CONTRIBUTING.md"
           fail: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -78,7 +78,8 @@ final class GetFloodForecastHandler implements ToolHandler
         $maxExtraChars = 800;
         foreach (['flood_risk_trend', 'sources'] as $key) {
             if (isset($data[$key]) && is_array($data[$key])) {
-                if (strlen(json_encode($data[$key])) > $maxExtraChars) {
+                $encoded = json_encode($data[$key]);
+                if ($encoded !== false && strlen($encoded) > $maxExtraChars) {
                     $data[$key] = LlmTrim::limitItems($data[$key], 3);
                 }
             }

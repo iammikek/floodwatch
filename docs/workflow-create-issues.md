@@ -41,25 +41,22 @@ Create `docs/pr8-unresolved-issue-1.md`:
 PR #8 Review Comment: https://github.com/iammikek/floodwatch/pull/8#discussion_r2790180053
 
 ## Status
-Unresolved
+Resolved
 
 ## Description
-`filterIncidentsByProximity()` drops any incident that lacks coordinates.
-Somerset Council roadworks don't include lat/lng, so they get silently
-excluded when proximity filtering is enabled.
+Current implementation keeps incidents without coordinates (by design) so that
+Somerset Council roadworks are retained when proximity filtering is enabled.
+No bug to file; original concern is resolved.
 
 ## Location
-- **File**: `app/Services/FloodWatchService.php`
-- **Line**: 622
+- **File**: `app/Roads/Services/RoadIncidentOrchestrator.php`
+- **Function**: `filterIncidentsByProximity`
 
 ## Impact
-- Somerset Council roadworks are being silently excluded
-- Users won't see important local road incidents
+- N/A
 
 ## Labels
-- bug
-- priority: high
-- component: road-incidents
+- status: resolved
 ```
 
 ### Step 2: Run the Workflow
