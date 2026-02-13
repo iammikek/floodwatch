@@ -7,11 +7,14 @@ use App\Models\User;
 use App\Roads\Services\NationalHighwaysService;
 use App\Roads\Services\SomersetCouncilRoadworksService;
 use App\Services\FloodWatchService;
+use GuzzleHttp\Psr7\Response as Psr7Response;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 use OpenAI\Exceptions\ErrorException;
+use OpenAI\Exceptions\RateLimitException;
+use OpenAI\Exceptions\TransporterException;
 use OpenAI\Laravel\Facades\OpenAI;
 use OpenAI\Responses\Chat\CreateResponse;
 use Psr\Http\Message\ResponseInterface;
@@ -956,6 +959,58 @@ class FloodWatchServiceTest extends TestCase
         $this->assertSame([], $result['incidents']);
         $this->assertSame([], $result['forecast']);
         $this->assertArrayHasKey('lastChecked', $result);
+    }
+
+    public function test_chat_returns_rate_limit_error_on_openai_rate_limit_exception(): void
+    {
+        Config::set('openai.api_key', 'test-key');
+        Http::fake([
+            '*environment.data.gov.uk*' => Http::response(['items' => []], 200),
+            '*fgs.metoffice.gov.uk*' => Http::response(['statement' => []], 200),
+            '*open-meteo.com*' => Http::response(['daily' => ['time' => [], 'weathercode' => [], 'temperature_2m_max' => [], 'temperature_2m_min' => [], 'precipitation_sum' => []]], 200),
+        ]);
+        $response = new Psr7Response(429, ['Retry-After' => '60']);
+        OpenAI::fake([new RateLimitException($response)]);
+        $service = app(FloodWatchService::class);
+        $result = $service->chat('Check status');
+        $this->assertTrue($result['getError']);
+        $this->assertSame('rate_limit', $result['error_key']);
+        $this->assertSame(__('flood-watch.getError.rate_limit'), $result['response']);
+    }
+
+    public function test_chat_returns_timeout_error_on_openai_error_exception(): void
+    {
+        Config::set('openai.api_key', 'test-key');
+        Http::fake([
+            '*environment.data.gov.uk*' => Http::response(['items' => []], 200),
+            '*fgs.metoffice.gov.uk*' => Http::response(['statement' => []], 200),
+            '*open-meteo.com*' => Http::response(['daily' => ['time' => [], 'weathercode' => [], 'temperature_2m_max' => [], 'temperature_2m_min' => [], 'precipitation_sum' => []]], 200),
+        ]);
+        $response = $this->createMock(ResponseInterface::class);
+        $response->method('getStatusCode')->willReturn(408);
+        OpenAI::fake([new ErrorException('Operation timed out', $response)]);
+        $service = app(FloodWatchService::class);
+        $result = $service->chat('Check status');
+        $this->assertTrue($result['getError']);
+        $this->assertSame('timeout', $result['error_key']);
+        $this->assertSame(__('flood-watch.getError.timeout'), $result['response']);
+    }
+
+    public function test_chat_returns_connection_error_on_openai_transporter_exception(): void
+    {
+        Config::set('openai.api_key', 'test-key');
+        Http::fake([
+            '*environment.data.gov.uk*' => Http::response(['items' => []], 200),
+            '*fgs.metoffice.gov.uk*' => Http::response(['statement' => []], 200),
+            '*open-meteo.com*' => Http::response(['daily' => ['time' => [], 'weathercode' => [], 'temperature_2m_max' => [], 'temperature_2m_min' => [], 'precipitation_sum' => []]], 200),
+        ]);
+        $clientException = new class('Connection refused') extends \Exception implements \Psr\Http\Client\ClientExceptionInterface {};
+        OpenAI::fake([new TransporterException($clientException)]);
+        $service = app(FloodWatchService::class);
+        $result = $service->chat('Check status');
+        $this->assertTrue($result['getError']);
+        $this->assertSame('connection', $result['error_key']);
+        $this->assertSame(__('flood-watch.getError.connection'), $result['response']);
     }
 
     public function test_chat_continues_when_tool_execution_throws_and_returns_error_to_llm(): void
