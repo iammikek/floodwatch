@@ -59,7 +59,7 @@ class LocationResolverTest extends TestCase
         $result = $resolver->resolve('');
 
         $this->assertFalse($result['valid']);
-        $this->assertSame('Please enter a postcode or location.', $result['errors']);
+        $this->assertSame(__('flood-watch.errors.invalid_location'), $result['error']);
     }
 
     public function test_returns_error_when_place_name_not_found(): void
@@ -72,7 +72,7 @@ class LocationResolverTest extends TestCase
         $result = $resolver->resolve('XyzzyNowhere');
 
         $this->assertFalse($result['valid']);
-        $this->assertStringContainsString('Location not found', $result['errors']);
+        $this->assertSame(__('flood-watch.bookmarks.unable_to_resolve'), $result['error']);
     }
 
     public function test_rejects_out_of_area_postcode(): void
@@ -82,7 +82,7 @@ class LocationResolverTest extends TestCase
 
         $this->assertTrue($result['valid']);
         $this->assertFalse($result['in_area']);
-        $this->assertStringContainsString('outside the South West', $result['errors']);
+        $this->assertSame(__('flood-watch.errors.outside_area'), $result['error']);
     }
 
     public function test_rejects_out_of_area_place_from_nominatim(): void
@@ -107,6 +107,6 @@ class LocationResolverTest extends TestCase
 
         $this->assertTrue($result['valid']);
         $this->assertFalse($result['in_area']);
-        $this->assertStringContainsString('outside the South West', $result['errors']);
+        $this->assertSame(__('flood-watch.errors.outside_area'), $result['error']);
     }
 }

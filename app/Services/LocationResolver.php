@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\Region;
 use Illuminate\Support\Facades\Http;
 use Throwable;
 
@@ -16,14 +17,6 @@ class LocationResolver
      */
     private const string SOUTH_WEST_VIEWBOX = '-5.7,50.0,-2.2,51.6';
 
-    /**
-     * County/area names that indicate South West region.
-     */
-    private const array SOUTH_WEST_INDICATORS = [
-        'somerset', 'devon', 'cornwall', 'bristol', 'dorset',
-        'north somerset', 'south gloucestershire', 'bath and north east somerset',
-    ];
-
     public function __construct(
         protected PostcodeValidator $postcodeValidator
     ) {}
@@ -31,7 +24,7 @@ class LocationResolver
     /**
      * Resolve a location string (postcode or place name) to coordinates and region.
      *
-     * @return array{valid: bool, in_area: bool, errors?: string, lat?: float, lng?: float, region?: string, outcode?: string, display_name?: string}
+     * @return array{valid: bool, in_area: bool, error?: string, lat?: float, lng?: float, region?: string, outcode?: string, display_name?: string}
      */
     public function resolve(string $input): array
     {
@@ -41,7 +34,7 @@ class LocationResolver
             return [
                 'valid' => false,
                 'in_area' => false,
-                'errors' => 'Please enter a postcode or location.',
+                'error' => __('flood-watch.errors.invalid_location'),
             ];
         }
 
@@ -56,7 +49,7 @@ class LocationResolver
     /**
      * Geocode a place name via Nominatim (OpenStreetMap).
      *
-     * @return array{valid: bool, in_area: bool, errors?: string, lat?: float, lng?: float, region?: string, display_name?: string}
+     * @return array{valid: bool, in_area: bool, error?: string, lat?: float, lng?: float, region?: string, display_name?: string}
      */
     private function geocodePlaceName(string $placeName): array
     {
@@ -80,7 +73,7 @@ class LocationResolver
                 return [
                     'valid' => false,
                     'in_area' => false,
-                    'errors' => 'Location lookup rate limit exceeded. Please wait a minute and try again.',
+                    'error' => __('flood-watch.errors.rate_limit'),
                 ];
             }
 
@@ -88,7 +81,7 @@ class LocationResolver
                 return [
                     'valid' => false,
                     'in_area' => false,
-                    'errors' => 'Unable to find that location. Try a postcode or a town name in the South West.',
+                    'error' => __('flood-watch.bookmarks.unable_to_resolve'),
                 ];
             }
 
@@ -99,7 +92,7 @@ class LocationResolver
                 return [
                     'valid' => false,
                     'in_area' => false,
-                    'errors' => 'Location not found. Try a postcode or town name (e.g. Langport, Bristol, Exeter).',
+                    'error' => __('flood-watch.bookmarks.unable_to_resolve'),
                 ];
             }
 
@@ -110,7 +103,7 @@ class LocationResolver
                 return [
                     'valid' => false,
                     'in_area' => false,
-                    'errors' => 'Unable to get coordinates for that location.',
+                    'error' => __('flood-watch.bookmarks.unable_to_resolve'),
                 ];
             }
 
@@ -123,7 +116,7 @@ class LocationResolver
                 return [
                     'valid' => true,
                     'in_area' => false,
-                    'errors' => 'That location is outside the South West. Flood Watch covers Bristol, Somerset, Devon and Cornwall.',
+                    'error' => __('flood-watch.errors.outside_area'),
                     'lat' => $lat,
                     'lng' => $lon,
                     'display_name' => $displayName,
@@ -144,7 +137,7 @@ class LocationResolver
             return [
                 'valid' => false,
                 'in_area' => false,
-                'errors' => 'Unable to look up that location. Please try again.',
+                'error' => __('flood-watch.bookmarks.unable_to_resolve'),
             ];
         }
     }
@@ -167,7 +160,7 @@ class LocationResolver
     {
         $searchable = strtolower(implode(' ', array_values($address)));
 
-        foreach (self::SOUTH_WEST_INDICATORS as $indicator) {
+        foreach (Region::indicators() as $indicator) {
             if (str_contains($searchable, $indicator)) {
                 return true;
             }
@@ -179,7 +172,7 @@ class LocationResolver
     /**
      * Reverse geocode coordinates to a location string and region.
      *
-     * @return array{valid: bool, in_area: bool, location: string, region: ?string, errors: ?string}
+     * @return array{valid: bool, in_area: bool, location: string, region: ?string, error: ?string}
      */
     public function reverseFromCoords(float $lat, float $lng): array
     {
@@ -202,7 +195,7 @@ class LocationResolver
                     'in_area' => false,
                     'location' => '',
                     'region' => null,
-                    'errors' => 'Location lookup rate limit exceeded. Please wait a minute and try again.',
+                    'error' => __('flood-watch.errors.rate_limit'),
                 ];
             }
 
@@ -212,7 +205,7 @@ class LocationResolver
                     'in_area' => false,
                     'location' => '',
                     'region' => null,
-                    'errors' => 'Could not get location. Try entering a postcode.',
+                    'error' => __('flood-watch.dashboard.gps_error'),
                 ];
             }
 
@@ -226,7 +219,7 @@ class LocationResolver
                     'in_area' => false,
                     'location' => '',
                     'region' => null,
-                    'errors' => 'Could not get location. Try entering a postcode.',
+                    'error' => __('flood-watch.dashboard.gps_error'),
                 ];
             }
 
@@ -241,7 +234,7 @@ class LocationResolver
                 'in_area' => $inArea,
                 'location' => $location,
                 'region' => $region,
-                'errors' => null,
+                'error' => null,
             ];
         } catch (Throwable $e) {
             report($e);
@@ -251,7 +244,7 @@ class LocationResolver
                 'in_area' => false,
                 'location' => '',
                 'region' => null,
-                'errors' => 'Could not get location. Try entering a postcode.',
+                'error' => __('flood-watch.dashboard.gps_error'),
             ];
         }
     }
@@ -261,20 +254,11 @@ class LocationResolver
         $county = strtolower($address['county'] ?? $address['state_district'] ?? $address['state'] ?? '');
         $city = strtolower($address['city'] ?? $address['town'] ?? $address['village'] ?? '');
 
-        if (str_contains($county, 'somerset') || str_contains($city, 'somerset')) {
-            return 'somerset';
-        }
-        if (str_contains($county, 'bristol') || str_contains($city, 'bristol')) {
-            return 'bristol';
-        }
-        if (str_contains($county, 'devon') || str_contains($city, 'devon')) {
-            return 'devon';
-        }
-        if (str_contains($county, 'cornwall') || str_contains($city, 'cornwall')) {
-            return 'cornwall';
-        }
-        if (str_contains($county, 'dorset') || str_contains($city, 'dorset')) {
-            return 'somerset';
+        foreach (Region::cases() as $region) {
+            $needle = $region->value;
+            if (str_contains($county, $needle) || str_contains($city, $needle)) {
+                return $region->value;
+            }
         }
 
         return null;

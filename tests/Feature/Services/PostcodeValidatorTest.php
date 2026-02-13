@@ -16,7 +16,7 @@ class PostcodeValidatorTest extends TestCase
 
         $this->assertFalse($result['valid']);
         $this->assertFalse($result['in_area']);
-        $this->assertStringContainsString('enter a postcode', $result['errors']);
+        $this->assertSame(__('flood-watch.errors.invalid_location'), $result['error']);
     }
 
     public function test_invalid_format_is_rejected(): void
@@ -27,7 +27,7 @@ class PostcodeValidatorTest extends TestCase
 
         $this->assertFalse($result['valid']);
         $this->assertFalse($result['in_area']);
-        $this->assertStringContainsString('Invalid postcode format', $result['errors']);
+        $this->assertSame(__('flood-watch.errors.invalid_location'), $result['error']);
     }
 
     public function test_valid_south_west_postcode_passes(): void
@@ -59,7 +59,7 @@ class PostcodeValidatorTest extends TestCase
 
         $this->assertTrue($result['valid']);
         $this->assertFalse($result['in_area']);
-        $this->assertStringContainsString('outside the South West', $result['errors']);
+        $this->assertSame(__('flood-watch.errors.outside_area'), $result['error']);
     }
 
     public function test_normalizes_postcode(): void
@@ -89,20 +89,20 @@ class PostcodeValidatorTest extends TestCase
 
     public function test_geocode_returns_error_on_rate_limit(): void
     {
-        Http::fake(['api.postcodes.io/*' => Http::response(['getError' => 'Too many requests'], 429)]);
+        Http::fake(['api.postcodes.io/*' => Http::response(['error' => 'Too many requests'], 429)]);
 
         $validator = app(PostcodeValidator::class);
 
         $result = $validator->geocode('TA10 0DP');
 
         $this->assertIsArray($result);
-        $this->assertArrayHasKey('errors', $result);
-        $this->assertStringContainsString('rate limit', $result['errors']);
+        $this->assertArrayHasKey('error', $result);
+        $this->assertSame(__('flood-watch.errors.rate_limit'), $result['error']);
     }
 
     public function test_validate_returns_error_when_geocode_rate_limited(): void
     {
-        Http::fake(['api.postcodes.io/*' => Http::response(['getError' => 'Too many requests'], 429)]);
+        Http::fake(['api.postcodes.io/*' => Http::response(['error' => 'Too many requests'], 429)]);
 
         $validator = app(PostcodeValidator::class);
 
@@ -110,6 +110,6 @@ class PostcodeValidatorTest extends TestCase
 
         $this->assertFalse($result['valid']);
         $this->assertFalse($result['in_area']);
-        $this->assertStringContainsString('rate limit', $result['errors']);
+        $this->assertSame(__('flood-watch.errors.rate_limit'), $result['error']);
     }
 }

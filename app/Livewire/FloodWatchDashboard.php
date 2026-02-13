@@ -447,14 +447,14 @@ class FloodWatchDashboard extends Component
             $validation = $locationResolver->resolve($locationTrimmed);
             if (! $validation['valid']) {
                 $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'mapBounds', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
-                $this->error = $validation['errors'] ?? __('flood-watch.errors.invalid_location');
+                $this->error = $validation['error'] ?? __('flood-watch.errors.invalid_location');
                 $this->loading = false;
 
                 return;
             }
             if (! $validation['in_area']) {
                 $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'mapBounds', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
-                $this->error = $validation['errors'] ?? __('flood-watch.errors.outside_area');
+                $this->error = $validation['error'] ?? __('flood-watch.errors.outside_area');
                 $this->loading = false;
 
                 return;
@@ -472,7 +472,7 @@ class FloodWatchDashboard extends Component
 
         if (! $result['valid']) {
             $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'mapBounds', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
-            $this->error = $result['errors'] ?? __('flood-watch.dashboard.gps_error');
+            $this->error = $result['error'] ?? __('flood-watch.dashboard.gps_error');
             $this->loading = false;
 
             return;
