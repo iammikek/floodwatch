@@ -85,6 +85,14 @@ final class BudgetAllocator
             $totalConfiguredItems += $limit;
         }
 
+        if ($budget->remaining() <= 0) {
+            foreach ($limits as $toolName => $_) {
+                $limits[$toolName] = 0;
+            }
+
+            return $limits;
+        }
+
         if ($totalConfiguredItems === 0) {
             return $limits;
         }
