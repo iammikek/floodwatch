@@ -16,7 +16,7 @@ class PostcodeValidatorTest extends TestCase
 
         $this->assertFalse($result['valid']);
         $this->assertFalse($result['in_area']);
-        $this->assertStringContainsString('enter a postcode', $result['getError']);
+        $this->assertStringContainsString('enter a postcode', $result['errors']);
     }
 
     public function test_invalid_format_is_rejected(): void
@@ -27,7 +27,7 @@ class PostcodeValidatorTest extends TestCase
 
         $this->assertFalse($result['valid']);
         $this->assertFalse($result['in_area']);
-        $this->assertStringContainsString('Invalid postcode format', $result['getError']);
+        $this->assertStringContainsString('Invalid postcode format', $result['errors']);
     }
 
     public function test_valid_south_west_postcode_passes(): void
@@ -59,7 +59,7 @@ class PostcodeValidatorTest extends TestCase
 
         $this->assertTrue($result['valid']);
         $this->assertFalse($result['in_area']);
-        $this->assertStringContainsString('outside the South West', $result['getError']);
+        $this->assertStringContainsString('outside the South West', $result['errors']);
     }
 
     public function test_normalizes_postcode(): void
@@ -96,8 +96,8 @@ class PostcodeValidatorTest extends TestCase
         $result = $validator->geocode('TA10 0DP');
 
         $this->assertIsArray($result);
-        $this->assertArrayHasKey('getError', $result);
-        $this->assertStringContainsString('rate limit', $result['getError']);
+        $this->assertArrayHasKey('errors', $result);
+        $this->assertStringContainsString('rate limit', $result['errors']);
     }
 
     public function test_validate_returns_error_when_geocode_rate_limited(): void
@@ -110,6 +110,6 @@ class PostcodeValidatorTest extends TestCase
 
         $this->assertFalse($result['valid']);
         $this->assertFalse($result['in_area']);
-        $this->assertStringContainsString('rate limit', $result['getError']);
+        $this->assertStringContainsString('rate limit', $result['errors']);
     }
 }

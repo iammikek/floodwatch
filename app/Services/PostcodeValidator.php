@@ -26,7 +26,7 @@ class PostcodeValidator
     /**
      * Validate and optionally geocode a UK postcode for the South West.
      *
-     * @return array{valid: bool, in_area: bool, getError?: string, lat?: float, lng?: float, outcode?: string, region?: string|null}
+     * @return array{valid: bool, in_area: bool, errors?: string, lat?: float, lng?: float, outcode?: string, region?: string|null}
      */
     public function validate(string $postcode, bool $geocode = true): array
     {
@@ -38,14 +38,14 @@ class PostcodeValidator
                 return [
                     'valid' => false,
                     'in_area' => false,
-                    'getError' => 'Please enter a postcode.',
+                    'errors' => 'Please enter a postcode.',
                 ];
             }
 
             return [
                 'valid' => false,
                 'in_area' => false,
-                'getError' => 'Invalid postcode format. Use a valid UK postcode (e.g. TA10 0DP).',
+                'errors' => 'Invalid postcode format. Use a valid UK postcode (e.g. TA10 0DP).',
             ];
         }
 
@@ -53,7 +53,7 @@ class PostcodeValidator
             return [
                 'valid' => true,
                 'in_area' => false,
-                'getError' => 'This postcode is outside the South West. Flood Watch covers Bristol, Somerset, Devon and Cornwall.',
+                'errors' => 'This postcode is outside the South West. Flood Watch covers Bristol, Somerset, Devon and Cornwall.',
                 'outcode' => $postcodeObj->outcode(),
             ];
         }
@@ -67,11 +67,11 @@ class PostcodeValidator
 
         if ($geocode) {
             $coords = $this->geocode($postcodeObj->normalize());
-            if ($coords !== null && isset($coords['getError'])) {
+            if ($coords !== null && isset($coords['errors'])) {
                 return [
                     'valid' => false,
                     'in_area' => false,
-                    'getError' => $coords['getError'],
+                    'errors' => $coords['errors'],
                 ];
             }
             if ($coords !== null && isset($coords['lat'], $coords['lng'])) {
@@ -98,20 +98,7 @@ class PostcodeValidator
         return (bool) preg_match(self::OUTCODE_ONLY_REGEX, $postcode);
     }
 
-    public function isInSouthWest(string $outcode): bool
-    {
-        $area = $this->extractAreaCode($outcode);
-
-        return in_array($area, self::SOUTH_WEST_AREAS, true);
-    }
-
-    /**
-     * @deprecated Use isInSouthWest instead
-     */
-    public function isInSomersetLevels(string $outcode): bool
-    {
-        return $this->isInSouthWest($outcode);
-    }
+    // Removed unused isInSouthWest(string $outcode): bool
 
     /**
      * Get the sub-region key from a postcode outcode (somerset, bristol, devon, cornwall).
@@ -133,7 +120,7 @@ class PostcodeValidator
     /**
      * Geocode postcode via postcodes.io (free, no API key).
      *
-     * @return array{lat: float, lng: float}|array{getError: string}|null
+     * @return array{lat: float, lng: float}|array{errors: string}|null
      */
     public function geocode(string $postcode): ?array
     {
@@ -144,7 +131,7 @@ class PostcodeValidator
             $response = Http::timeout(5)->get($url);
 
             if ($response->tooManyRequests()) {
-                return ['getError' => 'Postcode lookup rate limit exceeded. Please wait a minute and try again.'];
+                return ['errors' => 'Postcode lookup rate limit exceeded. Please wait a minute and try again.'];
             }
 
             if (! $response->successful()) {

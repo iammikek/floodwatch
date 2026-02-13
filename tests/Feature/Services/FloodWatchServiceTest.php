@@ -973,7 +973,7 @@ class FloodWatchServiceTest extends TestCase
         OpenAI::fake([new RateLimitException($response)]);
         $service = app(FloodWatchService::class);
         $result = $service->chat('Check status');
-        $this->assertTrue($result['getError']);
+        $this->assertTrue($result['errors']);
         $this->assertSame('rate_limit', $result['error_key']);
         $this->assertSame(__('flood-watch.errors.rate_limit'), $result['response']);
     }
@@ -991,7 +991,7 @@ class FloodWatchServiceTest extends TestCase
         OpenAI::fake([new ErrorException('Operation timed out', $response)]);
         $service = app(FloodWatchService::class);
         $result = $service->chat('Check status');
-        $this->assertTrue($result['getError']);
+        $this->assertTrue($result['errors']);
         $this->assertSame('timeout', $result['error_key']);
         $this->assertSame(__('flood-watch.errors.timeout'), $result['response']);
     }
@@ -1008,7 +1008,7 @@ class FloodWatchServiceTest extends TestCase
         OpenAI::fake([new TransporterException($clientException)]);
         $service = app(FloodWatchService::class);
         $result = $service->chat('Check status');
-        $this->assertTrue($result['getError']);
+        $this->assertTrue($result['errors']);
         $this->assertSame('connection', $result['error_key']);
         $this->assertSame(__('flood-watch.errors.connection'), $result['response']);
     }

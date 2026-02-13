@@ -447,14 +447,14 @@ class FloodWatchDashboard extends Component
             $validation = $locationResolver->resolve($locationTrimmed);
             if (! $validation['valid']) {
                 $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'mapBounds', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
-                $this->error = $validation['getError'] ?? __('flood-watch.errors.invalid_location');
+                $this->error = $validation['errors'] ?? __('flood-watch.errors.invalid_location');
                 $this->loading = false;
 
                 return;
             }
             if (! $validation['in_area']) {
                 $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'mapBounds', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
-                $this->error = $validation['getError'] ?? __('flood-watch.errors.outside_area');
+                $this->error = $validation['errors'] ?? __('flood-watch.errors.outside_area');
                 $this->loading = false;
 
                 return;
@@ -472,7 +472,7 @@ class FloodWatchDashboard extends Component
 
         if (! $result['valid']) {
             $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'mapBounds', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
-            $this->error = $result['getError'] ?? __('flood-watch.dashboard.gps_error');
+            $this->error = $result['errors'] ?? __('flood-watch.dashboard.gps_error');
             $this->loading = false;
 
             return;
@@ -543,7 +543,7 @@ class FloodWatchDashboard extends Component
             $onProgress = fn (string $status) => $streamStatus($status);
             $result = $assistant->chat($message, [], $cacheKey, $userLat, $userLng, $region, auth()->id(), $onProgress);
 
-            if (! empty($result['getError'])) {
+            if (! empty($result['errors'])) {
                 $this->error = $result['response'];
                 if (($result['error_key'] ?? '') === 'rate_limit') {
                     $this->logOpenAiRateLimit(new \RuntimeException('Rate limit returned from service'));

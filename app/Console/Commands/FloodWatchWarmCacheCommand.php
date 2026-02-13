@@ -36,7 +36,7 @@ class FloodWatchWarmCacheCommand extends Command
         foreach ($locationInputs as $location) {
             $result = $resolver->resolve($location);
             if (! ($result['valid'] ?? false) || ! ($result['in_area'] ?? false)) {
-                $this->warn("  Skipping {$location}: ".($result['getError'] ?? 'invalid or outside South West'));
+                $this->warn("  Skipping {$location}: ".($result['errors'] ?? 'invalid or outside South West'));
 
                 continue;
             }
