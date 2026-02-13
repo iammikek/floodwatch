@@ -68,7 +68,7 @@ final class GetCorrelationSummaryHandler implements ToolHandler
     public function presentForLlm(ToolResult $result, TokenBudget $budget): array|string
     {
         if (! $result->isOk()) {
-            return [ToolResult::ERROR_KEY => $result->getError(), 'getError' => $result->getError()];
+            return [ToolResult::ERROR_KEY => $result->getError()];
         }
 
         // Correlation output is already succinct and LLM-facing; return as-is.

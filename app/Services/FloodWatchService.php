@@ -290,13 +290,13 @@ class FloodWatchService
                     $result = [ToolResult::ERROR_KEY => __('flood-watch.errors.tool_failed'), 'code' => 'tool_error'];
                 }
 
-                if ($toolName === ToolName::GetFloodData->value && is_array($result) && ! isset($result[ToolResult::ERROR_KEY]) && ! isset($result['getError'])) {
+                if ($toolName === ToolName::GetFloodData->value && is_array($result) && ! isset($result[ToolResult::ERROR_KEY])) {
                     $floods = $result;
                 }
-                if ($toolName === ToolName::GetHighwaysIncidents->value && is_array($result) && ! isset($result[ToolResult::ERROR_KEY]) && ! isset($result['getError'])) {
+                if ($toolName === ToolName::GetHighwaysIncidents->value && is_array($result) && ! isset($result[ToolResult::ERROR_KEY])) {
                     $incidents = $result;
                 }
-                if ($toolName === ToolName::GetFloodForecast->value && is_array($result) && ! isset($result[ToolResult::ERROR_KEY]) && ! isset($result['getError'])) {
+                if ($toolName === ToolName::GetFloodForecast->value && is_array($result) && ! isset($result[ToolResult::ERROR_KEY])) {
                     $forecast = $result;
                 }
 
@@ -475,7 +475,7 @@ class FloodWatchService
             try {
                 $handler = $this->toolRegistry->get(ToolName::from($toolName));
                 $toolResult = is_array($result)
-                    ? ((isset($result[ToolResult::ERROR_KEY]) || isset($result['getError'])) ? ToolResult::error((string) ($result[ToolResult::ERROR_KEY] ?? $result['getError'])) : ToolResult::ok($result))
+                    ? (isset($result[ToolResult::ERROR_KEY]) ? ToolResult::error((string) $result[ToolResult::ERROR_KEY]) : ToolResult::ok($result))
                     : ToolResult::ok($result);
 
                 return $handler->presentForLlm($toolResult, new TokenBudget(0));
