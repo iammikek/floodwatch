@@ -460,9 +460,9 @@ class FloodWatchService
             $ctx = \App\Support\Tooling\ToolContext::fromArray($context);
             $result = $handler->execute($args, $ctx);
 
-            return $result->isOk() ? ($result->data() ?? []) : ['getError' => $result->error() ?? 'Unknown getError'];
+            return $result->isOk() ? ($result->data() ?? []) : ['getError' => $result->getError() ?? __('flood-watch.getError.tool_execution', ['name' => $name])];
         } catch (\Throwable $e) {
-            return ['getError' => "Unknown tool or execution getError: {$name}"];
+            return ['getError' => __('flood-watch.getError.tool_execution', ['name' => $name])];
         }
     }
 

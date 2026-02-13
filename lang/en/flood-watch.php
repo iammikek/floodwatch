@@ -29,6 +29,7 @@ return [
         'api_error' => 'The AI service returned an error. Please try again in a moment.',
         'unexpected' => 'Something went wrong while contacting the AI service. Please try again.',
         'tool_failed' => 'Tool execution failed.',
+        'tool_execution' => 'Unknown tool or execution error: :name',
     ],
     'message' => [
         'check_status_default' => 'Check flood and road status for the South West (Bristol, Somerset, Devon, Cornwall).',
