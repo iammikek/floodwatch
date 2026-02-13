@@ -173,7 +173,7 @@ Extend RouteCheck verdict with predictive/hydrological context. See detailed spe
   - A.2 Elevation upgrades verdict to “At risk” when otherwise clear.
   - A.3 Config and tests for river proximity and upgrade flag.
   - B.3 Muchelney rule via RiskCorrelationService when route is relevant.
-  - B.1 Flood‑prone polygons (North Moor, King’s Sedgemoor) as config; intersect with route.
+  - B.1 Flood-prone polygons (North Moor, King’s Sedgemoor) as config; intersect with route.
 - Config additions
   - `route_check.river_proximity_km` (default 0.5)
   - `route_check.elevated_river_upgrades_verdict` (default true)
