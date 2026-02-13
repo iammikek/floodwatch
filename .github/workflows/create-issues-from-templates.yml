@@ -49,8 +49,8 @@ jobs:
             echo "📄 Processing: $template_file"
 
             # Try to extract title and labels from YAML front matter (between --- lines)
-            fm_title=$(awk 'BEGIN{in=0} /^---[[:space:]]*$/{if(in==0){in=1;next}else{in=2}} in==1 && /^title:[[:space:]]*/{sub(/^title:[[:space:]]*/,""); print; exit}' "$template_file" || true)
-            fm_labels=$(awk 'BEGIN{in=0} /^---[[:space:]]*$/{if(in==0){in=1;next}else{in=2}} in==1 && /^labels:[[:space:]]*/{sub(/^labels:[[:space:]]*/,""); print; exit}' "$template_file" || true)
+            fm_title=$(awk 'BEGIN{fm=0} /^---[[:space:]]*$/{if(fm==0){fm=1;next}else{fm=2}} (fm==1) && /^title:[[:space:]]*/{sub(/^title:[[:space:]]*/,""); print; exit}' "$template_file" || true)
+            fm_labels=$(awk 'BEGIN{fm=0} /^---[[:space:]]*$/{if(fm==0){fm=1;next}else{fm=2}} (fm==1) && /^labels:[[:space:]]*/{sub(/^labels:[[:space:]]*/,""); print; exit}' "$template_file" || true)
 
             # Normalize front matter labels (remove spaces after commas)
             if [ -n "$fm_labels" ]; then
@@ -95,7 +95,7 @@ jobs:
             fi
 
             # Read the body, stripping YAML front matter if present
-            body=$(awk 'BEGIN{in=0} {if(NR==1 && $0 ~ /^---[[:space:]]*$/){in=1; next} if(in==1){if($0 ~ /^---[[:space:]]*$/){in=0; next} else {next}} print}' "$template_file")
+            body=$(awk 'BEGIN{fm=0} {if(NR==1 && $0 ~ /^---[[:space:]]*$/){fm=1; next} if(fm==1){if($0 ~ /^---[[:space:]]*$/){fm=0; next} else {next}} print}' "$template_file")
 
             if [ -z "$title" ]; then
               echo "⚠️  Warning: Could not extract title from $template_file, skipping..."
