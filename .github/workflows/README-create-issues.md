@@ -19,7 +19,7 @@ The workflow can be triggered manually from the GitHub Actions tab:
 2. Select **"Create Issues from Templates"** from the workflow list
 3. Click **"Run workflow"**
 4. Configure the inputs:
-   - **Template Pattern**: File pattern to match template files (default: `docs/*-issue-*.md`)
+   - **Template Pattern**: File pattern to match template files (default: `.github/ISSUE_TEMPLATE/*.md`)
    - **Dry Run**: Enable to preview what would be created without actually creating issues
 
 ### Example: PR #10 Use Case
@@ -33,7 +33,23 @@ After creating issue templates like `docs/pr8-unresolved-issue-1.md`:
 
 ## Template Format
 
-Template files should follow this format:
+Template files can be either:
+- Markdown templates in `.github/ISSUE_TEMPLATE/` with YAML front matter (recommended)
+- Markdown files elsewhere following the headings format below
+
+### ISSUE_TEMPLATE (front matter) example
+
+```markdown
+---
+title: "Somerset incidents filtered out due to missing coordinates"
+labels: bug, priority:medium
+---
+
+## Description
+...
+```
+
+### Headings-based template example
 
 ```markdown
 # Issue: Your Issue Title Here
@@ -65,7 +81,7 @@ Detailed description of the issue
 
 - **Title**: The workflow extracts the title from the first `# Issue:` heading
   - If no `# Issue:` heading is found, it uses the first `#` heading
-- **Labels**: Listed under `## Labels` section as a bulleted list
+- **Labels**: Either YAML front matter `labels: bug, priority:high` or listed under `## Labels` section as a bulleted list
 
 ### Example Templates
 
@@ -80,12 +96,13 @@ See the following examples from PR #10:
 - **Flexible Pattern Matching**: Use glob patterns to select specific template files
 - **Label Support**: Automatically applies labels specified in the template
 - **Full Body Preservation**: The entire template file becomes the issue body, maintaining formatting
+  - YAML front matter is stripped from the body automatically
 
 ## Workflow Inputs
 
 | Input | Description | Default | Required |
 |-------|-------------|---------|----------|
-| `template_pattern` | File glob pattern to match template files | `docs/*-issue-*.md` | No |
+| `template_pattern` | File glob pattern to match template files | `.github/ISSUE_TEMPLATE/*.md` | No |
 | `dry_run` | Preview mode - shows what would be created without creating issues | `false` | No |
 
 ## Permissions
