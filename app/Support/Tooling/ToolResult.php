@@ -6,6 +6,8 @@ namespace App\Support\Tooling;
 
 final class ToolResult
 {
+    public const ERROR_KEY = 'errors';
+
     private function __construct(
         private bool $ok,
         private mixed $data,

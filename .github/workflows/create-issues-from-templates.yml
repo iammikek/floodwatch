@@ -114,20 +114,40 @@ jobs:
               continue
             fi
 
+            # Filter labels to those that exist in the repo
+            filtered_labels=""
+            if [ -n "$labels" ]; then
+              # Get existing label names
+              existing_labels=$(gh label list --repo ${{ github.repository }} --json name --jq '.[].name' 2>/dev/null || true)
+              IFS=',' read -r -a label_arr <<< "$labels"
+              for lbl in "${label_arr[@]}"; do
+                lbl_trimmed=$(echo "$lbl" | sed 's/^ *//;s/ *$//')
+                if echo "$existing_labels" | grep -Fxq "$lbl_trimmed"; then
+                  if [ -z "$filtered_labels" ]; then
+                    filtered_labels="$lbl_trimmed"
+                  else
+                    filtered_labels="$filtered_labels,$lbl_trimmed"
+                  fi
+                else
+                  echo "  ⚠️  Skipping non-existent label: $lbl_trimmed"
+                fi
+              done
+            fi
+
             if [ "${{ inputs.dry_run }}" == "true" ]; then
               echo "  🏃 DRY RUN - Would create issue with:"
               echo "     Title: $title"
-              echo "     Labels: ${labels:-none}"
+              echo "     Labels: ${filtered_labels:-none}"
               echo "     Body length: $(echo "$body" | wc -c) characters"
             else
               echo "  ✅ Creating issue..."
 
               # Create the issue
-              if [ -n "$labels" ]; then
+              if [ -n "$filtered_labels" ]; then
                 issue_url=$(gh issue create \
                   --title "$title" \
                   --body "$body" \
-                  --label "$labels" \
+                  --label "$filtered_labels" \
                   --repo ${{ github.repository }})
               else
                 issue_url=$(gh issue create \

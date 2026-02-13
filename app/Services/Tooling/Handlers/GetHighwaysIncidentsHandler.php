@@ -58,7 +58,7 @@ final class GetHighwaysIncidentsHandler implements ToolHandler
     public function presentForLlm(ToolResult $result, TokenBudget $budget): array|string
     {
         if (! $result->isOk()) {
-            return ['getError' => $result->getError()];
+            return [ToolResult::ERROR_KEY => $result->getError()];
         }
 
         return LlmTrim::limitItems($result->data(), (int) config(ConfigKey::LLM_MAX_INCIDENTS, 25));
