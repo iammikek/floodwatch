@@ -161,16 +161,16 @@ class FloodWatchService
             } catch (OpenAIRateLimitException $e) {
                 Log::error('FloodWatch OpenAI rate limit', [
                     'provider' => 'openai',
-                    'getError' => $e->getMessage(),
+                    'error' => $e->getMessage(),
                     'iteration' => $iteration + 1,
                     'region' => $region,
                 ]);
 
                 return $emptyResult(__('flood-watch.errors.rate_limit'), now()->toIso8601String(), 'rate_limit');
             } catch (OpenAIErrorException $e) {
-                Log::error('FloodWatch OpenAI API getError', [
+                Log::error('FloodWatch OpenAI API error', [
                     'provider' => 'openai',
-                    'getError' => $e->getMessage(),
+                    'error' => $e->getMessage(),
                     'status_code' => $e->getStatusCode(),
                     'iteration' => $iteration + 1,
                     'region' => $region,
@@ -190,9 +190,9 @@ class FloodWatchService
 
                 return $emptyResult(__($messageKey), now()->toIso8601String(), $errorKey);
             } catch (OpenAITransporterException $e) {
-                Log::error('FloodWatch OpenAI transport getError', [
+                Log::error('FloodWatch OpenAI transport error', [
                     'provider' => 'openai',
-                    'getError' => $e->getMessage(),
+                    'error' => $e->getMessage(),
                     'iteration' => $iteration + 1,
                     'region' => $region,
                 ]);
@@ -202,9 +202,9 @@ class FloodWatchService
 
                 return $emptyResult($msg, now()->toIso8601String(), $errorKey);
             } catch (Throwable $e) {
-                Log::error('FloodWatch unexpected getError during LLM call', [
+                Log::error('FloodWatch unexpected error during LLM call', [
                     'provider' => 'openai',
-                    'getError' => $e->getMessage(),
+                    'error' => $e->getMessage(),
                     'iteration' => $iteration + 1,
                     'region' => $region,
                 ]);
@@ -285,7 +285,7 @@ class FloodWatchService
                         'region' => $region,
                         'lat' => $lat,
                         'lng' => $lng,
-                        'getError' => $e->getMessage(),
+                        'error' => $e->getMessage(),
                     ]);
                     $result = [ToolResult::ERROR_KEY => __('flood-watch.errors.tool_failed'), 'code' => 'tool_error'];
                 }

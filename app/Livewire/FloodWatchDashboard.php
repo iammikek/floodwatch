@@ -750,7 +750,7 @@ class FloodWatchDashboard extends Component
         if (str_contains(strtolower($message), 'rate limit') || str_contains(strtolower($message), '429')) {
             return __('flood-watch.errors.rate_limit');
         }
-        if (str_contains($message, 'timed out') || str_contains($message, 'cURL getError 28') || str_contains($message, 'Operation timed out')) {
+        if (str_contains($message, 'timed out') || str_contains($message, 'cURL error 28') || str_contains($message, 'Operation timed out')) {
             return __('flood-watch.errors.timeout');
         }
         if (str_contains($message, 'Connection') && (str_contains($message, 'refused') || str_contains($message, 'reset'))) {

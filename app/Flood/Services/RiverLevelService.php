@@ -82,7 +82,7 @@ class RiverLevelService
             Log::error('FloodWatch EA stations fetch failed', [
                 'provider' => 'environment_agency',
                 'url' => $url,
-                'getError' => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
             throw $e;
         }

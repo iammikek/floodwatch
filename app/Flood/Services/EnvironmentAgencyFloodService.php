@@ -77,7 +77,7 @@ class EnvironmentAgencyFloodService
             Log::error('FloodWatch EA floods fetch failed', [
                 'provider' => 'environment_agency',
                 'url' => $url,
-                'getError' => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
             throw $e;
         }
@@ -133,7 +133,7 @@ class EnvironmentAgencyFloodService
             Log::error('FloodWatch EA centroids fetch failed', [
                 'provider' => 'environment_agency',
                 'url' => $url,
-                'getError' => $e->getMessage(),
+                'error' => $e->getMessage(),
             ]);
             throw $e;
         }
