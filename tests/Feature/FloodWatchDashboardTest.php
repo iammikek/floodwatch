@@ -744,7 +744,7 @@ class FloodWatchDashboardTest extends TestCase
             ->assertSet('assistantResponse', 'First search OK.');
 
         $component->call('search')
-            ->assertSet('error', __('flood-watch.getError.guest_rate_limit', ['action' => 'request']))
+            ->assertSet('error', __('flood-watch.errors.guest_rate_limit', ['action' => 'request']))
             ->assertSet('retryAfterTimestamp', fn ($v) => $v !== null && $v > time());
     }
 

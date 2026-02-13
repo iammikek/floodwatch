@@ -9,7 +9,6 @@ use App\Support\Tooling\ToolArguments;
 use App\Support\Tooling\ToolContext;
 use App\Support\Tooling\ToolResult;
 use Illuminate\Support\Facades\Config;
-use Mockery;
 
 it('executes and returns incidents via orchestrator using context', function () {
     $orch = Mockery::mock(RoadIncidentOrchestrator::class);

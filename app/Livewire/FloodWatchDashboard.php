@@ -518,7 +518,7 @@ class FloodWatchDashboard extends Component
 
             if (RateLimiter::tooManyAttempts($key, 1)) {
                 $seconds = RateLimiter::availableIn($key);
-                $this->error = __('flood-watch.getError.guest_rate_limit', ['action' => 'request']);
+                $this->error = __('flood-watch.errors.guest_rate_limit', ['action' => 'request']);
                 $this->retryAfterTimestamp = time() + $seconds;
                 $this->loading = false;
 

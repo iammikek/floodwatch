@@ -6,7 +6,6 @@ use App\Roads\Services\RoadIncidentOrchestrator;
 use App\Services\FloodWatchService;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
-use Mockery;
 use OpenAI\Laravel\Facades\OpenAI;
 use OpenAI\Responses\Chat\CreateResponse;
 

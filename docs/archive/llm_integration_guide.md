@@ -297,7 +297,7 @@ try {
         'getError' => $e->getMessage(),
     ]);
     // Generic message to LLM only; detailed message stays in logs to avoid leaking internals
-    $result = ['getError' => __('flood-watch.getError.tool_failed'), 'code' => 'tool_error'];
+    $result = ['getError' => __('flood-watch.errors.tool_failed'), 'code' => 'tool_error'];
 }
 ```
 

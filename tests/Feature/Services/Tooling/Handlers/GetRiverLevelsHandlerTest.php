@@ -9,7 +9,6 @@ use App\Support\Tooling\ToolArguments;
 use App\Support\Tooling\ToolContext;
 use App\Support\Tooling\ToolResult;
 use Illuminate\Support\Facades\Config;
-use Mockery;
 
 it('executes and returns river levels via service', function () {
     $svc = Mockery::mock(RiverLevelService::class);
