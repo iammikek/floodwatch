@@ -101,7 +101,8 @@ final class BudgetAllocator
         $reductionRatio = $availableChars / $estimatedTotalChars;
 
         foreach ($limits as $toolName => $limit) {
-            $limits[$toolName] = max(1, (int) floor($limit * $reductionRatio));
+            $reduced = (int) floor($limit * $reductionRatio);
+            $limits[$toolName] = $limit === 0 ? 0 : max(1, $reduced);
         }
 
         return $limits;

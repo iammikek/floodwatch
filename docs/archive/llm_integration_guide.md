@@ -249,7 +249,7 @@ try {
     $response = OpenAI::chat()->create($payload);
 } catch (\OpenAI\Exceptions\RateLimitException $e) {
     Log::error('FloodWatch OpenAI rate limit', ['getError' => $e->getMessage(), 'iteration' => $iteration + 1]);
-    return $emptyResult(__('flood-watch.getError.rate_limit'), now()->toIso8601String(), 'rate_limit');
+    return $emptyResult(__('flood-watch.errors.rate_limit'), now()->toIso8601String(), 'rate_limit');
 } catch (\OpenAI\Exceptions\ErrorException $e) {
     Log::error('FloodWatch OpenAI API getError', [
         'getError' => $e->getMessage(),
@@ -258,9 +258,9 @@ try {
     ]);
     $status = $e->getStatusCode();
     $messageKey = match ($status) {
-        429 => 'flood-watch.getError.rate_limit',
-        408, 504 => 'flood-watch.getError.timeout',
-        default => 'flood-watch.getError.api_error',
+        429 => 'flood-watch.errors.rate_limit',
+        408, 504 => 'flood-watch.errors.timeout',
+        default => 'flood-watch.errors.api_error',
     };
     $errorKey = match ($status) {
         429 => 'rate_limit',

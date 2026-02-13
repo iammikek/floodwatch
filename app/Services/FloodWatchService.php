@@ -70,7 +70,6 @@ class FloodWatchService
                 'lastChecked' => $lastChecked ?? now()->toIso8601String(),
             ];
             if ($errorKey !== null) {
-                $result[ToolResult::ERROR_KEY] = true;
                 $result['getError'] = true;
                 $result['error_key'] = $errorKey;
             }
