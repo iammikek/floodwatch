@@ -18,7 +18,7 @@ test('config flood-watch warm_cache_locations exists with all regions', function
     $locations = config('flood-watch.warm_cache_locations');
 
     expect($locations)->toBeArray()
-        ->and($locations)->toHaveKeys(['somerset', 'bristol', 'devon', 'cornwall'])
+        ->and($locations)->toHaveKeys(['somerset', 'bristol', 'devon', 'cornwall', 'dorset'])
         ->and($locations['somerset'])->toBe('Langport');
 });
 

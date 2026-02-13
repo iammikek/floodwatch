@@ -353,7 +353,7 @@ return [
             'prompt' => '**Cornwall focus**: Key routes A30, A38. Coastal and river flood risk, especially west Cornwall. Cross-reference flood warnings with A30 incidents.',
         ],
         'dorset' => [
-            'areas' => ['DT'],
+            'areas' => ['DT', 'BH'],
             'prompt' => '**Dorset focus**: Key routes A35, A31. Coastal risk around Weymouth, Portland and Chesil Beach. Cross-reference flood warnings with A35/A31 incidents.',
         ],
     ],

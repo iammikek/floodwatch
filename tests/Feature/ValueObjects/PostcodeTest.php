@@ -56,4 +56,22 @@ class PostcodeTest extends TestCase
         $this->assertNotNull($postcode);
         $this->assertFalse($postcode->isInSouthWest());
     }
+
+    public function test_bh_postcode_maps_to_dorset_region(): void
+    {
+        $postcode = Postcode::tryFrom('BH11 8SS');
+        $this->assertNotNull($postcode);
+        $this->assertSame('BH', $postcode->areaCode());
+        $this->assertTrue($postcode->isInSouthWest());
+        $this->assertSame(Region::Dorset, $postcode->region());
+    }
+
+    public function test_dt_postcode_maps_to_dorset_region(): void
+    {
+        $postcode = Postcode::tryFrom('DT4 7BG');
+        $this->assertNotNull($postcode);
+        $this->assertSame('DT', $postcode->areaCode());
+        $this->assertTrue($postcode->isInSouthWest());
+        $this->assertSame(Region::Dorset, $postcode->region());
+    }
 }

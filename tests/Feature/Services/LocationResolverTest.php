@@ -53,6 +53,32 @@ class LocationResolverTest extends TestCase
         $this->assertStringContainsString('Langport', $result['display_name']);
     }
 
+    public function test_resolves_place_name_in_dorset(): void
+    {
+        Http::fake([
+            'nominatim.openstreetmap.org/*' => Http::response([
+                [
+                    'lat' => '50.716',
+                    'lon' => '-2.438',
+                    'display_name' => 'Dorchester, Dorset, England, United Kingdom',
+                    'address' => [
+                        'city' => 'Dorchester',
+                        'county' => 'Dorset',
+                        'country' => 'United Kingdom',
+                    ],
+                ],
+            ], 200),
+        ]);
+
+        $resolver = app(LocationResolver::class);
+        $result = $resolver->resolve('Dorchester');
+
+        $this->assertTrue($result['valid']);
+        $this->assertTrue($result['in_area']);
+        $this->assertSame('dorset', $result['region']);
+        $this->assertStringContainsString('Dorset', $result['display_name']);
+    }
+
     public function test_returns_error_for_empty_input(): void
     {
         $resolver = app(LocationResolver::class);

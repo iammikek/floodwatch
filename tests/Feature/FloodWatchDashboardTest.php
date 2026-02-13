@@ -161,7 +161,7 @@ class FloodWatchDashboardTest extends TestCase
 
         Http::fake(function ($request) {
             if (str_contains($request->url(), 'api.postcodes.io')) {
-                return Http::response(['status' => 404, 'getError' => 'Postcode not found'], 404);
+                return Http::response(['status' => 404, 'error' => 'Postcode not found'], 404);
             }
             if (str_contains($request->url(), 'nominatim.openstreetmap.org')) {
                 return Http::response([], 200);
@@ -189,7 +189,7 @@ class FloodWatchDashboardTest extends TestCase
 
         Http::fake(function ($request) {
             if (str_contains($request->url(), 'api.postcodes.io')) {
-                return Http::response(['status' => 404, 'getError' => 'Postcode not found'], 404);
+                return Http::response(['status' => 404, 'error' => 'Postcode not found'], 404);
             }
             if (str_contains($request->url(), 'nominatim.openstreetmap.org')) {
                 return Http::response([], 200);

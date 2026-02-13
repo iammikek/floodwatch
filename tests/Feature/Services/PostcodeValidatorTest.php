@@ -51,6 +51,29 @@ class PostcodeValidatorTest extends TestCase
         $this->assertSame(-2.8318, $result['lng']);
     }
 
+    public function test_valid_dorset_postcode_passes_and_sets_region(): void
+    {
+        Http::fake([
+            'api.postcodes.io/*' => Http::response([
+                'result' => [
+                    'latitude' => 50.7200,
+                    'longitude' => -1.8800,
+                    'outcode' => 'BH11',
+                ],
+            ], 200),
+        ]);
+
+        $validator = app(PostcodeValidator::class);
+
+        $result = $validator->validate('BH11 8SS', geocode: true);
+
+        $this->assertTrue($result['valid']);
+        $this->assertTrue($result['in_area']);
+        $this->assertSame('dorset', $result['region']);
+        $this->assertSame(50.7200, $result['lat']);
+        $this->assertSame(-1.8800, $result['lng']);
+    }
+
     public function test_out_of_area_postcode_is_rejected(): void
     {
         $validator = app(PostcodeValidator::class);

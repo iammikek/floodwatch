@@ -35,7 +35,7 @@ class RouteCheckServiceTest extends TestCase
     public function test_returns_error_when_from_invalid(): void
     {
         Http::fake([
-            'api.postcodes.io/*' => Http::response(['status' => 404, 'getError' => 'Postcode not found'], 404),
+            'api.postcodes.io/*' => Http::response(['status' => 404, 'error' => 'Postcode not found'], 404),
             'nominatim.openstreetmap.org/*' => Http::response([], 200),
         ]);
 
