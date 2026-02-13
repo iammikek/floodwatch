@@ -381,8 +381,8 @@ class FloodWatchService
     }
 
     /**
-     * @param  array{response: string, floods: array, incidents: array, forecast: array, weather: array}  $result
-     * @return array{response: string, floods: array, incidents: array, forecast: array, weather: array, lastChecked: string}
+     * @param  array{response: string, floods: array, incidents: array, forecast: array, weather: array, riverLevels?: array, errors?: bool, error_key?: string}  $result
+     * @return array{response: string, floods: array, incidents: array, forecast: array, weather: array, riverLevels?: array, lastChecked: string, errors?: bool, error_key?: string}
      */
     private function storeAndReturn(string $cacheKey, array $result): array
     {
@@ -632,7 +632,7 @@ class FloodWatchService
 
             RecordLlmRequestJob::dispatch($payload);
         } catch (Throwable $e) {
-            Log::warning('FloodWatch failed to record LLM request', ['getError' => $e->getMessage()]);
+            Log::warning('FloodWatch failed to record LLM request', ['error' => $e->getMessage()]);
         }
     }
 }
