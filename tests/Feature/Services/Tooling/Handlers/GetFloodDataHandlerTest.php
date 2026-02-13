@@ -62,5 +62,5 @@ it('presents error shape when ToolResult is error', function () {
 
     $presented = $handler->presentForLlm(ToolResult::error('Service unavailable'), new TokenBudget(0));
 
-    expect($presented)->toBeArray()->toHaveKey('getError', 'Service unavailable');
+    expect($presented)->toBeArray()->toHaveKey(ToolResult::ERROR_KEY, 'Service unavailable');
 });

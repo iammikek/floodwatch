@@ -31,5 +31,5 @@ it('presents correlation result as-is and surfaces errors', function () {
     expect($ok)->toBeArray()->toHaveKey('summary', 'ok');
 
     $err = $handler->presentForLlm(ToolResult::error('Service unavailable'), new TokenBudget(0));
-    expect($err)->toBeArray()->toHaveKey('getError', 'Service unavailable');
+    expect($err)->toBeArray()->toHaveKey(ToolResult::ERROR_KEY, 'Service unavailable');
 });
