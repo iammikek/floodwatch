@@ -16,5 +16,4 @@ parameters:
     ignoreErrors:
         # Baseline - add specific ignores here as needed
 
-    excludePaths:
-        - app/Services/Tooling/Handlers/*Test.php
+    reportUnmatchedIgnoredErrors: false
