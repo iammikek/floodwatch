@@ -14,7 +14,7 @@ return [
         'correlating' => 'Correlating flood and road data…',
         'loading' => 'Loading data…',
     ],
-    'getError' => [
+    'errors' => [
         'no_response' => 'Unable to get a response from the assistant.',
         'no_content' => 'No response generated.',
         'no_api_key' => 'Flood Watch is not configured with an OpenAI API key. Please add OPENAI_API_KEY to your environment.',

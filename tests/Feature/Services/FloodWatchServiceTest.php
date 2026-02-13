@@ -910,7 +910,7 @@ class FloodWatchServiceTest extends TestCase
         $service = app(FloodWatchService::class);
         $result = $service->chat('Check status');
 
-        $this->assertSame(__('flood-watch.getError.api_error'), $result['response']);
+        $this->assertSame(__('flood-watch.errors.api_error'), $result['response']);
         $this->assertSame([], $result['floods']);
         $this->assertSame([], $result['incidents']);
         $this->assertSame([], $result['forecast']);
@@ -932,7 +932,7 @@ class FloodWatchServiceTest extends TestCase
         $service = app(FloodWatchService::class);
         $result = $service->chat('Check status');
 
-        $this->assertSame(__('flood-watch.getError.connection'), $result['response']);
+        $this->assertSame(__('flood-watch.errors.connection'), $result['response']);
         $this->assertSame([], $result['floods']);
         $this->assertSame([], $result['incidents']);
         $this->assertSame([], $result['forecast']);
@@ -954,7 +954,7 @@ class FloodWatchServiceTest extends TestCase
         $service = app(FloodWatchService::class);
         $result = $service->chat('Check status');
 
-        $this->assertSame(__('flood-watch.getError.unexpected'), $result['response']);
+        $this->assertSame(__('flood-watch.errors.unexpected'), $result['response']);
         $this->assertSame([], $result['floods']);
         $this->assertSame([], $result['incidents']);
         $this->assertSame([], $result['forecast']);
@@ -975,7 +975,7 @@ class FloodWatchServiceTest extends TestCase
         $result = $service->chat('Check status');
         $this->assertTrue($result['getError']);
         $this->assertSame('rate_limit', $result['error_key']);
-        $this->assertSame(__('flood-watch.getError.rate_limit'), $result['response']);
+        $this->assertSame(__('flood-watch.errors.rate_limit'), $result['response']);
     }
 
     public function test_chat_returns_timeout_error_on_openai_error_exception(): void
@@ -993,7 +993,7 @@ class FloodWatchServiceTest extends TestCase
         $result = $service->chat('Check status');
         $this->assertTrue($result['getError']);
         $this->assertSame('timeout', $result['error_key']);
-        $this->assertSame(__('flood-watch.getError.timeout'), $result['response']);
+        $this->assertSame(__('flood-watch.errors.timeout'), $result['response']);
     }
 
     public function test_chat_returns_connection_error_on_openai_transporter_exception(): void
@@ -1010,7 +1010,7 @@ class FloodWatchServiceTest extends TestCase
         $result = $service->chat('Check status');
         $this->assertTrue($result['getError']);
         $this->assertSame('connection', $result['error_key']);
-        $this->assertSame(__('flood-watch.getError.connection'), $result['response']);
+        $this->assertSame(__('flood-watch.errors.connection'), $result['response']);
     }
 
     public function test_chat_continues_when_tool_execution_throws_and_returns_error_to_llm(): void

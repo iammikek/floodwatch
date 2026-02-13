@@ -78,7 +78,7 @@ class FloodWatchService
         };
 
         if (empty(config('openai.api_key'))) {
-            return $emptyResult(__('flood-watch.getError.no_api_key'));
+            return $emptyResult(__('flood-watch.errors.no_api_key'));
         }
 
         $store = $this->resolveCacheStore();
@@ -166,7 +166,7 @@ class FloodWatchService
                     'region' => $region,
                 ]);
 
-                return $emptyResult(__('flood-watch.getError.rate_limit'), now()->toIso8601String(), 'rate_limit');
+                return $emptyResult(__('flood-watch.errors.rate_limit'), now()->toIso8601String(), 'rate_limit');
             } catch (OpenAIErrorException $e) {
                 Log::error('FloodWatch OpenAI API getError', [
                     'provider' => 'openai',
@@ -178,9 +178,9 @@ class FloodWatchService
 
                 $status = $e->getStatusCode();
                 $messageKey = match ($status) {
-                    429 => 'flood-watch.getError.rate_limit',
-                    408, 504 => 'flood-watch.getError.timeout',
-                    default => 'flood-watch.getError.api_error',
+                    429 => 'flood-watch.errors.rate_limit',
+                    408, 504 => 'flood-watch.errors.timeout',
+                    default => 'flood-watch.errors.api_error',
                 };
                 $errorKey = match ($status) {
                     429 => 'rate_limit',
@@ -219,7 +219,7 @@ class FloodWatchService
 
             $choice = $response->choices[0] ?? null;
             if (! $choice) {
-                return $emptyResult(__('flood-watch.getError.no_response'), now()->toIso8601String());
+                return $emptyResult(__('flood-watch.errors.no_response'), now()->toIso8601String());
             }
 
             $message = $choice->message;
@@ -229,7 +229,7 @@ class FloodWatchService
                 $report(__('flood-watch.progress.preparing_summary'));
 
                 return $this->storeAndReturn($key, [
-                    'response' => trim($message->content ?? __('flood-watch.getError.no_content')),
+                    'response' => trim($message->content ?? __('flood-watch.errors.no_content')),
                     'floods' => $floods,
                     'incidents' => $incidents,
                     'forecast' => $forecast,
@@ -242,7 +242,7 @@ class FloodWatchService
                 $report(__('flood-watch.progress.preparing_summary'));
 
                 return $this->storeAndReturn($key, [
-                    'response' => trim($message->content ?? __('flood-watch.getError.no_content')),
+                    'response' => trim($message->content ?? __('flood-watch.errors.no_content')),
                     'floods' => $floods,
                     'incidents' => $incidents,
                     'forecast' => $forecast,
@@ -287,7 +287,7 @@ class FloodWatchService
                         'lng' => $lng,
                         'getError' => $e->getMessage(),
                     ]);
-                    $result = ['getError' => __('flood-watch.getError.tool_failed'), 'code' => 'tool_error'];
+                    $result = ['getError' => __('flood-watch.errors.tool_failed'), 'code' => 'tool_error'];
                 }
 
                 if ($toolName === ToolName::GetFloodData->value && is_array($result) && ! isset($result['getError'])) {
@@ -322,7 +322,7 @@ class FloodWatchService
             $iteration++;
         }
 
-        return $emptyResult(__('flood-watch.getError.max_tool_calls'), now()->toIso8601String());
+        return $emptyResult(__('flood-watch.errors.max_tool_calls'), now()->toIso8601String());
     }
 
     private function buildSystemPrompt(?string $region): string
@@ -350,16 +350,16 @@ class FloodWatchService
         $msg = strtolower($e->getMessage());
 
         if (str_contains($msg, 'rate limit') || str_contains($msg, '429')) {
-            return __('flood-watch.getError.rate_limit');
+            return __('flood-watch.errors.rate_limit');
         }
         if (str_contains($msg, 'timed out') || str_contains($msg, 'timeout')) {
-            return __('flood-watch.getError.timeout');
+            return __('flood-watch.errors.timeout');
         }
         if (str_contains($msg, 'connection') || str_contains($msg, 'resolve host') || str_contains($msg, 'connection refused')) {
-            return __('flood-watch.getError.connection');
+            return __('flood-watch.errors.connection');
         }
 
-        return __('flood-watch.getError.unexpected');
+        return __('flood-watch.errors.unexpected');
     }
 
     /**
@@ -367,13 +367,13 @@ class FloodWatchService
      */
     private function errorKeyFromMessage(string $message): string
     {
-        if ($message === __('flood-watch.getError.rate_limit')) {
+        if ($message === __('flood-watch.errors.rate_limit')) {
             return 'rate_limit';
         }
-        if ($message === __('flood-watch.getError.timeout')) {
+        if ($message === __('flood-watch.errors.timeout')) {
             return 'timeout';
         }
-        if ($message === __('flood-watch.getError.connection')) {
+        if ($message === __('flood-watch.errors.connection')) {
             return 'connection';
         }
 
@@ -463,9 +463,9 @@ class FloodWatchService
             $ctx = ToolContext::fromArray($context);
             $result = $handler->execute($args, $ctx);
 
-            return $result->isOk() ? ($result->data() ?? []) : ['getError' => $result->getError() ?? __('flood-watch.getError.tool_execution', ['name' => $name])];
+            return $result->isOk() ? ($result->data() ?? []) : ['getError' => $result->getError() ?? __('flood-watch.errors.tool_execution', ['name' => $name])];
         } catch (Throwable $e) {
-            return ['getError' => __('flood-watch.getError.tool_execution', ['name' => $name])];
+            return ['getError' => __('flood-watch.errors.tool_execution', ['name' => $name])];
         }
     }
 
