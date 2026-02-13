@@ -40,10 +40,10 @@ What's **built and in the codebase** today. Verified against current implementat
 | Cache layer | Done | TTL configurable; default 0 (disabled) |
 | localStorage persistence | Done | Last location + results for offline |
 
-**Data flow**: On-demand fetch per search (no scheduled backend polling). Cache reduces API/LLM calls when TTL > 0.
+**Data flow**: Scheduled backend polling warms shared caches; searches also fetch on-demand. Cache reduces API/LLM calls when TTL > 0.
 
 **LLM tools**: GetFloodData, GetHighwaysIncidents, GetFloodForecast, GetRiverLevels  
-**Regions**: Somerset (BA, TA), Bristol (BS), Devon (EX, TQ, PL), Cornwall (TR)  
+**Regions**: Somerset (BA, TA), Bristol (BS), Devon (EX, TQ, PL), Cornwall (TR), Dorset (DT, BH)  
 **Tooling**: Yarn, CI via `.github/workflows/tests.yml`
 
 ---
@@ -56,11 +56,11 @@ Planned features that are **not** in the current codebase:
 |------|-------|
 | Location bookmarks | Multiple locations per registered user; profile default |
 | Profile default location | Pre-loaded on app open; feeds admin metrics |
-| **Route check (From/To)** | Geocode From + To; overlay incidents/floods on route; Clear / Blocked / At risk / Delays summary |
-| Search history (DB) | Store searched locations; recent searches UI |
-| Use my location (GPS) | Browser geolocation; "Use my location" button |
+| **Route check (From/To)** | Done – Geocode From + To; overlay incidents/floods; verdict summary |
+| Search history (DB) | Done – records searches; recent searches available |
+| Use my location (GPS) | Done – geolocation button populates From |
 | Admin dashboard | API health, LLM cost, user metrics, budget alerts |
-| Backend polling | Scheduled job fetches APIs; required before geographic caching can work |
+| Backend polling | Done – scheduled jobs warm API caches |
 | Donations | "Support Flood Watch" link in footer |
 
 ---
@@ -119,23 +119,23 @@ flowchart LR
 | Priority | Item | Notes |
 |----------|------|-------|
 | High | Location bookmarks + profile default | Model, migration, UI |
-| High | Search history (DB) | Store searched locations; schema below |
-| High | Use my location (GPS) | Browser geolocation; "Use my location" button in UI |
-| High | Route check (From/To) | Geocode both; overlay incidents/floods; Clear/Blocked/At risk summary |
+| High | Search history (DB) | Done – records searches; recent searches UI |
+| High | Use my location (GPS) | Done – geolocation button in UI |
+| High | Route check (From/To) | Done – geocode both; overlay incidents/floods; verdict summary |
 | High | Admin dashboard | API health, LLM cost, user metrics, budget alerts |
-| High | Backend polling | Scheduled job (15 min); required for geographic caching |
+| High | Backend polling | Done – scheduled jobs (15 min) warm caches |
 | High | National Rail | LDB API, GetRailDisruption tool, Rail Status section |
 | Medium | Road data relevance | Filter flood-related; cascading prompt |
 | Medium | Expand predictive rules | Curry Moor, Salt Moor, Thorney, Devon cut-off |
 | Medium | Smarter route verdict | Rivers on route, wet areas, Muchelney rule |
-| Medium | Analytics layer | Event storage, reporting, admin reports; see below |
+| Medium | Analytics layer | Partial – trend recording in Redis; reporting later |
 | Medium | Real-time & push | Laravel Reverb + FCM; see Phase 2 |
 | Medium | Queue-based async | For high-traffic; poll for results |
 | Low | Polygon limit tuning | `max_polygons_per_request` |
-| Low | Additional regions | Beyond South West; see `docs/CONSIDERATIONS.md` |
+| Low | Additional regions | Planned – beyond South West; Dorset added |
 | Low | Test coverage visibility | Document critical paths; consider `--coverage` in CI |
 | Low | Postcode sector cache key | Use sector (TA10 0) not full (TA10 0DP) for cache; reduces cost |
-| Low | Cache warming | Schedule `flood-watch:warm-cache`; region-based locations; see below |
+| Low | Cache warming | Done – scheduled `flood-watch:warm-cache` |
 | Low | Donations | "Support Flood Watch" link in footer; Ko-fi / PayPal / Buy Me a Coffee |
 | Low | **Manual refresh for results** | The manual refresh control was removed from the results header, and there is no other "Refresh" action wired to rerun search once results are shown. If users need to update results on demand (especially guests without auto-poll), consider reintroducing a refresh button in the location header or results layout. |
 
