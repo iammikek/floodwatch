@@ -55,7 +55,7 @@ class FloodWatchService
      * @param  string|null  $region  User's region (e.g., 'somerset', 'bristol') for region-specific prompt injection (optional).
      * @param  int|null  $userId  User ID for LLM request recording in analytics (optional).
      * @param  callable(string): void|null  $onProgress  Optional callback for progress updates (e.g., for streaming status to UI). Receives progress message strings.
-     * @return array{response: string, floods: array, incidents: array, forecast: array, weather: array, riverLevels: array, lastChecked: string, errors?: bool, error_key?: string} The LLM response and all collected data
+     * @return array{response: string, floods: array, incidents: array<mixed>, forecast: array<mixed>, weather: array<mixed>, riverLevels: array<mixed>, lastChecked: string, errors?: bool, error_key?: string} The LLM response and all collected data
      */
     public function chat(string $userMessage, array $conversation = [], ?string $cacheKey = null, ?float $userLat = null, ?float $userLng = null, ?string $region = null, ?int $userId = null, ?callable $onProgress = null): array
     {
@@ -381,8 +381,8 @@ class FloodWatchService
     }
 
     /**
-     * @param  array{response: string, floods: array, incidents: array, forecast: array, weather: array, riverLevels?: array, errors?: bool, error_key?: string}  $result
-     * @return array{response: string, floods: array, incidents: array, forecast: array, weather: array, riverLevels?: array, lastChecked: string, errors?: bool, error_key?: string}
+     * @param  array{response: string, floods: array<mixed>, incidents: array<mixed>, forecast: array<mixed>, weather: array<mixed>, riverLevels?: array<mixed>, errors?: bool, error_key?: string}  $result
+     * @return array{response: string, floods: array<mixed>, incidents: array<mixed>, forecast: array<mixed>, weather: array<mixed>, riverLevels?: array<mixed>, lastChecked: string, errors?: bool, error_key?: string}
      */
     private function storeAndReturn(string $cacheKey, array $result): array
     {
