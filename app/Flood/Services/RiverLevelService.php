@@ -8,6 +8,7 @@ use App\Support\CoordinateMapper;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
@@ -72,9 +73,18 @@ class RiverLevelService
         $retryTimes = config('flood-watch.environment_agency.retry_times', 3);
         $retrySleep = config('flood-watch.environment_agency.retry_sleep_ms', 100);
 
-        $response = Http::timeout($timeout)->retry($retryTimes, $retrySleep, null, false)->get($url);
-        if (! $response->successful()) {
-            $response->throw();
+        try {
+            $response = Http::timeout($timeout)->retry($retryTimes, $retrySleep, null, false)->get($url);
+            if (! $response->successful()) {
+                $response->throw();
+            }
+        } catch (Throwable $e) {
+            Log::error('FloodWatch EA stations fetch failed', [
+                'provider' => 'environment_agency',
+                'url' => $url,
+                'error' => $e->getMessage(),
+            ]);
+            throw $e;
         }
 
         $data = $response->json();

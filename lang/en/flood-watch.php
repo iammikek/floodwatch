@@ -12,9 +12,9 @@ return [
         'getting_forecast' => 'Getting flood forecast…',
         'fetching_river_levels' => 'Fetching river levels…',
         'correlating' => 'Correlating flood and road data…',
-        'loading' => 'Loading data…',
+        'loading' => 'Loading data...',
     ],
-    'error' => [
+    'errors' => [
         'no_response' => 'Unable to get a response from the assistant.',
         'no_content' => 'No response generated.',
         'no_api_key' => 'Flood Watch is not configured with an OpenAI API key. Please add OPENAI_API_KEY to your environment.',
@@ -29,6 +29,7 @@ return [
         'api_error' => 'The AI service returned an error. Please try again in a moment.',
         'unexpected' => 'Something went wrong while contacting the AI service. Please try again.',
         'tool_failed' => 'Tool execution failed.',
+        'tool_execution' => 'Unknown tool or execution error: :name',
     ],
     'message' => [
         'check_status_default' => 'Check flood and road status for the South West (Bristol, Somerset, Devon, Cornwall).',

@@ -16,7 +16,7 @@ class PostcodeValidatorTest extends TestCase
 
         $this->assertFalse($result['valid']);
         $this->assertFalse($result['in_area']);
-        $this->assertStringContainsString('enter a postcode', $result['error']);
+        $this->assertSame(__('flood-watch.errors.invalid_location'), $result['error']);
     }
 
     public function test_invalid_format_is_rejected(): void
@@ -27,7 +27,7 @@ class PostcodeValidatorTest extends TestCase
 
         $this->assertFalse($result['valid']);
         $this->assertFalse($result['in_area']);
-        $this->assertStringContainsString('Invalid postcode format', $result['error']);
+        $this->assertSame(__('flood-watch.errors.invalid_location'), $result['error']);
     }
 
     public function test_valid_south_west_postcode_passes(): void
@@ -51,6 +51,29 @@ class PostcodeValidatorTest extends TestCase
         $this->assertSame(-2.8318, $result['lng']);
     }
 
+    public function test_valid_dorset_postcode_passes_and_sets_region(): void
+    {
+        Http::fake([
+            'api.postcodes.io/*' => Http::response([
+                'result' => [
+                    'latitude' => 50.7200,
+                    'longitude' => -1.8800,
+                    'outcode' => 'BH11',
+                ],
+            ], 200),
+        ]);
+
+        $validator = app(PostcodeValidator::class);
+
+        $result = $validator->validate('BH11 8SS', geocode: true);
+
+        $this->assertTrue($result['valid']);
+        $this->assertTrue($result['in_area']);
+        $this->assertSame('dorset', $result['region']);
+        $this->assertSame(50.7200, $result['lat']);
+        $this->assertSame(-1.8800, $result['lng']);
+    }
+
     public function test_out_of_area_postcode_is_rejected(): void
     {
         $validator = app(PostcodeValidator::class);
@@ -59,7 +82,7 @@ class PostcodeValidatorTest extends TestCase
 
         $this->assertTrue($result['valid']);
         $this->assertFalse($result['in_area']);
-        $this->assertStringContainsString('outside the South West', $result['error']);
+        $this->assertSame(__('flood-watch.errors.outside_area'), $result['error']);
     }
 
     public function test_normalizes_postcode(): void
@@ -97,7 +120,7 @@ class PostcodeValidatorTest extends TestCase
 
         $this->assertIsArray($result);
         $this->assertArrayHasKey('error', $result);
-        $this->assertStringContainsString('rate limit', $result['error']);
+        $this->assertSame(__('flood-watch.errors.rate_limit'), $result['error']);
     }
 
     public function test_validate_returns_error_when_geocode_rate_limited(): void
@@ -110,6 +133,6 @@ class PostcodeValidatorTest extends TestCase
 
         $this->assertFalse($result['valid']);
         $this->assertFalse($result['in_area']);
-        $this->assertStringContainsString('rate limit', $result['error']);
+        $this->assertSame(__('flood-watch.errors.rate_limit'), $result['error']);
     }
 }

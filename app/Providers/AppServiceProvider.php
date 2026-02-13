@@ -4,6 +4,12 @@ namespace App\Providers;
 
 use App\Models\User;
 use App\Services\FloodWatchPromptBuilder;
+use App\Services\Tooling\Handlers\GetCorrelationSummaryHandler;
+use App\Services\Tooling\Handlers\GetFloodDataHandler;
+use App\Services\Tooling\Handlers\GetFloodForecastHandler;
+use App\Services\Tooling\Handlers\GetHighwaysIncidentsHandler;
+use App\Services\Tooling\Handlers\GetRiverLevelsHandler;
+use App\Support\Tooling\ToolRegistry;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -17,9 +23,30 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->singleton(FloodWatchPromptBuilder::class, function () {
+        // Tag handlers for registry discovery
+        $this->app->bind(GetFloodDataHandler::class);
+        $this->app->bind(GetHighwaysIncidentsHandler::class);
+        $this->app->bind(GetRiverLevelsHandler::class);
+        $this->app->bind(GetFloodForecastHandler::class);
+        $this->app->bind(GetCorrelationSummaryHandler::class);
+        $this->app->tag([
+            GetFloodDataHandler::class,
+            GetHighwaysIncidentsHandler::class,
+            GetRiverLevelsHandler::class,
+            GetFloodForecastHandler::class,
+            GetCorrelationSummaryHandler::class,
+        ], 'llm.tool');
+
+        // Registry from tagged handlers
+        $this->app->singleton(ToolRegistry::class, function ($app) {
+            return new ToolRegistry($app->tagged('llm.tool'));
+        });
+
+        // Prompt builder pulls tool definitions from the registry (DRY)
+        $this->app->singleton(FloodWatchPromptBuilder::class, function ($app) {
             return new FloodWatchPromptBuilder(
-                config('flood-watch.prompt_version', 'v1')
+                config('flood-watch.prompt_version', 'v1'),
+                $app->make(ToolRegistry::class)
             );
         });
     }

@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       template_pattern:
-        description: 'Pattern to match template files (e.g., docs/*-issue-*.md)'
+        description: 'Pattern to match template files (e.g., .github/ISSUE_TEMPLATE/*.md)'
         required: false
-        default: 'docs/*-issue-*.md'
+        default: '.github/ISSUE_TEMPLATE/*.md'
       dry_run:
         description: 'Dry run mode (will not create issues, only show what would be created)'
         required: false
@@ -48,39 +48,54 @@ jobs:
             echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
             echo "📄 Processing: $template_file"
 
-            # Extract title (first heading after "# Issue:")
-            title=$(grep -m 1 "^# Issue:" "$template_file" | sed 's/^# Issue: //' || true)
+            # Try to extract title and labels from YAML front matter (between --- lines)
+            fm_title=$(awk 'BEGIN{fm=0} /^---[[:space:]]*$/{if(fm==0){fm=1;next}else{fm=2}} (fm==1) && /^title:[[:space:]]*/{sub(/^title:[[:space:]]*/,""); print; exit}' "$template_file" || true)
+            fm_labels=$(awk 'BEGIN{fm=0} /^---[[:space:]]*$/{if(fm==0){fm=1;next}else{fm=2}} (fm==1) && /^labels:[[:space:]]*/{sub(/^labels:[[:space:]]*/,""); print; exit}' "$template_file" || true)
+
+            # Normalize front matter labels (remove spaces after commas)
+            if [ -n "$fm_labels" ]; then
+              fm_labels=$(echo "$fm_labels" | sed 's/^"//;s/"$//' | sed 's/, */,/g')
+            fi
+
+            # Extract title fallback (first heading after "# Issue:")
+            title=${fm_title}
+            if [ -z "$title" ]; then
+              title=$(grep -m 1 "^# Issue:" "$template_file" | sed 's/^# Issue: //' || true)
+            fi
 
             # If no "# Issue:" heading, try to get first heading
             if [ -z "$title" ]; then
               title=$(grep -m 1 "^# " "$template_file" | sed 's/^# //' || true)
             fi
 
-            # Extract labels from the Labels section
-            labels=""
-            in_labels_section=false
-            while IFS= read -r line; do
-              if [[ "$line" == "## Labels" ]]; then
-                in_labels_section=true
-                continue
-              fi
-              if [[ "$in_labels_section" == true ]]; then
-                if [[ "$line" =~ ^## ]]; then
-                  break
+            # Extract labels: prefer front matter, else parse "## Labels" section
+            labels="${fm_labels}"
+            if [ -z "$labels" ]; then
+              labels=""
+              in_labels_section=false
+              while IFS= read -r line; do
+                if [[ "$line" == "## Labels" ]]; then
+                  in_labels_section=true
+                  continue
                 fi
-                if [[ "$line" =~ ^-[[:space:]]*(.*) ]]; then
-                  label="${BASH_REMATCH[1]}"
-                  if [ -z "$labels" ]; then
-                    labels="$label"
-                  else
-                    labels="$labels,$label"
+                if [[ "$in_labels_section" == true ]]; then
+                  if [[ "$line" =~ ^## ]]; then
+                    break
+                  fi
+                  if [[ "$line" =~ ^-[[:space:]]*(.*) ]]; then
+                    label="${BASH_REMATCH[1]}"
+                    if [ -z "$labels" ]; then
+                      labels="$label"
+                    else
+                      labels="$labels,$label"
+                    fi
                   fi
                 fi
-              fi
-            done < "$template_file"
+              done < "$template_file"
+            fi
 
-            # Read the entire file as the body
-            body=$(cat "$template_file")
+            # Read the body, stripping YAML front matter if present
+            body=$(awk 'BEGIN{fm=0} {if(NR==1 && $0 ~ /^---[[:space:]]*$/){fm=1; next} if(fm==1){if($0 ~ /^---[[:space:]]*$/){fm=0; next} else {next}} print}' "$template_file")
 
             if [ -z "$title" ]; then
               echo "⚠️  Warning: Could not extract title from $template_file, skipping..."
@@ -99,20 +114,40 @@ jobs:
               continue
             fi
 
+            # Filter labels to those that exist in the repo
+            filtered_labels=""
+            if [ -n "$labels" ]; then
+              # Get existing label names
+              existing_labels=$(gh label list --repo ${{ github.repository }} --json name --jq '.[].name' 2>/dev/null || true)
+              IFS=',' read -r -a label_arr <<< "$labels"
+              for lbl in "${label_arr[@]}"; do
+                lbl_trimmed=$(echo "$lbl" | sed 's/^ *//;s/ *$//')
+                if echo "$existing_labels" | grep -Fxq "$lbl_trimmed"; then
+                  if [ -z "$filtered_labels" ]; then
+                    filtered_labels="$lbl_trimmed"
+                  else
+                    filtered_labels="$filtered_labels,$lbl_trimmed"
+                  fi
+                else
+                  echo "  ⚠️  Skipping non-existent label: $lbl_trimmed"
+                fi
+              done
+            fi
+
             if [ "${{ inputs.dry_run }}" == "true" ]; then
               echo "  🏃 DRY RUN - Would create issue with:"
               echo "     Title: $title"
-              echo "     Labels: ${labels:-none}"
+              echo "     Labels: ${filtered_labels:-none}"
               echo "     Body length: $(echo "$body" | wc -c) characters"
             else
               echo "  ✅ Creating issue..."
 
               # Create the issue
-              if [ -n "$labels" ]; then
+              if [ -n "$filtered_labels" ]; then
                 issue_url=$(gh issue create \
                   --title "$title" \
                   --body "$body" \
-                  --label "$labels" \
+                  --label "$filtered_labels" \
                   --repo ${{ github.repository }})
               else
                 issue_url=$(gh issue create \

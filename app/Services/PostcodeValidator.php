@@ -19,11 +19,6 @@ class PostcodeValidator
     private const OUTCODE_ONLY_REGEX = '/^([A-Z]{1,2}[0-9][0-9A-Z]?)(?:\s+[0-9][A-Z]{0,2})?$/i';
 
     /**
-     * Postcode area codes for the South West (Bristol, Somerset, Devon, Cornwall).
-     */
-    private const SOUTH_WEST_AREAS = ['BS', 'BA', 'TA', 'EX', 'TQ', 'PL', 'TR'];
-
-    /**
      * Validate and optionally geocode a UK postcode for the South West.
      *
      * @return array{valid: bool, in_area: bool, error?: string, lat?: float, lng?: float, outcode?: string, region?: string|null}
@@ -38,14 +33,14 @@ class PostcodeValidator
                 return [
                     'valid' => false,
                     'in_area' => false,
-                    'error' => 'Please enter a postcode.',
+                    'error' => __('flood-watch.errors.invalid_location'),
                 ];
             }
 
             return [
                 'valid' => false,
                 'in_area' => false,
-                'error' => 'Invalid postcode format. Use a valid UK postcode (e.g. TA10 0DP).',
+                'error' => __('flood-watch.errors.invalid_location'),
             ];
         }
 
@@ -53,7 +48,7 @@ class PostcodeValidator
             return [
                 'valid' => true,
                 'in_area' => false,
-                'error' => 'This postcode is outside the South West. Flood Watch covers Bristol, Somerset, Devon and Cornwall.',
+                'error' => __('flood-watch.errors.outside_area'),
                 'outcode' => $postcodeObj->outcode(),
             ];
         }
@@ -98,20 +93,7 @@ class PostcodeValidator
         return (bool) preg_match(self::OUTCODE_ONLY_REGEX, $postcode);
     }
 
-    public function isInSouthWest(string $outcode): bool
-    {
-        $area = $this->extractAreaCode($outcode);
-
-        return in_array($area, self::SOUTH_WEST_AREAS, true);
-    }
-
-    /**
-     * @deprecated Use isInSouthWest instead
-     */
-    public function isInSomersetLevels(string $outcode): bool
-    {
-        return $this->isInSouthWest($outcode);
-    }
+    // Removed unused isInSouthWest(string $outcode): bool
 
     /**
      * Get the sub-region key from a postcode outcode (somerset, bristol, devon, cornwall).
@@ -144,7 +126,7 @@ class PostcodeValidator
             $response = Http::timeout(5)->get($url);
 
             if ($response->tooManyRequests()) {
-                return ['error' => 'Postcode lookup rate limit exceeded. Please wait a minute and try again.'];
+                return ['error' => __('flood-watch.errors.rate_limit')];
             }
 
             if (! $response->successful()) {

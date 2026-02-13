@@ -10,6 +10,7 @@ use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class EnvironmentAgencyFloodService
@@ -67,9 +68,18 @@ class EnvironmentAgencyFloodService
         $timeout = config('flood-watch.environment_agency.timeout');
         $url = "{$baseUrl}/id/floods?lat={$lat}&long={$lng}&dist={$radiusKm}";
 
-        $response = $this->http($url, $timeout);
-        if (! $response->successful()) {
-            $response->throw();
+        try {
+            $response = $this->http($url, $timeout);
+            if (! $response->successful()) {
+                $response->throw();
+            }
+        } catch (Throwable $e) {
+            Log::error('FloodWatch EA floods fetch failed', [
+                'provider' => 'environment_agency',
+                'url' => $url,
+                'error' => $e->getMessage(),
+            ]);
+            throw $e;
         }
 
         $data = $response->json();
@@ -114,9 +124,18 @@ class EnvironmentAgencyFloodService
     {
         $url = "{$baseUrl}/id/floodAreas?lat={$lat}&long={$lng}&dist={$radiusKm}&_limit=200";
 
-        $response = $this->http($url, $timeout);
-        if (! $response->successful()) {
-            $response->throw();
+        try {
+            $response = $this->http($url, $timeout);
+            if (! $response->successful()) {
+                $response->throw();
+            }
+        } catch (Throwable $e) {
+            Log::error('FloodWatch EA centroids fetch failed', [
+                'provider' => 'environment_agency',
+                'url' => $url,
+                'error' => $e->getMessage(),
+            ]);
+            throw $e;
         }
 
         $data = $response->json();

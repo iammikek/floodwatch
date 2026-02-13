@@ -12,7 +12,7 @@ final readonly class Postcode
 
     private const OUTCODE_ONLY_REGEX = '/^([A-Z]{1,2}[0-9][0-9A-Z]?)(?:\s+[0-9][A-Z]{0,2})?$/i';
 
-    private const SOUTH_WEST_AREAS = ['BS', 'BA', 'TA', 'EX', 'TQ', 'PL', 'TR'];
+    private const SOUTH_WEST_AREAS = ['BS', 'BA', 'TA', 'EX', 'TQ', 'PL', 'TR', 'BH', 'DT'];
 
     public function __construct(
         public string $value

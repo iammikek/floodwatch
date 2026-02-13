@@ -53,13 +53,39 @@ class LocationResolverTest extends TestCase
         $this->assertStringContainsString('Langport', $result['display_name']);
     }
 
+    public function test_resolves_place_name_in_dorset(): void
+    {
+        Http::fake([
+            'nominatim.openstreetmap.org/*' => Http::response([
+                [
+                    'lat' => '50.716',
+                    'lon' => '-2.438',
+                    'display_name' => 'Dorchester, Dorset, England, United Kingdom',
+                    'address' => [
+                        'city' => 'Dorchester',
+                        'county' => 'Dorset',
+                        'country' => 'United Kingdom',
+                    ],
+                ],
+            ], 200),
+        ]);
+
+        $resolver = app(LocationResolver::class);
+        $result = $resolver->resolve('Dorchester');
+
+        $this->assertTrue($result['valid']);
+        $this->assertTrue($result['in_area']);
+        $this->assertSame('dorset', $result['region']);
+        $this->assertStringContainsString('Dorset', $result['display_name']);
+    }
+
     public function test_returns_error_for_empty_input(): void
     {
         $resolver = app(LocationResolver::class);
         $result = $resolver->resolve('');
 
         $this->assertFalse($result['valid']);
-        $this->assertSame('Please enter a postcode or location.', $result['error']);
+        $this->assertSame(__('flood-watch.errors.invalid_location'), $result['error']);
     }
 
     public function test_returns_error_when_place_name_not_found(): void
@@ -72,7 +98,7 @@ class LocationResolverTest extends TestCase
         $result = $resolver->resolve('XyzzyNowhere');
 
         $this->assertFalse($result['valid']);
-        $this->assertStringContainsString('Location not found', $result['error']);
+        $this->assertSame(__('flood-watch.bookmarks.unable_to_resolve'), $result['error']);
     }
 
     public function test_rejects_out_of_area_postcode(): void
@@ -82,7 +108,7 @@ class LocationResolverTest extends TestCase
 
         $this->assertTrue($result['valid']);
         $this->assertFalse($result['in_area']);
-        $this->assertStringContainsString('outside the South West', $result['error']);
+        $this->assertSame(__('flood-watch.errors.outside_area'), $result['error']);
     }
 
     public function test_rejects_out_of_area_place_from_nominatim(): void
@@ -107,6 +133,6 @@ class LocationResolverTest extends TestCase
 
         $this->assertTrue($result['valid']);
         $this->assertFalse($result['in_area']);
-        $this->assertStringContainsString('outside the South West', $result['error']);
+        $this->assertSame(__('flood-watch.errors.outside_area'), $result['error']);
     }
 }

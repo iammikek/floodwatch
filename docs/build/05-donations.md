@@ -6,7 +6,7 @@
 
 **Prerequisite**: [00-foundation.md](00-foundation.md) – `donation_url` config exists.
 
-**Ref**: `docs/BRIEF.md` §8, `docs/PLAN.md` Donations
+**Ref**: `docs/brief.md` §8, `docs/plan.md` Donations
 
 ---
 

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Discussions
+    url: https://github.com/iammikek/floodwatch/discussions
+    about: Please use discussions for questions or ideas.
+  - name: 📖 Contributing Guide
+    url: https://github.com/iammikek/floodwatch/blob/main/contributing.md
+    about: Read our contributing guide before opening an issue.

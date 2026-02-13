@@ -52,12 +52,12 @@ class StoreLocationBookmarkRequest extends FormRequest
                     $resolver = app(LocationResolver::class);
                     $resolved = $resolver->resolve(trim($value));
                     if (! $resolved['valid']) {
-                        $fail($resolved['error'] ?? __('flood-watch.error.invalid_location'));
+                        $fail($resolved['error'] ?? __('flood-watch.errors.invalid_location'));
 
                         return;
                     }
                     if (! $resolved['in_area']) {
-                        $fail($resolved['error'] ?? __('flood-watch.error.outside_area'));
+                        $fail($resolved['error'] ?? __('flood-watch.errors.outside_area'));
 
                         return;
                     }

@@ -42,11 +42,11 @@ $response = OpenAI::chat()->create($payload);
 try {
     $response = OpenAI::chat()->create($payload);
 } catch (\OpenAI\Exceptions\ErrorException $e) {
-    Log::error('OpenAI API error', ['error' => $e->getMessage()]);
-    return $emptyResult(__('flood-watch.error.api_error'));
+    Log::error('OpenAI API getError', ['getError' => $e->getMessage()]);
+    return $emptyResult(__('flood-watch.errors.api_error'));
 } catch (Throwable $e) {
-    Log::error('Unexpected LLM error', ['error' => $e->getMessage()]);
-    return $emptyResult(__('flood-watch.error.unexpected'));
+    Log::error('Unexpected LLM getError', ['getError' => $e->getMessage()]);
+    return $emptyResult(__('flood-watch.errors.unexpected'));
 }
 ```
 
@@ -138,7 +138,7 @@ private function trimMessagesToTokenBudget(array $messages): array
 
 ### 1. LLM Integration Guide (18KB)
 
-**Location**: `docs/LLM_INTEGRATION_GUIDE.md`
+**Location**: `docs/agents-and-llm.md`
 
 **Contents**:
 - Architecture overview with sequence diagrams

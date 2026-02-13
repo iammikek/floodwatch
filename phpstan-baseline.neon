@@ -1,0 +1,529 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Method App\\Contracts\\Tooling\\ToolHandler\:\:definition\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Contracts/Tooling/ToolHandler.php
+
+		-
+			message: '#^Method App\\Contracts\\Tooling\\ToolHandler\:\:presentForLlm\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Contracts/Tooling/ToolHandler.php
+
+		-
+			message: '#^Method App\\Flood\\DTOs\\FloodWarning\:\:__construct\(\) has parameter \$polygon with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Flood/DTOs/FloodWarning.php
+
+		-
+			message: '#^Method App\\Flood\\DTOs\\FloodWarning\:\:fromArray\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Flood/DTOs/FloodWarning.php
+
+		-
+			message: '#^Method App\\Flood\\DTOs\\FloodWarning\:\:toArray\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Flood/DTOs/FloodWarning.php
+
+		-
+			message: '#^Method App\\Roads\\DTOs\\RoadIncident\:\:fromArray\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Roads/DTOs/RoadIncident.php
+
+		-
+			message: '#^Method App\\Roads\\DTOs\\RoadIncident\:\:toArray\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Roads/DTOs/RoadIncident.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<string, mixed\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Roads/Services/NationalHighwaysService.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 4
+			path: app/Roads/Services/NationalHighwaysService.php
+
+		-
+			message: '#^Method App\\Roads\\Services\\RoadIncidentOrchestrator\:\:filterIncidentsByProximity\(\) has parameter \$incidents with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Roads/Services/RoadIncidentOrchestrator.php
+
+		-
+			message: '#^Method App\\Roads\\Services\\RoadIncidentOrchestrator\:\:filterIncidentsByProximity\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Roads/Services/RoadIncidentOrchestrator.php
+
+		-
+			message: '#^Method App\\Roads\\Services\\RoadIncidentOrchestrator\:\:filterIncidentsByRegion\(\) has parameter \$incidents with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Roads/Services/RoadIncidentOrchestrator.php
+
+		-
+			message: '#^Method App\\Roads\\Services\\RoadIncidentOrchestrator\:\:filterIncidentsByRegion\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Roads/Services/RoadIncidentOrchestrator.php
+
+		-
+			message: '#^Method App\\Roads\\Services\\RoadIncidentOrchestrator\:\:filterMotorwaysFromDisplay\(\) has parameter \$incidents with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Roads/Services/RoadIncidentOrchestrator.php
+
+		-
+			message: '#^Method App\\Roads\\Services\\RoadIncidentOrchestrator\:\:filterMotorwaysFromDisplay\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Roads/Services/RoadIncidentOrchestrator.php
+
+		-
+			message: '#^Method App\\Roads\\Services\\RoadIncidentOrchestrator\:\:getAllowedRoadsForRegion\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Roads/Services/RoadIncidentOrchestrator.php
+
+		-
+			message: '#^Method App\\Roads\\Services\\RoadIncidentOrchestrator\:\:mergedHighwaysIncidents\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Roads/Services/RoadIncidentOrchestrator.php
+
+		-
+			message: '#^Method App\\Roads\\Services\\RoadIncidentOrchestrator\:\:sortIncidentsByPriority\(\) has parameter \$incidents with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Roads/Services/RoadIncidentOrchestrator.php
+
+		-
+			message: '#^Method App\\Roads\\Services\\RoadIncidentOrchestrator\:\:sortIncidentsByPriority\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Roads/Services/RoadIncidentOrchestrator.php
+
+		-
+			message: '#^Parameter \#1 \$array \(list\) of array_values is already a list, call has no effect\.$#'
+			identifier: arrayValues.list
+			count: 1
+			path: app/Roads/Services/RoadIncidentOrchestrator.php
+
+		-
+			message: '#^Method App\\Services\\FloodWatchPromptBuilder\:\:getToolDefinitions\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/FloodWatchPromptBuilder.php
+
+		-
+			message: '#^Property App\\Services\\FloodWatchPromptBuilder\:\:\$cachedToolDefinitions type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/FloodWatchPromptBuilder.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: app/Services/FloodWatchService.php
+
+		-
+			message: '#^Method App\\Services\\FloodWatchService\:\:buildMessages\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/FloodWatchService.php
+
+		-
+			message: '#^Method App\\Services\\FloodWatchService\:\:cacheGet\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/FloodWatchService.php
+
+		-
+			message: '#^Method App\\Services\\FloodWatchService\:\:cachePut\(\) has parameter \$value with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/FloodWatchService.php
+
+		-
+			message: '#^Method App\\Services\\FloodWatchService\:\:chat\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 5
+			path: app/Services/FloodWatchService.php
+
+		-
+			message: '#^Method App\\Services\\FloodWatchService\:\:chat\(\) should return array\{response\: string, floods\: array, incidents\: array, forecast\: array, weather\: array, riverLevels\: array, lastChecked\: string, getError\?\: bool, \.\.\.\} but returns array\{response\: string, floods\: array, incidents\: array, forecast\: array, weather\: array, lastChecked\: string\}\.$#'
+			identifier: return.type
+			count: 2
+			path: app/Services/FloodWatchService.php
+
+		-
+			message: '#^Method App\\Services\\FloodWatchService\:\:executeTool\(\) has parameter \$context with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 3
+			path: app/Services/FloodWatchService.php
+
+		-
+			message: '#^Method App\\Services\\FloodWatchService\:\:executeTool\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/FloodWatchService.php
+
+		-
+			message: '#^Method App\\Services\\FloodWatchService\:\:extractBaseRoads\(\) is unused\.$#'
+			identifier: method.unused
+			count: 1
+			path: app/Services/FloodWatchService.php
+
+		-
+			message: '#^Method App\\Services\\FloodWatchService\:\:prepareToolResultForLlm\(\) has parameter \$result with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/FloodWatchService.php
+
+		-
+			message: '#^Method App\\Services\\FloodWatchService\:\:prepareToolResultForLlm\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/FloodWatchService.php
+
+		-
+			message: '#^Method App\\Services\\FloodWatchService\:\:storeAndReturn\(\) has parameter \$result with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 4
+			path: app/Services/FloodWatchService.php
+
+		-
+			message: '#^Method App\\Services\\FloodWatchService\:\:storeAndReturn\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 4
+			path: app/Services/FloodWatchService.php
+
+		-
+			message: '#^Method App\\Services\\FloodWatchService\:\:trimMessagesToTokenBudget\(\) has parameter \$messages with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/FloodWatchService.php
+
+		-
+			message: '#^Method App\\Services\\FloodWatchService\:\:trimMessagesToTokenBudget\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/FloodWatchService.php
+
+		-
+			message: '#^Method App\\Services\\FloodWatchService\:\:truncateToolContentsToBudget\(\) has parameter \$messages with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/FloodWatchService.php
+
+		-
+			message: '#^Method App\\Services\\FloodWatchService\:\:truncateToolContentsToBudget\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/FloodWatchService.php
+
+		-
+			message: '#^Method App\\Support\\Tooling\\ToolResult\:\:error\(\) invoked with 0 parameters, 1 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: app/Services/FloodWatchService.php
+
+		-
+			message: '#^Offset ''role'' on array\{role\: string, content\?\: string\|null, tool_calls\?\: array, tool_call_id\?\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/FloodWatchService.php
+
+		-
+			message: '#^Static method Illuminate\\Support\\Facades\\Concurrency\:\:run\(\) invoked with 2 parameters, 1 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: app/Services/FloodWatchService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>completionTokens" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/FloodWatchService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>promptTokens" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/FloodWatchService.php
+
+		-
+			message: '#^Parameter \#3 \$end of method Redis\:\:zRemRangeByScore\(\) expects string, float given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/FloodWatchTrendService.php
+
+		-
+			message: '#^Method App\\Services\\LocationResolver\:\:addressIndicatesSouthWest\(\) has parameter \$address with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/LocationResolver.php
+
+		-
+			message: '#^Method App\\Services\\LocationResolver\:\:getRegionFromAddress\(\) has parameter \$address with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/LocationResolver.php
+
+		-
+			message: '#^Method App\\Services\\LocationResolver\:\:isInSouthWest\(\) has parameter \$address with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/LocationResolver.php
+
+		-
+			message: '#^Method App\\Services\\OpenAiUsageService\:\:buildChartDaily\(\) has parameter \$buckets with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/OpenAiUsageService.php
+
+		-
+			message: '#^Method App\\Services\\OpenAiUsageService\:\:estimateCost\(\) has parameter \$buckets with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/OpenAiUsageService.php
+
+		-
+			message: '#^Method App\\Services\\OpenAiUsageService\:\:estimateCost\(\) never returns null so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: app/Services/OpenAiUsageService.php
+
+		-
+			message: '#^Method App\\Services\\OpenAiUsageService\:\:fetchCompletionsUsage\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/OpenAiUsageService.php
+
+		-
+			message: '#^Method App\\Services\\OpenAiUsageService\:\:fetchUsage\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/OpenAiUsageService.php
+
+		-
+			message: '#^Method App\\Services\\OpenAiUsageService\:\:sumRequests\(\) has parameter \$buckets with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/OpenAiUsageService.php
+
+		-
+			message: '#^Method App\\Services\\OpenAiUsageService\:\:sumTokens\(\) has parameter \$buckets with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/OpenAiUsageService.php
+
+		-
+			message: '#^Offset ''start_time'' on array\{start_time\: int, end_time\: int, results\?\: array\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/OpenAiUsageService.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type Illuminate\\Http\\Client\\Response\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/OpenAiUsageService.php
+
+		-
+			message: '#^Method App\\Services\\PostcodeValidator\:\:extractOutcode\(\) is unused\.$#'
+			identifier: method.unused
+			count: 1
+			path: app/Services/PostcodeValidator.php
+
+		-
+			message: '#^Method App\\Services\\PostcodeValidator\:\:outcodePrefix\(\) is unused\.$#'
+			identifier: method.unused
+			count: 1
+			path: app/Services/PostcodeValidator.php
+
+		-
+			message: '#^Method App\\Services\\RiskCorrelationService\:\:roadHasIncident\(\) has parameter \$incidentRoads with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/RiskCorrelationService.php
+
+		-
+			message: '#^Offset ''flood_pattern'' on array\{river_pattern\: string, trigger_level\: string, warning\: string\} in isset\(\) does not exist\.$#'
+			identifier: isset.offset
+			count: 1
+			path: app/Services/RiskCorrelationService.php
+
+		-
+			message: '#^Offset ''flood_pattern'' on array\{river_pattern\: string, trigger_level\: string, warning\: string\} on left side of \?\? does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/RiskCorrelationService.php
+
+		-
+			message: '#^Offset ''river_pattern'' on array\{river_pattern\: string, trigger_level\: string, warning\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/RiskCorrelationService.php
+
+		-
+			message: '#^Offset ''trigger_level'' on array\{river_pattern\: string, trigger_level\: string, warning\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/RiskCorrelationService.php
+
+		-
+			message: '#^Offset ''warning'' on array\{river_pattern\: string, trigger_level\: string, warning\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Services/RiskCorrelationService.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between '''' and '''' will always evaluate to true\.$#'
+			identifier: identical.alwaysTrue
+			count: 1
+			path: app/Services/RiskCorrelationService.php
+
+		-
+			message: '#^Unreachable statement \- code above always terminates\.$#'
+			identifier: deadCode.unreachable
+			count: 1
+			path: app/Services/RiskCorrelationService.php
+
+		-
+			message: '#^Method App\\Services\\RouteCheckService\:\:cachePut\(\) has parameter \$value with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/RouteCheckService.php
+
+		-
+			message: '#^Method App\\Services\\RouteCheckService\:\:fetchOsrmRoute\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/RouteCheckService.php
+
+		-
+			message: '#^Offset ''in_area'' on array\{valid\: true, in_area\: bool, getError\?\: string, lat\?\: float, lng\?\: float, region\?\: string, outcode\?\: string, display_name\?\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 2
+			path: app/Services/RouteCheckService.php
+
+		-
+			message: '#^Method App\\Services\\Tooling\\Handlers\\GetCorrelationSummaryHandler\:\:definition\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Tooling/Handlers/GetCorrelationSummaryHandler.php
+
+		-
+			message: '#^Method App\\Services\\Tooling\\Handlers\\GetCorrelationSummaryHandler\:\:presentForLlm\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Tooling/Handlers/GetCorrelationSummaryHandler.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<int, array\<string, mixed\>\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Services/Tooling/Handlers/GetFloodDataHandler.php
+
+		-
+			message: '#^Method App\\Services\\Tooling\\Handlers\\GetFloodDataHandler\:\:definition\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Tooling/Handlers/GetFloodDataHandler.php
+
+		-
+			message: '#^Method App\\Services\\Tooling\\Handlers\\GetFloodDataHandler\:\:presentForLlm\(\) never returns string so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: app/Services/Tooling/Handlers/GetFloodDataHandler.php
+
+		-
+			message: '#^Method App\\Services\\Tooling\\Handlers\\GetFloodDataHandler\:\:presentForLlm\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Tooling/Handlers/GetFloodDataHandler.php
+
+		-
+			message: '#^Method App\\Services\\Tooling\\Handlers\\GetFloodForecastHandler\:\:definition\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Tooling/Handlers/GetFloodForecastHandler.php
+
+		-
+			message: '#^Method App\\Services\\Tooling\\Handlers\\GetFloodForecastHandler\:\:presentForLlm\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Tooling/Handlers/GetFloodForecastHandler.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<int, array\<string, mixed\>\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Services/Tooling/Handlers/GetHighwaysIncidentsHandler.php
+
+		-
+			message: '#^Method App\\Services\\Tooling\\Handlers\\GetHighwaysIncidentsHandler\:\:definition\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Tooling/Handlers/GetHighwaysIncidentsHandler.php
+
+		-
+			message: '#^Method App\\Services\\Tooling\\Handlers\\GetHighwaysIncidentsHandler\:\:presentForLlm\(\) never returns string so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: app/Services/Tooling/Handlers/GetHighwaysIncidentsHandler.php
+
+		-
+			message: '#^Method App\\Services\\Tooling\\Handlers\\GetHighwaysIncidentsHandler\:\:presentForLlm\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Tooling/Handlers/GetHighwaysIncidentsHandler.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<int, array\{station\: string, river\: string, town\: string, value\: float, unit\: string, unitName\: string, dateTime\: string\}\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Services/Tooling/Handlers/GetRiverLevelsHandler.php
+
+		-
+			message: '#^Method App\\Services\\Tooling\\Handlers\\GetRiverLevelsHandler\:\:definition\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Tooling/Handlers/GetRiverLevelsHandler.php
+
+		-
+			message: '#^Method App\\Services\\Tooling\\Handlers\\GetRiverLevelsHandler\:\:presentForLlm\(\) never returns string so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: app/Services/Tooling/Handlers/GetRiverLevelsHandler.php
+
+		-
+			message: '#^Method App\\Services\\Tooling\\Handlers\\GetRiverLevelsHandler\:\:presentForLlm\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: app/Services/Tooling/Handlers/GetRiverLevelsHandler.php
+
+		-
+			message: '#^Method App\\Support\\Tooling\\ToolContext\:\:fromArray\(\) has parameter \$context with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 3
+			path: app/Support/Tooling/ToolContext.php
+
+		-
+			message: '#^Right side of && is always true\.$#'
+			identifier: booleanAnd.rightAlwaysTrue
+			count: 3
+			path: app/Support/Tooling/ToolContext.php

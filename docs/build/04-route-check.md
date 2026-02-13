@@ -4,7 +4,7 @@ Geocode From and To; compute route; overlay incidents/floods; produce summary: C
 
 **Status**: ✅ Complete
 
-**Ref**: `docs/BRIEF.md` §4, `docs/ACCEPTANCE_CRITERIA.md` §3
+**Ref**: `docs/brief.md` §4, `docs/ACCEPTANCE_CRITERIA.md` §3
 
 ---
 
@@ -61,7 +61,7 @@ Mapping of `docs/ACCEPTANCE_CRITERIA.md` to Route Check build. **Met** = Route C
 
 ## Questions (answer before or during implementation)
 
-1. ~~**OSRM production**~~ **Decided**: Use public demo `router.project-osrm.org` for production. Self-host later if needed; see `docs/PERFORMANCE.md`.
+1. ~~**OSRM production**~~ **Decided**: Use public demo `router.project-osrm.org` for production. Self-host later if needed; see `docs/performance.md`.
 
 2. ~~**From default**~~ **Decided**: Pre-fill From from default bookmark when logged in. Otherwise, From is empty and we prompt for location with a "Use my location" button (reuse GPS flow from main search).
 
@@ -196,7 +196,7 @@ Place in revised wireframe position so the section appears as you build:
 - **To**: Empty until user enters.
 - **Result panel**: Hidden until check runs.
 - **Mobile** (< `lg`): Text verdict + summary + alternatives (no map).
-- **Desktop** (`lg`+): Text in Route Check block + route polyline on map (floods/incidents overlaid). See `docs/archive/WIREFRAME_REVISED_BRIEF.md`.
+- **Desktop** (`lg`+): Text in Route Check block + route polyline on map (floods/incidents overlaid). See `docs/archive/WIREFRAME_REVISED_brief.md`.
 
 ---
 

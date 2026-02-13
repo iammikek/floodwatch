@@ -1,8 +1,8 @@
 # Build: Revised Wireframe UI
 
-Reorganise the Flood Watch dashboard to match the revised brief wireframe (`docs/archive/WIREFRAME_REVISED_BRIEF.md`, `public/wireframes/revised-brief.html`).
+Reorganise the Flood Watch dashboard to match the revised brief wireframe (`docs/archive/WIREFRAME_REVISED_brief.md`, `public/wireframes/revised-brief.html`).
 
-**Ref**: `docs/WIREFRAMES.md`, `docs/archive/WIREFRAME_REVISED_BRIEF.md`
+**Ref**: `docs/WIREFRAMES.md`, `docs/archive/WIREFRAME_REVISED_brief.md`
 
 **Note**: Builds 03, 04, 05 include "Wireframe placement" – they add their UI in the revised wireframe position as you build. So by the time you do build 08, the location dropdown, Route Check section, and footer changes may already be in place. Build 08 focuses on layout shell, Risk/Action blocks, grid, and Danger to Life.
 

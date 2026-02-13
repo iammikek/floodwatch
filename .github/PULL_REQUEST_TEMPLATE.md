@@ -1,25 +1,44 @@
-## Description
+## What does this PR do?
 
-<!-- Describe your changes -->
+<!-- Brief description of changes -->
+
+## Type of Change
+
+- [ ] **Docs only** — no runtime impact
+- [ ] **Code change** — new feature, refactor, or bug fix (describe below)
+- [ ] **Infrastructure** — CI, build, dependencies
+
+## Why is this needed?
+
+<!-- Explain the problem being solved or feature being added -->
+
+## How was this tested?
+
+<!-- Describe how you verified these changes (manual/automated) -->
+
+## Documentation
+
+- [ ] If this PR changes user-facing behaviour or APIs, I updated the relevant docs (README and/or `docs/`).
+- [ ] If this PR only touches docs, I checked links and followed the [docs style guide](docs/docs_style.md).
 
 ## Review Checklist
 
+### Code Quality
+- [ ] Tests pass (`sail test`)
+- [ ] Code formatted (`sail pint`)
+- [ ] No sensitive data in code
+
 ### Test Coverage
-- [ ] DashboardController authorization (admin-only access)
-- [ ] OpenAiUsageService API integration
-- [ ] LlmRequest logging accuracy
+- [ ] Unit/Feature tests added/updated
+- [ ] Edge cases handled (null, empty, errors)
 
 ### Security
-- [ ] `/admin` route has auth middleware and `accessAdmin` gate
 - [ ] OpenAI API keys in `.env` only (never in code)
-
-### Error Handling
-- [ ] OpenAiUsageService handles API failures gracefully
-- [ ] Fallbacks when OpenAI API is unavailable
+- [ ] Auth/Gate protection for sensitive routes
 
 ### Performance
-- [ ] OpenAiUsageService caching (5 min) prevents excessive API calls
-- [ ] LlmRequest table has indexes for `created_at` and `(user_id, created_at)`
+- [ ] Caching considered for expensive operations
+- [ ] N+1 queries avoided
 
 ### Database
-- [ ] LlmRequest migration has indexes and constraints
+- [ ] Migrations include indexes and constraints where applicable

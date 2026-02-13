@@ -4,7 +4,7 @@ API health, LLM cost, user metrics, budget alerts, recent LLM requests. Restrict
 
 **Prerequisite**: [00-foundation.md](00-foundation.md) – `accessAdmin` gate exists.
 
-**Ref**: `docs/PLAN.md` Admin Dashboard, `docs/WIREFRAMES.md`
+**Ref**: `docs/plan.md` Admin Dashboard, `docs/WIREFRAMES.md`
 
 ---
 

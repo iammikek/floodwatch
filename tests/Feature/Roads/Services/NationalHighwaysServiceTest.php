@@ -142,4 +142,34 @@ class NationalHighwaysServiceTest extends TestCase
         $this->assertIsArray($result);
         $this->assertEmpty($result);
     }
+
+    public function test_returns_empty_array_on_connection_exception(): void
+    {
+        Config::set('flood-watch.national_highways.api_key', 'test-key');
+        Config::set('flood-watch.national_highways.base_url', 'https://api.example.com');
+
+        Http::fake([
+            '*api.example.com*' => function () {
+                throw new \Illuminate\Http\Client\ConnectionException('network');
+            },
+        ]);
+
+        $service = new NationalHighwaysService;
+        $result = $service->fetchAndStoreInCache();
+
+        $this->assertSame([], $result);
+    }
+
+    public function test_returns_empty_array_when_circuit_is_open(): void
+    {
+        Config::set('flood-watch.national_highways.api_key', 'test-key');
+        $cb = \Mockery::mock(\App\Support\CircuitBreaker::class);
+        $cb->shouldReceive('execute')
+            ->andThrow(new \App\Support\CircuitOpenException);
+
+        $service = new NationalHighwaysService($cb);
+        $result = $service->getIncidents();
+
+        $this->assertSame([], $result);
+    }
 }

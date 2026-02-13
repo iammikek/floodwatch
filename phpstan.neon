@@ -1,0 +1,19 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+    - phpstan-baseline.neon
+
+parameters:
+    paths:
+        - app/Services
+        - app/Flood
+        - app/Roads
+        - app/Support/Tooling
+        - app/Contracts/Tooling
+        - app/Enums
+
+    level: 6
+
+    ignoreErrors:
+        # Baseline - add specific ignores here as needed
+
+    reportUnmatchedIgnoredErrors: false

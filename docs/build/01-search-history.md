@@ -4,7 +4,7 @@ Store searched locations in the database. Feeds "Recent searches" UI and admin m
 
 **Prerequisite**: [00-foundation.md](00-foundation.md) – migration and model already exist.
 
-**Schema**: `docs/SCHEMA.md` – `user_searches` table
+**Schema**: `docs/schema.md` – `user_searches` table
 
 ---
 

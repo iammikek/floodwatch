@@ -1,0 +1,25 @@
+name: 📖 Documentation Improvement
+description: Suggest an improvement or fix for the documentation.
+labels: [documentation]
+body:
+  - type: textarea
+    id: documentation-area
+    attributes:
+      label: Which documentation area?
+      description: e.g. README, docs/api.md, docs/installation.md
+    validations:
+      required: true
+  - type: textarea
+    id: issue
+    attributes:
+      label: What's the issue?
+      description: Is something missing, outdated, or broken?
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested change
+      description: How should the documentation be improved?
+    validations:
+      required: true
