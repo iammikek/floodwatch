@@ -7,7 +7,7 @@ Lightweight analytics to track operational health, user behavior, cache effectiv
 ## Acceptance Criteria
 
 - [ ] Emit analytics events for searches, route checks, scheduler runs, upstream API calls, and LLM requests
-- [ ] Store events (Redis trends + database table) with 90‑day retention
+- [ ] Store events (Redis trends + database table) with 90-day retention
 - [ ] Admin dashboard shows search volume, route verdict breakdown, cache hit ratio, upstream health, and LLM budget
 - [ ] Alerts configured for cache ratio drop, upstream error spikes, LLM budget ≥ 80%, missed scheduler run
 - [ ] Tests cover event emitters and daily aggregation job
