@@ -85,7 +85,7 @@ Lightweight analytics to track operational health, user behavior, cache effectiv
 2. HTTP timing middleware and cache hit/miss counters
 3. `analytics_events` table + nightly aggregation job
 4. Admin dashboard panels (charts and tables)
-5. Alerts (email or log‑based thresholds)
+5. Alerts (email or log-based thresholds)
 
 ---
 
