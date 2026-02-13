@@ -12,7 +12,7 @@ return [
         'getting_forecast' => 'Getting flood forecast…',
         'fetching_river_levels' => 'Fetching river levels…',
         'correlating' => 'Correlating flood and road data…',
-        'loading' => 'Loading data…',
+        'loading' => 'Loading data...',
     ],
     'errors' => [
         'no_response' => 'Unable to get a response from the assistant.',
