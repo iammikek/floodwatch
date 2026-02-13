@@ -19,11 +19,6 @@ class PostcodeValidator
     private const OUTCODE_ONLY_REGEX = '/^([A-Z]{1,2}[0-9][0-9A-Z]?)(?:\s+[0-9][A-Z]{0,2})?$/i';
 
     /**
-     * Postcode area codes for the South West (Bristol, Somerset, Devon, Cornwall).
-     */
-    private const SOUTH_WEST_AREAS = ['BS', 'BA', 'TA', 'EX', 'TQ', 'PL', 'TR'];
-
-    /**
      * Validate and optionally geocode a UK postcode for the South West.
      *
      * @return array{valid: bool, in_area: bool, error?: string, lat?: float, lng?: float, outcode?: string, region?: string|null}

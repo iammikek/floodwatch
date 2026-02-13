@@ -37,7 +37,7 @@ class RouteCheckService
         if (! $fromValidation['valid']) {
             return RouteCheckResult::error($fromValidation['error'] ?? __('flood-watch.route_check.error_invalid_from'));
         }
-        if (! ($fromValidation['in_area'] ?? false)) {
+        if (! $fromValidation['in_area']) {
             return RouteCheckResult::error(__('flood-watch.route_check.error_outside_area'));
         }
 
@@ -45,7 +45,7 @@ class RouteCheckService
         if (! $toValidation['valid']) {
             return RouteCheckResult::error($toValidation['error'] ?? __('flood-watch.route_check.error_invalid_to'));
         }
-        if (! ($toValidation['in_area'] ?? false)) {
+        if (! $toValidation['in_area']) {
             return RouteCheckResult::error(__('flood-watch.route_check.error_outside_area'));
         }
 

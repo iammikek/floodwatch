@@ -36,6 +36,9 @@ enum Region: string
         return self::tryFrom(strtolower($value));
     }
 
+    /**
+     * @return array<int, string>
+     */
     public static function indicators(): array
     {
         $base = array_map(fn (self $r) => $r->value, self::cases());
