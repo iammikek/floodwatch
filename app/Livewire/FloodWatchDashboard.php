@@ -363,7 +363,7 @@ class FloodWatchDashboard extends Component
             $key = $this->guestRateLimitKey();
             if (RateLimiter::tooManyAttempts($key, 1)) {
                 $seconds = RateLimiter::availableIn($key);
-                $this->error = __('flood-watch.getError.guest_rate_limit', ['action' => 'request']);
+                $this->error = __('flood-watch.errors.guest_rate_limit', ['action' => 'request']);
                 $this->retryAfterTimestamp = time() + $seconds;
             }
         } else {
@@ -389,7 +389,7 @@ class FloodWatchDashboard extends Component
                 $this->retryAfterTimestamp = time() + RateLimiter::availableIn($key);
                 $this->routeCheckResult = [
                     'verdict' => 'error',
-                    'summary' => __('flood-watch.getError.guest_rate_limit', ['action' => 'request']),
+                    'summary' => __('flood-watch.errors.guest_rate_limit', ['action' => 'request']),
                     'floods_on_route' => [],
                     'incidents_on_route' => [],
                     'alternatives' => [],
@@ -447,14 +447,14 @@ class FloodWatchDashboard extends Component
             $validation = $locationResolver->resolve($locationTrimmed);
             if (! $validation['valid']) {
                 $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'mapBounds', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
-                $this->error = $validation['getError'] ?? __('flood-watch.getError.invalid_location');
+                $this->error = $validation['getError'] ?? __('flood-watch.errors.invalid_location');
                 $this->loading = false;
 
                 return;
             }
             if (! $validation['in_area']) {
                 $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'mapBounds', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
-                $this->error = $validation['getError'] ?? __('flood-watch.getError.outside_area');
+                $this->error = $validation['getError'] ?? __('flood-watch.errors.outside_area');
                 $this->loading = false;
 
                 return;
@@ -480,7 +480,7 @@ class FloodWatchDashboard extends Component
 
         if (! $result['in_area']) {
             $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'mapBounds', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
-            $this->error = __('flood-watch.getError.outside_area');
+            $this->error = __('flood-watch.errors.outside_area');
             $this->loading = false;
 
             return;
