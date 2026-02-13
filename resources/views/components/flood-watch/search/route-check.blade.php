@@ -80,7 +80,7 @@
                         'blocked' => 'bg-red-100 text-red-800',
                         'at_risk' => 'bg-amber-100 text-amber-800',
                         'delays' => 'bg-yellow-100 text-yellow-800',
-                        'getError' => 'bg-slate-100 text-slate-700',
+                        'error' => 'bg-slate-100 text-slate-700',
                         default => 'bg-emerald-100 text-emerald-800',
                     };
                 @endphp
