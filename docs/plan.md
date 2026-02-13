@@ -127,6 +127,7 @@ flowchart LR
 | High | National Rail | LDB API, GetRailDisruption tool, Rail Status section |
 | Medium | Road data relevance | Filter flood-related; cascading prompt |
 | Medium | Expand predictive rules | Curry Moor, Salt Moor, Thorney, Devon cut-off |
+| Medium | Smarter route verdict | Rivers on route, wet areas, Muchelney rule |
 | Medium | Analytics layer | Event storage, reporting, admin reports; see below |
 | Medium | Real-time & push | Laravel Reverb + FCM; see Phase 2 |
 | Medium | Queue-based async | For high-traffic; poll for results |
@@ -157,6 +158,35 @@ flowchart LR
 | **Two-phase layout** | “Overview” tab/section: Risk + Summary + key bullets; “Details” tab/section: Flood list, Road status, Weather, etc. | Clear separation of “what to do” vs “raw data”. | Tab/section UX; more navigation. |
 
 **Recommendation for plan**: Decide whether **priority is “advice first”** (move or duplicate Summary higher) or **“glanceable + expand”** (short teaser at top, full Summary expandable). Then add a concrete backlog item (e.g. “Mobile: surface LLM Summary higher or as expandable AI advice”) and reference this section.
+
+---
+
+## Smarter Route Verdict – Plan
+
+Extend RouteCheck verdict with predictive/hydrological context. See detailed spec: `docs/build/09-smarter-route-verdict.md`.
+
+- Goals
+  - Rivers on route: detect stations near the route; upgrade to “At risk” when elevated.
+  - Wet area detection: Somerset Levels polygons and Muchelney rule via RiskCorrelationService.
+- Phases
+  - A.1 Rivers near route using RiverLevelService (station proximity).
+  - A.2 Elevation upgrades verdict to “At risk” when otherwise clear.
+  - A.3 Config and tests for river proximity and upgrade flag.
+  - B.3 Muchelney rule via RiskCorrelationService when route is relevant.
+  - B.1 Flood‑prone polygons (North Moor, King’s Sedgemoor) as config; intersect with route.
+- Config additions
+  - `route_check.river_proximity_km` (default 0.5)
+  - `route_check.elevated_river_upgrades_verdict` (default true)
+  - Optional: `flood_prone_polygons.somerset[...]` for Levels areas
+- Tests
+  - Unit: station filtering near route; verdict upgrade on elevated rivers.
+  - Feature: Langport–Muchelney route shows predictive warning when Parrett elevated.
+  - Feature: Clear of floods/incidents but elevated river → “At risk”.
+- Risks
+  - Sparse EA stations → document limitation; allow config overrides.
+  - Polygon sourcing → start with bbox; refine later (EA/OSM).
+
+Suggested order: A.1 → A.2 → A.3 → B.3 → B.1. Trending analysis deferred.
 
 ---
 
