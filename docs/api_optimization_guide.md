@@ -252,7 +252,7 @@ $emptyToolCalls = 0;
 foreach ($message->toolCalls as $toolCall) {
     $result = $this->executeTool(...);
     
-    if (empty($result) || (isset($result['getError']))) {
+    if (empty($result) || (isset($result['error']))) {
         $emptyToolCalls++;
     }
 }

@@ -523,8 +523,8 @@ Log::warning('FloodWatch trimmed to last assistant+tool block', [
 
 **ERROR** - API failures:
 ```php
-Log::error('FloodWatch OpenAI API getError', [
-    'getError' => 'Rate limit exceeded',
+Log::error('FloodWatch OpenAI API error', [
+    'error' => 'Rate limit exceeded',
     'iteration' => 3,
 ]);
 ```

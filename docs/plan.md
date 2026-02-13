@@ -172,7 +172,7 @@ Users support the project via **donations**. The app stays free; donations offse
 
 **Approach**: Soft ask, non-intrusive. No in-app payment processing; link to external donation page.
 
-**Ref**: `docs/archive/MONETISATION_plan.md` for platform comparison.
+**Ref**: `docs/archive/monetisation_plan.md` for platform comparison.
 
 ---
 

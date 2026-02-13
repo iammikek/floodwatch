@@ -281,7 +281,7 @@ Users can **support the project** via donations. The app remains free; donations
 | **Placement** | Footer: "Support Flood Watch" · Profile: "Support this project" |
 | **No account required** | Guests and registered users can donate; no sign-up for the donation itself |
 
-Donations are **optional** and **non-intrusive** – a soft ask that fits the "keep it free" ethos. See `docs/archive/MONETISATION_plan.md` for platform options (Ko-fi, Patreon, PayPal).
+Donations are **optional** and **non-intrusive** – a soft ask that fits the "keep it free" ethos. See `docs/archive/monetisation_plan.md` for platform options (Ko-fi, Patreon, PayPal).
 
 ---
 
