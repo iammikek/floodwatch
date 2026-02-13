@@ -25,7 +25,7 @@ Button that uses browser Geolocation API to get user's position and run a search
 ```javascript
 navigator.geolocation.getCurrentPosition(
   (pos) => { /* success: pos.coords.latitude, pos.coords.longitude */ },
-  (err) => { /* getError: err.message, err.code */ },
+  (err) => { /* error: err.message, err.code */ },
   { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
 );
 ```
