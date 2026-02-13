@@ -24,7 +24,10 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $locations = implode(',', array_values(config('flood-watch.warm_cache_locations', [])));
         if ($locations !== '') {
-            $schedule->command('flood-watch:warm-cache', ['--locations' => $locations])->everyFifteenMinutes();
+            $schedule->command('flood-watch:warm-cache', ['--locations' => $locations])
+                ->everyFifteenMinutes()
+                ->withoutOverlapping()
+                ->onOneServer();
         }
     })
     ->withExceptions(function (Exceptions $exceptions): void {
