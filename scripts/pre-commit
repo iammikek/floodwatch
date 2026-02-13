@@ -7,3 +7,26 @@ if [ -n "$STAGED_PHP" ]; then
     echo "$STAGED_PHP" | xargs vendor/bin/pint
     echo "$STAGED_PHP" | xargs git add
 fi
+
+# If any PHP files changed, run the test suite (prefer Sail if available)
+if [ -n "$STAGED_PHP" ]; then
+    if [ -x "./vendor/bin/sail" ]; then
+        ./vendor/bin/sail test --compact
+    else
+        php artisan test --compact
+    fi
+fi
+
+# Link validation for changed docs/templates
+STAGED_DOCS=$(git diff --cached --name-only --diff-filter=ACM | grep -E '^(docs/.*\.md|README\.md|contributing\.md|CONTRIBUTING\.md|\.github/ISSUE_TEMPLATE/.*\.md)$' || true)
+if [ -n "$STAGED_DOCS" ]; then
+    echo "Running link checks on documentation changes..."
+    if command -v docker >/dev/null 2>&1; then
+        docker run --rm -v "$PWD":/workspace -w /workspace ghcr.io/lycheeverse/lychee:latest --config .lychee.toml --verbose --no-progress "docs/**/*.md" "README.md" "contributing.md" "CONTRIBUTING.md" ".github/ISSUE_TEMPLATE/*.md"
+    elif command -v lychee >/dev/null 2>&1; then
+        lychee --config .lychee.toml --verbose --no-progress "docs/**/*.md" "README.md" "contributing.md" "CONTRIBUTING.md" ".github/ISSUE_TEMPLATE/*.md"
+    else
+        echo "Lychee not found (docker or local binary). Skipping link checks."
+        echo "Install: brew install lychee or run via docker ghcr.io/lycheeverse/lychee"
+    fi
+fi
