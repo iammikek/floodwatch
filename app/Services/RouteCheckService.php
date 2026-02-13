@@ -35,7 +35,7 @@ class RouteCheckService
 
         $fromValidation = $this->locationResolver->resolve($fromTrimmed);
         if (! $fromValidation['valid']) {
-            return RouteCheckResult::error($fromValidation['getError'] ?? __('flood-watch.route_check.error_invalid_from'));
+            return RouteCheckResult::error($fromValidation['errors'] ?? __('flood-watch.route_check.error_invalid_from'));
         }
         if (! ($fromValidation['in_area'] ?? false)) {
             return RouteCheckResult::error(__('flood-watch.route_check.error_outside_area'));
@@ -43,7 +43,7 @@ class RouteCheckService
 
         $toValidation = $this->locationResolver->resolve($toTrimmed);
         if (! $toValidation['valid']) {
-            return RouteCheckResult::error($toValidation['getError'] ?? __('flood-watch.route_check.error_invalid_to'));
+            return RouteCheckResult::error($toValidation['errors'] ?? __('flood-watch.route_check.error_invalid_to'));
         }
         if (! ($toValidation['in_area'] ?? false)) {
             return RouteCheckResult::error(__('flood-watch.route_check.error_outside_area'));

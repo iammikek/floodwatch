@@ -21,7 +21,7 @@ class OpenAiUsageService
     private const int TIMEOUT = 15;
 
     /**
-     * @return array{requests_today: int, requests_this_month: int, input_tokens_this_month: int, output_tokens_this_month: int, cost_this_month: float|null, remaining_budget: float|null, chart_daily: array<int, array{date: string, requests: int, input_tokens: int, output_tokens: int, cost: float}>, getError: string|null}
+     * @return array{requests_today: int, requests_this_month: int, input_tokens_this_month: int, output_tokens_this_month: int, cost_this_month: float|null, remaining_budget: float|null, chart_daily: array<int, array{date: string, requests: int, input_tokens: int, output_tokens: int, cost: float}>, error: string|null}
      */
     public function getUsage(): array
     {
@@ -36,7 +36,7 @@ class OpenAiUsageService
                 'cost_this_month' => null,
                 'remaining_budget' => null,
                 'chart_daily' => [],
-                'getError' => 'Admin API key not configured. Set OPENAI_ORG_API_KEY or OPENAI_ORG_ADMIN_KEY. Usage API requires an org admin key.',
+                'error' => 'Admin API key not configured. Set OPENAI_ORG_API_KEY or OPENAI_ORG_ADMIN_KEY. Usage API requires an org admin key.',
             ];
         }
 
@@ -46,7 +46,7 @@ class OpenAiUsageService
     }
 
     /**
-     * @return array{requests_today: int, requests_this_month: int, input_tokens_this_month: int, output_tokens_this_month: int, cost_this_month: float|null, remaining_budget: float|null, chart_daily: array, getError: string|null}
+     * @return array{requests_today: int, requests_this_month: int, input_tokens_this_month: int, output_tokens_this_month: int, cost_this_month: float|null, remaining_budget: float|null, chart_daily: array, error: string|null}
      */
     private function fetchUsage(string $apiKey): array
     {
@@ -87,7 +87,7 @@ class OpenAiUsageService
                 'cost_this_month' => $costThisMonth,
                 'remaining_budget' => $remainingBudget,
                 'chart_daily' => $chartDaily,
-                'getError' => null,
+                'error' => null,
             ];
         } catch (Throwable $e) {
             $status = $e instanceof RequestException ? $e->response?->status() : null;
@@ -105,7 +105,7 @@ class OpenAiUsageService
                 'cost_this_month' => null,
                 'remaining_budget' => null,
                 'chart_daily' => [],
-                'getError' => $status === 403
+                'error' => $status === 403
                     ? 'Usage API requires an Admin API key (sk-admin-...). Organization Owners: create one at platform.openai.com/settings/organization/admin-keys and set OPENAI_ORG_ADMIN_KEY or OPENAI_ORG_API_KEY.'
                     : $e->getMessage(),
             ];
