@@ -11,6 +11,7 @@ enum Region: string
     case Bristol = 'bristol';
     case Devon = 'devon';
     case Cornwall = 'cornwall';
+    case Dorset = 'dorset';
 
     /**
      * Default location for warm cache pre-fetch per region.
@@ -22,6 +23,7 @@ enum Region: string
             self::Bristol => 'Bristol',
             self::Devon => 'Exeter',
             self::Cornwall => 'Truro',
+            self::Dorset => 'Dorchester',
         };
     }
 
@@ -32,5 +34,16 @@ enum Region: string
         }
 
         return self::tryFrom(strtolower($value));
+    }
+
+    public static function indicators(): array
+    {
+        $base = array_map(fn (self $r) => $r->value, self::cases());
+
+        return array_merge($base, [
+            'north somerset',
+            'south gloucestershire',
+            'bath and north east somerset',
+        ]);
     }
 }

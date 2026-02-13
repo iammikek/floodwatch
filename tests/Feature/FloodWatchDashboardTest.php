@@ -546,7 +546,7 @@ class FloodWatchDashboardTest extends TestCase
         Livewire::test('flood-watch-dashboard')
             ->set('location', 'XyzzyNowhere123')
             ->call('search')
-            ->assertSet('error', 'Location not found. Try a postcode or town name (e.g. Langport, Bristol, Exeter).')
+            ->assertSet('error', __('flood-watch.bookmarks.unable_to_resolve'))
             ->assertSet('assistantResponse', null);
     }
 
@@ -555,7 +555,7 @@ class FloodWatchDashboardTest extends TestCase
         Livewire::test('flood-watch-dashboard')
             ->set('location', 'SW1A 1AA')
             ->call('search')
-            ->assertSet('error', 'This postcode is outside the South West. Flood Watch covers Bristol, Somerset, Devon and Cornwall.')
+            ->assertSet('error', __('flood-watch.errors.outside_area'))
             ->assertSet('assistantResponse', null);
     }
 
@@ -943,7 +943,7 @@ class FloodWatchDashboardTest extends TestCase
 
         Livewire::test('flood-watch-dashboard')
             ->call('searchFromGps', 51.5074, -0.1278)
-            ->assertSet('error', 'This location is outside the South West.')
+            ->assertSet('error', __('flood-watch.errors.outside_area'))
             ->assertSet('assistantResponse', null);
     }
 
@@ -955,7 +955,7 @@ class FloodWatchDashboardTest extends TestCase
 
         Livewire::test('flood-watch-dashboard')
             ->call('searchFromGps', 0.0, 0.0)
-            ->assertSet('error', 'Could not get location. Try entering a postcode.')
+            ->assertSet('error', __('flood-watch.dashboard.gps_error'))
             ->assertSet('assistantResponse', null);
     }
 
