@@ -6,10 +6,13 @@ use App\Enums\ToolName;
 use App\Flood\Services\EnvironmentAgencyFloodService;
 use App\Flood\Services\FloodForecastService;
 use App\Flood\Services\RiverLevelService;
+use App\Jobs\RecordLlmRequestJob;
 use App\Roads\Services\RoadIncidentOrchestrator;
 use App\Support\ConfigKey;
 use App\Support\LogMasker;
 use App\Support\Tooling\TokenBudget;
+use App\Support\Tooling\ToolArguments;
+use App\Support\Tooling\ToolContext;
 use App\Support\Tooling\ToolRegistry;
 use App\Support\Tooling\ToolResult;
 use Illuminate\Support\Facades\Cache;
@@ -456,12 +459,12 @@ class FloodWatchService
 
         try {
             $handler = $this->toolRegistry->get(ToolName::from($name));
-            $args = \App\Support\Tooling\ToolArguments::fromJson($argumentsJson);
-            $ctx = \App\Support\Tooling\ToolContext::fromArray($context);
+            $args = ToolArguments::fromJson($argumentsJson);
+            $ctx = ToolContext::fromArray($context);
             $result = $handler->execute($args, $ctx);
 
             return $result->isOk() ? ($result->data() ?? []) : ['getError' => $result->getError() ?? __('flood-watch.getError.tool_execution', ['name' => $name])];
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return ['getError' => __('flood-watch.getError.tool_execution', ['name' => $name])];
         }
     }
@@ -476,7 +479,7 @@ class FloodWatchService
                     : ToolResult::ok($result);
 
                 return $handler->presentForLlm($toolResult, new TokenBudget(0));
-            } catch (\Throwable) {
+            } catch (Throwable) {
                 // Fall back to passthrough if presenter fails
             }
         }
@@ -627,7 +630,7 @@ class FloodWatchService
                 'region' => $region,
             ];
 
-            \App\Jobs\RecordLlmRequestJob::dispatch($payload);
+            RecordLlmRequestJob::dispatch($payload);
         } catch (Throwable $e) {
             Log::warning('FloodWatch failed to record LLM request', ['getError' => $e->getMessage()]);
         }
