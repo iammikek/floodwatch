@@ -59,8 +59,8 @@
 
             <section class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
                 <h3 class="text-lg font-medium text-gray-900 mb-4">LLM Cost</h3>
-                @if ($llmUsage['getError'] ?? null)
-                    <p class="text-sm text-amber-600">{{ $llmUsage['getError'] }}</p>
+                @if ($llmUsage['error'] ?? null)
+                    <p class="text-sm text-amber-600">{{ $llmUsage['error'] }}</p>
                 @else
                     <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                         <div class="flex items-center justify-between rounded-lg border px-4 py-3">
