@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\ValueObjects\Postcode;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Throwable;
 
@@ -114,12 +115,24 @@ class PostcodeValidator
 
     /**
      * Geocode postcode via postcodes.io (free, no API key).
+     * Successful results are cached to reduce repeat API calls.
      *
      * @return array{lat: float, lng: float}|array{error: string}|null
      */
     public function geocode(string $postcode): ?array
     {
         $normalized = $this->normalize($postcode);
+        $cacheMinutes = config('flood-watch.geocode_postcode_cache_minutes', 0);
+
+        if ($cacheMinutes > 0) {
+            $key = $this->geocodePostcodeCacheKey($normalized);
+            $store = config('flood-watch.cache_store', 'flood-watch');
+            $cached = Cache::store($store)->get($key);
+            if ($cached !== null && is_array($cached) && isset($cached['lat'], $cached['lng'])) {
+                return $cached;
+            }
+        }
+
         $url = 'https://api.postcodes.io/postcodes/'.rawurlencode($normalized);
 
         try {
@@ -140,13 +153,28 @@ class PostcodeValidator
                 return null;
             }
 
-            return [
+            $coords = [
                 'lat' => (float) $result['latitude'],
                 'lng' => (float) $result['longitude'],
             ];
+
+            if ($cacheMinutes > 0) {
+                $key = $this->geocodePostcodeCacheKey($normalized);
+                $store = config('flood-watch.cache_store', 'flood-watch');
+                Cache::store($store)->put($key, $coords, now()->addMinutes($cacheMinutes));
+            }
+
+            return $coords;
         } catch (Throwable) {
             return null;
         }
+    }
+
+    private function geocodePostcodeCacheKey(string $normalizedPostcode): string
+    {
+        $prefix = config('flood-watch.cache_key_prefix', 'flood-watch');
+
+        return "{$prefix}:geocode:postcode:".$normalizedPostcode;
     }
 
     private function extractOutcode(string $postcode): string

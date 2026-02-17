@@ -36,4 +36,31 @@ class FloodWatchRiverLevelsControllerTest extends TestCase
         $response->assertOk();
         $this->assertIsArray($response->json());
     }
+
+    public function test_river_levels_endpoint_returns_cached_response_on_second_request(): void
+    {
+        $this->app['config']->set('flood-watch.river_levels_cache_minutes', 15);
+
+        $requestCount = 0;
+        Http::fake(function ($request) use (&$requestCount) {
+            $requestCount++;
+            if (str_contains($request->url(), 'environment.data.gov.uk')) {
+                return Http::response(['items' => []], 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
+        $session = ['flood_watch_loaded' => true];
+        $url = '/flood-watch/river-levels?lat=51.02&lng=-2.84&radius=20';
+
+        $response1 = $this->withSession($session)->getJson($url);
+        $response1->assertOk();
+
+        $response2 = $this->withSession($session)->getJson($url);
+        $response2->assertOk();
+
+        $this->assertSame($response1->json(), $response2->json());
+        $this->assertSame(1, $requestCount, 'Second request should be served from cache without calling EA API');
+    }
 }

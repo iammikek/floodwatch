@@ -149,7 +149,8 @@ class RouteCheckServiceTest extends TestCase
         $this->assertSame('at_risk', $result->verdict);
         $this->assertSame('Cached summary', $result->summary);
         $this->assertSame('abc123', $result->routeKey);
-        Http::assertSentCount(2);
+        // One postcodes.io request (second resolve hits geocode cache when from/to are same)
+        Http::assertSentCount(1);
     }
 
     public function test_returns_cached_result_when_stored_as_array(): void
@@ -186,7 +187,8 @@ class RouteCheckServiceTest extends TestCase
         $this->assertSame('delays', $result->verdict);
         $this->assertSame('Cached array summary', $result->summary);
         $this->assertSame('xyz789', $result->routeKey);
-        Http::assertSentCount(2);
+        // One postcodes.io request (second resolve hits geocode cache when from/to are same)
+        Http::assertSentCount(1);
     }
 
     public function test_returns_blocked_verdict_when_road_closed_on_route(): void

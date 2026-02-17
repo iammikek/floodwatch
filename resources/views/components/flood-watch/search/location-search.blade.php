@@ -57,7 +57,7 @@
         <input
             type="text"
             id="location"
-            wire:model="location"
+            wire:model.defer="location"
             placeholder="{{ __('flood-watch.dashboard.location_placeholder') }}"
             class="block flex-1 min-h-[44px] rounded-lg border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base sm:text-sm"
         />

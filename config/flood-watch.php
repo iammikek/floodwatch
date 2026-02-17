@@ -215,6 +215,33 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | River Levels Cache (Map API)
+    |--------------------------------------------------------------------------
+    |
+    | TTL in minutes for cached river level results from GET /flood-watch/river-levels.
+    | Map pan/zoom requests the same area repeatedly; caching reduces EA API load.
+    | Set to 0 to disable. Key is scoped by rounded lat/lng and radius.
+    |
+    */
+
+    'river_levels_cache_minutes' => (int) env('FLOOD_WATCH_RIVER_LEVELS_CACHE_MINUTES', 15),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Geocoding Cache (postcodes.io + Nominatim)
+    |--------------------------------------------------------------------------
+    |
+    | TTL in minutes for cached geocode results. Reduces repeat calls to
+    | postcodes.io and Nominatim (Nominatim recommends 1 req/s; caching helps).
+    | Postcodes rarely change (e.g. 7 days). Place names: 24 hours. Set to 0 to disable.
+    |
+    */
+
+    'geocode_postcode_cache_minutes' => (int) env('FLOOD_WATCH_GEOCODE_POSTCODE_CACHE_MINUTES', 10080), // 7 days
+    'geocode_place_cache_minutes' => (int) env('FLOOD_WATCH_GEOCODE_PLACE_CACHE_MINUTES', 1440), // 24 hours
+
+    /*
+    |--------------------------------------------------------------------------
     | Map base layer (tiles)
     |--------------------------------------------------------------------------
     |

@@ -7,6 +7,7 @@ use App\Support\CircuitOpenException;
 use App\Support\CoordinateMapper;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -27,6 +28,7 @@ class RiverLevelService
 
     /**
      * Fetch latest river and sea levels for monitoring stations near the given coordinates.
+     * Results are cached by rounded lat/lng and radius to reduce EA API load for map pan/zoom.
      *
      * @return array<int, array{station: string, river: string, town: string, value: float, unit: string, unitName: string, dateTime: string}>
      */
@@ -35,12 +37,22 @@ class RiverLevelService
         ?float $lng = null,
         ?int $radiusKm = null
     ): array {
-        try {
-            return $this->circuitBreaker->execute(function () use ($lat, $lng, $radiusKm) {
-                $lat ??= config('flood-watch.default_lat');
-                $lng ??= config('flood-watch.default_lng');
-                $radiusKm ??= config('flood-watch.default_radius_km');
+        $lat ??= config('flood-watch.default_lat');
+        $lng ??= config('flood-watch.default_lng');
+        $radiusKm ??= config('flood-watch.default_radius_km');
 
+        $cacheMinutes = config('flood-watch.river_levels_cache_minutes', 0);
+        if ($cacheMinutes > 0) {
+            $key = $this->riverLevelsCacheKey($lat, $lng, $radiusKm);
+            $store = config('flood-watch.cache_store', 'flood-watch');
+            $cached = Cache::store($store)->get($key);
+            if ($cached !== null && is_array($cached)) {
+                return $cached;
+            }
+        }
+
+        try {
+            $result = $this->circuitBreaker->execute(function () use ($lat, $lng, $radiusKm) {
                 $baseUrl = config('flood-watch.environment_agency.base_url');
                 $timeout = config('flood-watch.environment_agency.timeout');
 
@@ -54,6 +66,14 @@ class RiverLevelService
 
                 return $this->mergeStationsWithReadings($stations, $readings);
             });
+
+            if ($cacheMinutes > 0) {
+                $key = $this->riverLevelsCacheKey($lat, $lng, $radiusKm);
+                $store = config('flood-watch.cache_store', 'flood-watch');
+                Cache::store($store)->put($key, $result, now()->addMinutes($cacheMinutes));
+            }
+
+            return $result;
         } catch (CircuitOpenException) {
             return [];
         } catch (ConnectionException|RequestException $e) {
@@ -61,6 +81,15 @@ class RiverLevelService
 
             return [];
         }
+    }
+
+    private function riverLevelsCacheKey(float $lat, float $lng, int $radiusKm): string
+    {
+        $prefix = config('flood-watch.cache_key_prefix', 'flood-watch');
+        $latRounded = round($lat, 2);
+        $lngRounded = round($lng, 2);
+
+        return "{$prefix}:river-levels:{$latRounded}:{$lngRounded}:{$radiusKm}";
     }
 
     /**
