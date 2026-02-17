@@ -48,20 +48,20 @@ What's **built and in the codebase** today. Verified against current implementat
 
 ---
 
-## Phase 1 (Next)
+## Phase 1 (In progress)
 
-Planned features that are **not** in the current codebase:
+Features planned for the first phase after MVP. Several are **already built**; the rest are planned.
 
-| Item | Notes |
-|------|-------|
-| Location bookmarks | Multiple locations per registered user; profile default |
-| Profile default location | Pre-loaded on app open; feeds admin metrics |
-| **Route check (From/To)** | Done – Geocode From + To; overlay incidents/floods; verdict summary |
-| Search history (DB) | Done – records searches; recent searches available |
-| Use my location (GPS) | Done – geolocation button populates From |
-| Admin dashboard | API health, LLM cost, user metrics, budget alerts |
-| Backend polling | Done – scheduled jobs warm API caches |
-| Donations | "Support Flood Watch" link in footer |
+| Item | Status | Notes |
+|------|--------|-------|
+| **Route check (From/To)** | Done | Geocode From + To; overlay incidents/floods; verdict summary |
+| Search history (DB) | Done | Records searches; recent searches available |
+| Use my location (GPS) | Done | Geolocation button populates From |
+| Backend polling | Done | Scheduled jobs warm API caches |
+| Location bookmarks | Planned | Multiple locations per registered user; profile default |
+| Profile default location | Planned | Pre-loaded on app open; feeds admin metrics |
+| Admin dashboard | Planned | API health, LLM cost, user metrics, budget alerts |
+| Donations | Planned | "Support Flood Watch" link in footer |
 
 ---
 

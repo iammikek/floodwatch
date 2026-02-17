@@ -14,7 +14,7 @@ This document outlines optimisations to improve performance and speed up renderi
 
 **Impact**: Repeat visits and same-location searches avoid LLM + EA + National Highways calls; response time drops from seconds to milliseconds for cache hits.
 
-**Reference**: `FloodWatchService::chat()` already implements cache get/put; only config change required. See `docs/ARCHITECTURE.md` Caches & TTLs.
+**Reference**: `FloodWatchService::chat()` already implements cache get/put; only config change required. See `docs/architecture.md` Caches & TTLs.
 
 ---
 
@@ -96,7 +96,7 @@ This document outlines optimisations to improve performance and speed up renderi
 
 **Impact**: First search (cold) may see lower latency when three HTTP calls run in parallel in separate processes.
 
-**Reference**: `docs/ARCHITECTURE.md` – Scaling Notes.
+**Reference**: `docs/architecture.md` – Scaling Notes.
 
 ---
 
@@ -164,6 +164,6 @@ This document outlines optimisations to improve performance and speed up renderi
 
 ## Related docs
 
-- `docs/ARCHITECTURE.md` – Caches, Concurrency, scaling
+- `docs/architecture.md` – Caches, Concurrency, scaling
 - `docs/performance.md` – OSRM, LLM/cache, Nominatim
-- `docs/PLAN.md` – Geographic cache keys, cache warming
+- `docs/plan.md` – Geographic cache keys, cache warming
