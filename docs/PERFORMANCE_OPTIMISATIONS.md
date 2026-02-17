@@ -20,7 +20,7 @@ This document outlines optimisations to improve performance and speed up renderi
 
 ## 2. Reduce Livewire round-trips for location input (high impact, low effort) ✅ Done
 
-**Current**: `wire:model="location"` in `resources/views/components/flood-watch/search/location-search.blade.php` syncs on every keystroke. Typing "Langport" can trigger many server round-trips and re-renders (including `getBookmarksProperty` / `getRecentSearchesProperty`).
+**Before**: `wire:model="location"` in `resources/views/components/flood-watch/search/location-search.blade.php` syncs on every keystroke. Typing "Langport" can trigger many server round-trips and re-renders (including `getBookmarksProperty` / `getRecentSearchesProperty`).
 
 **Change** (implemented):
 - Use `wire:model.defer="location"` so the location is synced only when the next Livewire request runs (e.g. "Check status" click); no round-trips while typing.
@@ -33,7 +33,7 @@ This document outlines optimisations to improve performance and speed up renderi
 
 ## 3. Cache river levels for map API (high impact, medium effort) ✅ Done
 
-**Current**: `GET /flood-watch/river-levels?lat=&lng=&radius=` is invoked by the map on load and on every `moveend` (debounced 400 ms). `FloodWatchRiverLevelsController` calls `RiverLevelService::getLevels()` with **no caching**; each request hits the Environment Agency API.
+**Before**: `GET /flood-watch/river-levels?lat=&lng=&radius=` is invoked by the map on load and on every `moveend` (debounced 400 ms). `FloodWatchRiverLevelsController` calls `RiverLevelService::getLevels()` with **no caching**; each request hits the Environment Agency API.
 
 **Change**:
 - In `RiverLevelService::getLevels()`, cache results by a key derived from rounded lat/lng and radius (e.g. `flood-watch:river-levels:{round(lat,2)}:{round(lng,2)}:{radius}`) with TTL 15 minutes (reuse `flood-watch.cache_ttl_minutes` or a dedicated `river_levels_cache_minutes`).
@@ -47,9 +47,9 @@ This document outlines optimisations to improve performance and speed up renderi
 
 ## 4. Cache geocoding (LocationResolver / PostcodeValidator) (medium impact, medium effort) ✅ Done
 
-**Current**: 
-- `PostcodeValidator::geocode()` calls postcodes.io on every postcode lookup with no cache.
-- `LocationResolver::geocodePlaceName()` calls Nominatim on every place-name lookup with no cache.
+**Before**:
+- `PostcodeValidator::geocode()` called postcodes.io on every postcode lookup with no cache.
+- `LocationResolver::geocodePlaceName()` called Nominatim on every place-name lookup with no cache.
 
 **Change** (implemented):
 - **Postcodes**: Cache by normalised postcode. Key `{prefix}:geocode:postcode:{normalized}`. TTL configurable (`geocode_postcode_cache_minutes`, default 10080 = 7 days). Only successful lat/lng results cached.
