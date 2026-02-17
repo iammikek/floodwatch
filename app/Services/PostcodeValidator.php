@@ -3,7 +3,9 @@
 namespace App\Services;
 
 use App\ValueObjects\Postcode;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Psr\SimpleCache\InvalidArgumentException;
 use Throwable;
 
 class PostcodeValidator
@@ -11,32 +13,25 @@ class PostcodeValidator
     /**
      * UK postcode format (outcode + incode). Supports optional space.
      */
-    private const UK_POSTCODE_REGEX = '/^([A-Z]{1,2}[0-9][0-9A-Z]?)\s*([0-9][A-Z]{2})$/i';
+    private const string UK_POSTCODE_REGEX = '/^([A-Z]{1,2}[0-9][0-9A-Z]?)\s*([0-9][A-Z]{2})$/i';
 
     /**
      * Outcode-only pattern (e.g. TA10, TA10 0) for partial postcode lookup.
      */
-    private const OUTCODE_ONLY_REGEX = '/^([A-Z]{1,2}[0-9][0-9A-Z]?)(?:\s+[0-9][A-Z]{0,2})?$/i';
+    private const string OUTCODE_ONLY_REGEX = '/^([A-Z]{1,2}[0-9][0-9A-Z]?)(?:\s+[0-9][A-Z]{0,2})?$/i';
 
     /**
      * Validate and optionally geocode a UK postcode for the South West.
      *
      * @return array{valid: bool, in_area: bool, error?: string, lat?: float, lng?: float, outcode?: string, region?: string|null}
+     *
+     * @throws InvalidArgumentException
      */
     public function validate(string $postcode, bool $geocode = true): array
     {
         $postcodeObj = Postcode::tryFrom($postcode);
 
         if ($postcodeObj === null) {
-            $normalized = $this->normalize($postcode);
-            if ($normalized === '') {
-                return [
-                    'valid' => false,
-                    'in_area' => false,
-                    'error' => __('flood-watch.errors.invalid_location'),
-                ];
-            }
-
             return [
                 'valid' => false,
                 'in_area' => false,
@@ -93,33 +88,28 @@ class PostcodeValidator
         return (bool) preg_match(self::OUTCODE_ONLY_REGEX, $postcode);
     }
 
-    // Removed unused isInSouthWest(string $outcode): bool
-
-    /**
-     * Get the sub-region key from a postcode outcode (somerset, bristol, devon, cornwall).
-     */
-    public function getRegionFromOutcode(string $outcode): ?string
-    {
-        $area = $this->extractAreaCode($outcode);
-        $regions = config('flood-watch.regions', []);
-
-        foreach ($regions as $regionKey => $config) {
-            if (in_array($area, $config['areas'] ?? [], true)) {
-                return $regionKey;
-            }
-        }
-
-        return null;
-    }
-
     /**
      * Geocode postcode via postcodes.io (free, no API key).
+     * Successful results are cached to reduce repeat API calls.
      *
      * @return array{lat: float, lng: float}|array{error: string}|null
+     *
+     * @throws InvalidArgumentException
      */
     public function geocode(string $postcode): ?array
     {
         $normalized = $this->normalize($postcode);
+        $cacheMinutes = config('flood-watch.geocode_postcode_cache_minutes', 0);
+
+        if ($cacheMinutes > 0) {
+            $key = $this->geocodePostcodeCacheKey($normalized);
+            $store = config('flood-watch.cache_store', 'flood-watch');
+            $cached = Cache::store($store)->get($key);
+            if ($cached !== null && is_array($cached) && isset($cached['lat'], $cached['lng'])) {
+                return $cached;
+            }
+        }
+
         $url = 'https://api.postcodes.io/postcodes/'.rawurlencode($normalized);
 
         try {
@@ -140,46 +130,27 @@ class PostcodeValidator
                 return null;
             }
 
-            return [
+            $coords = [
                 'lat' => (float) $result['latitude'],
                 'lng' => (float) $result['longitude'],
             ];
+
+            if ($cacheMinutes > 0) {
+                $key = $this->geocodePostcodeCacheKey($normalized);
+                $store = config('flood-watch.cache_store', 'flood-watch');
+                Cache::store($store)->put($key, $coords, now()->addMinutes($cacheMinutes));
+            }
+
+            return $coords;
         } catch (Throwable) {
             return null;
         }
     }
 
-    private function extractOutcode(string $postcode): string
+    private function geocodePostcodeCacheKey(string $normalizedPostcode): string
     {
-        if (preg_match(self::UK_POSTCODE_REGEX, $postcode, $m)) {
-            return strtoupper($m[1]);
-        }
-        if (preg_match(self::OUTCODE_ONLY_REGEX, $postcode, $m)) {
-            return strtoupper($m[1]);
-        }
+        $prefix = config('flood-watch.cache_key_prefix', 'flood-watch');
 
-        return '';
-    }
-
-    private function outcodePrefix(string $outcode): string
-    {
-        $outcode = strtoupper($outcode);
-
-        if (preg_match('/^([A-Z]{1,2}[0-9][0-9A-Z]?)/', $outcode, $m)) {
-            return $m[1];
-        }
-
-        return $outcode;
-    }
-
-    private function extractAreaCode(string $outcode): string
-    {
-        $outcode = strtoupper($outcode);
-
-        if (preg_match('/^([A-Z]{1,2})/', $outcode, $m)) {
-            return $m[1];
-        }
-
-        return '';
+        return "{$prefix}:geocode:postcode:".$normalizedPostcode;
     }
 }

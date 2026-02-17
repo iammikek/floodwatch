@@ -32,6 +32,7 @@ Implementation specs for Cursor agentic development. Build in order; each spec i
 | # | Spec | Est. | Purpose |
 |---|------|------|---------|
 | 9 | [Smarter route verdict](09-smarter-route-verdict.md) | ~8–10 h | Rivers on route, wet areas, Muchelney rule |
+| 10 | [Analytics layer](10-analytics-layer.md) | ~2–4 h | Operational metrics, trends, dashboard, alerts |
 
 **Note**: Admin dashboard comes first so we can monitor API health, users, and LLM cost from the start. Search history enhances admin metrics when built.
 

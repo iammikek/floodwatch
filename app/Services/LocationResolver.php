@@ -3,7 +3,9 @@
 namespace App\Services;
 
 use App\Enums\Region;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Psr\SimpleCache\InvalidArgumentException;
 use Throwable;
 
 /**
@@ -25,6 +27,8 @@ class LocationResolver
      * Resolve a location string (postcode or place name) to coordinates and region.
      *
      * @return array{valid: bool, in_area: bool, error?: string, lat?: float, lng?: float, region?: string, outcode?: string, display_name?: string}
+     *
+     * @throws InvalidArgumentException
      */
     public function resolve(string $input): array
     {
@@ -48,11 +52,27 @@ class LocationResolver
 
     /**
      * Geocode a place name via Nominatim (OpenStreetMap).
+     * Successful in-area results are cached to reduce repeat API calls (Nominatim recommends 1 req/s).
+     * Transient errors (rate limit, API failure) and "outside area" are not cached.
      *
      * @return array{valid: bool, in_area: bool, error?: string, lat?: float, lng?: float, region?: string, display_name?: string}
+     *
+     * @throws InvalidArgumentException
      */
     private function geocodePlaceName(string $placeName): array
     {
+        $normalized = strtolower(trim($placeName));
+        $cacheMinutes = config('flood-watch.geocode_place_cache_minutes', 0);
+
+        if ($cacheMinutes > 0 && $normalized !== '') {
+            $key = $this->geocodePlaceCacheKey($normalized);
+            $store = config('flood-watch.cache_store', 'flood-watch');
+            $cached = Cache::store($store)->get($key);
+            if ($cached !== null && is_array($cached) && isset($cached['valid'], $cached['in_area'])) {
+                return $cached;
+            }
+        }
+
         $url = 'https://nominatim.openstreetmap.org/search';
         $params = [
             'q' => $placeName.', UK',
@@ -113,7 +133,7 @@ class LocationResolver
             $region = $this->getRegionFromAddress($address);
 
             if (! $inArea) {
-                return [
+                $result = [
                     'valid' => true,
                     'in_area' => false,
                     'error' => __('flood-watch.errors.outside_area'),
@@ -121,16 +141,24 @@ class LocationResolver
                     'lng' => $lon,
                     'display_name' => $displayName,
                 ];
+            } else {
+                $result = [
+                    'valid' => true,
+                    'in_area' => true,
+                    'lat' => $lat,
+                    'lng' => $lon,
+                    'region' => $region,
+                    'display_name' => $displayName,
+                ];
             }
 
-            return [
-                'valid' => true,
-                'in_area' => true,
-                'lat' => $lat,
-                'lng' => $lon,
-                'region' => $region,
-                'display_name' => $displayName,
-            ];
+            if ($cacheMinutes > 0 && $normalized !== '' && $result['in_area']) {
+                $key = $this->geocodePlaceCacheKey($normalized);
+                $store = config('flood-watch.cache_store', 'flood-watch');
+                Cache::store($store)->put($key, $result, now()->addMinutes($cacheMinutes));
+            }
+
+            return $result;
         } catch (Throwable $e) {
             report($e);
 
@@ -140,6 +168,13 @@ class LocationResolver
                 'error' => __('flood-watch.bookmarks.unable_to_resolve'),
             ];
         }
+    }
+
+    private function geocodePlaceCacheKey(string $normalizedPlaceName): string
+    {
+        $prefix = config('flood-watch.cache_key_prefix', 'flood-watch');
+
+        return "{$prefix}:geocode:place:".md5($normalizedPlaceName);
     }
 
     private function isInSouthWest(float $lat, float $lon, array $address): bool

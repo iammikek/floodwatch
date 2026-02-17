@@ -364,7 +364,7 @@ class FloodWatchDashboard extends Component
             if (RateLimiter::tooManyAttempts($key, 1)) {
                 $seconds = RateLimiter::availableIn($key);
                 $this->error = __('flood-watch.errors.guest_rate_limit', ['action' => 'request']);
-                $this->retryAfterTimestamp = time() + $seconds;
+                $this->retryAfterTimestamp = time() + max(1, $seconds);
             }
         } else {
             $default = Auth::user()->locationBookmarks()->where('is_default', true)->first();
@@ -386,7 +386,7 @@ class FloodWatchDashboard extends Component
             $decaySeconds = 1;
             if (RateLimiter::tooManyAttempts($key, 1)) {
                 $this->routeCheckLoading = false;
-                $this->retryAfterTimestamp = time() + RateLimiter::availableIn($key);
+                $this->retryAfterTimestamp = time() + max(1, RateLimiter::availableIn($key));
                 $this->routeCheckResult = [
                     'verdict' => 'error',
                     'summary' => __('flood-watch.errors.guest_rate_limit', ['action' => 'request']),
@@ -519,7 +519,7 @@ class FloodWatchDashboard extends Component
             if (RateLimiter::tooManyAttempts($key, 1)) {
                 $seconds = RateLimiter::availableIn($key);
                 $this->error = __('flood-watch.errors.guest_rate_limit', ['action' => 'request']);
-                $this->retryAfterTimestamp = time() + $seconds;
+                $this->retryAfterTimestamp = time() + max(1, $seconds);
                 $this->loading = false;
 
                 return;

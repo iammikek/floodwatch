@@ -3,6 +3,7 @@
 namespace Tests\Feature\Services;
 
 use App\Services\PostcodeValidator;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -134,5 +135,67 @@ class PostcodeValidatorTest extends TestCase
         $this->assertFalse($result['valid']);
         $this->assertFalse($result['in_area']);
         $this->assertSame(__('flood-watch.errors.rate_limit'), $result['error']);
+    }
+
+    public function test_geocode_returns_cached_result_on_cache_hit_without_http_request(): void
+    {
+        $this->app['config']->set('flood-watch.geocode_postcode_cache_minutes', 60);
+
+        $cachedCoords = ['lat' => 51.1, 'lng' => -2.9];
+        $prefix = config('flood-watch.cache_key_prefix', 'flood-watch');
+        $key = "{$prefix}:geocode:postcode:TA10 0DP";
+        Cache::store(config('flood-watch.cache_store'))->put($key, $cachedCoords, now()->addMinutes(60));
+
+        Http::fake(function () {
+            $this->fail('Expected no HTTP request when geocode cache is hit');
+        });
+
+        $validator = app(PostcodeValidator::class);
+        $result = $validator->geocode('TA10 0DP');
+
+        $this->assertSame($cachedCoords, $result);
+    }
+
+    public function test_geocode_stores_result_in_cache_on_miss(): void
+    {
+        $this->app['config']->set('flood-watch.geocode_postcode_cache_minutes', 60);
+
+        Http::fake([
+            'api.postcodes.io/*' => Http::response([
+                'result' => ['latitude' => 51.2, 'longitude' => -2.7],
+            ], 200),
+        ]);
+
+        $validator = app(PostcodeValidator::class);
+        $result = $validator->geocode('BA6 8AB');
+
+        $this->assertNotNull($result);
+        $this->assertSame(51.2, $result['lat']);
+        $this->assertSame(-2.7, $result['lng']);
+
+        $prefix = config('flood-watch.cache_key_prefix', 'flood-watch');
+        $key = "{$prefix}:geocode:postcode:BA6 8AB";
+        $stored = Cache::store(config('flood-watch.cache_store'))->get($key);
+        $this->assertNotNull($stored);
+        $this->assertSame(51.2, $stored['lat']);
+        $this->assertSame(-2.7, $stored['lng']);
+    }
+
+    public function test_geocode_does_not_use_cache_when_ttl_zero(): void
+    {
+        $this->app['config']->set('flood-watch.geocode_postcode_cache_minutes', 0);
+
+        $requestCount = 0;
+        Http::fake(function () use (&$requestCount) {
+            $requestCount++;
+
+            return Http::response(['result' => ['latitude' => 51.0, 'longitude' => -2.8]], 200);
+        });
+
+        $validator = app(PostcodeValidator::class);
+        $validator->geocode('TA10 0DP');
+        $validator->geocode('TA10 0DP');
+
+        $this->assertSame(2, $requestCount, 'Expected two HTTP requests when geocode cache TTL is 0');
     }
 }

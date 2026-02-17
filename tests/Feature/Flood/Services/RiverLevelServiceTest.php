@@ -3,6 +3,7 @@
 namespace Tests\Feature\Flood\Services;
 
 use App\Flood\Services\RiverLevelService;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -182,5 +183,119 @@ class RiverLevelServiceTest extends TestCase
         $result = $service->getLevels();
 
         $this->assertSame([], $result);
+    }
+
+    public function test_returns_cached_result_on_cache_hit_without_http_request(): void
+    {
+        $this->app['config']->set('flood-watch.river_levels_cache_minutes', 15);
+
+        $cachedResult = [
+            [
+                'station' => 'Cached Station',
+                'river' => 'River Cached',
+                'town' => 'Cached Town',
+                'value' => 1.5,
+                'unit' => 'm',
+                'unitName' => 'm',
+                'dateTime' => '2026-02-04T12:00:00Z',
+                'lat' => 51.04,
+                'lng' => -2.83,
+                'stationType' => 'river_gauge',
+                'levelStatus' => 'expected',
+            ],
+        ];
+
+        $prefix = config('flood-watch.cache_key_prefix', 'flood-watch');
+        $lat = config('flood-watch.default_lat');
+        $lng = config('flood-watch.default_lng');
+        $radius = config('flood-watch.default_radius_km');
+        $key = "{$prefix}:river-levels:".round($lat, 2).':'.round($lng, 2).":{$radius}";
+
+        Cache::store(config('flood-watch.cache_store'))->put($key, $cachedResult, now()->addMinutes(15));
+
+        Http::fake(function () {
+            $this->fail('Expected no HTTP request when cache is hit');
+        });
+
+        $service = new RiverLevelService;
+        $result = $service->getLevels();
+
+        $this->assertSame($cachedResult, $result);
+    }
+
+    public function test_stores_result_in_cache_on_miss(): void
+    {
+        $this->app['config']->set('flood-watch.river_levels_cache_minutes', 15);
+
+        Http::fake(function ($request) {
+            $url = $request->url();
+            if (str_contains($url, '/id/stations?') || str_contains($url, '/id/stations&')) {
+                return Http::response([
+                    'items' => [
+                        [
+                            'notation' => '52119',
+                            'stationReference' => '52119',
+                            'label' => 'Cache Test Station',
+                            'riverName' => 'River Test',
+                            'town' => 'Test Town',
+                            'lat' => 51.0,
+                            'long' => -2.8,
+                            'stageScale' => [
+                                'typicalRangeLow' => 1.0,
+                                'typicalRangeHigh' => 2.0,
+                            ],
+                        ],
+                    ],
+                ], 200);
+            }
+            if (str_contains($url, '/stations/52119/readings')) {
+                return Http::response([
+                    'items' => [
+                        [
+                            'value' => 1.5,
+                            'dateTime' => '2026-02-04T12:00:00Z',
+                            'measure' => 'http://environment.data.gov.uk/flood-monitoring/id/measures/52119-level-stage-i-15_min-mASD',
+                        ],
+                    ],
+                ], 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
+        $service = new RiverLevelService;
+        $result = $service->getLevels(51.0, -2.8, 10);
+
+        $this->assertCount(1, $result);
+        $this->assertSame('Cache Test Station', $result[0]['station']);
+
+        $prefix = config('flood-watch.cache_key_prefix', 'flood-watch');
+        $key = "{$prefix}:river-levels:51:-2.8:10";
+        $stored = Cache::store(config('flood-watch.cache_store'))->get($key);
+        $this->assertNotNull($stored);
+        $this->assertIsArray($stored);
+        $this->assertCount(1, $stored);
+        $this->assertSame('Cache Test Station', $stored[0]['station']);
+    }
+
+    public function test_does_not_use_cache_when_ttl_zero(): void
+    {
+        $this->app['config']->set('flood-watch.river_levels_cache_minutes', 0);
+
+        $callCount = 0;
+        Http::fake(function ($request) use (&$callCount) {
+            $callCount++;
+            if (str_contains($request->url(), '/id/stations')) {
+                return Http::response(['items' => []], 200);
+            }
+
+            return Http::response(null, 404);
+        });
+
+        $service = new RiverLevelService;
+        $service->getLevels(51.1, -2.9, 20);
+        $service->getLevels(51.1, -2.9, 20);
+
+        $this->assertSame(2, $callCount, 'Expected two HTTP requests when cache TTL is 0');
     }
 }
