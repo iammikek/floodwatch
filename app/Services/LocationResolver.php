@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\Region;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Psr\SimpleCache\InvalidArgumentException;
 use Throwable;
 
 /**
@@ -26,6 +27,8 @@ class LocationResolver
      * Resolve a location string (postcode or place name) to coordinates and region.
      *
      * @return array{valid: bool, in_area: bool, error?: string, lat?: float, lng?: float, region?: string, outcode?: string, display_name?: string}
+     *
+     * @throws InvalidArgumentException
      */
     public function resolve(string $input): array
     {
@@ -52,6 +55,8 @@ class LocationResolver
      * Successful results are cached to reduce repeat API calls (Nominatim recommends 1 req/s).
      *
      * @return array{valid: bool, in_area: bool, error?: string, lat?: float, lng?: float, region?: string, display_name?: string}
+     *
+     * @throws InvalidArgumentException
      */
     private function geocodePlaceName(string $placeName): array
     {

@@ -18,7 +18,7 @@ use Throwable;
  */
 class RiverLevelService
 {
-    private const MAX_STATIONS = 15;
+    private const int MAX_STATIONS = 15;
 
     public function __construct(
         protected ?CircuitBreaker $circuitBreaker = null
@@ -46,7 +46,7 @@ class RiverLevelService
             $key = $this->riverLevelsCacheKey($lat, $lng, $radiusKm);
             $store = config('flood-watch.cache_store', 'flood-watch');
             $cached = Cache::store($store)->get($key);
-            if ($cached !== null && is_array($cached)) {
+            if (is_array($cached)) {
                 return $cached;
             }
         }
