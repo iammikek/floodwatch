@@ -52,7 +52,8 @@ class LocationResolver
 
     /**
      * Geocode a place name via Nominatim (OpenStreetMap).
-     * Successful results are cached to reduce repeat API calls (Nominatim recommends 1 req/s).
+     * Successful in-area results are cached to reduce repeat API calls (Nominatim recommends 1 req/s).
+     * Transient errors (rate limit, API failure) and "outside area" are not cached.
      *
      * @return array{valid: bool, in_area: bool, error?: string, lat?: float, lng?: float, region?: string, display_name?: string}
      *
@@ -151,7 +152,7 @@ class LocationResolver
                 ];
             }
 
-            if ($cacheMinutes > 0 && $normalized !== '') {
+            if ($cacheMinutes > 0 && $normalized !== '' && $result['in_area']) {
                 $key = $this->geocodePlaceCacheKey($normalized);
                 $store = config('flood-watch.cache_store', 'flood-watch');
                 Cache::store($store)->put($key, $result, now()->addMinutes($cacheMinutes));

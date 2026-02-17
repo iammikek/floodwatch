@@ -189,4 +189,36 @@ class LocationResolverTest extends TestCase
 
         $this->assertSame(2, $requestCount, 'Expected two HTTP requests when place cache TTL is 0');
     }
+
+    public function test_resolve_place_name_does_not_cache_outside_area_result(): void
+    {
+        $this->app['config']->set('flood-watch.geocode_place_cache_minutes', 60);
+
+        $requestCount = 0;
+        Http::fake(function () use (&$requestCount) {
+            $requestCount++;
+
+            return Http::response([
+                [
+                    'lat' => '51.5074',
+                    'lon' => '-0.1278',
+                    'display_name' => 'London, England, United Kingdom',
+                    'address' => [
+                        'city' => 'London',
+                        'county' => 'Greater London',
+                        'country' => 'United Kingdom',
+                    ],
+                ],
+            ], 200);
+        });
+
+        $resolver = app(LocationResolver::class);
+        $result1 = $resolver->resolve('London');
+        $result2 = $resolver->resolve('London');
+
+        $this->assertTrue($result1['valid']);
+        $this->assertFalse($result1['in_area']);
+        $this->assertSame($result1['error'], $result2['error']);
+        $this->assertSame(2, $requestCount, 'Outside-area results must not be cached; second call should hit Nominatim again');
+    }
 }
