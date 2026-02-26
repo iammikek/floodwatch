@@ -22,6 +22,10 @@ test('config flood-watch warm_cache_locations exists with all regions', function
         ->and($locations['somerset'])->toBe('Langport');
 });
 
+test('config flood-watch warm_cache_cron exists and defaults to every 4 hours', function () {
+    expect(config('flood-watch.warm_cache_cron'))->toBe('0 */4 * * *');
+});
+
 test('accessAdmin gate allows admin user', function () {
     $admin = User::factory()->admin()->create();
 

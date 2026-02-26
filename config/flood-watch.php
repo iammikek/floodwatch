@@ -36,6 +36,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Warm Cache Schedule (Cron)
+    |--------------------------------------------------------------------------
+    |
+    | Cron expression for the flood-watch:warm-cache command. Reduces Neon
+    | compute by running less often. Default: every 4 hours. For hourly, use
+    | 0 * * * *; for every 15 min use 0,15,30,45 * * * *
+    |
+    */
+    'warm_cache_cron' => env('FLOOD_WATCH_WARM_CACHE_CRON', '0 */4 * * *'),
+
+    /*
+    |--------------------------------------------------------------------------
     | LLM Token Limits
     |--------------------------------------------------------------------------
     |
