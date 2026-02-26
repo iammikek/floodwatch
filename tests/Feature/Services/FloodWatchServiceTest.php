@@ -204,6 +204,36 @@ class FloodWatchServiceTest extends TestCase
         $this->assertSame('chatcmpl-record123', $record->openai_id);
     }
 
+    public function test_chat_with_record_usage_false_does_not_create_llm_request(): void
+    {
+        Config::set('openai.api_key', 'test-key');
+        Http::fake([
+            '*api.ffc-environment-agency.fgs.metoffice.gov.uk*' => Http::response(['statement' => []], 200),
+            '*api.open-meteo.com*' => Http::response(['daily' => ['time' => [], 'weathercode' => [], 'temperature_2m_max' => [], 'temperature_2m_min' => [], 'precipitation_sum' => []]], 200),
+            '*environment.data.gov.uk*' => Http::response(['items' => []], 200),
+        ]);
+
+        $directResponse = CreateResponse::fake([
+            'choices' => [
+                [
+                    'index' => 0,
+                    'message' => ['role' => 'assistant', 'content' => 'OK', 'tool_calls' => []],
+                    'logprobs' => null,
+                    'finish_reason' => 'stop',
+                ],
+            ],
+            'usage' => ['prompt_tokens' => 1, 'completion_tokens' => 1, 'total_tokens' => 2],
+            'model' => 'gpt-4o-mini',
+            'id' => 'chatcmpl-warm',
+        ]);
+        OpenAI::fake([$directResponse]);
+
+        $service = app(FloodWatchService::class);
+        $service->chat('Check status', [], null, null, null, 'somerset', null, null, false);
+
+        $this->assertSame(0, LlmRequest::query()->count());
+    }
+
     public function test_execute_tool_passes_custom_coordinates_to_get_flood_data(): void
     {
         Config::set('openai.api_key', 'test-key');

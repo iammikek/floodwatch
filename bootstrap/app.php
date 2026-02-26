@@ -25,7 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $locations = implode(',', array_values(config('flood-watch.warm_cache_locations', [])));
         if ($locations !== '') {
             $schedule->command('flood-watch:warm-cache', ['--locations' => $locations])
-                ->everyFifteenMinutes()
+                ->cron(config('flood-watch.warm_cache_cron', '0 */4 * * *'))
                 ->withoutOverlapping()
                 ->onOneServer();
         }

@@ -56,6 +56,9 @@ class FloodWatchWarmCacheCommand extends Command
                 $lat,
                 $lng,
                 $region,
+                null,
+                null,
+                false, // do not record usage for warm-cache (reduces Neon DB compute)
             );
         }
 
