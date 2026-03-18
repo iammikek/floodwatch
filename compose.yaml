@@ -10,7 +10,8 @@ services:
             - 'host.docker.internal:host-gateway'
         ports:
             - '${APP_PORT:-80}:80'
-            - '${VITE_PORT:-5173}:${VITE_PORT:-5173}'
+            # Map host VITE_PORT to container's Vite dev server (5173)
+            - '${VITE_PORT:-5173}:5173'
         environment:
             WWWUSER: '${WWWUSER}'
             LARAVEL_SAIL: 1
