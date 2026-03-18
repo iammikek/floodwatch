@@ -3,6 +3,9 @@
 namespace Tests\Feature\Flood\Services;
 
 use App\Flood\Services\EnvironmentAgencyFloodService;
+use App\Support\CircuitBreaker;
+use App\Support\CircuitOpenException;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -73,7 +76,7 @@ class EnvironmentAgencyFloodServiceTest extends TestCase
     {
         Http::fake([
             '*/flood-monitoring/id/floods*' => function () {
-                throw new \Illuminate\Http\Client\ConnectionException('network');
+                throw new ConnectionException('network');
             },
         ]);
 
@@ -85,9 +88,9 @@ class EnvironmentAgencyFloodServiceTest extends TestCase
 
     public function test_returns_empty_array_when_circuit_is_open(): void
     {
-        $cb = \Mockery::mock(\App\Support\CircuitBreaker::class);
+        $cb = \Mockery::mock(CircuitBreaker::class);
         $cb->shouldReceive('execute')
-            ->andThrow(new \App\Support\CircuitOpenException);
+            ->andThrow(new CircuitOpenException);
 
         $service = new EnvironmentAgencyFloodService($cb);
         $result = $service->getFloods();

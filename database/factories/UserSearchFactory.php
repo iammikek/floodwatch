@@ -3,10 +3,11 @@
 namespace Database\Factories;
 
 use App\Models\User;
+use App\Models\UserSearch;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\UserSearch>
+ * @extends Factory<UserSearch>
  */
 class UserSearchFactory extends Factory
 {

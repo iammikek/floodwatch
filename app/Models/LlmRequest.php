@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use Database\Factories\LlmRequestFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class LlmRequest extends Model
 {
-    /** @use HasFactory<\Database\Factories\LlmRequestFactory> */
+    /** @use HasFactory<LlmRequestFactory> */
     use HasFactory;
 
     protected $fillable = [

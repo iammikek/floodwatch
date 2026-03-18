@@ -3,9 +3,10 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Laravel\Pulse\Support\PulseMigration;
 
 if (class_exists('Laravel\\Pulse\\Support\\PulseMigration')) {
-    return new class extends \Laravel\Pulse\Support\PulseMigration
+    return new class extends PulseMigration
     {
         public function up(): void
         {
@@ -82,5 +83,6 @@ if (class_exists('Laravel\\Pulse\\Support\\PulseMigration')) {
 return new class extends Migration
 {
     public function up(): void {}
+
     public function down(): void {}
 };

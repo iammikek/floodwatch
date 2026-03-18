@@ -2,6 +2,7 @@
 
 use App\Models\User;
 use App\Models\UserSearch;
+use Illuminate\Support\Carbon;
 
 test('factory creates user search with user', function () {
     $search = UserSearch::factory()->create([
@@ -35,7 +36,7 @@ test('searched_at is cast to datetime', function () {
         'searched_at' => '2026-02-07 12:00:00',
     ]);
 
-    expect($search->searched_at)->toBeInstanceOf(\Illuminate\Support\Carbon::class)
+    expect($search->searched_at)->toBeInstanceOf(Carbon::class)
         ->and($search->searched_at->format('Y-m-d'))->toBe('2026-02-07');
 });
 

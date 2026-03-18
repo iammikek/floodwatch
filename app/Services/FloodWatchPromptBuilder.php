@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Support\Tooling\ToolRegistry;
 use Illuminate\Support\Facades\File;
 
 /**
@@ -22,7 +23,7 @@ class FloodWatchPromptBuilder
 
     public function __construct(
         protected string $version = 'v1',
-        protected ?\App\Support\Tooling\ToolRegistry $registry = null,
+        protected ?ToolRegistry $registry = null,
     ) {}
 
     public function buildSystemPrompt(?string $region = null): string

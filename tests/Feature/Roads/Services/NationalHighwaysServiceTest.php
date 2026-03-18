@@ -3,6 +3,9 @@
 namespace Tests\Feature\Roads\Services;
 
 use App\Roads\Services\NationalHighwaysService;
+use App\Support\CircuitBreaker;
+use App\Support\CircuitOpenException;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
@@ -150,7 +153,7 @@ class NationalHighwaysServiceTest extends TestCase
 
         Http::fake([
             '*api.example.com*' => function () {
-                throw new \Illuminate\Http\Client\ConnectionException('network');
+                throw new ConnectionException('network');
             },
         ]);
 
@@ -163,9 +166,9 @@ class NationalHighwaysServiceTest extends TestCase
     public function test_returns_empty_array_when_circuit_is_open(): void
     {
         Config::set('flood-watch.national_highways.api_key', 'test-key');
-        $cb = \Mockery::mock(\App\Support\CircuitBreaker::class);
+        $cb = \Mockery::mock(CircuitBreaker::class);
         $cb->shouldReceive('execute')
-            ->andThrow(new \App\Support\CircuitOpenException);
+            ->andThrow(new CircuitOpenException);
 
         $service = new NationalHighwaysService($cb);
         $result = $service->getIncidents();

@@ -9,6 +9,7 @@ use App\Roads\Services\NationalHighwaysService;
 use App\Support\GeoJsonBboxExtractor;
 use App\Support\IncidentIcon;
 use App\Support\IncidentsOnRouteFilter;
+use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
@@ -449,7 +450,7 @@ class RouteCheckService
     /**
      * Safe cache read: returns RouteCheckResult or null on failure/corrupt/incompatible data.
      */
-    private function cacheGet(\Illuminate\Contracts\Cache\Repository $cache, string $key): ?RouteCheckResult
+    private function cacheGet(Repository $cache, string $key): ?RouteCheckResult
     {
         try {
             $data = $cache->get($key);
@@ -471,7 +472,7 @@ class RouteCheckService
     /**
      * Safe cache write: silently skips on store failure.
      */
-    private function cachePut(\Illuminate\Contracts\Cache\Repository $cache, string $key, array $value, \DateTimeInterface|int $ttl): void
+    private function cachePut(Repository $cache, string $key, array $value, \DateTimeInterface|int $ttl): void
     {
         try {
             $cache->put($key, $value, $ttl);

@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\ThrottleFloodWatch;
+use App\Jobs\FetchNationalHighwaysIncidentsJob;
 use App\Jobs\ScrapeSomersetCouncilRoadworksJob;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
@@ -14,12 +16,12 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->trustProxies(at: '*');
-        $middleware->appendToGroup('web', \App\Http\Middleware\ThrottleFloodWatch::class);
+        $middleware->appendToGroup('web', ThrottleFloodWatch::class);
     })
     ->withSchedule(function (Schedule $schedule): void {
         $schedule->command('flood-watch:prune-llm-requests')->daily();
 
-        $schedule->job(new \App\Jobs\FetchNationalHighwaysIncidentsJob)->everyFifteenMinutes()->withoutOverlapping()->onOneServer();
+        $schedule->job(new FetchNationalHighwaysIncidentsJob)->everyFifteenMinutes()->withoutOverlapping()->onOneServer();
         $schedule->job(new ScrapeSomersetCouncilRoadworksJob)->everyFifteenMinutes()->withoutOverlapping()->onOneServer();
 
         $locations = implode(',', array_values(config('flood-watch.warm_cache_locations', [])));
