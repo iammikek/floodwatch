@@ -80,7 +80,7 @@ The assistant uses **OpenAI tool calling** (openai-php/laravel). The LLM receive
 
 ## Tech Stack
 
-- **Laravel 12.x** – PHP 8.2+
+- **Laravel 13.x** – PHP 8.3+
 - **Laravel Sail** – Docker development environment (includes Redis)
 - **Livewire 4** – Real-time UI
 - **Laravel Boost** – AI-assisted development (MCP, guidelines)
