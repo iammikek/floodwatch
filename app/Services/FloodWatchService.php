@@ -59,26 +59,8 @@ class FloodWatchService
      */
     public function chat(string $userMessage, array $conversation = [], ?string $cacheKey = null, ?float $userLat = null, ?float $userLng = null, ?string $region = null, ?int $userId = null, ?callable $onProgress = null): array
     {
-        $emptyResult = function (string $response, ?string $lastChecked = null, ?string $errorKey = null): array {
-            $result = [
-                'response' => $response,
-                'floods' => [],
-                'incidents' => [],
-                'forecast' => [],
-                'weather' => [],
-                'riverLevels' => [],
-                'lastChecked' => $lastChecked ?? now()->toIso8601String(),
-            ];
-            if ($errorKey !== null) {
-                $result['errors'] = true;
-                $result['error_key'] = $errorKey;
-            }
-
-            return $result;
-        };
-
         if (empty(config('openai.api_key'))) {
-            return $emptyResult(__('flood-watch.errors.no_api_key'));
+            return $this->emptyResult(__('flood-watch.errors.no_api_key'));
         }
 
         $store = $this->resolveCacheStore();
@@ -94,7 +76,30 @@ class FloodWatchService
                     'region' => $region,
                 ]);
 
-                return $cached;
+                $response = isset($cached['response']) ? (string) $cached['response'] : '';
+                $floods = is_array($cached['floods'] ?? null) ? $cached['floods'] : [];
+                $incidents = is_array($cached['incidents'] ?? null) ? $cached['incidents'] : [];
+                $forecast = is_array($cached['forecast'] ?? null) ? $cached['forecast'] : [];
+                $weather = is_array($cached['weather'] ?? null) ? $cached['weather'] : [];
+                $riverLevelsCoerced = is_array($cached['riverLevels'] ?? null) ? $cached['riverLevels'] : [];
+                $lastChecked = isset($cached['lastChecked']) ? (string) $cached['lastChecked'] : now()->toIso8601String();
+                $out = [
+                    'response' => $response,
+                    'floods' => $floods,
+                    'incidents' => $incidents,
+                    'forecast' => $forecast,
+                    'weather' => $weather,
+                    'riverLevels' => $riverLevelsCoerced,
+                    'lastChecked' => $lastChecked,
+                ];
+                if (isset($cached['errors'])) {
+                    $out['errors'] = (bool) $cached['errors'];
+                }
+                if (isset($cached['error_key'])) {
+                    $out['error_key'] = (string) $cached['error_key'];
+                }
+
+                return $out;
             }
             Log::debug('FloodWatch cache miss', [
                 'provider' => 'flood-watch',
@@ -138,8 +143,8 @@ class FloodWatchService
                 'tools' => $tools,
                 'tool_choice' => 'auto',
             ];
-            $payloadJson = json_encode($payload);
-            $payloadBytes = strlen($payloadJson);
+            $payloadJson = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            $payloadBytes = strlen($payloadJson !== false ? $payloadJson : '{}');
             $estimatedTokens = (int) ceil($payloadBytes / 4);
             Log::info('FloodWatch OpenAI payload', [
                 'provider' => 'openai',
@@ -166,7 +171,7 @@ class FloodWatchService
                     'region' => $region,
                 ]);
 
-                return $emptyResult(__('flood-watch.errors.rate_limit'), now()->toIso8601String(), 'rate_limit');
+                return $this->emptyResult(__('flood-watch.errors.rate_limit'), now()->toIso8601String(), 'rate_limit');
             } catch (OpenAIErrorException $e) {
                 Log::error('FloodWatch OpenAI API error', [
                     'provider' => 'openai',
@@ -188,7 +193,7 @@ class FloodWatchService
                     default => 'api_error',
                 };
 
-                return $emptyResult(__($messageKey), now()->toIso8601String(), $errorKey);
+                return $this->emptyResult(__($messageKey), now()->toIso8601String(), $errorKey);
             } catch (OpenAITransporterException $e) {
                 Log::error('FloodWatch OpenAI transport error', [
                     'provider' => 'openai',
@@ -200,7 +205,7 @@ class FloodWatchService
                 $msg = $this->userMessageForLlmException($e);
                 $errorKey = $this->errorKeyFromMessage($msg);
 
-                return $emptyResult($msg, now()->toIso8601String(), $errorKey);
+                return $this->emptyResult($msg, now()->toIso8601String(), $errorKey);
             } catch (Throwable $e) {
                 Log::error('FloodWatch unexpected error during LLM call', [
                     'provider' => 'openai',
@@ -212,14 +217,14 @@ class FloodWatchService
                 $msg = $this->userMessageForLlmException($e);
                 $errorKey = $this->errorKeyFromMessage($msg);
 
-                return $emptyResult($msg, now()->toIso8601String(), $errorKey);
+                return $this->emptyResult($msg, now()->toIso8601String(), $errorKey);
             }
 
             $this->dispatchRecordLlmRequest($response, $userId, $region);
 
             $choice = $response->choices[0] ?? null;
             if (! $choice) {
-                return $emptyResult(__('flood-watch.errors.no_response'), now()->toIso8601String());
+                return $this->emptyResult(__('flood-watch.errors.no_response'), now()->toIso8601String());
             }
 
             $message = $choice->message;
@@ -301,7 +306,10 @@ class FloodWatchService
                 }
 
                 $contentForLlm = $this->prepareToolResultForLlm($toolName, $result);
-                $content = is_string($contentForLlm) ? $contentForLlm : json_encode($contentForLlm);
+                $encoded = is_string($contentForLlm)
+                    ? $contentForLlm
+                    : json_encode($contentForLlm, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                $content = $encoded !== false ? $encoded : '[unserializable tool result]';
                 $contentBytes = strlen($content);
                 Log::info('FloodWatch tool result for LLM', [
                     'tool' => $toolName,
@@ -322,7 +330,29 @@ class FloodWatchService
             $iteration++;
         }
 
-        return $emptyResult(__('flood-watch.errors.max_tool_calls'), now()->toIso8601String());
+        return $this->emptyResult(__('flood-watch.errors.max_tool_calls'), now()->toIso8601String());
+    }
+
+    /**
+     * @return array{response: string, floods: array<mixed>, incidents: array<mixed>, forecast: array<mixed>, weather: array<mixed>, riverLevels: array<mixed>, lastChecked: string, errors?: bool, error_key?: string}
+     */
+    private function emptyResult(string $response, ?string $lastChecked = null, ?string $errorKey = null): array
+    {
+        $result = [
+            'response' => $response,
+            'floods' => [],
+            'incidents' => [],
+            'forecast' => [],
+            'weather' => [],
+            'riverLevels' => [],
+            'lastChecked' => $lastChecked ?? now()->toIso8601String(),
+        ];
+        if ($errorKey !== null) {
+            $result['errors'] = true;
+            $result['error_key'] = $errorKey;
+        }
+
+        return $result;
     }
 
     private function buildSystemPrompt(?string $region): string
@@ -381,8 +411,8 @@ class FloodWatchService
     }
 
     /**
-     * @param  array{response: string, floods: array<mixed>, incidents: array<mixed>, forecast: array<mixed>, weather: array<mixed>, riverLevels?: array<mixed>, errors?: bool, error_key?: string}  $result
-     * @return array{response: string, floods: array<mixed>, incidents: array<mixed>, forecast: array<mixed>, weather: array<mixed>, riverLevels?: array<mixed>, lastChecked: string, errors?: bool, error_key?: string}
+     * @param  array{response: string, floods: array<mixed>, incidents: array<mixed>, forecast: array<mixed>, weather: array<mixed>, riverLevels: array<mixed>, errors?: bool, error_key?: string}  $result
+     * @return array{response: string, floods: array<mixed>, incidents: array<mixed>, forecast: array<mixed>, weather: array<mixed>, riverLevels: array<mixed>, lastChecked: string, errors?: bool, error_key?: string}
      */
     private function storeAndReturn(string $cacheKey, array $result): array
     {
@@ -508,7 +538,7 @@ class FloodWatchService
         // Crude token estimation: bytes / 4 (OpenAI's rule: ~1 token per 4 chars for English)
         // Note: strlen() counts bytes, which approximates character count for ASCII/English.
         // For multi-byte UTF-8, this estimate is less accurate but conservative (overestimates).
-        $estimate = fn (array $m): int => (int) ceil(strlen(json_encode(['messages' => $m])) / 4);
+        $estimate = fn (array $m): int => (int) ceil(strlen(json_encode(['messages' => $m]) ?: '[]') / 4);
         $estimatedTokens = $estimate($messages);
 
         if ($estimatedTokens <= $maxTokens) {
@@ -561,7 +591,7 @@ class FloodWatchService
      */
     private function truncateToolContentsToBudget(array $messages, int $maxTokens): array
     {
-        $estimate = fn (array $m): int => (int) ceil(strlen(json_encode(['messages' => $m])) / 4);
+        $estimate = fn (array $m): int => (int) ceil(strlen(json_encode(['messages' => $m]) ?: '[]') / 4);
 
         if ($estimate($messages) <= $maxTokens) {
             return $messages;

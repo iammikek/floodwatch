@@ -41,6 +41,9 @@ class RouteCheckService
         if (! $fromValidation['in_area']) {
             return RouteCheckResult::error(__('flood-watch.route_check.error_outside_area'));
         }
+        if (! isset($fromValidation['lat'], $fromValidation['lng'])) {
+            return RouteCheckResult::error(__('flood-watch.route_check.error_invalid_from'));
+        }
 
         $toValidation = $this->locationResolver->resolve($toTrimmed);
         if (! $toValidation['valid']) {
@@ -48,6 +51,9 @@ class RouteCheckService
         }
         if (! $toValidation['in_area']) {
             return RouteCheckResult::error(__('flood-watch.route_check.error_outside_area'));
+        }
+        if (! isset($toValidation['lat'], $toValidation['lng'])) {
+            return RouteCheckResult::error(__('flood-watch.route_check.error_invalid_to'));
         }
 
         $fromLat = (float) $fromValidation['lat'];

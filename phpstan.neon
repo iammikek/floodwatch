@@ -11,7 +11,7 @@ parameters:
         - app/Contracts/Tooling
         - app/Enums
 
-    level: 6
+    level: 7
 
     ignoreErrors:
         # Baseline - add specific ignores here as needed
