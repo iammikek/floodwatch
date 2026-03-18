@@ -4,7 +4,7 @@ This document is intentionally minimal to reduce context size and credit usage.
 
 **Project**
 - Flood Watch correlates Environment Agency flood data with National Highways road status across the South West (Somerset, Bristol, Devon, Cornwall).
-- Laravel 12, PHP 8.2+, Sail, Livewire 4, Pest/PHPUnit, OpenAI via openai-php/laravel.
+- Laravel 13, PHP 8.3+, Sail, Livewire 4, Pest/PHPUnit, OpenAI via openai-php/laravel.
 
 **LLM Usage**
 - Default model: gpt-4o-mini.
