@@ -4,6 +4,10 @@ use App\Models\User;
 use Illuminate\Support\Facades\Config;
 
 beforeEach(function () {
+    if (! class_exists('Laravel\\Pulse\\PulseServiceProvider')) {
+        test()->skip('Pulse not installed for this environment');
+    }
+
     Config::set('pulse.enabled', true);
 });
 
