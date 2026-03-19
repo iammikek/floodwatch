@@ -13,6 +13,8 @@ exclude = [
     "file://.*/docs/archive/url$",
     # External site favicon (404, not our issue)
     "https://contributing.md/.*",
+    # Open Rail Data wiki uses bot protection (403)
+    "https?://wiki\\.openraildata\\.com/.*",
 ]
 
 # Accept redirects as valid
