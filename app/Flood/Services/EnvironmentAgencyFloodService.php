@@ -8,6 +8,7 @@ use App\Support\CircuitOpenException;
 use App\Support\CoordinateMapper;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -21,7 +22,7 @@ class EnvironmentAgencyFloodService
         $this->circuitBreaker ??= new CircuitBreaker('environment_agency');
     }
 
-    private function http(string $url, int $timeout): \Illuminate\Http\Client\Response
+    private function http(string $url, int $timeout): Response
     {
         $retryTimes = config('flood-watch.environment_agency.retry_times', 3);
         $retrySleep = config('flood-watch.environment_agency.retry_sleep_ms', 100);

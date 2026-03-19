@@ -3,6 +3,8 @@
 namespace Tests\Feature\Flood\Services;
 
 use App\Flood\Services\RiverLevelService;
+use App\Support\CircuitBreaker;
+use App\Support\CircuitOpenException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -175,9 +177,9 @@ class RiverLevelServiceTest extends TestCase
 
     public function test_returns_empty_array_when_circuit_is_open(): void
     {
-        $cb = \Mockery::mock(\App\Support\CircuitBreaker::class);
+        $cb = \Mockery::mock(CircuitBreaker::class);
         $cb->shouldReceive('execute')
-            ->andThrow(new \App\Support\CircuitOpenException);
+            ->andThrow(new CircuitOpenException);
 
         $service = new RiverLevelService($cb);
         $result = $service->getLevels();

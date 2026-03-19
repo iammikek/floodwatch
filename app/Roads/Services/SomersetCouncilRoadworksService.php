@@ -105,7 +105,14 @@ class SomersetCouncilRoadworksService
 
             $xpath = new DOMXPath($dom);
 
-            foreach ($xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' inrix-feed__alert ')]") as $alert) {
+            $alerts = $xpath->query("//*[contains(concat(' ', normalize-space(@class), ' '), ' inrix-feed__alert ')]");
+            if (! $alerts instanceof \DOMNodeList) {
+                return $incidents;
+            }
+            foreach ($alerts as $alert) {
+                if (! $alert instanceof \DOMNode) {
+                    continue;
+                }
                 $title = $this->textContent($xpath, ".//*[contains(concat(' ', normalize-space(@class), ' '), ' inrix-feed__alert-title ')]", $alert);
                 $details = $this->textContent($xpath, ".//*[contains(concat(' ', normalize-space(@class), ' '), ' inrix-feed__alert-details ')]", $alert);
 
@@ -137,6 +144,9 @@ class SomersetCouncilRoadworksService
     private function textContent(DOMXPath $xpath, string $expr, \DOMNode $context): string
     {
         $nodes = $xpath->query($expr, $context);
+        if (! $nodes instanceof \DOMNodeList) {
+            return '';
+        }
         $node = $nodes->item(0);
 
         return $node !== null ? trim($node->textContent ?? '') : '';

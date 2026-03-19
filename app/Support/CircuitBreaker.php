@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Support\Facades\Cache;
 use Throwable;
 
@@ -29,7 +30,7 @@ class CircuitBreaker
         return config('flood-watch.circuit_breaker.enabled', true);
     }
 
-    protected function cache(): \Illuminate\Contracts\Cache\Repository
+    protected function cache(): Repository
     {
         return Cache::store(config('flood-watch.cache_store'));
     }

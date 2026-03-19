@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Support\Tooling\ToolRegistry;
 use Illuminate\Support\Facades\File;
 
 /**
@@ -22,7 +23,7 @@ class FloodWatchPromptBuilder
 
     public function __construct(
         protected string $version = 'v1',
-        protected ?\App\Support\Tooling\ToolRegistry $registry = null,
+        protected ?ToolRegistry $registry = null,
     ) {}
 
     public function buildSystemPrompt(?string $region = null): string
@@ -72,6 +73,22 @@ class FloodWatchPromptBuilder
         $defs = $this->registry->definitions();
         usort($defs, fn ($a, $b) => strcmp($a['function']['name'] ?? '', $b['function']['name'] ?? ''));
 
-        return $this->cachedToolDefinitions = $defs;
+        $normalized = [];
+        foreach ($defs as $d) {
+            $name = (string) ($d['function']['name'] ?? '');
+            if ($name === '') {
+                continue;
+            }
+            $normalized[] = [
+                'type' => (string) ($d['type'] ?? 'function'),
+                'function' => [
+                    'name' => $name,
+                    'description' => (string) ($d['function']['description'] ?? ''),
+                    'parameters' => is_array($d['function']['parameters'] ?? null) ? $d['function']['parameters'] : [],
+                ],
+            ];
+        }
+
+        return $this->cachedToolDefinitions = $normalized;
     }
 }

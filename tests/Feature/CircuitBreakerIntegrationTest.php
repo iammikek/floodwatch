@@ -30,8 +30,8 @@ test('circuit breaker returns empty when open', function () {
     $failures = 0;
     for ($i = 0; $i < 3; $i++) {
         try {
-            $circuit->execute(fn () => throw new \RuntimeException('API getError'));
-        } catch (\Throwable $e) {
+            $circuit->execute(fn () => throw new RuntimeException('API getError'));
+        } catch (Throwable $e) {
             $failures++;
         }
     }

@@ -52,11 +52,11 @@ class FloodWatchTrendService
         try {
             $key = config('flood-watch.trends_key', 'flood-watch:trends');
             $minScore = $sinceDays !== null
-                ? (float) now()->subDays($sinceDays)->timestamp
+                ? (string) (float) now()->subDays($sinceDays)->timestamp
                 : '-inf';
             $maxScore = '+inf';
 
-            $raw = Redis::connection()->zrangebyscore($key, $minScore, $maxScore, [
+            $raw = Redis::connection()->zrangebyscore($key, $minScore, (string) $maxScore, [
                 'limit' => [0, $limit ?? 1000],
                 'withscores' => false,
             ]);
@@ -64,9 +64,18 @@ class FloodWatchTrendService
             $results = [];
             foreach ($raw as $item) {
                 $decoded = json_decode($item, true);
-                if (is_array($decoded)) {
-                    $results[] = $decoded;
+                if (! is_array($decoded)) {
+                    continue;
                 }
+                $results[] = [
+                    'location' => isset($decoded['location']) && is_string($decoded['location']) ? $decoded['location'] : null,
+                    'lat' => isset($decoded['lat']) ? (float) $decoded['lat'] : null,
+                    'lng' => isset($decoded['lng']) ? (float) $decoded['lng'] : null,
+                    'region' => isset($decoded['region']) && is_string($decoded['region']) ? $decoded['region'] : null,
+                    'flood_count' => (int) ($decoded['flood_count'] ?? 0),
+                    'incident_count' => (int) ($decoded['incident_count'] ?? 0),
+                    'checked_at' => isset($decoded['checked_at']) ? (string) $decoded['checked_at'] : now()->toIso8601String(),
+                ];
             }
 
             return array_reverse($results);

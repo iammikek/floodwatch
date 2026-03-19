@@ -1,26 +1,28 @@
 <?php
 
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\FloodWatchPolygonsController;
 use App\Http\Controllers\FloodWatchRiverLevelsController;
 use App\Http\Controllers\HealthController;
 use App\Http\Controllers\LocationBookmarkController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Middleware\EnsureFloodWatchSession;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health', HealthController::class)->name('health');
 
 Route::get('/flood-watch/polygons', FloodWatchPolygonsController::class)
-    ->middleware([\App\Http\Middleware\EnsureFloodWatchSession::class, 'throttle:flood-watch-api'])
+    ->middleware([EnsureFloodWatchSession::class, 'throttle:flood-watch-api'])
     ->name('flood-watch.polygons');
 Route::get('/flood-watch/river-levels', FloodWatchRiverLevelsController::class)
-    ->middleware([\App\Http\Middleware\EnsureFloodWatchSession::class, 'throttle:flood-watch-api'])
+    ->middleware([EnsureFloodWatchSession::class, 'throttle:flood-watch-api'])
     ->name('flood-watch.river-levels');
 
 Route::livewire('/', 'flood-watch-dashboard');
 
 Route::redirect('/dashboard', '/')->name('dashboard');
 
-Route::middleware('auth')->get('/admin', App\Http\Controllers\Admin\DashboardController::class)->name('admin.dashboard');
+Route::middleware('auth')->get('/admin', DashboardController::class)->name('admin.dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

@@ -64,7 +64,7 @@ class PostcodeValidator
                     'error' => $coords['error'],
                 ];
             }
-            if ($coords !== null && isset($coords['lat'], $coords['lng'])) {
+            if ($coords !== null) {
                 $result['lat'] = $coords['lat'];
                 $result['lng'] = $coords['lng'];
             }

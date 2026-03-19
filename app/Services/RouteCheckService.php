@@ -9,6 +9,7 @@ use App\Roads\Services\NationalHighwaysService;
 use App\Support\GeoJsonBboxExtractor;
 use App\Support\IncidentIcon;
 use App\Support\IncidentsOnRouteFilter;
+use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
@@ -40,6 +41,9 @@ class RouteCheckService
         if (! $fromValidation['in_area']) {
             return RouteCheckResult::error(__('flood-watch.route_check.error_outside_area'));
         }
+        if (! isset($fromValidation['lat'], $fromValidation['lng'])) {
+            return RouteCheckResult::error(__('flood-watch.route_check.error_invalid_from'));
+        }
 
         $toValidation = $this->locationResolver->resolve($toTrimmed);
         if (! $toValidation['valid']) {
@@ -47,6 +51,9 @@ class RouteCheckService
         }
         if (! $toValidation['in_area']) {
             return RouteCheckResult::error(__('flood-watch.route_check.error_outside_area'));
+        }
+        if (! isset($toValidation['lat'], $toValidation['lng'])) {
+            return RouteCheckResult::error(__('flood-watch.route_check.error_invalid_to'));
         }
 
         $fromLat = (float) $fromValidation['lat'];
@@ -449,7 +456,7 @@ class RouteCheckService
     /**
      * Safe cache read: returns RouteCheckResult or null on failure/corrupt/incompatible data.
      */
-    private function cacheGet(\Illuminate\Contracts\Cache\Repository $cache, string $key): ?RouteCheckResult
+    private function cacheGet(Repository $cache, string $key): ?RouteCheckResult
     {
         try {
             $data = $cache->get($key);
@@ -471,7 +478,7 @@ class RouteCheckService
     /**
      * Safe cache write: silently skips on store failure.
      */
-    private function cachePut(\Illuminate\Contracts\Cache\Repository $cache, string $key, array $value, \DateTimeInterface|int $ttl): void
+    private function cachePut(Repository $cache, string $key, array $value, \DateTimeInterface|int $ttl): void
     {
         try {
             $cache->put($key, $value, $ttl);

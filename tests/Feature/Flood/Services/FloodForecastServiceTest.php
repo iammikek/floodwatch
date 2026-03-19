@@ -5,6 +5,7 @@ namespace Tests\Feature\Flood\Services;
 use App\Flood\Services\FloodForecastService;
 use App\Support\CircuitBreaker;
 use App\Support\CircuitOpenException;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 use Mockery;
@@ -68,7 +69,7 @@ class FloodForecastServiceTest extends TestCase
 
         Http::fake([
             'api.example.com/*' => function () {
-                throw new \Illuminate\Http\Client\ConnectionException('network');
+                throw new ConnectionException('network');
             },
         ]);
 

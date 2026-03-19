@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Services;
 
+use App\Flood\Services\EnvironmentAgencyFloodService;
 use App\Models\LlmRequest;
 use App\Models\User;
 use App\Roads\Services\NationalHighwaysService;
@@ -17,6 +18,7 @@ use OpenAI\Exceptions\RateLimitException;
 use OpenAI\Exceptions\TransporterException;
 use OpenAI\Laravel\Facades\OpenAI;
 use OpenAI\Responses\Chat\CreateResponse;
+use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Message\ResponseInterface;
 use Tests\TestCase;
 
@@ -1034,7 +1036,7 @@ class FloodWatchServiceTest extends TestCase
             '*fgs.metoffice.gov.uk*' => Http::response(['statement' => []], 200),
             '*open-meteo.com*' => Http::response(['daily' => ['time' => [], 'weathercode' => [], 'temperature_2m_max' => [], 'temperature_2m_min' => [], 'precipitation_sum' => []]], 200),
         ]);
-        $clientException = new class('Connection refused') extends \Exception implements \Psr\Http\Client\ClientExceptionInterface {};
+        $clientException = new class('Connection refused') extends \Exception implements ClientExceptionInterface {};
         OpenAI::fake([new TransporterException($clientException)]);
         $service = app(FloodWatchService::class);
         $result = $service->chat('Check status');
@@ -1049,10 +1051,10 @@ class FloodWatchServiceTest extends TestCase
         Config::set('flood-watch.national_highways.api_key', 'test-key');
         Config::set('flood-watch.national_highways.base_url', 'https://api.example.com');
 
-        $floodServiceMock = $this->createMock(\App\Flood\Services\EnvironmentAgencyFloodService::class);
+        $floodServiceMock = $this->createMock(EnvironmentAgencyFloodService::class);
         $floodServiceMock->method('getFloods')->willThrowException(new \RuntimeException('EA API unavailable'));
 
-        $this->app->instance(\App\Flood\Services\EnvironmentAgencyFloodService::class, $floodServiceMock);
+        $this->app->instance(EnvironmentAgencyFloodService::class, $floodServiceMock);
 
         Http::fake([
             '*api.example.com*' => Http::response(['D2Payload' => ['situation' => []]], 200),

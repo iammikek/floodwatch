@@ -1,6 +1,9 @@
 <?php
 
+use App\Models\LlmRequest;
 use App\Models\User;
+use App\Models\UserSearch;
+use App\Services\OpenAiUsageService;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 
@@ -78,9 +81,9 @@ test('admin dashboard displays user metrics section', function () {
 test('admin dashboard displays top regions when user searches exist', function () {
     $admin = User::factory()->admin()->create();
 
-    \App\Models\UserSearch::factory()->count(3)->create(['region' => 'somerset']);
-    \App\Models\UserSearch::factory()->count(2)->create(['region' => 'bristol']);
-    \App\Models\UserSearch::factory()->count(1)->create(['region' => 'devon']);
+    UserSearch::factory()->count(3)->create(['region' => 'somerset']);
+    UserSearch::factory()->count(2)->create(['region' => 'bristol']);
+    UserSearch::factory()->count(1)->create(['region' => 'devon']);
 
     $response = $this->actingAs($admin)->get('/admin');
 
@@ -101,7 +104,7 @@ test('admin dashboard displays llm cost section', function () {
 test('admin dashboard displays llm usage from openai api', function () {
     $admin = User::factory()->admin()->create();
 
-    $this->mock(\App\Services\OpenAiUsageService::class, function ($mock) {
+    $this->mock(OpenAiUsageService::class, function ($mock) {
         $mock->shouldReceive('getUsage')
             ->once()
             ->andReturn([
@@ -137,7 +140,7 @@ test('admin dashboard displays recent llm requests section', function () {
 
 test('admin dashboard displays llm requests table when populated', function () {
     $admin = User::factory()->admin()->create();
-    \App\Models\LlmRequest::factory()->create([
+    LlmRequest::factory()->create([
         'model' => 'gpt-4o-mini',
         'input_tokens' => 100,
         'output_tokens' => 50,
@@ -158,7 +161,7 @@ test('admin dashboard displays remaining budget when llm_budget_initial is set',
     Config::set('flood-watch.llm_budget_initial', 10);
     $admin = User::factory()->admin()->create();
 
-    $this->mock(\App\Services\OpenAiUsageService::class, function ($mock) {
+    $this->mock(OpenAiUsageService::class, function ($mock) {
         $mock->shouldReceive('getUsage')
             ->once()
             ->andReturn([

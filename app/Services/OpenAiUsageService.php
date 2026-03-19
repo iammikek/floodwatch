@@ -53,16 +53,16 @@ class OpenAiUsageService
         try {
             $today = $this->fetchCompletionsUsage(
                 $apiKey,
-                now()->startOfDay()->timestamp,
-                now()->timestamp,
+                (int) now()->startOfDay()->timestamp,
+                (int) now()->timestamp,
                 '1h',
                 24
             );
 
             $thisMonth = $this->fetchCompletionsUsage(
                 $apiKey,
-                now()->startOfMonth()->timestamp,
-                now()->timestamp,
+                (int) now()->startOfMonth()->timestamp,
+                (int) now()->timestamp,
                 '1d',
                 31
             );

@@ -109,7 +109,7 @@ National Rail provides real-time train running information via **Darwin**, the G
 ### Technical Notes
 
 - LDB is SOAP/JSON; Darwin Push requires persistent connection
-- Open Rail Data wiki: https://wiki.openraildata.com/index.php/Main_Page
+- Open Rail Data wiki: wiki.openraildata.com (may require browser verification)
 - Community: Open Rail Data-Talk (Google Groups)
 
 ---
@@ -332,6 +332,6 @@ Rail services in your area are running normally.
 - National Rail Developers: https://www.nationalrail.co.uk/developers/
 - Rail Data Marketplace: https://raildata.org.uk/
 - Darwin LDB documentation: https://realtime.nationalrail.co.uk/LDBWS/docs/documentation.html
-- Open Rail Data wiki: https://wiki.openraildata.com/index.php/Main_Page
+- Open Rail Data wiki: wiki.openraildata.com (may require browser verification)
 - data.police.uk: https://data.police.uk/docs/
 - data.gov.uk: https://www.data.gov.uk/
