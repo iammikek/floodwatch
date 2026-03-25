@@ -2,6 +2,7 @@
 
 namespace App\Flood\Services;
 
+use App\Services\DataLakeClient;
 use App\Support\CircuitBreaker;
 use App\Support\CircuitOpenException;
 use App\Support\CoordinateMapper;
@@ -37,6 +38,27 @@ class RiverLevelService
         ?float $lng = null,
         ?int $radiusKm = null
     ): array {
+        if (config('flood-watch.use_data_lake', false) === true) {
+            $lat ??= (float) config('flood-watch.default_lat');
+            $lng ??= (float) config('flood-watch.default_lng');
+            $radiusKm ??= (int) config('flood-watch.default_radius_km');
+            $cacheMinutes = (int) config('flood-watch.river_levels_cache_minutes', 0);
+            $key = $this->riverLevelsCacheKey($lat, $lng, $radiusKm);
+            $store = config('flood-watch.cache_store', 'flood-watch');
+            if ($cacheMinutes > 0) {
+                $cached = Cache::store($store)->get($key);
+                if (is_array($cached)) {
+                    return $cached;
+                }
+            }
+            $result = $this->getLevelsFromDataLake($lat, $lng, $radiusKm);
+            if ($cacheMinutes > 0) {
+                Cache::store($store)->put($key, $result, now()->addMinutes($cacheMinutes));
+            }
+
+            return $result;
+        }
+
         $lat ??= config('flood-watch.default_lat');
         $lng ??= config('flood-watch.default_lng');
         $radiusKm ??= config('flood-watch.default_radius_km');
@@ -293,5 +315,77 @@ class RiverLevelService
         }
 
         return 'expected';
+    }
+
+    /**
+     * Data Lake integration behind feature flag. Returns same shape as EA flow.
+     *
+     * @return array<int, array{station: string, river: string, town: string, value: float, unit: string, unitName: string, dateTime: string, lat: float, lng: float, stationType: string, levelStatus: string, typicalRangeLow?: float|null, typicalRangeHigh?: float|null}>
+     */
+    private function getLevelsFromDataLake(float $lat, float $lng, int $radiusKm): array
+    {
+        $latDelta = $radiusKm / 111.0;
+        $lngDelta = $radiusKm / (111.0 * max(cos(deg2rad($lat)), 0.001));
+        $minLat = $lat - $latDelta;
+        $maxLat = $lat + $latDelta;
+        $minLng = $lng - $lngDelta;
+        $maxLng = $lng + $lngDelta;
+        $bbox = "{$minLng},{$minLat},{$maxLng},{$maxLat}";
+
+        $client = new DataLakeClient;
+        $resp = $client->getMeasurements(bbox: $bbox, aggregate: 'raw', page: 1, limit: 200);
+        if ($resp->status !== 200 || ! is_array($resp->body)) {
+            return [];
+        }
+        $items = $resp->body['items'] ?? [];
+        if (! is_array($items) || empty($items)) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($items as $it) {
+            if (! is_array($it)) {
+                continue;
+            }
+            $value = isset($it['value']) ? (float) $it['value'] : null;
+            $dateTime = isset($it['dateTime']) ? (string) $it['dateTime'] : null;
+            $latV = isset($it['lat']) ? (float) $it['lat'] : null;
+            $lngV = isset($it['lng']) ? (float) $it['lng'] : null;
+            if ($value === null || $dateTime === null || $latV === null || $lngV === null) {
+                continue;
+            }
+            $stationLabel = (string) ($it['station_label'] ?? $it['station'] ?? 'Unknown Station');
+            $riverName = (string) ($it['river'] ?? '');
+            $townName = (string) ($it['town'] ?? '');
+            $unitName = (string) ($it['unitName'] ?? 'm');
+
+            $typicalLow = isset($it['typicalRangeLow']) ? (float) $it['typicalRangeLow'] : null;
+            $typicalHigh = isset($it['typicalRangeHigh']) ? (float) $it['typicalRangeHigh'] : null;
+            $levelStatus = $this->computeLevelStatus($value, $typicalLow, $typicalHigh);
+            $stationType = (string) ($it['stationType'] ?? 'river_gauge');
+
+            $row = [
+                'station' => $stationLabel,
+                'river' => $riverName,
+                'town' => $townName,
+                'value' => $value,
+                'unit' => $unitName,
+                'unitName' => $unitName,
+                'dateTime' => $dateTime,
+                'lat' => $latV,
+                'lng' => $lngV,
+                'stationType' => $stationType,
+                'levelStatus' => $levelStatus,
+            ];
+            if ($typicalLow !== null) {
+                $row['typicalRangeLow'] = $typicalLow;
+            }
+            if ($typicalHigh !== null) {
+                $row['typicalRangeHigh'] = $typicalHigh;
+            }
+            $result[] = $row;
+        }
+
+        return $result;
     }
 }
