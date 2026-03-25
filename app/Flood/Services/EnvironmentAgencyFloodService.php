@@ -3,6 +3,7 @@
 namespace App\Flood\Services;
 
 use App\Flood\DTOs\FloodWarning;
+use App\Services\DataLakeClient;
 use App\Support\CircuitBreaker;
 use App\Support\CircuitOpenException;
 use App\Support\CoordinateMapper;
@@ -40,6 +41,9 @@ class EnvironmentAgencyFloodService
         ?float $lng = null,
         ?int $radiusKm = null
     ): array {
+        if (config('flood-watch.use_data_lake', false) === true) {
+            return $this->fetchFloodsFromDataLake($lat, $lng, $radiusKm);
+        }
         try {
             return $this->circuitBreaker->execute(function () use ($lat, $lng, $radiusKm) {
                 return $this->fetchFloods($lat, $lng, $radiusKm);
@@ -110,6 +114,64 @@ class EnvironmentAgencyFloodService
                 $raw['polygon'] = $polygons[$areaId];
             }
 
+            $result[] = FloodWarning::fromArray($raw)->toArray();
+        }
+
+        return $result;
+    }
+
+    /**
+     * Data Lake-backed warnings endpoint behind feature flag.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function fetchFloodsFromDataLake(
+        ?float $lat,
+        ?float $lng,
+        ?int $radiusKm
+    ): array {
+        $lat ??= (float) config('flood-watch.default_lat');
+        $lng ??= (float) config('flood-watch.default_lng');
+        $radiusKm ??= (int) config('flood-watch.default_radius_km');
+
+        $latDelta = $radiusKm / 111.0;
+        $lngDelta = $radiusKm / (111.0 * max(cos(deg2rad($lat)), 0.001));
+        $minLat = $lat - $latDelta;
+        $maxLat = $lat + $latDelta;
+        $minLng = $lng - $lngDelta;
+        $maxLng = $lng + $lngDelta;
+        $bbox = "{$minLng},{$minLat},{$maxLng},{$maxLat}";
+
+        $client = new DataLakeClient;
+        $resp = $client->getWarnings(bbox: $bbox);
+        if ($resp->status !== 200 || ! is_array($resp->body)) {
+            return [];
+        }
+        $items = $resp->body['items'] ?? [];
+        if (! is_array($items) || empty($items)) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($items as $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+            $raw = [
+                'description' => (string) ($item['description'] ?? ''),
+                'severity' => (string) ($item['severity'] ?? ''),
+                'severityLevel' => (int) ($item['severityLevel'] ?? ($item['severity_level'] ?? 0)),
+                'message' => (string) ($item['message'] ?? ''),
+                'floodAreaID' => (string) ($item['floodAreaID'] ?? ($item['area_id'] ?? '')),
+                'timeRaised' => $item['timeRaised'] ?? ($item['time_raised'] ?? null),
+                'timeMessageChanged' => $item['timeMessageChanged'] ?? ($item['time_message_changed'] ?? null),
+                'timeSeverityChanged' => $item['timeSeverityChanged'] ?? ($item['time_severity_changed'] ?? null),
+                'lat' => isset($item['lat']) ? (float) $item['lat'] : null,
+                'lng' => isset($item['lng']) ? (float) $item['lng'] : null,
+            ];
+            if (isset($item['polygon']) && is_array($item['polygon'])) {
+                $raw['polygon'] = $item['polygon'];
+            }
             $result[] = FloodWarning::fromArray($raw)->toArray();
         }
 
