@@ -10,6 +10,27 @@ use Tests\TestCase;
 
 class DataLakeClientTest extends TestCase
 {
+    public function test_fetch_warnings_retries_on_429_then_succeeds(): void
+    {
+        Config::set(ConfigKey::DATA_LAKE.'.base_url', 'http://lake.test');
+        Config::set(ConfigKey::DATA_LAKE.'.timeout', 5);
+        Config::set(ConfigKey::DATA_LAKE.'.retry_times', 2);
+        Config::set(ConfigKey::DATA_LAKE.'.retry_sleep_ms', 1);
+
+        Http::fake([
+            'http://lake.test/v1/warnings*' => Http::sequence()
+                ->push([], 429)
+                ->push(['items' => [['id' => 'w2']]], 200, ['ETag' => 'W/"ret"']),
+        ]);
+
+        $client = new DataLakeClient;
+        $res = $client->getWarnings(region: 'SOM');
+
+        $this->assertSame(200, $res->status);
+        $this->assertSame('W/"ret"', $res->etag);
+        $this->assertSame('w2', $res->body['items'][0]['id']);
+    }
+
     public function test_fetch_warnings_200_returns_body_and_etag(): void
     {
         Config::set(ConfigKey::DATA_LAKE.'.base_url', 'http://lake.test');

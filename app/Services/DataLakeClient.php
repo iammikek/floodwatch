@@ -23,9 +23,19 @@ class DataLakeClient
         if ($ifNoneMatch !== null && $ifNoneMatch !== '') {
             $req = $req->withHeaders(['If-None-Match' => $ifNoneMatch]);
         }
+        $retryTimes = (int) config(ConfigKey::DATA_LAKE.'.retry_times', 2);
+        $retrySleep = (int) config(ConfigKey::DATA_LAKE.'.retry_sleep_ms', 50);
+
         /** @var Response $resp */
-        $resp = $req->get($url, $query);
+        $resp = $req->get($url, is_array($query) ? $query : []);
         $status = $resp->status();
+        $attempt = 0;
+        while (($status === 429 || $status >= 500) && $attempt < $retryTimes) {
+            usleep($retrySleep * 1000);
+            $attempt++;
+            $resp = $req->get($url, is_array($query) ? $query : []);
+            $status = $resp->status();
+        }
         $etag = $resp->header('ETag');
 
         return new DataLakeResponse($status, $etag, $status === 304 ? null : $resp->json());
