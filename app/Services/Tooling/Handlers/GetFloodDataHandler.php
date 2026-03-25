@@ -27,11 +27,16 @@ final class GetFloodDataHandler implements ToolHandler
 
     public function definition(): array
     {
+        $isLake = (bool) config(ConfigKey::USE_DATA_LAKE, false);
+        $desc = $isLake
+            ? 'Fetch current flood warnings from the Flood Watch Data Lake for the South West. Uses coordinates from user postcode when present; otherwise defaults are used.'
+            : 'Fetch current flood warnings from the Environment Agency for the South West. Use coordinates from user postcode when present; otherwise defaults are used.';
+
         return [
             'type' => 'function',
             'function' => [
                 'name' => ToolName::GetFloodData->value,
-                'description' => 'Fetch current flood warnings from the Environment Agency for the South West. Use coordinates from user postcode when present; otherwise defaults are used.',
+                'description' => $desc,
                 'parameters' => [
                     'type' => 'object',
                     'properties' => [
@@ -59,7 +64,7 @@ final class GetFloodDataHandler implements ToolHandler
 
         Log::info('Tool execute', [
             'tool' => ToolName::GetFloodData->value,
-            'provider' => 'environment_agency',
+            'provider' => config(ConfigKey::USE_DATA_LAKE, false) ? 'data_lake' : 'environment_agency',
             'region' => $ctx->region,
             'lat' => $args->lat,
             'lng' => $args->lng,

@@ -31,11 +31,16 @@ final class GetRiverLevelsHandler implements ToolHandler
      */
     public function definition(): array
     {
+        $isLake = (bool) config(ConfigKey::USE_DATA_LAKE, false);
+        $desc = $isLake
+            ? 'Fetch real-time river and sea levels from the Flood Watch Data Lake using coordinates (defaults to Langport 51.0358, -2.8318). Returns station name, river, town, current level and unit, and reading time.'
+            : 'Fetch real-time river and sea levels from Environment Agency monitoring stations. Use coordinates from the user message when a postcode is given; otherwise use default (Langport 51.0358, -2.8318). Returns station name, river, town, current level and unit, and reading time.';
+
         return [
             'type' => 'function',
             'function' => [
                 'name' => ToolName::GetRiverLevels->value,
-                'description' => 'Fetch real-time river and sea levels from Environment Agency monitoring stations. Use coordinates from the user message when a postcode is given; otherwise use default (Langport 51.0358, -2.8318). Returns station name, river, town, current level and unit, and reading time.',
+                'description' => $desc,
                 'parameters' => [
                     'type' => 'object',
                     'properties' => [
@@ -54,7 +59,7 @@ final class GetRiverLevelsHandler implements ToolHandler
 
         Log::info('Tool execute', [
             'tool' => ToolName::GetRiverLevels->value,
-            'provider' => 'environment_agency',
+            'provider' => config(ConfigKey::USE_DATA_LAKE, false) ? 'data_lake' : 'environment_agency',
             'region' => $ctx->region,
             'lat' => $args->lat,
             'lng' => $args->lng,
