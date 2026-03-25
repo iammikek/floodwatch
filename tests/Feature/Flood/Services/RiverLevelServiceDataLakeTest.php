@@ -4,6 +4,7 @@ namespace Tests\Feature\Flood\Services;
 
 use App\Flood\Services\RiverLevelService;
 use App\Support\ConfigKey;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -74,5 +75,22 @@ class RiverLevelServiceDataLakeTest extends TestCase
                 && str_contains($request->url(), 'bbox=')
                 && str_contains($request->url(), 'aggregate=raw');
         });
+    }
+
+    public function test_returns_empty_array_on_lake_connection_exception(): void
+    {
+        Config::set(ConfigKey::USE_DATA_LAKE, true);
+        Config::set(ConfigKey::DATA_LAKE.'.base_url', 'http://lake.test');
+
+        Http::fake([
+            'http://lake.test/v1/measurements*' => function () {
+                throw new ConnectionException('network');
+            },
+        ]);
+
+        $service = new RiverLevelService;
+        $result = $service->getLevels(51.0, -2.8, 10);
+
+        $this->assertSame([], $result);
     }
 }

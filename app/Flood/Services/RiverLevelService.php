@@ -332,8 +332,18 @@ class RiverLevelService
         $maxLng = $lng + $lngDelta;
         $bbox = "{$minLng},{$minLat},{$maxLng},{$maxLat}";
 
-        $client = new DataLakeClient;
-        $resp = $client->getMeasurements(bbox: $bbox, aggregate: 'raw', page: 1, limit: 200);
+        try {
+            $client = new DataLakeClient;
+            $resp = $client->getMeasurements(bbox: $bbox, aggregate: 'raw', page: 1, limit: 200);
+        } catch (Throwable $e) {
+            Log::error('FloodWatch Data Lake measurements fetch failed', [
+                'provider' => 'data_lake',
+                'bbox' => $bbox,
+                'error' => $e->getMessage(),
+            ]);
+
+            return [];
+        }
         if ($resp->status !== 200 || ! is_array($resp->body)) {
             return [];
         }
