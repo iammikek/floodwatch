@@ -168,6 +168,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Data Lake Service
+    |--------------------------------------------------------------------------
+    */
+
+    'use_data_lake' => env('FLOOD_WATCH_USE_DATA_LAKE', false),
+
+    'data_lake' => [
+        'base_url' => env('FLOOD_WATCH_DATA_LAKE_URL', 'http://localhost:8000'),
+        'timeout' => (int) env('FLOOD_WATCH_DATA_LAKE_TIMEOUT', 10),
+        'retry_times' => (int) env('FLOOD_WATCH_DATA_LAKE_RETRY_TIMES', 2),
+        'retry_sleep_ms' => (int) env('FLOOD_WATCH_DATA_LAKE_RETRY_SLEEP_MS', 50),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Somerset Council roadworks and travel (scraped)
     |--------------------------------------------------------------------------
     |

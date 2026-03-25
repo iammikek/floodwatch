@@ -60,4 +60,9 @@ final class ConfigKey
 
     // Circuit breaker
     public const CIRCUIT_BREAKER = 'flood-watch.circuit_breaker';
+
+    // Data Lake
+    public const DATA_LAKE = 'flood-watch.data_lake';
+
+    public const USE_DATA_LAKE = 'flood-watch.use_data_lake';
 }
