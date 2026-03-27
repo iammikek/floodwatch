@@ -59,6 +59,8 @@ class EnvironmentAgencyFloodService
 
     /**
      * @return array<int, array<string, mixed>>
+     *
+     * @deprecated Replaced by Data Lake-backed warnings when flood-watch.use_data_lake=true
      */
     private function fetchFloods(
         ?float $lat,
@@ -182,6 +184,8 @@ class EnvironmentAgencyFloodService
      * Fetch flood area centroids for cross-referencing with location.
      *
      * @return array<string, array{lat: float, lng: float}>
+     *
+     * @deprecated Replaced by Data Lake-backed warnings when flood-watch.use_data_lake=true
      */
     private function fetchFloodAreaCentroids(string $baseUrl, int $timeout, float $lat, float $lng, int $radiusKm): array
     {
@@ -224,6 +228,8 @@ class EnvironmentAgencyFloodService
      *
      * @param  array<int, array<string, mixed>>  $items
      * @return array<string, array<string, mixed>>
+     *
+     * @deprecated Replaced by Data Lake-backed warnings when flood-watch.use_data_lake=true
      */
     private function fetchFloodAreaPolygons(string $baseUrl, int $timeout, array $items): array
     {

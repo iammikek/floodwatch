@@ -116,6 +116,8 @@ class RiverLevelService
 
     /**
      * @return array<int, array{notation: string, label: string, riverName: string, town: string, lat: float, lng: float, stationType: string, typicalRangeLow?: float, typicalRangeHigh?: float}>
+     *
+     * @deprecated Replaced by Data Lake measurements when flood-watch.use_data_lake=true
      */
     private function fetchStations(string $baseUrl, int $timeout, float $lat, float $lng, int $radiusKm): array
     {
@@ -203,6 +205,8 @@ class RiverLevelService
     /**
      * @param  array<int, array{notation: string, label: string, riverName: string, town: string, lat: float, lng: float}>  $stations
      * @return array<string, array{value: float, unitName: string, dateTime: string}>
+     *
+     * @deprecated Replaced by Data Lake measurements when flood-watch.use_data_lake=true
      */
     private function fetchReadings(string $baseUrl, int $timeout, array $stations): array
     {
