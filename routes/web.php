@@ -22,6 +22,10 @@ Route::get('/api/lake/warnings/tiles/{z}/{x}/{y}.pbf', [FloodWatchTilesControlle
     ->middleware(['throttle:flood-watch-api'])
     ->whereNumber(['z', 'x', 'y'])
     ->name('flood-watch.tiles.warnings');
+Route::get('/api/lake/polygons/tiles/{dataset}/{z}/{x}/{y}.pbf', [FloodWatchTilesController::class, 'polygonsTile'])
+    ->middleware(['throttle:flood-watch-api'])
+    ->whereNumber(['z', 'x', 'y'])
+    ->name('flood-watch.tiles.polygons');
 
 Route::livewire('/', 'flood-watch-dashboard');
 

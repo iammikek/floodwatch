@@ -73,15 +73,19 @@ class DataLakeClientTest extends TestCase
     public function test_polygon_tile_200_builds_path_and_returns_body(): void
     {
         Config::set(ConfigKey::DATA_LAKE.'.base_url', 'http://lake.test');
-        Http::fake([
-            'http://lake.test/v1/polygons/tiles/flood_zones/10/511/340*' => Http::response(['type' => 'FeatureCollection', 'features' => []], 200),
-        ]);
+        Http::fake(function ($request) {
+            $this->assertTrue($request->hasHeader('Accept'));
+            $this->assertStringContainsString('application/x-protobuf', $request->header('Accept')[0] ?? '');
+
+            return Http::response('PBF_BYTES', 200, ['ETag' => 'W/"tile"']);
+        });
 
         $client = new DataLakeClient;
         $res = $client->getPolygonTile('flood_zones', 10, 511, 340, region: 'SOM', format: 'simplified');
 
         $this->assertSame(200, $res->status);
-        $this->assertIsArray($res->body);
-        $this->assertSame('FeatureCollection', $res->body['type']);
+        $this->assertSame('W/"tile"', $res->etag);
+        $this->assertIsString($res->body);
+        $this->assertSame('PBF_BYTES', $res->body);
     }
 }

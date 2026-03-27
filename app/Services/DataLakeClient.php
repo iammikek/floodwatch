@@ -176,7 +176,7 @@ class DataLakeClient
             $query['scenario'] = $scenario;
         }
 
-        return $this->fetch("/v1/polygons/tiles/{$dataset}/{$z}/{$x}/{$y}", $query, $ifNoneMatch);
+        return $this->fetchBinary("/v1/polygons/tiles/{$dataset}/{$z}/{$x}/{$y}", $query, $ifNoneMatch);
     }
 
     public function getWarningTile(
