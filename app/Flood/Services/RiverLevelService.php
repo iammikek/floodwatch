@@ -336,9 +336,20 @@ class RiverLevelService
         $maxLng = $lng + $lngDelta;
         $bbox = "{$minLng},{$minLat},{$maxLng},{$maxLat}";
 
+        $store = config('flood-watch.cache_store', 'flood-watch');
+        $ttlMinutes = (int) config('flood-watch.cache_ttl_minutes', 0);
+        $aggregate = 'raw';
+        $cacheKeyPrefix = config('flood-watch.cache_key_prefix', 'flood-watch').':lake:measurements:';
+        $cacheKey = "{$cacheKeyPrefix}{$bbox}:{$aggregate}";
+        $cached = null;
+        if ($ttlMinutes > 0) {
+            $cached = Cache::store($store)->get($cacheKey);
+        }
+        $ifNoneMatch = is_array($cached) && isset($cached['etag']) ? (string) $cached['etag'] : null;
+
         try {
             $client = new DataLakeClient;
-            $resp = $client->getMeasurements(bbox: $bbox, aggregate: 'raw', page: 1, limit: 200);
+            $resp = $client->getMeasurements(bbox: $bbox, aggregate: $aggregate, page: 1, limit: 200, ifNoneMatch: $ifNoneMatch);
         } catch (Throwable $e) {
             Log::error('FloodWatch Data Lake measurements fetch failed', [
                 'provider' => 'data_lake',
@@ -348,10 +359,17 @@ class RiverLevelService
 
             return [];
         }
-        if ($resp->status !== 200 || ! is_array($resp->body)) {
-            return [];
+        if ($resp->status === 304 && is_array($cached) && isset($cached['body']) && is_array($cached['body'])) {
+            $items = $cached['body']['items'] ?? [];
+        } else {
+            if ($resp->status !== 200 || ! is_array($resp->body)) {
+                return [];
+            }
+            $items = $resp->body['items'] ?? [];
+            if ($ttlMinutes > 0 && $resp->etag) {
+                Cache::store($store)->put($cacheKey, ['etag' => $resp->etag, 'body' => $resp->body], now()->addMinutes($ttlMinutes));
+            }
         }
-        $items = $resp->body['items'] ?? [];
         if (! is_array($items) || empty($items)) {
             return [];
         }
