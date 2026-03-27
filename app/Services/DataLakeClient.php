@@ -31,7 +31,21 @@ class DataLakeClient
         $status = $resp->status();
         $attempt = 0;
         while (($status === 429 || $status >= 500) && $attempt < $retryTimes) {
-            usleep($retrySleep * 1000);
+            $retryAfterHeader = $resp->header('Retry-After');
+            $rateResetHeader = $resp->header('X-RateLimit-Reset');
+            $retryAfter = is_numeric($retryAfterHeader) ? (int) $retryAfterHeader : 0;
+            $rateReset = is_numeric($rateResetHeader) ? (int) $rateResetHeader : 0;
+            $sleepMs = $retrySleep;
+            if ($retryAfter > 0) {
+                $sleepMs = max($sleepMs, $retryAfter * 1000);
+            } elseif ($rateReset > 0) {
+                $now = time();
+                $delta = $rateReset > $now ? ($rateReset - $now) : $rateReset;
+                if ($delta > 0) {
+                    $sleepMs = max($sleepMs, $delta * 1000);
+                }
+            }
+            usleep($sleepMs * 1000);
             $attempt++;
             $resp = $req->get($url, is_array($query) ? $query : []);
             $status = $resp->status();
@@ -56,7 +70,21 @@ class DataLakeClient
         $status = $resp->status();
         $attempt = 0;
         while (($status === 429 || $status >= 500) && $attempt < $retryTimes) {
-            usleep($retrySleep * 1000);
+            $retryAfterHeader = $resp->header('Retry-After');
+            $rateResetHeader = $resp->header('X-RateLimit-Reset');
+            $retryAfter = is_numeric($retryAfterHeader) ? (int) $retryAfterHeader : 0;
+            $rateReset = is_numeric($rateResetHeader) ? (int) $rateResetHeader : 0;
+            $sleepMs = $retrySleep;
+            if ($retryAfter > 0) {
+                $sleepMs = max($sleepMs, $retryAfter * 1000);
+            } elseif ($rateReset > 0) {
+                $now = time();
+                $delta = $rateReset > $now ? ($rateReset - $now) : $rateReset;
+                if ($delta > 0) {
+                    $sleepMs = max($sleepMs, $delta * 1000);
+                }
+            }
+            usleep($sleepMs * 1000);
             $attempt++;
             $resp = $req->get($url, is_array($query) ? $query : []);
             $status = $resp->status();
@@ -184,11 +212,15 @@ class DataLakeClient
         int $x,
         int $y,
         ?string $region = null,
+        ?int $minSeverity = null,
         ?string $ifNoneMatch = null
     ): DataLakeResponse {
         $query = [];
         if ($region !== null && $region !== '') {
             $query['region'] = $region;
+        }
+        if ($minSeverity !== null) {
+            $query['min_severity'] = $minSeverity;
         }
 
         return $this->fetchBinary("/v1/warnings/tiles/{$z}/{$x}/{$y}.pbf", $query, $ifNoneMatch);

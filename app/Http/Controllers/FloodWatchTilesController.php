@@ -11,10 +11,12 @@ class FloodWatchTilesController extends Controller
     {
         $ifNoneMatch = $request->header('If-None-Match');
         $region = (string) $request->query('region', '');
+        $minSeverity = $request->query('min_severity');
         $region = $region !== '' ? $region : null;
+        $minSeverity = is_numeric($minSeverity) ? (int) $minSeverity : null;
 
         $client = new DataLakeClient;
-        $resp = $client->getWarningTile($z, $x, $y, region: $region, ifNoneMatch: $ifNoneMatch);
+        $resp = $client->getWarningTile($z, $x, $y, region: $region, minSeverity: $minSeverity, ifNoneMatch: $ifNoneMatch);
 
         if ($resp->status === 304) {
             return response('', 304)
