@@ -155,7 +155,9 @@ class EnvironmentAgencyFloodService
         $ifNoneMatch = is_array($cached) && isset($cached['etag']) ? (string) $cached['etag'] : null;
 
         $client = new DataLakeClient;
+        $t0 = microtime(true);
         $resp = $client->getWarnings(bbox: $bbox, ifNoneMatch: $ifNoneMatch);
+        $latencyMs = (int) round((microtime(true) - $t0) * 1000);
         if ($resp->status === 304 && is_array($cached) && isset($cached['body']) && is_array($cached['body'])) {
             $items = $cached['body']['items'] ?? [];
         } else {
@@ -167,6 +169,14 @@ class EnvironmentAgencyFloodService
                 Cache::store($store)->put($cacheKey, ['etag' => $resp->etag, 'body' => $resp->body], now()->addMinutes($ttlMinutes));
             }
         }
+        Log::info('FloodWatch Data Lake warnings', [
+            'provider' => 'data_lake',
+            'endpoint' => 'warnings',
+            'bbox' => $bbox,
+            'status' => $resp->status,
+            'items' => is_array($items) ? count($items) : 0,
+            'latency_ms' => $latencyMs,
+        ]);
         if (! is_array($items) || empty($items)) {
             return [];
         }

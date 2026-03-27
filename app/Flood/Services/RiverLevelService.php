@@ -349,7 +349,9 @@ class RiverLevelService
 
         try {
             $client = new DataLakeClient;
+            $t0 = microtime(true);
             $resp = $client->getMeasurements(bbox: $bbox, aggregate: $aggregate, page: 1, limit: 200, ifNoneMatch: $ifNoneMatch);
+            $latencyMs = (int) round((microtime(true) - $t0) * 1000);
         } catch (Throwable $e) {
             Log::error('FloodWatch Data Lake measurements fetch failed', [
                 'provider' => 'data_lake',
@@ -370,6 +372,15 @@ class RiverLevelService
                 Cache::store($store)->put($cacheKey, ['etag' => $resp->etag, 'body' => $resp->body], now()->addMinutes($ttlMinutes));
             }
         }
+        Log::info('FloodWatch Data Lake measurements', [
+            'provider' => 'data_lake',
+            'endpoint' => 'measurements',
+            'bbox' => $bbox,
+            'aggregate' => $aggregate,
+            'status' => $resp->status,
+            'items' => is_array($items) ? count($items) : 0,
+            'latency_ms' => $latencyMs,
+        ]);
         if (! is_array($items) || empty($items)) {
             return [];
         }
