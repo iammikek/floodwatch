@@ -36,7 +36,10 @@ class RiverLevelService
     public function getLevels(
         ?float $lat = null,
         ?float $lng = null,
-        ?int $radiusKm = null
+        ?int $radiusKm = null,
+        ?string $from = null,
+        ?string $to = null,
+        string $aggregate = 'raw'
     ): array {
         if (config('flood-watch.use_data_lake', false) === true) {
             $lat ??= (float) config('flood-watch.default_lat');
@@ -51,7 +54,7 @@ class RiverLevelService
                     return $cached;
                 }
             }
-            $result = $this->getLevelsFromDataLake($lat, $lng, $radiusKm);
+            $result = $this->getLevelsFromDataLake($lat, $lng, $radiusKm, $from, $to, $aggregate);
             if ($cacheMinutes > 0) {
                 Cache::store($store)->put($key, $result, now()->addMinutes($cacheMinutes));
             }
@@ -326,7 +329,7 @@ class RiverLevelService
      *
      * @return array<int, array{station: string, river: string, town: string, value: float, unit: string, unitName: string, dateTime: string, lat: float, lng: float, stationType: string, levelStatus: string, typicalRangeLow?: float|null, typicalRangeHigh?: float|null}>
      */
-    private function getLevelsFromDataLake(float $lat, float $lng, int $radiusKm): array
+    private function getLevelsFromDataLake(float $lat, float $lng, int $radiusKm, ?string $from = null, ?string $to = null, string $aggregate = 'raw'): array
     {
         $latDelta = $radiusKm / 111.0;
         $lngDelta = $radiusKm / (111.0 * max(cos(deg2rad($lat)), 0.001));
@@ -338,7 +341,6 @@ class RiverLevelService
 
         $store = config('flood-watch.cache_store', 'flood-watch');
         $ttlMinutes = (int) config('flood-watch.cache_ttl_minutes', 0);
-        $aggregate = 'raw';
         $cacheKeyPrefix = config('flood-watch.cache_key_prefix', 'flood-watch').':lake:measurements:';
         $cacheKey = "{$cacheKeyPrefix}{$bbox}:{$aggregate}";
         $cached = null;
@@ -350,7 +352,15 @@ class RiverLevelService
         try {
             $client = new DataLakeClient;
             $t0 = microtime(true);
-            $resp = $client->getMeasurements(bbox: $bbox, aggregate: $aggregate, page: 1, limit: 200, ifNoneMatch: $ifNoneMatch);
+            $resp = $client->getMeasurements(
+                bbox: $bbox,
+                from: $from,
+                to: $to,
+                aggregate: $aggregate,
+                page: 1,
+                limit: 200,
+                ifNoneMatch: $ifNoneMatch
+            );
             $latencyMs = (int) round((microtime(true) - $t0) * 1000);
         } catch (Throwable $e) {
             Log::error('FloodWatch Data Lake measurements fetch failed', [
