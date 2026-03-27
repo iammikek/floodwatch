@@ -12,11 +12,9 @@
             <a href="{{ config('flood-watch.donation_url') }}" target="_blank" rel="noopener" class="underline hover:text-slate-600">{{ __('flood-watch.dashboard.support_development') }}</a>.
         </p>
     @endif
-    @if (config('flood-watch.use_data_lake'))
-        <p class="text-xs text-slate-500 mb-2">
-            Data served via Flood Watch Data Lake (aggregated sources).
-        </p>
-    @endif
+    <p class="text-xs text-slate-500 mb-2">
+        Data served via Flood Watch Data Lake (aggregated sources).
+    </p>
     <p class="text-xs text-slate-500">
         An <a href="https://automica.io" target="_blank" rel="noopener" class="underline hover:text-slate-600">automica labs</a> project.
         Data: Environment Agency flood and river level data from the

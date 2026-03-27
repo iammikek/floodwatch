@@ -8,6 +8,79 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
             <section class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Lake Warnings Preview</h3>
+                <div class="flex flex-wrap items-center gap-3">
+                    <label class="text-sm text-gray-700">
+                        Region
+                        <select id="lake-region" class="ms-2 border rounded px-2 py-1 text-sm">
+                            <option value="SOM">Somerset</option>
+                            <option value="BRI">Bristol</option>
+                            <option value="DEV">Devon</option>
+                            <option value="CON">Cornwall</option>
+                        </select>
+                    </label>
+                    <label class="text-sm text-gray-700">
+                        Since
+                        <select id="lake-since" class="ms-2 border rounded px-2 py-1 text-sm">
+                            <option value="">All</option>
+                            <option value="PT1H">Last 1h</option>
+                            <option value="PT3H">Last 3h</option>
+                            <option value="PT6H">Last 6h</option>
+                            <option value="PT12H">Last 12h</option>
+                            <option value="P1D">Last 24h</option>
+                        </select>
+                    </label>
+                    <label class="text-sm text-gray-700">
+                        Min severity
+                        <select id="lake-min" class="ms-2 border rounded px-2 py-1 text-sm">
+                            <option value="">Auto</option>
+                            <option value="1">Severe only</option>
+                            <option value="2">Warnings+</option>
+                            <option value="3">Alerts+</option>
+                            <option value="4">All</option>
+                        </select>
+                    </label>
+                    <button id="lake-refresh" class="px-3 py-1.5 text-sm rounded border bg-slate-50 hover:bg-slate-100">Refresh</button>
+                    <span id="lake-status" class="text-sm text-gray-600">—</span>
+                </div>
+                <div class="mt-4">
+                    <ul id="lake-list" class="text-sm text-gray-800 list-disc ms-5 space-y-1"></ul>
+                </div>
+                <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    const regionEl = document.getElementById('lake-region');
+                    const sinceEl = document.getElementById('lake-since');
+                    const minEl = document.getElementById('lake-min');
+                    const statusEl = document.getElementById('lake-status');
+                    const listEl = document.getElementById('lake-list');
+                    const refreshBtn = document.getElementById('lake-refresh');
+                    const fetchData = () => {
+                        const qs = new URLSearchParams();
+                        qs.append('region', regionEl.value || 'SOM');
+                        if (sinceEl.value) qs.append('since', sinceEl.value);
+                        if (minEl.value) qs.append('min_severity', minEl.value);
+                        statusEl.textContent = 'Loading…';
+                        fetch('{{ route('flood-watch.warnings') }}' + '?' + qs.toString(), { credentials: 'same-origin' })
+                          .then(r => r.ok ? r.json() : Promise.reject(r.status))
+                          .then(data => {
+                              const items = Array.isArray(data?.items) ? data.items : [];
+                              statusEl.textContent = String(items.length) + ' warnings';
+                              listEl.innerHTML = '';
+                              items.slice(0, 5).forEach(i => {
+                                  const li = document.createElement('li');
+                                  li.textContent = (i.severity || '') + ' – ' + (i.description || 'Flood area');
+                                  listEl.appendChild(li);
+                              });
+                          })
+                          .catch(() => { statusEl.textContent = 'Error'; });
+                    };
+                    refreshBtn.addEventListener('click', fetchData);
+                    [regionEl, sinceEl, minEl].forEach(el => el.addEventListener('change', fetchData));
+                    fetchData();
+                });
+                </script>
+            </section>
+            <section class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
                 <h3 class="text-lg font-medium text-gray-900 mb-4">API Health</h3>
                 <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     @foreach ($checks as $name => $check)

@@ -22,6 +22,9 @@ class FloodWatchRiverLevelsController extends Controller
         $lat = $request->query('lat');
         $lng = $request->query('lng');
         $radius = $request->query('radius', config('flood-watch.default_radius_km', 15));
+        $from = $request->query('from');
+        $to = $request->query('to');
+        $aggregate = (string) $request->query('aggregate', 'raw');
 
         if ($lat === null || $lng === null || ! is_numeric($lat) || ! is_numeric($lng)) {
             return response()->json([]);
@@ -31,7 +34,7 @@ class FloodWatchRiverLevelsController extends Controller
         $lng = (float) $lng;
         $radius = min(50, max(5, (int) $radius));
 
-        $levels = $this->riverLevelService->getLevels($lat, $lng, $radius);
+        $levels = $this->riverLevelService->getLevels($lat, $lng, $radius, $from, $to, $aggregate);
 
         return response()->json($levels);
     }

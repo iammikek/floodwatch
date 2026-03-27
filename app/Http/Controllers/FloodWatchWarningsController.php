@@ -14,6 +14,7 @@ class FloodWatchWarningsController extends Controller
         $bbox = $request->query('bbox');
         $region = $request->query('region');
         $county = $request->query('county');
+        $since = $request->query('since');
         $minSeverity = $request->query('min_severity');
         $minSeverity = is_numeric($minSeverity) ? (int) $minSeverity : null;
 
@@ -30,6 +31,7 @@ class FloodWatchWarningsController extends Controller
             $bbox ? "bbox:{$bbox}" : '',
             $region ? "region:{$region}" : '',
             $county ? "county:{$county}" : '',
+            $since ? "since:{$since}" : '',
             $minSeverity !== null ? "min:{$minSeverity}" : '',
         ];
         $cacheKey = $prefix.':'.implode(':', array_values(array_filter($keyParts, fn ($p) => $p !== '')));
@@ -43,6 +45,7 @@ class FloodWatchWarningsController extends Controller
         $resp = $client->getWarnings(
             bbox: $bbox ? (string) $bbox : null,
             region: $region ? (string) $region : null,
+            since: $since ? (string) $since : null,
             county: $county ? (string) $county : null,
             minSeverity: $minSeverity,
             ifNoneMatch: $ifNoneMatch

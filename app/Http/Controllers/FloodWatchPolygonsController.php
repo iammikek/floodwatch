@@ -19,7 +19,7 @@ class FloodWatchPolygonsController extends Controller
      */
     public function __invoke(Request $request): JsonResponse
     {
-        if ((bool) config('flood-watch.use_data_lake', false) && $request->filled('bbox')) {
+        if ($request->filled('bbox')) {
             $bbox = (string) $request->query('bbox');
             $outcode = (string) $request->query('outcode', '');
             $region = $this->mapOutcodeToRegion($outcode);

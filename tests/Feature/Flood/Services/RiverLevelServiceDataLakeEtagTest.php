@@ -12,7 +12,6 @@ class RiverLevelServiceDataLakeEtagTest extends TestCase
 {
     public function test_measurements_use_etag_and_return_cached_body_on_304(): void
     {
-        Config::set(ConfigKey::USE_DATA_LAKE, true);
         Config::set(ConfigKey::DATA_LAKE.'.base_url', 'http://lake.test');
         Config::set('flood-watch.cache_ttl_minutes', 5);
         Config::set('flood-watch.default_lat', 51.0);

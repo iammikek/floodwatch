@@ -47,6 +47,7 @@
                 map: null,
                 tileLayer: null,
                 mapStyleOpen: false,
+                minSeverity: 'auto',
                 selectedTileId: (() => {
                     try {
                         const saved = typeof localStorage !== 'undefined' && localStorage.getItem('flood-watch-map-style');
@@ -54,6 +55,13 @@
                     } catch (e) {}
                     return (config.tileLayers && config.tileLayers[0]) ? config.tileLayers[0].id : null;
                 })(),
+                onMinSeverityChange() {
+                    if (!this.map) return;
+                    if (this._warnTimer) clearTimeout(this._warnTimer);
+                    this._warnTimer = setTimeout(() => {
+                        if (typeof this._fetchLakeWarnings === 'function') this._fetchLakeWarnings(2);
+                    }, 200);
+                },
                 esc(s) {
                     if (s == null || s === '') return '';
                     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -355,8 +363,13 @@
                                 const bbox = [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()].join(',');
                                 const zoom = this.map.getZoom();
                                 let minSeverity = null;
-                                if (zoom < 10) minSeverity = 2;
-                                else if (zoom < 12) minSeverity = 3;
+                                if (this.minSeverity && this.minSeverity !== 'auto') {
+                                    const val = Number(this.minSeverity);
+                                    if (Number.isFinite(val) && val >= 1 && val <= 4) minSeverity = val;
+                                } else {
+                                    if (zoom < 10) minSeverity = 2;
+                                    else if (zoom < 12) minSeverity = 3;
+                                }
                                 const base = String(this.warningsUrl).indexOf('http') === 0 ? this.warningsUrl : (window.location.origin + (this.warningsUrl.startsWith('/') ? '' : '/') + this.warningsUrl);
                                 const qs = new URLSearchParams();
                                 qs.append('bbox', bbox);
@@ -396,6 +409,7 @@
                                     this.map.whenReady(() => setTimeout(() => fetchLakeWarnings(2), 500));
                                 }
                                 setTimeout(() => fetchLakeWarnings(2), 1000);
+                                this._fetchLakeWarnings = fetchLakeWarnings;
                             }
                             (typeof requestIdleCallback !== 'undefined'
                                 ? (cb) => requestIdleCallback(cb, { timeout: 100 })

@@ -130,6 +130,7 @@ flowchart LR
 | Medium | Smarter route verdict | Rivers on route, wet areas, Muchelney rule |
 | Medium | Analytics layer | Partial – trend recording in Redis; reporting later |
 | Medium | Real-time & push | Laravel Reverb + FCM; see Phase 2 |
+| Medium | River levels time window selector | Add from/to + aggregate (raw/hour/day) controls to map river levels fetch; render sparkline in station popup; default to latest when unset |
 | Medium | Queue-based async | For high-traffic; poll for results |
 | Low | Polygon limit tuning | `max_polygons_per_request` |
 | Low | Additional regions | Planned – beyond South West; Dorset added |

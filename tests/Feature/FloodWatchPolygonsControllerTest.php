@@ -60,7 +60,6 @@ class FloodWatchPolygonsControllerTest extends TestCase
 
     public function test_polygons_endpoint_returns_inline_geojson_when_lake_and_bbox(): void
     {
-        config()->set('flood-watch.use_data_lake', true);
         config()->set('flood-watch.data_lake.base_url', 'http://lake.test');
         config()->set('flood-watch.cache_ttl_minutes', 5);
 

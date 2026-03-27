@@ -12,7 +12,6 @@ class RiverLevelServiceTimeSeriesDataLakeTest extends TestCase
 {
     public function test_timeseries_hourly_with_from_to_is_requested_and_parsed(): void
     {
-        Config::set(ConfigKey::USE_DATA_LAKE, true);
         Config::set(ConfigKey::DATA_LAKE.'.base_url', 'http://lake.test');
         Config::set('flood-watch.cache_ttl_minutes', 5);
 

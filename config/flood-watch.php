@@ -109,26 +109,9 @@ return [
     'default_location_sentinel' => 'default',
 
     'bookmarks_max_per_user' => (int) env('FLOOD_WATCH_BOOKMARKS_MAX', 10),
-
-    /*
-    |--------------------------------------------------------------------------
-    | Environment Agency API
-    |--------------------------------------------------------------------------
-    */
-
-    'environment_agency' => [
-        'base_url' => env('ENVIRONMENT_AGENCY_URL', 'https://environment.data.gov.uk/flood-monitoring'),
-        'timeout' => (int) env('ENVIRONMENT_AGENCY_TIMEOUT', 25),
-        'polygon_cache_hours' => (int) env('FLOOD_WATCH_POLYGON_CACHE_HOURS', 168),
-        'max_polygons_per_request' => (int) env('FLOOD_WATCH_MAX_POLYGONS', 10),
-        'retry_times' => (int) env('FLOOD_WATCH_EA_RETRY_TIMES', 3),
-        'retry_sleep_ms' => (int) env('FLOOD_WATCH_EA_RETRY_SLEEP_MS', 100),
-    ],
-
     /*
     |--------------------------------------------------------------------------
     | Flood Guidance Statement (5-day forecast)
-    |--------------------------------------------------------------------------
     */
 
     'flood_forecast' => [
@@ -173,8 +156,6 @@ return [
     | Data Lake Service
     |--------------------------------------------------------------------------
     */
-
-    'use_data_lake' => env('FLOOD_WATCH_USE_DATA_LAKE', false),
 
     'data_lake' => [
         'base_url' => env('FLOOD_WATCH_DATA_LAKE_URL', 'http://localhost:8000'),

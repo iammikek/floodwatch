@@ -13,7 +13,6 @@ class RiverLevelServiceDataLakeTest extends TestCase
 {
     public function test_fetches_river_levels_from_data_lake_when_flag_enabled(): void
     {
-        Config::set(ConfigKey::USE_DATA_LAKE, true);
         Config::set(ConfigKey::DATA_LAKE.'.base_url', 'http://lake.test');
         Config::set('flood-watch.default_lat', 51.0358);
         Config::set('flood-watch.default_lng', -2.8318);
@@ -59,7 +58,6 @@ class RiverLevelServiceDataLakeTest extends TestCase
 
     public function test_built_bbox_is_sent_to_lake_measurements_endpoint(): void
     {
-        Config::set(ConfigKey::USE_DATA_LAKE, true);
         Config::set(ConfigKey::DATA_LAKE.'.base_url', 'http://lake.test');
 
         Http::fake([
@@ -79,7 +77,6 @@ class RiverLevelServiceDataLakeTest extends TestCase
 
     public function test_returns_empty_array_on_lake_connection_exception(): void
     {
-        Config::set(ConfigKey::USE_DATA_LAKE, true);
         Config::set(ConfigKey::DATA_LAKE.'.base_url', 'http://lake.test');
 
         Http::fake(function ($request) {

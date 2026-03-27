@@ -70,8 +70,8 @@ class RiverLevelService
 
         try {
             $result = $this->circuitBreaker->execute(function () use ($lat, $lng, $radiusKm) {
-                $baseUrl = config('flood-watch.environment_agency.base_url');
-                $timeout = config('flood-watch.environment_agency.timeout');
+                $baseUrl = (string) (config('flood-watch.environment_agency.base_url') ?? 'https://environment.data.gov.uk/flood-monitoring');
+                $timeout = (int) config('flood-watch.environment_agency.timeout', 25);
 
                 $stations = $this->fetchStations($baseUrl, $timeout, $lat, $lng, $radiusKm);
                 if (empty($stations)) {
