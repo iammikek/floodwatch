@@ -15,11 +15,12 @@ class HealthController extends Controller
 
     public function __invoke(Request $request): JsonResponse
     {
-        [$environmentAgency, $floodForecast, $weather, $nationalHighways] = Concurrency::run([
+        [$environmentAgency, $floodForecast, $weather, $nationalHighways, $dataLake] = Concurrency::run([
             fn () => $this->checkEnvironmentAgency(),
             fn () => $this->checkFloodForecast(),
             fn () => $this->checkWeather(),
             fn () => $this->checkNationalHighways(),
+            fn () => $this->checkDataLake(),
         ]);
 
         $checks = [
@@ -27,6 +28,7 @@ class HealthController extends Controller
             'flood_forecast' => $floodForecast,
             'weather' => $weather,
             'national_highways' => $nationalHighways,
+            'data_lake' => $dataLake,
             'cache' => $this->checkCache(),
         ];
 
@@ -37,6 +39,28 @@ class HealthController extends Controller
             'status' => $allOk ? 'healthy' : 'degraded',
             'checks' => $checks,
         ], $statusCode);
+    }
+
+    private function checkDataLake(): array
+    {
+        try {
+            $baseUrl = rtrim((string) config('flood-watch.data_lake.base_url', ''), '/');
+            if ($baseUrl === '') {
+                return ['status' => 'skipped', 'message' => 'Data lake not configured'];
+            }
+            $warningsUrl = "{$baseUrl}/v1/warnings?bbox=-3.1,50.9,-2.6,51.2&limit=1";
+            $measurementsUrl = "{$baseUrl}/v1/measurements?bbox=-3.1,50.9,-2.6,51.2&aggregate=raw&limit=1";
+            $wr = Http::timeout(self::HEALTH_TIMEOUT)->get($warningsUrl);
+            $mr = Http::timeout(self::HEALTH_TIMEOUT)->get($measurementsUrl);
+            $ok = $wr->successful() && $mr->successful();
+
+            return [
+                'status' => $ok ? 'ok' : 'degraded',
+                'message' => $ok ? null : "warnings {$wr->status()} / measurements {$mr->status()}",
+            ];
+        } catch (Throwable $e) {
+            return ['status' => 'unhealthy', 'message' => $e->getMessage()];
+        }
     }
 
     private function checkEnvironmentAgency(): array

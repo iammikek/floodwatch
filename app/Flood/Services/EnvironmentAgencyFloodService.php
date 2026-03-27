@@ -132,6 +132,8 @@ class EnvironmentAgencyFloodService
         ?float $lng,
         ?int $radiusKm
     ): array {
+        $store = config('flood-watch.cache_store');
+        $ttlMinutes = (int) config('flood-watch.cache_ttl_minutes', 0);
         $lat ??= (float) config('flood-watch.default_lat');
         $lng ??= (float) config('flood-watch.default_lng');
         $radiusKm ??= (int) config('flood-watch.default_radius_km');
@@ -144,12 +146,27 @@ class EnvironmentAgencyFloodService
         $maxLng = $lng + $lngDelta;
         $bbox = "{$minLng},{$minLat},{$maxLng},{$maxLat}";
 
-        $client = new DataLakeClient;
-        $resp = $client->getWarnings(bbox: $bbox);
-        if ($resp->status !== 200 || ! is_array($resp->body)) {
-            return [];
+        $cacheKeyPrefix = config('flood-watch.cache_key_prefix', 'flood-watch').':lake:warnings:';
+        $cacheKey = "{$cacheKeyPrefix}{$bbox}";
+        $cached = null;
+        if ($ttlMinutes > 0) {
+            $cached = Cache::store($store)->get($cacheKey);
         }
-        $items = $resp->body['items'] ?? [];
+        $ifNoneMatch = is_array($cached) && isset($cached['etag']) ? (string) $cached['etag'] : null;
+
+        $client = new DataLakeClient;
+        $resp = $client->getWarnings(bbox: $bbox, ifNoneMatch: $ifNoneMatch);
+        if ($resp->status === 304 && is_array($cached) && isset($cached['body']) && is_array($cached['body'])) {
+            $items = $cached['body']['items'] ?? [];
+        } else {
+            if ($resp->status !== 200 || ! is_array($resp->body)) {
+                return [];
+            }
+            $items = $resp->body['items'] ?? [];
+            if ($ttlMinutes > 0 && $resp->etag) {
+                Cache::store($store)->put($cacheKey, ['etag' => $resp->etag, 'body' => $resp->body], now()->addMinutes($ttlMinutes));
+            }
+        }
         if (! is_array($items) || empty($items)) {
             return [];
         }

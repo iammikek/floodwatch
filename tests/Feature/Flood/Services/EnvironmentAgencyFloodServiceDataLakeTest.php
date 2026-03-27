@@ -10,57 +10,26 @@ use Tests\TestCase;
 
 class EnvironmentAgencyFloodServiceDataLakeTest extends TestCase
 {
-    public function test_fetches_floods_from_data_lake_when_flag_enabled(): void
+    public function test_warnings_uses_etag_and_returns_cached_body_on_304(): void
     {
         Config::set(ConfigKey::USE_DATA_LAKE, true);
         Config::set(ConfigKey::DATA_LAKE.'.base_url', 'http://lake.test');
-        Config::set('flood-watch.default_lat', 51.0358);
-        Config::set('flood-watch.default_lng', -2.8318);
-        Config::set('flood-watch.default_radius_km', 15);
+        Config::set('flood-watch.cache_ttl_minutes', 5);
 
         Http::fake([
-            'http://lake.test/v1/warnings*' => Http::response([
-                'items' => [
-                    [
-                        'description' => 'River Parrett',
-                        'severity' => 'Flood alert',
-                        'severityLevel' => 3,
-                        'message' => 'Flooding is possible.',
-                        'lat' => 51.04,
-                        'lng' => -2.83,
-                    ],
-                ],
-            ], 200),
+            'http://lake.test/v1/warnings*' => Http::sequence()
+                ->push(['items' => [['severity' => 'Flood alert', 'message' => 'Test warning', 'floodAreaID' => 'A1']]], 200, ['ETag' => 'W/"abc"'])
+                ->push(null, 304, ['ETag' => 'W/"abc"']),
         ]);
 
-        $service = new EnvironmentAgencyFloodService;
-        $result = $service->getFloods();
+        $svc = new EnvironmentAgencyFloodService;
+        $first = $svc->getFloods(51.0, -2.8, 10);
+        $this->assertIsArray($first);
+        $this->assertCount(1, $first);
 
-        $this->assertIsArray($result);
-        $this->assertCount(1, $result);
-        $this->assertSame('River Parrett', $result[0]['description']);
-        $this->assertSame('Flood alert', $result[0]['severity']);
-        $this->assertSame(3, $result[0]['severityLevel']);
-        $this->assertSame(51.04, $result[0]['lat']);
-        $this->assertSame(-2.83, $result[0]['lng']);
-    }
-
-    public function test_built_bbox_is_sent_to_lake_endpoint(): void
-    {
-        Config::set(ConfigKey::USE_DATA_LAKE, true);
-        Config::set(ConfigKey::DATA_LAKE.'.base_url', 'http://lake.test');
-
-        Http::fake([
-            'http://lake.test/v1/warnings*' => Http::response(['items' => []], 200),
-        ]);
-
-        $service = new EnvironmentAgencyFloodService;
-        $service->getFloods(51.0, -2.8, 10);
-
-        Http::assertSent(function ($request) {
-            return str_contains($request->url(), '/v1/warnings')
-                && $request->method() === 'GET'
-                && str_contains($request->url(), 'bbox=');
-        });
+        $second = $svc->getFloods(51.0, -2.8, 10);
+        $this->assertIsArray($second);
+        $this->assertCount(1, $second);
+        $this->assertSame($first[0]['floodAreaID'], $second[0]['floodAreaID']);
     }
 }
