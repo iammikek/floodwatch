@@ -299,7 +299,8 @@
                             L.control.scale({ imperial: false }).addTo(this.map);
                             this.map.invalidateSize();
                             if (this.polygonsUrl) {
-                                if (this.lakeEnabled && this.map && typeof this.map.getBounds === 'function') {
+                                const fetchInlinePolygons = async () => {
+                                    if (!(this.lakeEnabled && this.map && typeof this.map.getBounds === 'function')) return;
                                     const b = this.map.getBounds();
                                     const bbox = [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()].join(',');
                                     const q = new URLSearchParams();
@@ -315,6 +316,14 @@
                                             }
                                         }
                                     } catch (e) {}
+                                };
+                                if (this.lakeEnabled) {
+                                    fetchInlinePolygons();
+                                    let polyTimeout = null;
+                                    this.map.on('moveend', () => {
+                                        if (polyTimeout) clearTimeout(polyTimeout);
+                                        polyTimeout = setTimeout(() => fetchInlinePolygons(), 500);
+                                    });
                                 } else if (this.floods && this.floods.length > 0) {
                                     const ids = this.floods.map(f => f.floodAreaID).filter(Boolean);
                                     if (ids.length > 0) {
