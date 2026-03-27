@@ -157,6 +157,28 @@ Workflow file: `.github/workflows/tests.yml`
 | Open-Meteo             | Free weather API                                   | 5-day weather forecast       |
 | postcodes.io           | Free geocoding                                     | Postcode → lat/long          |
 
+## Data Lake Mode
+
+When enabled, the app sources Environment Agency data through the Flood Watch Data Lake for improved caching, stability, and consistent shapes.
+
+- Enable: set `FLOOD_WATCH_USE_DATA_LAKE=true` in `.env`
+- Base URL: `FLOOD_WATCH_DATA_LAKE_URL` (default `http://localhost:8000`; with Sail use `http://host.docker.internal:8000`)
+- Client: `App\Services\DataLakeClient` (ETag/If-None-Match, backoff for 429/5xx)
+
+What routes through the lake:
+- Warnings: `GET /v1/warnings` with `bbox` when map-centered
+- Measurements: `GET /v1/measurements` with `bbox`, optional `from`, `to`, and `aggregate=raw|hour|day`
+- Polygons: `GET /v1/polygons?inline=true&bbox=…` for small viewports (rendered directly on the map)
+
+Caching and robustness:
+- ETag-aware caching for warnings and measurements; on 304, the app serves the cached body
+- Inline polygon requests use ETag + TTL caching keyed by `bbox+region+dataset`
+- Structured logs record status, items/features count, and latency for observability
+
+UI notes:
+- The footer shows “Data served via Flood Watch Data Lake” when lake mode is enabled
+- Map overlays flood zones from the lake for the current viewport; for larger areas, switch to tiles can be added later
+
 ## Attribution
 
 Data use requires attribution. The dashboard displays a footer with:

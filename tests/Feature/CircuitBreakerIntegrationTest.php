@@ -42,19 +42,7 @@ test('circuit breaker returns empty when open', function () {
         ->toThrow(CircuitOpenException::class);
 });
 
-test('environment agency service returns empty when circuit is open', function () use ($cacheStore) {
-    $circuit = new CircuitBreaker('environment_agency', 1, 60);
-    $circuit->recordFailure();
-    $cacheStore()->put('flood-watch-test:circuit:environment_agency:open', true, 60);
-
-    $service = new EnvironmentAgencyFloodService($circuit);
-
-    Http::fake(fn () => Http::response(null, 500));
-
-    $result = $service->getFloods();
-
-    expect($result)->toBe([]);
-});
+// Service no longer uses circuit breaker; behavior covered by Data Lake tests.
 
 test('circuit breaker disabled bypasses open state', function () use ($cacheStore) {
     Config::set('flood-watch.circuit_breaker.enabled', false);
@@ -67,29 +55,21 @@ test('circuit breaker disabled bypasses open state', function () use ($cacheStor
     expect($result)->toBe('ok');
 });
 
-test('environment agency service works when circuit disabled', function () {
-    Config::set('flood-watch.circuit_breaker.enabled', false);
+test('environment agency service returns lake warnings', function () {
+    Config::set('flood-watch.data_lake.base_url', 'http://lake.test');
 
-    Http::fake(function ($request) {
-        if (str_contains($request->url(), 'environment.data.gov.uk')) {
-            if (str_contains($request->url(), '/id/floodAreas')) {
-                return Http::response(['items' => []], 200);
-            }
-
-            return Http::response([
-                'items' => [
-                    [
-                        'description' => 'Test flood',
-                        'severity' => 'Warning',
-                        'severityLevel' => 1,
-                        'message' => 'Test',
-                    ],
+    Http::fake([
+        'http://lake.test/v1/warnings*' => Http::response([
+            'items' => [
+                [
+                    'description' => 'Test flood',
+                    'severity' => 'Warning',
+                    'severityLevel' => 1,
+                    'message' => 'Test',
                 ],
-            ], 200);
-        }
-
-        return Http::response(null, 404);
-    });
+            ],
+        ], 200),
+    ]);
 
     $service = app(EnvironmentAgencyFloodService::class);
     $result = $service->getFloods();

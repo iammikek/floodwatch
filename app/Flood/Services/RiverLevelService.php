@@ -2,6 +2,7 @@
 
 namespace App\Flood\Services;
 
+use App\Services\DataLakeClient;
 use App\Support\CircuitBreaker;
 use App\Support\CircuitOpenException;
 use App\Support\CoordinateMapper;
@@ -35,16 +36,19 @@ class RiverLevelService
     public function getLevels(
         ?float $lat = null,
         ?float $lng = null,
-        ?int $radiusKm = null
+        ?int $radiusKm = null,
+        ?string $from = null,
+        ?string $to = null,
+        string $aggregate = 'raw'
     ): array {
-        $lat ??= config('flood-watch.default_lat');
-        $lng ??= config('flood-watch.default_lng');
-        $radiusKm ??= config('flood-watch.default_radius_km');
-
-        $cacheMinutes = config('flood-watch.river_levels_cache_minutes', 0);
-        if ($cacheMinutes > 0) {
-            $key = $this->riverLevelsCacheKey($lat, $lng, $radiusKm);
-            $store = config('flood-watch.cache_store', 'flood-watch');
+        $lat ??= (float) config('flood-watch.default_lat');
+        $lng ??= (float) config('flood-watch.default_lng');
+        $radiusKm ??= (int) config('flood-watch.default_radius_km');
+        $cacheMinutes = (int) config('flood-watch.river_levels_cache_minutes', 0);
+        $shouldCache = $cacheMinutes > 0;
+        $key = $this->riverLevelsCacheKey($lat, $lng, $radiusKm);
+        $store = config('flood-watch.cache_store', 'flood-watch');
+        if ($shouldCache) {
             $cached = Cache::store($store)->get($key);
             if (is_array($cached)) {
                 return $cached;
@@ -52,26 +56,34 @@ class RiverLevelService
         }
 
         try {
+            $result = $this->getLevelsFromDataLake($lat, $lng, $radiusKm, $from, $to, $aggregate);
+            if (! empty($result)) {
+                $this->cacheLevels($store, $key, $result, $cacheMinutes);
+
+                return $result;
+            }
+        } catch (CircuitOpenException) {
+            return [];
+        } catch (ConnectionException|RequestException $e) {
+            report($e);
+        }
+
+        try {
             $result = $this->circuitBreaker->execute(function () use ($lat, $lng, $radiusKm) {
-                $baseUrl = config('flood-watch.environment_agency.base_url');
-                $timeout = config('flood-watch.environment_agency.timeout');
+                $baseUrl = (string) (config('flood-watch.environment_agency.base_url') ?? 'https://environment.data.gov.uk/flood-monitoring');
+                $timeout = (int) config('flood-watch.environment_agency.timeout', 25);
 
                 $stations = $this->fetchStations($baseUrl, $timeout, $lat, $lng, $radiusKm);
                 if (empty($stations)) {
                     return [];
                 }
-
                 $stations = array_slice($stations, 0, self::MAX_STATIONS);
                 $readings = $this->fetchReadings($baseUrl, $timeout, $stations);
 
                 return $this->mergeStationsWithReadings($stations, $readings);
             });
 
-            if ($cacheMinutes > 0) {
-                $key = $this->riverLevelsCacheKey($lat, $lng, $radiusKm);
-                $store = config('flood-watch.cache_store', 'flood-watch');
-                Cache::store($store)->put($key, $result, now()->addMinutes($cacheMinutes));
-            }
+            $this->cacheLevels($store, $key, $result, $cacheMinutes);
 
             return $result;
         } catch (CircuitOpenException) {
@@ -80,6 +92,13 @@ class RiverLevelService
             report($e);
 
             return [];
+        }
+    }
+
+    private function cacheLevels(string $store, string $key, mixed $value, int $minutes): void
+    {
+        if ($minutes > 0) {
+            Cache::store($store)->put($key, $value, now()->addMinutes($minutes));
         }
     }
 
@@ -94,6 +113,8 @@ class RiverLevelService
 
     /**
      * @return array<int, array{notation: string, label: string, riverName: string, town: string, lat: float, lng: float, stationType: string, typicalRangeLow?: float, typicalRangeHigh?: float}>
+     *
+     * @deprecated Replaced by Data Lake measurements when flood-watch.use_data_lake=true
      */
     private function fetchStations(string $baseUrl, int $timeout, float $lat, float $lng, int $radiusKm): array
     {
@@ -181,6 +202,8 @@ class RiverLevelService
     /**
      * @param  array<int, array{notation: string, label: string, riverName: string, town: string, lat: float, lng: float}>  $stations
      * @return array<string, array{value: float, unitName: string, dateTime: string}>
+     *
+     * @deprecated Replaced by Data Lake measurements when flood-watch.use_data_lake=true
      */
     private function fetchReadings(string $baseUrl, int $timeout, array $stations): array
     {
@@ -293,5 +316,123 @@ class RiverLevelService
         }
 
         return 'expected';
+    }
+
+    /**
+     * Data Lake integration behind feature flag. Returns same shape as EA flow.
+     *
+     * @return array<int, array{station: string, river: string, town: string, value: float, unit: string, unitName: string, dateTime: string, lat: float, lng: float, stationType: string, levelStatus: string, typicalRangeLow?: float|null, typicalRangeHigh?: float|null}>
+     */
+    private function getLevelsFromDataLake(float $lat, float $lng, int $radiusKm, ?string $from = null, ?string $to = null, string $aggregate = 'raw'): array
+    {
+        $latDelta = $radiusKm / 111.0;
+        $lngDelta = $radiusKm / (111.0 * max(cos(deg2rad($lat)), 0.001));
+        $minLat = $lat - $latDelta;
+        $maxLat = $lat + $latDelta;
+        $minLng = $lng - $lngDelta;
+        $maxLng = $lng + $lngDelta;
+        $bbox = "{$minLng},{$minLat},{$maxLng},{$maxLat}";
+
+        $store = config('flood-watch.cache_store', 'flood-watch');
+        $ttlMinutes = (int) config('flood-watch.cache_ttl_minutes', 0);
+        $cacheKeyPrefix = config('flood-watch.cache_key_prefix', 'flood-watch').':lake:measurements:';
+        $cacheKey = "{$cacheKeyPrefix}{$bbox}:{$aggregate}";
+        $cached = null;
+        if ($ttlMinutes > 0) {
+            $cached = Cache::store($store)->get($cacheKey);
+        }
+        $ifNoneMatch = is_array($cached) && isset($cached['etag']) ? (string) $cached['etag'] : null;
+
+        try {
+            $client = new DataLakeClient;
+            $t0 = microtime(true);
+            $resp = $client->getMeasurements(
+                bbox: $bbox,
+                from: $from,
+                to: $to,
+                aggregate: $aggregate,
+                page: 1,
+                limit: 200,
+                ifNoneMatch: $ifNoneMatch
+            );
+            $latencyMs = (int) round((microtime(true) - $t0) * 1000);
+        } catch (Throwable $e) {
+            Log::error('FloodWatch Data Lake measurements fetch failed', [
+                'provider' => 'data_lake',
+                'bbox' => $bbox,
+                'error' => $e->getMessage(),
+            ]);
+
+            return [];
+        }
+        if ($resp->status === 304 && is_array($cached) && isset($cached['body']) && is_array($cached['body'])) {
+            $items = $cached['body']['items'] ?? [];
+        } else {
+            if ($resp->status !== 200 || ! is_array($resp->body)) {
+                return [];
+            }
+            $items = $resp->body['items'] ?? [];
+            if ($ttlMinutes > 0 && $resp->etag) {
+                Cache::store($store)->put($cacheKey, ['etag' => $resp->etag, 'body' => $resp->body], now()->addMinutes($ttlMinutes));
+            }
+        }
+        Log::info('FloodWatch Data Lake measurements', [
+            'provider' => 'data_lake',
+            'endpoint' => 'measurements',
+            'bbox' => $bbox,
+            'aggregate' => $aggregate,
+            'status' => $resp->status,
+            'items' => is_array($items) ? count($items) : 0,
+            'latency_ms' => $latencyMs,
+        ]);
+        if (! is_array($items) || empty($items)) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($items as $it) {
+            if (! is_array($it)) {
+                continue;
+            }
+            $value = isset($it['value']) ? (float) $it['value'] : null;
+            $dateTime = isset($it['dateTime']) ? (string) $it['dateTime'] : null;
+            $latV = isset($it['lat']) ? (float) $it['lat'] : null;
+            $lngV = isset($it['lng']) ? (float) $it['lng'] : null;
+            if ($value === null || $dateTime === null || $latV === null || $lngV === null) {
+                continue;
+            }
+            $stationLabel = (string) ($it['station_label'] ?? $it['station'] ?? 'Unknown Station');
+            $riverName = (string) ($it['river'] ?? '');
+            $townName = (string) ($it['town'] ?? '');
+            $unitName = (string) ($it['unitName'] ?? 'm');
+
+            $typicalLow = isset($it['typicalRangeLow']) ? (float) $it['typicalRangeLow'] : null;
+            $typicalHigh = isset($it['typicalRangeHigh']) ? (float) $it['typicalRangeHigh'] : null;
+            $levelStatus = $this->computeLevelStatus($value, $typicalLow, $typicalHigh);
+            $stationType = (string) ($it['stationType'] ?? 'river_gauge');
+
+            $row = [
+                'station' => $stationLabel,
+                'river' => $riverName,
+                'town' => $townName,
+                'value' => $value,
+                'unit' => $unitName,
+                'unitName' => $unitName,
+                'dateTime' => $dateTime,
+                'lat' => $latV,
+                'lng' => $lngV,
+                'stationType' => $stationType,
+                'levelStatus' => $levelStatus,
+            ];
+            if ($typicalLow !== null) {
+                $row['typicalRangeLow'] = $typicalLow;
+            }
+            if ($typicalHigh !== null) {
+                $row['typicalRangeHigh'] = $typicalHigh;
+            }
+            $result[] = $row;
+        }
+
+        return $result;
     }
 }

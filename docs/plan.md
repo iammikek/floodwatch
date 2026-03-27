@@ -130,6 +130,7 @@ flowchart LR
 | Medium | Smarter route verdict | Rivers on route, wet areas, Muchelney rule |
 | Medium | Analytics layer | Partial – trend recording in Redis; reporting later |
 | Medium | Real-time & push | Laravel Reverb + FCM; see Phase 2 |
+| Medium | River levels time window selector | Add from/to + aggregate (raw/hour/day) controls to map river levels fetch; render sparkline in station popup; default to latest when unset |
 | Medium | Queue-based async | For high-traffic; poll for results |
 | Low | Polygon limit tuning | `max_polygons_per_request` |
 | Low | Additional regions | Planned – beyond South West; Dorset added |
@@ -317,6 +318,39 @@ Define granularity for cache key scoping:
 **Current**: Environment Agency, National Highways, Flood Forecast, Open-Meteo
 
 **Planned**: National Rail (LDB/Darwin via raildata.org.uk) – departures/delays for South West stations
+
+---
+
+## Data Lake Integration Plan
+
+**Goal**: Use the Flood Watch Data Lake as the primary source for EA measurements, curated polygons, and flood warnings to reduce external calls, standardize data shapes, and improve caching.
+
+- Scope
+  - Measurements: swap river level reads to lake /v1/measurements (raw|hour|day)
+  - Polygons: render flood zone overlays via /v1/polygons (inline for small bbox) and /v1/polygons/tiles for map
+  - Warnings: use /v1/warnings for region/bbox/county with min_severity
+  - Leave rainfall/forecast/context via existing sources until lake endpoints mature
+- Client
+  - Add DataLakeClient (HTTP) with ETag/If-None-Match handling and backoff using X-RateLimit headers
+  - Config: DATA_LAKE_URL (default http://localhost:8000), use_data_lake (bool)
+  - Propagate Cache-Control and mirror TTLs in app cache when beneficial
+- Integration Points
+  - FloodWatchService prefetch: replace riverLevels block with aggregated measurements
+  - RiverLevelService: refactor to call DataLakeClient and coerce to UI shape
+  - Map overlays: inline polygons for current viewport; tiles for zoomed map rendering
+  - WarningsService: switch to lake endpoint; preserve geometry and severity mapping
+  - LLM tools: update GetFloodData/GetRiverLevels (and later GetFloodForecast) to call lake
+- Testing
+  - Pest tests with Http::fake for DataLakeClient responses (200 + 304 paths)
+  - Verify shapes match PHPStan level 7 array declarations in FloodWatchService
+  - Feature tests for warnings, measurements, and polygon inline filtering
+- Rollout
+  - Feature flag use_data_lake default off; ship behind config
+  - Enable per environment once validated; add footer attribution “Data Lake” when active
+- Risks
+  - Data parity: ensure lake outputs match current UI expectations
+  - Caching semantics: align ETag/TTL between lake and app caches to avoid stale content
+  - Rate limiting: react to low remaining values to avoid 429s
 
 ---
 
