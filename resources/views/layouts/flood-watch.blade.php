@@ -298,19 +298,37 @@
                             this.tileLayer = L.tileLayer(tileUrl, { attribution: tileAttribution, maxZoom: 19 }).addTo(this.map);
                             L.control.scale({ imperial: false }).addTo(this.map);
                             this.map.invalidateSize();
-                            if (this.polygonsUrl && this.floods && this.floods.length > 0) {
-                                const ids = this.floods.map(f => f.floodAreaID).filter(Boolean);
-                                if (ids.length > 0) {
+                            if (this.polygonsUrl) {
+                                if (this.lakeEnabled && this.map && typeof this.map.getBounds === 'function') {
+                                    const b = this.map.getBounds();
+                                    const bbox = [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()].join(',');
+                                    const q = new URLSearchParams();
+                                    q.append('bbox', bbox);
+                                    if (this.outcode) q.append('outcode', this.outcode);
                                     try {
-                                        const res = await fetch(this.polygonsUrl + '?ids=' + encodeURIComponent(ids.join(',')), { credentials: 'same-origin' });
+                                        const res = await fetch(this.polygonsUrl + '?' + q.toString(), { credentials: 'same-origin' });
                                         if (res.ok) {
-                                            const data = await res.json();
-                                            this.floods = this.floods.map(f => {
-                                                const poly = f.floodAreaID ? data[f.floodAreaID] : null;
-                                                return poly ? { ...f, polygon: poly } : f;
-                                            });
+                                            const geo = await res.json();
+                                            if (geo && geo.type && Array.isArray(geo.features)) {
+                                                const style = { color: '#f59e0b', fillColor: '#f59e0b', fillOpacity: 0.25, weight: 1, opacity: 0.6 };
+                                                L.geoJSON(geo, { style: () => style }).addTo(this.map);
+                                            }
                                         }
                                     } catch (e) {}
+                                } else if (this.floods && this.floods.length > 0) {
+                                    const ids = this.floods.map(f => f.floodAreaID).filter(Boolean);
+                                    if (ids.length > 0) {
+                                        try {
+                                            const res = await fetch(this.polygonsUrl + '?ids=' + encodeURIComponent(ids.join(',')), { credentials: 'same-origin' });
+                                            if (res.ok) {
+                                                const data = await res.json();
+                                                this.floods = this.floods.map(f => {
+                                                    const poly = f.floodAreaID ? data[f.floodAreaID] : null;
+                                                    return poly ? { ...f, polygon: poly } : f;
+                                                });
+                                            }
+                                        } catch (e) {}
+                                    }
                                 }
                             }
                             (typeof requestIdleCallback !== 'undefined'

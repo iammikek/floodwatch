@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class FloodWatchPolygonsControllerTest extends TestCase
@@ -55,5 +56,29 @@ class FloodWatchPolygonsControllerTest extends TestCase
             ->getJson('/flood-watch/polygons?ids='.implode(',', $ids));
 
         $response->assertOk();
+    }
+
+    public function test_polygons_endpoint_returns_inline_geojson_when_lake_and_bbox(): void
+    {
+        config()->set('flood-watch.use_data_lake', true);
+        config()->set('flood-watch.data_lake.base_url', 'http://lake.test');
+        config()->set('flood-watch.cache_ttl_minutes', 5);
+
+        Http::fake([
+            'http://lake.test/v1/polygons*' => Http::response([
+                'type' => 'FeatureCollection',
+                'features' => [
+                    ['type' => 'Feature', 'geometry' => ['type' => 'Polygon', 'coordinates' => [[[-2.83, 51.04], [-2.82, 51.04], [-2.82, 51.05], [-2.83, 51.05], [-2.83, 51.04]]]]],
+                ],
+            ], 200, ['ETag' => 'W/"p1"']),
+        ]);
+
+        $response = $this->withSession(['flood_watch_loaded' => true])
+            ->getJson('/flood-watch/polygons?bbox=-2.9,51.0,-2.7,51.1&outcode=TA1');
+
+        $response->assertOk();
+        $data = $response->json();
+        $this->assertSame('FeatureCollection', $data['type'] ?? null);
+        $this->assertIsArray($data['features'] ?? null);
     }
 }
