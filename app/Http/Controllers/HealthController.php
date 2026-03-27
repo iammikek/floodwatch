@@ -65,22 +65,7 @@ class HealthController extends Controller
 
     private function checkEnvironmentAgency(): array
     {
-        $baseUrl = config('flood-watch.environment_agency.base_url');
-        $url = "{$baseUrl}/id/floods?lat=51&long=-2&dist=5";
-
-        try {
-            $response = Http::timeout(self::HEALTH_TIMEOUT)->get($url);
-
-            return [
-                'status' => $response->successful() ? 'ok' : 'degraded',
-                'message' => $response->successful() ? null : "HTTP {$response->status()}",
-            ];
-        } catch (Throwable $e) {
-            return [
-                'status' => 'unhealthy',
-                'message' => $e->getMessage(),
-            ];
-        }
+        return ['status' => 'skipped', 'message' => 'Deprecated (using Data Lake)'];
     }
 
     private function checkFloodForecast(): array
