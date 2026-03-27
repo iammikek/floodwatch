@@ -340,6 +340,63 @@
                                     }
                                 }
                             }
+                            const addLakeWarningsLayer = (L) => {
+                                if (!this.map) return;
+                                if (!this.lakeWarningsLayer) {
+                                    this.lakeWarningsLayer = typeof L.MarkerClusterGroup === 'function'
+                                        ? L.markerClusterGroup({ animate: false })
+                                        : L.layerGroup();
+                                    this.lakeWarningsLayer.addTo(this.map);
+                                }
+                            };
+                            const fetchLakeWarnings = (retriesLeft = 2) => {
+                                if (!(this.lakeEnabled && this.warningsUrl && this.map)) return;
+                                const b = this.map.getBounds();
+                                const bbox = [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()].join(',');
+                                const zoom = this.map.getZoom();
+                                let minSeverity = null;
+                                if (zoom < 10) minSeverity = 2;
+                                else if (zoom < 12) minSeverity = 3;
+                                const base = String(this.warningsUrl).indexOf('http') === 0 ? this.warningsUrl : (window.location.origin + (this.warningsUrl.startsWith('/') ? '' : '/') + this.warningsUrl);
+                                const qs = new URLSearchParams();
+                                qs.append('bbox', bbox);
+                                if (minSeverity != null) qs.append('min_severity', String(minSeverity));
+                                fetch(base + '?' + qs.toString(), { credentials: 'same-origin' })
+                                    .then(r => {
+                                        if (!r.ok) throw new Error('Warnings ' + r.status);
+                                        return r.json();
+                                    })
+                                    .then(data => {
+                                        if (!this.map) return;
+                                        const items = Array.isArray(data?.items) ? data.items : [];
+                                        addLakeWarningsLayer(L);
+                                        this.lakeWarningsLayer.clearLayers();
+                                        items.forEach(f => {
+                                            const lat = Number(f.lat ?? f.latitude);
+                                            const lng = Number(f.lng ?? f.long ?? f.longitude);
+                                            if (Number.isFinite(lat) && Number.isFinite(lng)) {
+                                                const m = L.marker([lat, lng], { icon: this.floodIcon(f) }).bindPopup(this.floodPopup(f));
+                                                if (typeof L.MarkerClusterGroup === 'function') this.lakeWarningsLayer.addLayer(m);
+                                                else m.addTo(this.lakeWarningsLayer);
+                                            }
+                                        });
+                                    })
+                                    .catch(() => {
+                                        if (retriesLeft > 0) setTimeout(() => fetchLakeWarnings(retriesLeft - 1), 1000);
+                                    });
+                            };
+                            if (this.lakeEnabled && this.warningsUrl) {
+                                addLakeWarningsLayer(L);
+                                let warnTimeout = null;
+                                this.map.on('moveend', () => {
+                                    if (warnTimeout) clearTimeout(warnTimeout);
+                                    warnTimeout = setTimeout(() => fetchLakeWarnings(2), 500);
+                                });
+                                if (typeof this.map.whenReady === 'function') {
+                                    this.map.whenReady(() => setTimeout(() => fetchLakeWarnings(2), 500));
+                                }
+                                setTimeout(() => fetchLakeWarnings(2), 1000);
+                            }
                             (typeof requestIdleCallback !== 'undefined'
                                 ? (cb) => requestIdleCallback(cb, { timeout: 100 })
                                 : (cb) => setTimeout(cb, 100))(() => addMarkers(L));
