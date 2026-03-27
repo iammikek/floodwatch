@@ -420,6 +420,12 @@ class FloodWatchService
     private function storeAndReturn(string $cacheKey, array $result): array
     {
         $result['lastChecked'] = now()->toIso8601String();
+        $response = (string) $result['response'];
+        $prependCanonical = (bool) config('flood-watch.add_canonical_preamble', false);
+        $canonical = $prependCanonical ? $this->canonicalStatusMarkdown($result['floods'], $result['incidents']) : '';
+        if ($prependCanonical && $canonical !== '') {
+            $result['response'] = $canonical."\n\n".$response;
+        }
         $cacheMinutes = config('flood-watch.cache_ttl_minutes', 15);
         if ($cacheMinutes > 0) {
             $store = $this->resolveCacheStore();
@@ -427,6 +433,46 @@ class FloodWatchService
         }
 
         return $result;
+    }
+
+    /**
+     * Build a deterministic "Current Status" block from exact tool results for consistency with UI counts.
+     */
+    /**
+     * @param  array<int, array<string, mixed>>  $floods
+     * @param  array<int, array<string, mixed>>  $incidents
+     */
+    private function canonicalStatusMarkdown(array $floods, array $incidents): string
+    {
+        $severe = 0;
+        $warnings = 0;
+        $alerts = 0;
+        foreach ($floods as $f) {
+            $lvl = isset($f['severityLevel']) ? (int) $f['severityLevel'] : null;
+            $sev = isset($f['severity']) ? strtolower((string) $f['severity']) : '';
+            if ($lvl === 1 || str_starts_with($sev, 'severe')) {
+                $severe++;
+            } elseif ($lvl === 2 || $sev === 'flood warning') {
+                $warnings++;
+            } elseif ($lvl === 3 || $sev === 'flood alert') {
+                $alerts++;
+            }
+        }
+        $incCount = count($incidents);
+        if (($severe + $warnings + $alerts + $incCount) === 0) {
+            return '';
+        }
+        $lines = [];
+        $lines[] = '## Summary';
+        $lines[] = '';
+        $lines[] = '### Current Status';
+        $lines[] = '';
+        $fw = $severe + $warnings;
+        $lines[] = '- Flood warnings: '.($fw);
+        $lines[] = '- Flood alerts: '.($alerts);
+        $lines[] = '- Road status: '.($incCount > 0 ? "{$incCount} incident".($incCount === 1 ? '' : 's') : 'No reported incidents');
+
+        return implode("\n", $lines);
     }
 
     private function resolveCacheStore(): string

@@ -41,9 +41,15 @@ class EnvironmentAgencyFloodService
         ?float $lng = null,
         ?int $radiusKm = null
     ): array {
-        if (config('flood-watch.use_data_lake', false) === true) {
-            return $this->fetchFloodsFromDataLake($lat, $lng, $radiusKm);
+        try {
+            $lake = $this->fetchFloodsFromDataLake($lat, $lng, $radiusKm);
+            if (! empty($lake)) {
+                return $lake;
+            }
+        } catch (Throwable $e) {
+            report($e);
         }
+
         try {
             return $this->circuitBreaker->execute(function () use ($lat, $lng, $radiusKm) {
                 return $this->fetchFloods($lat, $lng, $radiusKm);

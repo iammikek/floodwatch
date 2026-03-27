@@ -9,14 +9,12 @@ use Illuminate\Support\Facades\Http;
 use OpenAI\Laravel\Facades\OpenAI;
 use OpenAI\Responses\Chat\CreateResponse;
 
-it('dispatches via ToolRegistry and preserves full incidents in returned data while LLM sees trimmed content', function () {
+it('prepends canonical preamble when enabled and incidents exist', function () {
     Config::set('openai.api_key', 'test-key');
-    Config::set('flood-watch.add_canonical_preamble', false);
-    Config::set('flood-watch.llm_max_incidents', 1); // ensure presenter would trim to 1 for LLM
+    Config::set('flood-watch.add_canonical_preamble', true);
     Config::set('flood-watch.national_highways.api_key', 'test-key');
-    Config::set('flood-watch.national_highways.base_url', 'https://api.example.com');
+    Config::set('flood-watch.national_highways.base_url', 'https://api.data.nationalhighways.co.uk');
 
-    // Prefetch HTTP calls
     Http::fake(function ($request) {
         if (str_contains($request->url(), 'api.ffc-environment-agency.fgs.metoffice.gov.uk')) {
             return Http::response(['statement' => []], 200);
@@ -34,7 +32,6 @@ it('dispatches via ToolRegistry and preserves full incidents in returned data wh
         return Http::response([], 200);
     });
 
-    // Mock orchestrator used by GetHighwaysIncidentsHandler (invoked via ToolRegistry)
     $orch = Mockery::mock(RoadIncidentOrchestrator::class);
     $orch->shouldReceive('getFilteredIncidents')
         ->once()
@@ -45,7 +42,6 @@ it('dispatches via ToolRegistry and preserves full incidents in returned data wh
         ]);
     app()->instance(RoadIncidentOrchestrator::class, $orch);
 
-    // First LLM response: requests GetHighwaysIncidents tool
     $toolCallResponse = CreateResponse::fake([
         'choices' => [
             [
@@ -70,14 +66,13 @@ it('dispatches via ToolRegistry and preserves full incidents in returned data wh
         ],
     ]);
 
-    // Final LLM response: finish
     $finalResponse = CreateResponse::fake([
         'choices' => [
             [
                 'index' => 0,
                 'message' => [
                     'role' => 'assistant',
-                    'content' => 'Here is the summary.',
+                    'content' => 'LLM summary here.',
                     'tool_calls' => [],
                 ],
                 'logprobs' => null,
@@ -89,9 +84,7 @@ it('dispatches via ToolRegistry and preserves full incidents in returned data wh
     OpenAI::fake([$toolCallResponse, $finalResponse]);
 
     $service = app(FloodWatchService::class);
-    $result = $service->chat('Check status near Langport', [], null, 51.0358, -2.8318, 'somerset');
+    $result = $service->chat('Check status', [], null, 51.0358, -2.8318, 'somerset');
 
-    // Expect full incidents (2) are preserved in returned data even though LLM-facing content was limited to 1
-    expect($result['incidents'] ?? [])->toBeArray()->toHaveCount(2);
-    expect($result['response'] ?? '')->toBe('Here is the summary.');
+    expect($result['response'] ?? '')->toStartWith("## Summary\n\n### Current Status\n\n- Flood warnings: 0\n- Flood alerts: 0\n- Road status: 2 incidents\n\nLLM summary here.");
 });

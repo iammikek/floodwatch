@@ -82,11 +82,20 @@ class RiverLevelServiceDataLakeTest extends TestCase
         Config::set(ConfigKey::USE_DATA_LAKE, true);
         Config::set(ConfigKey::DATA_LAKE.'.base_url', 'http://lake.test');
 
-        Http::fake([
-            'http://lake.test/v1/measurements*' => function () {
+        Http::fake(function ($request) {
+            $url = $request->url();
+            if (str_starts_with($url, 'http://lake.test/v1/measurements')) {
                 throw new ConnectionException('network');
-            },
-        ]);
+            }
+            if (str_contains($url, 'environment.data.gov.uk/flood-monitoring/id/stations')) {
+                return Http::response(['items' => []], 200);
+            }
+            if (str_contains($url, '/readings')) {
+                return Http::response(null, 404);
+            }
+
+            return Http::response(null, 404);
+        });
 
         $service = new RiverLevelService;
         $result = $service->getLevels(51.0, -2.8, 10);

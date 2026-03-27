@@ -41,6 +41,31 @@ class DataLakeClient
         return new DataLakeResponse($status, $etag, $status === 304 ? null : $resp->json());
     }
 
+    public function fetchBinary(string $path, mixed $query = null, ?string $ifNoneMatch = null): DataLakeResponse
+    {
+        $url = rtrim($this->baseUrl ?? '', '/').$path;
+        $req = Http::timeout($this->timeout ?? 10)->withHeaders(['Accept' => 'application/x-protobuf']);
+        if ($ifNoneMatch !== null && $ifNoneMatch !== '') {
+            $req = $req->withHeaders(['If-None-Match' => $ifNoneMatch]);
+        }
+        $retryTimes = (int) config(ConfigKey::DATA_LAKE.'.retry_times', 2);
+        $retrySleep = (int) config(ConfigKey::DATA_LAKE.'.retry_sleep_ms', 50);
+
+        /** @var Response $resp */
+        $resp = $req->get($url, is_array($query) ? $query : []);
+        $status = $resp->status();
+        $attempt = 0;
+        while (($status === 429 || $status >= 500) && $attempt < $retryTimes) {
+            usleep($retrySleep * 1000);
+            $attempt++;
+            $resp = $req->get($url, is_array($query) ? $query : []);
+            $status = $resp->status();
+        }
+        $etag = $resp->header('ETag');
+
+        return new DataLakeResponse($status, $etag, $status === 304 ? null : $resp->body());
+    }
+
     public function getWarnings(
         ?string $bbox = null,
         ?string $region = null,
@@ -152,5 +177,20 @@ class DataLakeClient
         }
 
         return $this->fetch("/v1/polygons/tiles/{$dataset}/{$z}/{$x}/{$y}", $query, $ifNoneMatch);
+    }
+
+    public function getWarningTile(
+        int $z,
+        int $x,
+        int $y,
+        ?string $region = null,
+        ?string $ifNoneMatch = null
+    ): DataLakeResponse {
+        $query = [];
+        if ($region !== null && $region !== '') {
+            $query['region'] = $region;
+        }
+
+        return $this->fetchBinary("/v1/warnings/tiles/{$z}/{$x}/{$y}.pbf", $query, $ifNoneMatch);
     }
 }

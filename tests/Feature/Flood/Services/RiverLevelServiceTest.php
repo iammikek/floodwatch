@@ -298,6 +298,6 @@ class RiverLevelServiceTest extends TestCase
         $service->getLevels(51.1, -2.9, 20);
         $service->getLevels(51.1, -2.9, 20);
 
-        $this->assertSame(2, $callCount, 'Expected two HTTP requests when cache TTL is 0');
+        $this->assertSame(4, $callCount, 'Expected two lake + two EA HTTP requests when cache TTL is 0');
     }
 }

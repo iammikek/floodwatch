@@ -41,39 +41,31 @@ class RiverLevelService
         ?string $to = null,
         string $aggregate = 'raw'
     ): array {
-        if (config('flood-watch.use_data_lake', false) === true) {
-            $lat ??= (float) config('flood-watch.default_lat');
-            $lng ??= (float) config('flood-watch.default_lng');
-            $radiusKm ??= (int) config('flood-watch.default_radius_km');
-            $cacheMinutes = (int) config('flood-watch.river_levels_cache_minutes', 0);
-            $key = $this->riverLevelsCacheKey($lat, $lng, $radiusKm);
-            $store = config('flood-watch.cache_store', 'flood-watch');
-            if ($cacheMinutes > 0) {
-                $cached = Cache::store($store)->get($key);
-                if (is_array($cached)) {
-                    return $cached;
-                }
-            }
-            $result = $this->getLevelsFromDataLake($lat, $lng, $radiusKm, $from, $to, $aggregate);
-            if ($cacheMinutes > 0) {
-                Cache::store($store)->put($key, $result, now()->addMinutes($cacheMinutes));
-            }
-
-            return $result;
-        }
-
-        $lat ??= config('flood-watch.default_lat');
-        $lng ??= config('flood-watch.default_lng');
-        $radiusKm ??= config('flood-watch.default_radius_km');
-
-        $cacheMinutes = config('flood-watch.river_levels_cache_minutes', 0);
-        if ($cacheMinutes > 0) {
-            $key = $this->riverLevelsCacheKey($lat, $lng, $radiusKm);
-            $store = config('flood-watch.cache_store', 'flood-watch');
+        $lat ??= (float) config('flood-watch.default_lat');
+        $lng ??= (float) config('flood-watch.default_lng');
+        $radiusKm ??= (int) config('flood-watch.default_radius_km');
+        $cacheMinutes = (int) config('flood-watch.river_levels_cache_minutes', 0);
+        $shouldCache = $cacheMinutes > 0;
+        $key = $this->riverLevelsCacheKey($lat, $lng, $radiusKm);
+        $store = config('flood-watch.cache_store', 'flood-watch');
+        if ($shouldCache) {
             $cached = Cache::store($store)->get($key);
             if (is_array($cached)) {
                 return $cached;
             }
+        }
+
+        try {
+            $result = $this->getLevelsFromDataLake($lat, $lng, $radiusKm, $from, $to, $aggregate);
+            if (! empty($result)) {
+                $this->cacheLevels($store, $key, $result, $cacheMinutes);
+
+                return $result;
+            }
+        } catch (CircuitOpenException) {
+            return [];
+        } catch (ConnectionException|RequestException $e) {
+            report($e);
         }
 
         try {
@@ -85,18 +77,13 @@ class RiverLevelService
                 if (empty($stations)) {
                     return [];
                 }
-
                 $stations = array_slice($stations, 0, self::MAX_STATIONS);
                 $readings = $this->fetchReadings($baseUrl, $timeout, $stations);
 
                 return $this->mergeStationsWithReadings($stations, $readings);
             });
 
-            if ($cacheMinutes > 0) {
-                $key = $this->riverLevelsCacheKey($lat, $lng, $radiusKm);
-                $store = config('flood-watch.cache_store', 'flood-watch');
-                Cache::store($store)->put($key, $result, now()->addMinutes($cacheMinutes));
-            }
+            $this->cacheLevels($store, $key, $result, $cacheMinutes);
 
             return $result;
         } catch (CircuitOpenException) {
@@ -105,6 +92,13 @@ class RiverLevelService
             report($e);
 
             return [];
+        }
+    }
+
+    private function cacheLevels(string $store, string $key, mixed $value, int $minutes): void
+    {
+        if ($minutes > 0) {
+            Cache::store($store)->put($key, $value, now()->addMinutes($minutes));
         }
     }
 

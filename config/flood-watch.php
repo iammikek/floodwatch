@@ -71,6 +71,8 @@ return [
     'llm_max_context_tokens' => (int) env('FLOOD_WATCH_LLM_MAX_CONTEXT_TOKENS', 110000),
     'llm_max_correlation_chars' => (int) env('FLOOD_WATCH_LLM_MAX_CORRELATION_CHARS', 8000),
 
+    'add_canonical_preamble' => env('FLOOD_WATCH_ADD_CANONICAL_PREAMBLE', true),
+
     /*
     |--------------------------------------------------------------------------
     | LLM Cost Tracking (Admin Dashboard)

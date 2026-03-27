@@ -11,6 +11,7 @@ use OpenAI\Responses\Chat\CreateResponse;
 
 it('handles very low token budget by trimming while completing the flow', function () {
     Config::set('openai.api_key', 'test-key');
+    Config::set('flood-watch.add_canonical_preamble', false);
     // Force an aggressively low context token limit so trimming paths are exercised
     Config::set('flood-watch.llm_max_context_tokens', 1000);
     // Allow many incidents so tool content can be large before budget trimming applies
