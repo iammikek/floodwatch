@@ -289,8 +289,9 @@ class FloodWatchDashboardTest extends TestCase
         Config::set('flood-watch.national_highways.api_key', 'test-key');
         Config::set('flood-watch.national_highways.base_url', 'https://api.example.com');
 
+        config()->set('flood-watch.data_lake.base_url', 'http://lake.test');
         Http::fake(function ($request) {
-            if (str_contains($request->url(), 'environment.data.gov.uk')) {
+            if (str_contains($request->url(), 'lake.test/v1/warnings')) {
                 return Http::response([
                     'items' => [
                         [
@@ -564,68 +565,42 @@ class FloodWatchDashboardTest extends TestCase
         Config::set('openai.api_key', 'test-key');
         Config::set('flood-watch.national_highways.api_key', 'test-key');
         Config::set('flood-watch.national_highways.base_url', 'https://api.example.com');
+        config()->set('flood-watch.data_lake.base_url', 'http://lake.test');
 
-        Http::fake(function ($request) {
-            if (str_contains($request->url(), 'postcodes.io')) {
-                return Http::response([
-                    'result' => ['latitude' => 51.0358, 'longitude' => -2.8318],
-                ], 200);
-            }
-            if (str_contains($request->url(), 'environment.data.gov.uk')) {
-                if (str_contains($request->url(), '/polygon')) {
-                    return Http::response([
-                        'type' => 'FeatureCollection',
-                        'features' => [
-                            [
-                                'type' => 'Feature',
-                                'geometry' => [
-                                    'type' => 'Polygon',
-                                    'coordinates' => [[[-2.83, 51.04], [-2.82, 51.04], [-2.82, 51.05], [-2.83, 51.05], [-2.83, 51.04]]],
-                                ],
-                            ],
-                        ],
-                    ], 200);
-                }
-                if (str_contains($request->url(), '/id/floodAreas')) {
-                    return Http::response([
-                        'items' => [
-                            ['notation' => '123abc', 'lat' => 51.04, 'long' => -2.82],
-                            ['notation' => '456def', 'lat' => 51.06, 'long' => -2.85],
-                        ],
-                    ], 200);
-                }
-
-                return Http::response([
-                    'items' => [
-                        [
-                            'description' => 'North Moor',
-                            'severity' => 'Flood Warning',
-                            'severityLevel' => 2,
-                            'floodAreaID' => '456def',
-                            'message' => 'Flooding expected.',
-                        ],
-                        [
-                            'description' => 'Langport area',
-                            'severity' => 'Flood Alert',
-                            'severityLevel' => 3,
-                            'floodAreaID' => '123abc',
-                            'message' => 'Flooding possible.',
-                        ],
+        Http::fake([
+            'https://api.postcodes.io/*' => Http::response([
+                'result' => ['latitude' => 51.0358, 'longitude' => -2.8318],
+            ], 200),
+            'http://lake.test/v1/warnings*' => Http::response([
+                'items' => [
+                    [
+                        'description' => 'North Moor',
+                        'severity' => 'Flood Warning',
+                        'severityLevel' => 2,
+                        'floodAreaID' => '456def',
+                        'message' => 'Flooding expected.',
+                        'lat' => 51.04,
+                        'lng' => -2.82,
                     ],
-                ], 200);
-            }
-            if (str_contains($request->url(), 'api.example.com')) {
-                return Http::response(['D2Payload' => ['situation' => []]], 200);
-            }
-            if (str_contains($request->url(), 'fgs.metoffice.gov.uk')) {
-                return Http::response(['statement' => []], 200);
-            }
-            if (str_contains($request->url(), 'open-meteo.com')) {
-                return Http::response(['daily' => ['time' => [], 'weathercode' => [], 'temperature_2m_max' => [], 'temperature_2m_min' => [], 'precipitation_sum' => []]], 200);
-            }
-
-            return Http::response(null, 404);
-        });
+                    [
+                        'description' => 'Langport area',
+                        'severity' => 'Flood Alert',
+                        'severityLevel' => 3,
+                        'floodAreaID' => '123abc',
+                        'message' => 'Flooding possible.',
+                        'lat' => 51.06,
+                        'lng' => -2.85,
+                    ],
+                ],
+            ], 200),
+            'https://api.example.com/*' => Http::response(['D2Payload' => ['situation' => []]], 200),
+            'https://api.ffc-environment-agency.fgs.metoffice.gov.uk/*' => Http::response(['statement' => []], 200),
+            'https://api.open-meteo.com/*' => Http::response([
+                'daily' => [
+                    'time' => [], 'weathercode' => [], 'temperature_2m_max' => [], 'temperature_2m_min' => [], 'precipitation_sum' => [],
+                ],
+            ], 200),
+        ]);
 
         $toolCallResponse = CreateResponse::fake([
             'choices' => [

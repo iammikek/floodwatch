@@ -6,30 +6,36 @@ use App\Flood\Services\EnvironmentAgencyFloodService;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
-/**
- * Contract tests using recorded API response fixtures.
- * Verifies parsing logic matches the Environment Agency API contract.
- */
 class EnvironmentAgencyFloodServiceContractTest extends TestCase
 {
     public function test_parses_recorded_floods_fixture_correctly(): void
     {
-        $floodsFixture = file_get_contents(__DIR__.'/../../fixtures/environment_agency_floods.json');
-        $areasFixture = file_get_contents(__DIR__.'/../../fixtures/environment_agency_areas.json');
+        config()->set('flood-watch.data_lake.base_url', 'http://lake.test');
 
-        Http::fake(function ($request) use ($floodsFixture, $areasFixture) {
-            if (str_contains($request->url(), '/id/floods')) {
-                return Http::response($floodsFixture, 200, ['Content-Type' => 'application/json']);
-            }
-            if (str_contains($request->url(), '/id/floodAreas') && ! str_contains($request->url(), '/polygon')) {
-                return Http::response($areasFixture, 200, ['Content-Type' => 'application/json']);
-            }
-            if (str_contains($request->url(), '/polygon')) {
-                return Http::response(['type' => 'FeatureCollection', 'features' => []], 200);
-            }
-
-            return Http::response(null, 404);
-        });
+        Http::fake([
+            'http://lake.test/v1/warnings*' => Http::response([
+                'items' => [
+                    [
+                        'description' => 'North Moor and Curry Moor',
+                        'severity' => 'Flood Warning',
+                        'severityLevel' => 2,
+                        'message' => 'Flooding is expected.',
+                        'floodAreaID' => '123WAC',
+                        'lat' => 51.04,
+                        'lng' => -2.82,
+                    ],
+                    [
+                        'description' => 'River Parrett at Langport',
+                        'severity' => 'Severe Flood Warning',
+                        'severityLevel' => 1,
+                        'message' => 'Severe flooding is expected.',
+                        'floodAreaID' => 'XYZ',
+                        'lat' => 51.035,
+                        'lng' => -2.831,
+                    ],
+                ],
+            ], 200),
+        ]);
 
         $service = new EnvironmentAgencyFloodService;
         $result = $service->getFloods(51.0358, -2.8318, 15);

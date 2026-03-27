@@ -333,27 +333,20 @@ class FloodWatchServiceTest extends TestCase
         Config::set('flood-watch.national_highways.api_key', 'test-key');
         Config::set('flood-watch.national_highways.base_url', 'https://api.example.com');
         Config::set('flood-watch.national_highways.fetch_unplanned', false);
+        Config::set('flood-watch.data_lake.base_url', 'http://lake.test');
 
         Http::fake(function ($request) {
-            if (str_contains($request->url(), 'environment.data.gov.uk')) {
-                if (str_contains($request->url(), '/id/stations')) {
-                    return Http::response(['items' => []], 200);
-                }
-                if (str_contains($request->url(), '/id/floodAreas')) {
-                    return Http::response(['items' => []], 200);
-                }
-                if (str_contains($request->url(), '/id/floods')) {
-                    return Http::response([
-                        'items' => [
-                            [
-                                'description' => 'River Parrett at Langport',
-                                'severity' => 'Flood Warning',
-                                'severityLevel' => 2,
-                                'message' => 'Flooding expected.',
-                            ],
+            if (str_contains($request->url(), 'lake.test/v1/warnings')) {
+                return Http::response([
+                    'items' => [
+                        [
+                            'description' => 'River Parrett at Langport',
+                            'severity' => 'Flood Warning',
+                            'severityLevel' => 2,
+                            'message' => 'Flooding expected.',
                         ],
-                    ], 200);
-                }
+                    ],
+                ], 200);
             }
             if (str_contains($request->url(), 'api.example.com')) {
                 return Http::response([
@@ -458,6 +451,7 @@ class FloodWatchServiceTest extends TestCase
         Config::set('flood-watch.national_highways.base_url', 'https://api.example.com');
         Config::set('flood-watch.national_highways.fetch_unplanned', false);
 
+        Config::set('flood-watch.data_lake.base_url', 'http://lake.test');
         Http::fake(function ($request) {
             $url = $request->url();
             if (str_contains($url, 'environment.data.gov.uk')) {
@@ -487,23 +481,18 @@ class FloodWatchServiceTest extends TestCase
                         ],
                     ], 200);
                 }
-                if (str_contains($url, '/id/floodAreas')) {
-                    return Http::response(['items' => []], 200);
-                }
-                if (str_contains($url, '/id/floods')) {
-                    return Http::response([
-                        'items' => [
-                            [
-                                'description' => 'River Parrett at Langport',
-                                'severity' => 'Flood Warning',
-                                'severityLevel' => 2,
-                                'message' => 'River levels are rising. Flooding expected.',
-                            ],
+            }
+            if (str_contains($url, 'lake.test/v1/warnings')) {
+                return Http::response([
+                    'items' => [
+                        [
+                            'description' => 'River Parrett at Langport',
+                            'severity' => 'Flood Warning',
+                            'severityLevel' => 2,
+                            'message' => 'River levels are rising. Flooding expected.',
                         ],
-                    ], 200);
-                }
-
-                return Http::response(['items' => []], 200);
+                    ],
+                ], 200);
             }
             if (str_contains($url, 'api.example.com')) {
                 return Http::response([
