@@ -11,9 +11,10 @@
 | Repo | Local path | Remote | Visibility |
 |------|------------|--------|------------|
 | **Flood Watch** (Laravel monolith) | `/Users/mike/Projects/flood-watch` | `git@github.com:iammikek/floodwatch.git` | Public |
-| **Flood Watch Data Lake** (FastAPI) | `/Users/mike/Projects/flood-watch-data-lake` | `git@bitbucket.org:automica/floodwatch-data-lake.git` | **Private** — proprietary EA-derived data and ingestion; do not reference data artifacts in public commits or issues |
+| **Flood Watch Data Lake** (FastAPI — full private) | `/Users/mike/Projects/flood-watch-data-lake` | `git@bitbucket.org:automica/floodwatch-data-lake.git` | **Private** — proprietary EA-derived data and ingestion |
+| **Flood Watch Data Lake** (API surface) | same working copy; branch `github-public` | `git@github.com:iammikek/floodwatch-data-lake.git` | Public — scrubbed lake-api only (no `data/`, no collector/CLI) |
 
-**Rule for agents:** Work on both repos locally. Only push **flood-watch** changes to GitHub unless the user explicitly asks to push the data lake. Never copy curated/raw data files into the public repo.
+**Rule for agents:** Work on both repos locally. Only push **flood-watch** and the **scrubbed** lake GitHub remote unless the user explicitly asks to push the private Bitbucket lake. Never copy curated/raw data files into a public repo. Keep ingestion/backfill on Bitbucket.
 
 ---
 
