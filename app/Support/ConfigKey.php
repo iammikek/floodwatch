@@ -50,8 +50,6 @@ final class ConfigKey
     public const CACHE_KEY_PREFIX = 'flood-watch.cache_key_prefix';
 
     // Providers
-    public const ENVIRONMENT_AGENCY = 'flood-watch.environment_agency';
-
     public const FLOOD_FORECAST = 'flood-watch.flood_forecast';
 
     public const WEATHER = 'flood-watch.weather';
@@ -60,4 +58,7 @@ final class ConfigKey
 
     // Circuit breaker
     public const CIRCUIT_BREAKER = 'flood-watch.circuit_breaker';
+
+    // Data Lake
+    public const DATA_LAKE = 'flood-watch.data_lake';
 }

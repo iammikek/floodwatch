@@ -47,6 +47,7 @@
                 map: null,
                 tileLayer: null,
                 mapStyleOpen: false,
+                minSeverity: 'auto',
                 selectedTileId: (() => {
                     try {
                         const saved = typeof localStorage !== 'undefined' && localStorage.getItem('flood-watch-map-style');
@@ -54,6 +55,13 @@
                     } catch (e) {}
                     return (config.tileLayers && config.tileLayers[0]) ? config.tileLayers[0].id : null;
                 })(),
+                onMinSeverityChange() {
+                    if (!this.map) return;
+                    if (this._warnTimer) clearTimeout(this._warnTimer);
+                    this._warnTimer = setTimeout(() => {
+                        if (typeof this._fetchLakeWarnings === 'function') this._fetchLakeWarnings(2);
+                    }, 200);
+                },
                 esc(s) {
                     if (s == null || s === '') return '';
                     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -298,20 +306,110 @@
                             this.tileLayer = L.tileLayer(tileUrl, { attribution: tileAttribution, maxZoom: 19 }).addTo(this.map);
                             L.control.scale({ imperial: false }).addTo(this.map);
                             this.map.invalidateSize();
-                            if (this.polygonsUrl && this.floods && this.floods.length > 0) {
-                                const ids = this.floods.map(f => f.floodAreaID).filter(Boolean);
-                                if (ids.length > 0) {
+                            if (this.polygonsUrl) {
+                                const fetchInlinePolygons = async () => {
+                                    if (!(this.lakeEnabled && this.map && typeof this.map.getBounds === 'function')) return;
+                                    const b = this.map.getBounds();
+                                    const bbox = [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()].join(',');
+                                    const q = new URLSearchParams();
+                                    q.append('bbox', bbox);
+                                    if (this.outcode) q.append('outcode', this.outcode);
                                     try {
-                                        const res = await fetch(this.polygonsUrl + '?ids=' + encodeURIComponent(ids.join(',')), { credentials: 'same-origin' });
+                                        const res = await fetch(this.polygonsUrl + '?' + q.toString(), { credentials: 'same-origin' });
                                         if (res.ok) {
-                                            const data = await res.json();
-                                            this.floods = this.floods.map(f => {
-                                                const poly = f.floodAreaID ? data[f.floodAreaID] : null;
-                                                return poly ? { ...f, polygon: poly } : f;
-                                            });
+                                            const geo = await res.json();
+                                            if (geo && geo.type && Array.isArray(geo.features)) {
+                                                const style = { color: '#f59e0b', fillColor: '#f59e0b', fillOpacity: 0.25, weight: 1, opacity: 0.6 };
+                                                L.geoJSON(geo, { style: () => style }).addTo(this.map);
+                                            }
                                         }
                                     } catch (e) {}
+                                };
+                                if (this.lakeEnabled) {
+                                    fetchInlinePolygons();
+                                    let polyTimeout = null;
+                                    this.map.on('moveend', () => {
+                                        if (polyTimeout) clearTimeout(polyTimeout);
+                                        polyTimeout = setTimeout(() => fetchInlinePolygons(), 500);
+                                    });
+                                } else if (this.floods && this.floods.length > 0) {
+                                    const ids = this.floods.map(f => f.floodAreaID).filter(Boolean);
+                                    if (ids.length > 0) {
+                                        try {
+                                            const res = await fetch(this.polygonsUrl + '?ids=' + encodeURIComponent(ids.join(',')), { credentials: 'same-origin' });
+                                            if (res.ok) {
+                                                const data = await res.json();
+                                                this.floods = this.floods.map(f => {
+                                                    const poly = f.floodAreaID ? data[f.floodAreaID] : null;
+                                                    return poly ? { ...f, polygon: poly } : f;
+                                                });
+                                            }
+                                        } catch (e) {}
+                                    }
                                 }
+                            }
+                            const addLakeWarningsLayer = (L) => {
+                                if (!this.map) return;
+                                if (!this.lakeWarningsLayer) {
+                                    this.lakeWarningsLayer = typeof L.MarkerClusterGroup === 'function'
+                                        ? L.markerClusterGroup({ animate: false })
+                                        : L.layerGroup();
+                                    this.lakeWarningsLayer.addTo(this.map);
+                                }
+                            };
+                            const fetchLakeWarnings = (retriesLeft = 2) => {
+                                if (!(this.lakeEnabled && this.warningsUrl && this.map)) return;
+                                const b = this.map.getBounds();
+                                const bbox = [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()].join(',');
+                                const zoom = this.map.getZoom();
+                                let minSeverity = null;
+                                if (this.minSeverity && this.minSeverity !== 'auto') {
+                                    const val = Number(this.minSeverity);
+                                    if (Number.isFinite(val) && val >= 1 && val <= 4) minSeverity = val;
+                                } else {
+                                    if (zoom < 10) minSeverity = 2;
+                                    else if (zoom < 12) minSeverity = 3;
+                                }
+                                const base = String(this.warningsUrl).indexOf('http') === 0 ? this.warningsUrl : (window.location.origin + (this.warningsUrl.startsWith('/') ? '' : '/') + this.warningsUrl);
+                                const qs = new URLSearchParams();
+                                qs.append('bbox', bbox);
+                                if (minSeverity != null) qs.append('min_severity', String(minSeverity));
+                                fetch(base + '?' + qs.toString(), { credentials: 'same-origin' })
+                                    .then(r => {
+                                        if (!r.ok) throw new Error('Warnings ' + r.status);
+                                        return r.json();
+                                    })
+                                    .then(data => {
+                                        if (!this.map) return;
+                                        const items = Array.isArray(data?.items) ? data.items : [];
+                                        addLakeWarningsLayer(L);
+                                        this.lakeWarningsLayer.clearLayers();
+                                        items.forEach(f => {
+                                            const lat = Number(f.lat ?? f.latitude);
+                                            const lng = Number(f.lng ?? f.long ?? f.longitude);
+                                            if (Number.isFinite(lat) && Number.isFinite(lng)) {
+                                                const m = L.marker([lat, lng], { icon: this.floodIcon(f) }).bindPopup(this.floodPopup(f));
+                                                if (typeof L.MarkerClusterGroup === 'function') this.lakeWarningsLayer.addLayer(m);
+                                                else m.addTo(this.lakeWarningsLayer);
+                                            }
+                                        });
+                                    })
+                                    .catch(() => {
+                                        if (retriesLeft > 0) setTimeout(() => fetchLakeWarnings(retriesLeft - 1), 1000);
+                                    });
+                            };
+                            if (this.lakeEnabled && this.warningsUrl) {
+                                addLakeWarningsLayer(L);
+                                let warnTimeout = null;
+                                this.map.on('moveend', () => {
+                                    if (warnTimeout) clearTimeout(warnTimeout);
+                                    warnTimeout = setTimeout(() => fetchLakeWarnings(2), 500);
+                                });
+                                if (typeof this.map.whenReady === 'function') {
+                                    this.map.whenReady(() => setTimeout(() => fetchLakeWarnings(2), 500));
+                                }
+                                setTimeout(() => fetchLakeWarnings(2), 1000);
+                                this._fetchLakeWarnings = fetchLakeWarnings;
                             }
                             (typeof requestIdleCallback !== 'undefined'
                                 ? (cb) => requestIdleCallback(cb, { timeout: 100 })

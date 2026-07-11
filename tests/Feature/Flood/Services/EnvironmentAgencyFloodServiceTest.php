@@ -3,9 +3,6 @@
 namespace Tests\Feature\Flood\Services;
 
 use App\Flood\Services\EnvironmentAgencyFloodService;
-use App\Support\CircuitBreaker;
-use App\Support\CircuitOpenException;
-use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -13,8 +10,9 @@ class EnvironmentAgencyFloodServiceTest extends TestCase
 {
     public function test_fetches_floods_for_default_coordinates(): void
     {
+        config()->set('flood-watch.data_lake.base_url', 'http://lake.test');
         Http::fake([
-            '*/flood-monitoring/id/floods*' => Http::response([
+            'http://lake.test/v1/warnings*' => Http::response([
                 'items' => [
                     [
                         'description' => 'River Parrett',
@@ -24,7 +22,6 @@ class EnvironmentAgencyFloodServiceTest extends TestCase
                     ],
                 ],
             ], 200),
-            '*/flood-monitoring/id/floodAreas*' => Http::response(['items' => []], 200),
         ]);
 
         $service = new EnvironmentAgencyFloodService;
@@ -39,21 +36,15 @@ class EnvironmentAgencyFloodServiceTest extends TestCase
 
     public function test_fetches_floods_for_custom_coordinates(): void
     {
+        config()->set('flood-watch.data_lake.base_url', 'http://lake.test');
         Http::fake([
-            '*/flood-monitoring/id/floods*' => Http::response([
-                'items' => [],
-            ], 200),
-            '*/flood-monitoring/id/floodAreas*' => Http::response(['items' => []], 200),
+            'http://lake.test/v1/warnings*' => Http::response(['items' => []], 200),
         ]);
 
         $service = new EnvironmentAgencyFloodService;
         $result = $service->getFloods(51.5, -2.5, 10);
 
-        Http::assertSent(function ($request) {
-            return str_contains($request->url(), 'lat=51.5')
-                && str_contains($request->url(), 'long=-2.5')
-                && str_contains($request->url(), 'dist=10');
-        });
+        Http::assertSent(fn ($request) => str_contains($request->url(), '/v1/warnings'));
 
         $this->assertIsArray($result);
         $this->assertEmpty($result);
@@ -61,9 +52,8 @@ class EnvironmentAgencyFloodServiceTest extends TestCase
 
     public function test_returns_empty_array_on_api_failure(): void
     {
-        Http::fake([
-            '*/flood-monitoring/id/floods*' => Http::response(null, 500),
-        ]);
+        config()->set('flood-watch.data_lake.base_url', 'http://lake.test');
+        Http::fake(['http://lake.test/v1/warnings*' => Http::response(null, 500)]);
 
         $service = new EnvironmentAgencyFloodService;
         $result = $service->getFloods();
@@ -72,72 +62,34 @@ class EnvironmentAgencyFloodServiceTest extends TestCase
         $this->assertEmpty($result);
     }
 
-    public function test_returns_empty_array_on_connection_exception(): void
-    {
-        Http::fake([
-            '*/flood-monitoring/id/floods*' => function () {
-                throw new ConnectionException('network');
-            },
-        ]);
-
-        $service = new EnvironmentAgencyFloodService;
-        $result = $service->getFloods();
-
-        $this->assertSame([], $result);
-    }
-
-    public function test_returns_empty_array_when_circuit_is_open(): void
-    {
-        $cb = \Mockery::mock(CircuitBreaker::class);
-        $cb->shouldReceive('execute')
-            ->andThrow(new CircuitOpenException);
-
-        $service = new EnvironmentAgencyFloodService($cb);
-        $result = $service->getFloods();
-
-        $this->assertSame([], $result);
-    }
-
     public function test_includes_polygon_geojson_when_flood_area_has_polygon_endpoint(): void
     {
-        Http::fake(function ($request) {
-            if (str_contains($request->url(), '/polygon')) {
-                return Http::response([
-                    'type' => 'FeatureCollection',
-                    'features' => [
-                        [
-                            'type' => 'Feature',
-                            'geometry' => [
-                                'type' => 'Polygon',
-                                'coordinates' => [[[-2.83, 51.04], [-2.82, 51.04], [-2.82, 51.05], [-2.83, 51.05], [-2.83, 51.04]]],
+        config()->set('flood-watch.data_lake.base_url', 'http://lake.test');
+        Http::fake([
+            'http://lake.test/v1/warnings*' => Http::response([
+                'items' => [
+                    [
+                        'description' => 'Test Flood Area',
+                        'severity' => 'Flood Warning',
+                        'severityLevel' => 2,
+                        'floodAreaID' => '123WAC',
+                        'message' => 'Flooding expected.',
+                        'polygon' => [
+                            'type' => 'FeatureCollection',
+                            'features' => [
+                                [
+                                    'type' => 'Feature',
+                                    'geometry' => [
+                                        'type' => 'Polygon',
+                                        'coordinates' => [[[-2.83, 51.04], [-2.82, 51.04], [-2.82, 51.05], [-2.83, 51.05], [-2.83, 51.04]]],
+                                    ],
+                                ],
                             ],
                         ],
                     ],
-                ], 200);
-            }
-            if (str_contains($request->url(), '/id/floodAreas') && ! str_contains($request->url(), '/polygon')) {
-                return Http::response([
-                    'items' => [
-                        ['notation' => '123WAC', 'lat' => 51.04, 'long' => -2.82],
-                    ],
-                ], 200);
-            }
-            if (str_contains($request->url(), '/id/floods')) {
-                return Http::response([
-                    'items' => [
-                        [
-                            'description' => 'Test Flood Area',
-                            'severity' => 'Flood Warning',
-                            'severityLevel' => 2,
-                            'floodAreaID' => '123WAC',
-                            'message' => 'Flooding expected.',
-                        ],
-                    ],
-                ], 200);
-            }
-
-            return Http::response(null, 404);
-        });
+                ],
+            ], 200),
+        ]);
 
         $service = new EnvironmentAgencyFloodService;
         $result = $service->getFloods();

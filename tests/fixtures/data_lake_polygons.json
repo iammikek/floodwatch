@@ -1,0 +1,25 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "zone-1",
+      "properties": {
+        "floodAreaID": "123WAC",
+        "label": "Langport flood zone"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-2.84, 51.03],
+            [-2.82, 51.03],
+            [-2.82, 51.04],
+            [-2.84, 51.04],
+            [-2.84, 51.03]
+          ]
+        ]
+      }
+    }
+  ]
+}

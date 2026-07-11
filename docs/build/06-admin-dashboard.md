@@ -14,7 +14,7 @@ API health, LLM cost, user metrics, budget alerts, recent LLM requests. Restrict
 - [x] Guests are redirected to login when visiting `/admin`
 - [x] Non-admin users receive 403 when visiting `/admin`
 - [x] Admin users can access `/admin` and see dashboard
-- [x] API Health section displays: EA, Flood Forecast, Weather, National Highways, Cache status (from `/health` or equivalent)
+- [x] API Health section displays: Data Lake, Flood Forecast, Weather, National Highways, Cache status (from `/health` or equivalent; EA check is skipped/deprecated)
 - [x] User Metrics section displays: total users; total searches (from `UserSearch`)
 - [x] LLM Cost section displays: requests today/month; input/output tokens; est. cost; budget alert at 80% if configured
 - [x] Recent LLM Requests section displays: last 10 requests (time, model, tokens, region, user)

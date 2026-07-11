@@ -74,9 +74,32 @@
 
     {{-- Row 2: 3 columns = Flood Warnings | Road Status | Forecast (compact cards; favour visible map area) --}}
     @php
-        $floodSummary = count($floodsForList) > 0
-            ? collect($floodsForList)->map(fn ($f) => trim(($f['description'] ?? '') . (isset($f['severity']) ? ' (' . $f['severity'] . ')' : '')))->filter()->implode(', ')
-            : __('flood-watch.dashboard.no_flood_warnings');
+        $floodSummary = __('flood-watch.dashboard.no_flood_warnings');
+        if (count($floodsForList) > 0) {
+            $bySeverity = collect($floodsForList)
+                ->map(fn ($f) => is_array($f) ? ($f['severity'] ?? '') : '')
+                ->filter()
+                ->map(fn ($s) => trim((string) $s))
+                ->filter()
+                ->groupBy(fn ($s) => strtolower($s))
+                ->map(fn ($g, $key) => [
+                    'key' => $key,
+                    'label' => $g->first(),
+                    'count' => $g->count(),
+                ])
+                ->sortBy(fn ($item) => match ($item['key']) {
+                    'severe flood warning' => 0,
+                    'flood warning' => 1,
+                    'flood alert' => 2,
+                    default => 3,
+                })
+                ->values();
+            if ($bySeverity->isNotEmpty()) {
+                $floodSummary = $bySeverity
+                    ->map(fn ($item) => $item['label'] . ': ' . $item['count'])
+                    ->implode('; ');
+            }
+        }
         $roadSummary = count($incidentsForList) > 0
             ? collect($incidentsForList)->map(fn ($i) => trim(($i['road'] ?? '') . (isset($i['statusLabel']) ? ' ' . $i['statusLabel'] : '')))->filter()->implode('; ')
             : __('flood-watch.dashboard.roads_clear');

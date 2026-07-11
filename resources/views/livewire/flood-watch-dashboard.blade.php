@@ -32,7 +32,15 @@
                     const storedResults = localStorage.getItem('flood-watch-results');
                     if (storedResults) {
                         try {
-                            wire.restoreFromStorage(JSON.parse(storedResults));
+                            const parsed = JSON.parse(storedResults);
+                            const last = parsed && parsed.lastChecked ? new Date(parsed.lastChecked) : null;
+                            const now = new Date();
+                            const maxAgeMs = 1000 * 60 * 60 * 6;
+                            if (last && (now - last) <= maxAgeMs) {
+                                wire.restoreFromStorage(parsed);
+                            } else {
+                                localStorage.removeItem('flood-watch-results');
+                            }
                         } catch (e) {}
                     }
                 }
@@ -112,6 +120,7 @@
                     :river-levels="[]"
                     :floods="$routeFloods"
                     :incidents="$routeIncidents"
+                    :outcode="$outcode"
                     :has-user-location="false"
                     :last-checked="null"
                     :route-geometry="$routeGeometry"
@@ -167,6 +176,7 @@
                     :river-levels="$riverLevels"
                     :floods="$floods"
                     :incidents="$incidents"
+                    :outcode="$outcode"
                     :floods-in-view="$this->floodsInView"
                     :incidents-in-view="$this->incidentsInView"
                     :has-user-location="$hasUserLocation"

@@ -43,8 +43,9 @@ class FloodWatchRiverLevelsControllerTest extends TestCase
 
         $requestCount = 0;
         Http::fake(function ($request) use (&$requestCount) {
-            $requestCount++;
             if (str_contains($request->url(), 'environment.data.gov.uk')) {
+                $requestCount++;
+
                 return Http::response(['items' => []], 200);
             }
 

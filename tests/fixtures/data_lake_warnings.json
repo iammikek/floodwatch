@@ -1,0 +1,15 @@
+{
+  "items": [
+    {
+      "id": "warn-langport-1",
+      "description": "River Parrett at Langport",
+      "severity": "Flood Warning",
+      "severityLevel": 2,
+      "message": "Flooding is possible.",
+      "floodAreaID": "123WAC",
+      "timeRaised": "2026-07-11T10:00:00Z",
+      "lat": 51.0358,
+      "lng": -2.8318
+    }
+  ]
+}

@@ -69,6 +69,7 @@ In Railway → Your Service → Variables, add:
 | `CACHE_STORE` | `file` |
 | `FLOOD_WATCH_CACHE_STORE` | `flood-watch-array` |
 | `FLOOD_WATCH_CACHE_TTL_MINUTES` | `15` |
+| `FLOOD_WATCH_DATA_LAKE_URL` | Data lake API base URL (e.g. staging/prod lake). Local Sail default: `http://localhost:8000` |
 | `CONCURRENCY_DRIVER` | `process` (production). Use `sync` for testing. |
 | `QUEUE_CONNECTION` | `database` (default). Queue worker runs on deploy via `scripts/start.sh`. |
 
@@ -78,7 +79,7 @@ Optional (for road closure data):
 |----------|-------|
 | `NATIONAL_HIGHWAYS_API_KEY` | From [developer.data.nationalhighways.co.uk](https://developer.data.nationalhighways.co.uk/) |
 
-**Deployment checklist**: If road status is required, verify `NATIONAL_HIGHWAYS_API_KEY` is set. Without it, incidents return empty; `/health` reports National Highways as "skipped".
+**Deployment checklist**: Set `FLOOD_WATCH_DATA_LAKE_URL` to a reachable lake API; `/health` and the admin dashboard report `data_lake` status. If road status is required, verify `NATIONAL_HIGHWAYS_API_KEY` is set. Without it, incidents return empty; `/health` reports National Highways as "skipped".
 
 ### 4. Generate Domain
 

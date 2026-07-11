@@ -71,6 +71,8 @@ return [
     'llm_max_context_tokens' => (int) env('FLOOD_WATCH_LLM_MAX_CONTEXT_TOKENS', 110000),
     'llm_max_correlation_chars' => (int) env('FLOOD_WATCH_LLM_MAX_CORRELATION_CHARS', 8000),
 
+    'add_canonical_preamble' => env('FLOOD_WATCH_ADD_CANONICAL_PREAMBLE', true),
+
     /*
     |--------------------------------------------------------------------------
     | LLM Cost Tracking (Admin Dashboard)
@@ -107,26 +109,9 @@ return [
     'default_location_sentinel' => 'default',
 
     'bookmarks_max_per_user' => (int) env('FLOOD_WATCH_BOOKMARKS_MAX', 10),
-
-    /*
-    |--------------------------------------------------------------------------
-    | Environment Agency API
-    |--------------------------------------------------------------------------
-    */
-
-    'environment_agency' => [
-        'base_url' => env('ENVIRONMENT_AGENCY_URL', 'https://environment.data.gov.uk/flood-monitoring'),
-        'timeout' => (int) env('ENVIRONMENT_AGENCY_TIMEOUT', 25),
-        'polygon_cache_hours' => (int) env('FLOOD_WATCH_POLYGON_CACHE_HOURS', 168),
-        'max_polygons_per_request' => (int) env('FLOOD_WATCH_MAX_POLYGONS', 10),
-        'retry_times' => (int) env('FLOOD_WATCH_EA_RETRY_TIMES', 3),
-        'retry_sleep_ms' => (int) env('FLOOD_WATCH_EA_RETRY_SLEEP_MS', 100),
-    ],
-
     /*
     |--------------------------------------------------------------------------
     | Flood Guidance Statement (5-day forecast)
-    |--------------------------------------------------------------------------
     */
 
     'flood_forecast' => [
@@ -164,6 +149,19 @@ return [
         'closures_path' => env('NATIONAL_HIGHWAYS_CLOSURES_PATH', 'closures'),
         'fetch_unplanned' => env('NATIONAL_HIGHWAYS_FETCH_UNPLANNED', true),
         'cache_minutes' => (int) env('NATIONAL_HIGHWAYS_CACHE_MINUTES', 15),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Data Lake Service
+    |--------------------------------------------------------------------------
+    */
+
+    'data_lake' => [
+        'base_url' => env('FLOOD_WATCH_DATA_LAKE_URL', 'http://localhost:8000'),
+        'timeout' => (int) env('FLOOD_WATCH_DATA_LAKE_TIMEOUT', 10),
+        'retry_times' => (int) env('FLOOD_WATCH_DATA_LAKE_RETRY_TIMES', 2),
+        'retry_sleep_ms' => (int) env('FLOOD_WATCH_DATA_LAKE_RETRY_SLEEP_MS', 50),
     ],
 
     /*

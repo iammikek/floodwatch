@@ -130,6 +130,7 @@ flowchart LR
 | Medium | Smarter route verdict | Rivers on route, wet areas, Muchelney rule |
 | Medium | Analytics layer | Partial – trend recording in Redis; reporting later |
 | Medium | Real-time & push | Laravel Reverb + FCM; see Phase 2 |
+| Medium | River levels time window selector | Add from/to + aggregate (raw/hour/day) controls to map river levels fetch; render sparkline in station popup; default to latest when unset |
 | Medium | Queue-based async | For high-traffic; poll for results |
 | Low | Polygon limit tuning | `max_polygons_per_request` |
 | Low | Additional regions | Planned – beyond South West; Dorset added |
@@ -320,6 +321,34 @@ Define granularity for cache key scoping:
 
 ---
 
+## Data Lake Integration Plan
+
+**Goal**: Use the Flood Watch data lake API as the primary source for hydrology measurements, curated polygons, and flood warnings to reduce external calls, standardize data shapes, and improve caching.
+
+**Status (current code):** Integration is live — there is no `use_data_lake` feature flag.
+
+| Domain | Behaviour |
+|--------|-----------|
+| Flood warnings | Lake only (`EnvironmentAgencyFloodService` → `DataLakeClient` `/v1/warnings`) |
+| River levels | Lake first (`RiverLevelService` → `/v1/measurements`); EA direct API fallback if lake empty/errors |
+| Polygons / tiles | Proxied via controllers + `DataLakeClient` (`/v1/polygons`, MVT tiles) |
+| Rainfall / forecast / RAG | Still Laravel-side until lake endpoints mature |
+
+- Client: `App\Services\DataLakeClient` — ETag/`If-None-Match`, retry on 429/5xx, rate-limit header backoff
+- Config: `flood-watch.data_lake.*` via `FLOOD_WATCH_DATA_LAKE_URL` (default `http://localhost:8000`), plus timeout/retry env vars
+- LLM tools: `GetFloodDataHandler` / `GetRiverLevelsHandler` report `provider: data_lake`
+- Health: `/health` and admin dashboard include a `data_lake` check
+
+**Ongoing workstreams** (contract tests, auth, next domain extraction, deploy): see [`docs/DATA_LAKE_MIGRATION_PLAN.md`](DATA_LAKE_MIGRATION_PLAN.md).
+
+**Risks**
+- Data parity: lake outputs must keep matching UI / DTO expectations
+- Caching: align ETag/TTL between lake and app caches
+- Rate limiting: react to low remaining values to avoid 429s
+- River-level EA fallback: remove only after lake reliability is proven in staging
+
+---
+
 ## Real-time & Push (Cost)
 
 | Feature | Approach | Railway cost |
@@ -347,6 +376,7 @@ Reverb as second service or process; Redis if scaling. Alternative: Pusher (free
 | `docs/ACCEPTANCE_CRITERIA.md` | Success checklist |
 | `docs/WIREFRAMES.md` | UI wireframes |
 | `docs/architecture.md` | System structure, data flow |
+| `docs/DATA_LAKE_MIGRATION_PLAN.md` | **Agent handoff:** Laravel ↔ FastAPI data lake migration (repos, workstreams, sprint order) |
 | `docs/agents-and-llm.md` | How LLM consumes data (tools, APIs, flow) |
 | `docs/deployment.md` | Railway runbook, pre-launch checklist |
 | `docs/performance.md` | OSRM limits, self-hosting, scaling options |
