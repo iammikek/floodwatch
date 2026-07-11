@@ -211,7 +211,7 @@ class RiverLevelServiceTest extends TestCase
         $lat = config('flood-watch.default_lat');
         $lng = config('flood-watch.default_lng');
         $radius = config('flood-watch.default_radius_km');
-        $key = "{$prefix}:river-levels:".round($lat, 2).':'.round($lng, 2).":{$radius}";
+        $key = "{$prefix}:river-levels:".round($lat, 2).':'.round($lng, 2).":{$radius}:raw";
 
         Cache::store(config('flood-watch.cache_store'))->put($key, $cachedResult, now()->addMinutes(15));
 
@@ -272,7 +272,7 @@ class RiverLevelServiceTest extends TestCase
         $this->assertSame('Cache Test Station', $result[0]['station']);
 
         $prefix = config('flood-watch.cache_key_prefix', 'flood-watch');
-        $key = "{$prefix}:river-levels:51:-2.8:10";
+        $key = "{$prefix}:river-levels:51:-2.8:10:raw";
         $stored = Cache::store(config('flood-watch.cache_store'))->get($key);
         $this->assertNotNull($stored);
         $this->assertIsArray($stored);

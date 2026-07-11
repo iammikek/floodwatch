@@ -46,8 +46,9 @@ class RiverLevelService
         $radiusKm ??= (int) config('flood-watch.default_radius_km');
         $cacheMinutes = (int) config('flood-watch.river_levels_cache_minutes', 0);
         $shouldCache = $cacheMinutes > 0;
-        $key = $this->riverLevelsCacheKey($lat, $lng, $radiusKm);
+        $key = $this->riverLevelsCacheKey($lat, $lng, $radiusKm, $from, $to, $aggregate);
         $store = config('flood-watch.cache_store', 'flood-watch');
+        $isHistoricalRequest = $from !== null || $to !== null || $aggregate !== 'raw';
         if ($shouldCache) {
             $cached = Cache::store($store)->get($key);
             if (is_array($cached)) {
@@ -66,6 +67,10 @@ class RiverLevelService
             return [];
         } catch (ConnectionException|RequestException $e) {
             report($e);
+        }
+
+        if ($isHistoricalRequest) {
+            return [];
         }
 
         try {
@@ -102,13 +107,33 @@ class RiverLevelService
         }
     }
 
-    private function riverLevelsCacheKey(float $lat, float $lng, int $radiusKm): string
-    {
+    private function riverLevelsCacheKey(
+        float $lat,
+        float $lng,
+        int $radiusKm,
+        ?string $from = null,
+        ?string $to = null,
+        string $aggregate = 'raw'
+    ): string {
         $prefix = config('flood-watch.cache_key_prefix', 'flood-watch');
         $latRounded = round($lat, 2);
         $lngRounded = round($lng, 2);
+        $parts = [
+            $prefix,
+            'river-levels',
+            (string) $latRounded,
+            (string) $lngRounded,
+            (string) $radiusKm,
+            $aggregate,
+        ];
+        if ($from !== null) {
+            $parts[] = 'from:'.$from;
+        }
+        if ($to !== null) {
+            $parts[] = 'to:'.$to;
+        }
 
-        return "{$prefix}:river-levels:{$latRounded}:{$lngRounded}:{$radiusKm}";
+        return implode(':', $parts);
     }
 
     /**
@@ -336,7 +361,7 @@ class RiverLevelService
         $store = config('flood-watch.cache_store', 'flood-watch');
         $ttlMinutes = (int) config('flood-watch.cache_ttl_minutes', 0);
         $cacheKeyPrefix = config('flood-watch.cache_key_prefix', 'flood-watch').':lake:measurements:';
-        $cacheKey = "{$cacheKeyPrefix}{$bbox}:{$aggregate}";
+        $cacheKey = "{$cacheKeyPrefix}{$bbox}:{$aggregate}:".($from ?? '').':'.($to ?? '');
         $cached = null;
         if ($ttlMinutes > 0) {
             $cached = Cache::store($store)->get($cacheKey);

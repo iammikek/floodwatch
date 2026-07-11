@@ -15,10 +15,23 @@ exclude = [
     "https://contributing.md/.*",
     # Open Rail Data wiki uses bot protection (403)
     "https?://wiki\\.openraildata\\.com/.*",
+    # Placeholder deploy host in deployment docs
+    "https://your-app\\.up\\.railway\\.app.*",
+    # Sites that often block GitHub Actions / bot UAs (403/challenge)
+    "https://automica\\.io/.*",
+    "https://status\\.openai\\.com/.*",
 ]
 
-# Accept redirects as valid
-accept = [200, 204, 301, 302, 307, 308]
+# Ignore archived docs (many stale external refs; not part of active contract)
+exclude_path = ["docs/archive"]
+
+# Accept redirects and common bot-block / rate-limit responses as non-fatal in CI
+accept = [200, 204, 301, 302, 307, 308, 403, 429]
+
+# Resilience on flaky external hosts (esp. GitHub Actions egress)
+max_retries = 3
+retry_wait_time = "2s"
+timeout = "20s"
 
 # Skip email validation (default in lychee v0.21+)
 include_mail = false
