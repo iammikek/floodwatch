@@ -105,10 +105,13 @@ flowchart TB
 
 | Service | Config key | Fixture |
 |---------|------------|---------|
-| Environment Agency | `flood-watch.environment_agency` | `tests/fixtures/environment_agency_*.json` |
+| Data Lake API | `flood-watch.data_lake` (`DataLakeClient`) | `tests/fixtures/data_lake_*.json` |
+| Environment Agency (legacy / river-level fallback) | `flood-watch.environment_agency` | `tests/fixtures/environment_agency_*.json` |
 | National Highways | `flood-watch.national_highways` | `tests/fixtures/national_highways_closures.json` |
 | Flood Forecast | `flood-watch.flood_forecast` | - |
 | Weather | `flood-watch.weather` | - |
+
+**Data Lake**: Laravel reads warnings, measurements, and polygons from a FastAPI data lake (`FLOOD_WATCH_DATA_LAKE_URL`, default `http://localhost:8000`). See `docs/DATA_LAKE_MIGRATION_PLAN.md` for the strangler migration and repo boundary.
 
 **National Highways (v2.0)**: `GET https://api.data.nationalhighways.co.uk/roads/v2.0/closures?closureType=planned|unplanned`. DATEX II v3.4 D2Payload with `situation[]` → `situationRecord[]` → `sitRoadOrCarriagewayOrLaneManagement`. Fetches both planned and unplanned closures (config: `fetch_unplanned`). Headers: `Ocp-Apim-Subscription-Key`, `X-Response-MediaType: application/json`.
 

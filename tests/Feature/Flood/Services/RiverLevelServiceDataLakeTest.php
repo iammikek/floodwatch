@@ -11,7 +11,7 @@ use Tests\TestCase;
 
 class RiverLevelServiceDataLakeTest extends TestCase
 {
-    public function test_fetches_river_levels_from_data_lake_when_flag_enabled(): void
+    public function test_fetches_river_levels_from_data_lake(): void
     {
         Config::set(ConfigKey::DATA_LAKE.'.base_url', 'http://lake.test');
         Config::set('flood-watch.default_lat', 51.0358);

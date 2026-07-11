@@ -35,6 +35,8 @@ beforeEach(function () {
         '*api.open-meteo.com*' => Http::response(['daily' => []], 200),
         '*api.data.nationalhighways.co.uk*' => Http::response([], 200),
         '*api.openai.com*' => Http::response($usageResponse, 200),
+        '*/v1/warnings*' => Http::response(['items' => []], 200),
+        '*/v1/measurements*' => Http::response(['items' => []], 200),
     ]);
 });
 
@@ -67,6 +69,7 @@ test('admin dashboard displays api health section', function () {
 
     $response->assertOk();
     $response->assertSee('API Health', false);
+    $response->assertSee('Data lake', false);
 });
 
 test('admin dashboard displays user metrics section', function () {

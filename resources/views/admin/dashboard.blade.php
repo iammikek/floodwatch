@@ -94,6 +94,9 @@
                                 @else
                                     <span class="text-red-600" aria-label="{{ $check['status'] ?? 'failed' }}">✗ {{ $check['status'] ?? 'failed' }}</span>
                                 @endif
+                                @if (isset($check['latency_ms']))
+                                    <span class="text-xs text-gray-500">{{ $check['latency_ms'] }}ms</span>
+                                @endif
                                 @if (!empty($check['message']))
                                     <span class="text-xs text-gray-500" title="{{ $check['message'] }}" aria-label="{{ $check['message'] }}">ⓘ</span>
                                 @endif

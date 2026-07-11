@@ -50,13 +50,16 @@ class HealthController extends Controller
             }
             $warningsUrl = "{$baseUrl}/v1/warnings?bbox=-3.1,50.9,-2.6,51.2&limit=1";
             $measurementsUrl = "{$baseUrl}/v1/measurements?bbox=-3.1,50.9,-2.6,51.2&aggregate=raw&limit=1";
+            $t0 = microtime(true);
             $wr = Http::timeout(self::HEALTH_TIMEOUT)->get($warningsUrl);
             $mr = Http::timeout(self::HEALTH_TIMEOUT)->get($measurementsUrl);
+            $latencyMs = (int) round((microtime(true) - $t0) * 1000);
             $ok = $wr->successful() && $mr->successful();
 
             return [
                 'status' => $ok ? 'ok' : 'degraded',
                 'message' => $ok ? null : "warnings {$wr->status()} / measurements {$mr->status()}",
+                'latency_ms' => $latencyMs,
             ];
         } catch (Throwable $e) {
             return ['status' => 'unhealthy', 'message' => $e->getMessage()];

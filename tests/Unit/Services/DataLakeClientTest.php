@@ -88,4 +88,46 @@ class DataLakeClientTest extends TestCase
         $this->assertIsString($res->body);
         $this->assertSame('PBF_BYTES', $res->body);
     }
+
+    public function test_fetch_measurements_200_returns_body_and_etag(): void
+    {
+        Config::set(ConfigKey::DATA_LAKE.'.base_url', 'http://lake.test');
+        Config::set(ConfigKey::DATA_LAKE.'.timeout', 5);
+
+        Http::fake([
+            'http://lake.test/v1/measurements*' => Http::response(
+                ['items' => [['value' => 1.2, 'dateTime' => '2026-07-11T12:00:00Z']]],
+                200,
+                ['ETag' => 'W/"m1"']
+            ),
+        ]);
+
+        $client = new DataLakeClient;
+        $res = $client->getMeasurements(bbox: '-3,51,-2,52', aggregate: 'raw');
+
+        $this->assertSame(200, $res->status);
+        $this->assertSame('W/"m1"', $res->etag);
+        $this->assertSame(1.2, $res->body['items'][0]['value']);
+    }
+
+    public function test_fetch_polygons_200_returns_body_and_etag(): void
+    {
+        Config::set(ConfigKey::DATA_LAKE.'.base_url', 'http://lake.test');
+        Config::set(ConfigKey::DATA_LAKE.'.timeout', 5);
+
+        Http::fake([
+            'http://lake.test/v1/polygons*' => Http::response(
+                ['type' => 'FeatureCollection', 'features' => []],
+                200,
+                ['ETag' => 'W/"p1"']
+            ),
+        ]);
+
+        $client = new DataLakeClient;
+        $res = $client->getPolygons(dataset: 'flood_zones', region: 'SOM', inline: true, bbox: '-3,51,-2,52');
+
+        $this->assertSame(200, $res->status);
+        $this->assertSame('W/"p1"', $res->etag);
+        $this->assertSame('FeatureCollection', $res->body['type']);
+    }
 }

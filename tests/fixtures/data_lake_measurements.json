@@ -1,0 +1,17 @@
+{
+  "items": [
+    {
+      "station_label": "Langport Gauge",
+      "river": "River Parrett",
+      "town": "Langport",
+      "value": 2.1,
+      "unitName": "m",
+      "dateTime": "2026-07-11T12:00:00Z",
+      "lat": 51.04,
+      "lng": -2.83,
+      "stationType": "river_gauge",
+      "typicalRangeLow": 1.5,
+      "typicalRangeHigh": 3.5
+    }
+  ]
+}

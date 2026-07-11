@@ -323,34 +323,29 @@ Define granularity for cache key scoping:
 
 ## Data Lake Integration Plan
 
-**Goal**: Use the Flood Watch Data Lake as the primary source for EA measurements, curated polygons, and flood warnings to reduce external calls, standardize data shapes, and improve caching.
+**Goal**: Use the Flood Watch data lake API as the primary source for hydrology measurements, curated polygons, and flood warnings to reduce external calls, standardize data shapes, and improve caching.
 
-- Scope
-  - Measurements: swap river level reads to lake /v1/measurements (raw|hour|day)
-  - Polygons: render flood zone overlays via /v1/polygons (inline for small bbox) and /v1/polygons/tiles for map
-  - Warnings: use /v1/warnings for region/bbox/county with min_severity
-  - Leave rainfall/forecast/context via existing sources until lake endpoints mature
-- Client
-  - Add DataLakeClient (HTTP) with ETag/If-None-Match handling and backoff using X-RateLimit headers
-  - Config: DATA_LAKE_URL (default http://localhost:8000), use_data_lake (bool)
-  - Propagate Cache-Control and mirror TTLs in app cache when beneficial
-- Integration Points
-  - FloodWatchService prefetch: replace riverLevels block with aggregated measurements
-  - RiverLevelService: refactor to call DataLakeClient and coerce to UI shape
-  - Map overlays: inline polygons for current viewport; tiles for zoomed map rendering
-  - WarningsService: switch to lake endpoint; preserve geometry and severity mapping
-  - LLM tools: update GetFloodData/GetRiverLevels (and later GetFloodForecast) to call lake
-- Testing
-  - Pest tests with Http::fake for DataLakeClient responses (200 + 304 paths)
-  - Verify shapes match PHPStan level 7 array declarations in FloodWatchService
-  - Feature tests for warnings, measurements, and polygon inline filtering
-- Rollout
-  - Feature flag use_data_lake default off; ship behind config
-  - Enable per environment once validated; add footer attribution “Data Lake” when active
-- Risks
-  - Data parity: ensure lake outputs match current UI expectations
-  - Caching semantics: align ETag/TTL between lake and app caches to avoid stale content
-  - Rate limiting: react to low remaining values to avoid 429s
+**Status (current code):** Integration is live — there is no `use_data_lake` feature flag.
+
+| Domain | Behaviour |
+|--------|-----------|
+| Flood warnings | Lake only (`EnvironmentAgencyFloodService` → `DataLakeClient` `/v1/warnings`) |
+| River levels | Lake first (`RiverLevelService` → `/v1/measurements`); EA direct API fallback if lake empty/errors |
+| Polygons / tiles | Proxied via controllers + `DataLakeClient` (`/v1/polygons`, MVT tiles) |
+| Rainfall / forecast / RAG | Still Laravel-side until lake endpoints mature |
+
+- Client: `App\Services\DataLakeClient` — ETag/`If-None-Match`, retry on 429/5xx, rate-limit header backoff
+- Config: `flood-watch.data_lake.*` via `FLOOD_WATCH_DATA_LAKE_URL` (default `http://localhost:8000`), plus timeout/retry env vars
+- LLM tools: `GetFloodDataHandler` / `GetRiverLevelsHandler` report `provider: data_lake`
+- Health: `/health` and admin dashboard include a `data_lake` check
+
+**Ongoing workstreams** (contract tests, auth, next domain extraction, deploy): see [`docs/DATA_LAKE_MIGRATION_PLAN.md`](DATA_LAKE_MIGRATION_PLAN.md).
+
+**Risks**
+- Data parity: lake outputs must keep matching UI / DTO expectations
+- Caching: align ETag/TTL between lake and app caches
+- Rate limiting: react to low remaining values to avoid 429s
+- River-level EA fallback: remove only after lake reliability is proven in staging
 
 ---
 
@@ -381,6 +376,7 @@ Reverb as second service or process; Redis if scaling. Alternative: Pusher (free
 | `docs/ACCEPTANCE_CRITERIA.md` | Success checklist |
 | `docs/WIREFRAMES.md` | UI wireframes |
 | `docs/architecture.md` | System structure, data flow |
+| `docs/DATA_LAKE_MIGRATION_PLAN.md` | **Agent handoff:** Laravel ↔ FastAPI data lake migration (repos, workstreams, sprint order) |
 | `docs/agents-and-llm.md` | How LLM consumes data (tools, APIs, flow) |
 | `docs/deployment.md` | Railway runbook, pre-launch checklist |
 | `docs/performance.md` | OSRM limits, self-hosting, scaling options |
