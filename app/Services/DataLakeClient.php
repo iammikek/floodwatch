@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Support\ConfigKey;
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 
@@ -19,10 +20,7 @@ class DataLakeClient
     public function fetch(string $path, mixed $query = null, ?string $ifNoneMatch = null): DataLakeResponse
     {
         $url = rtrim($this->baseUrl ?? '', '/').$path;
-        $req = Http::timeout($this->timeout ?? 10);
-        if ($ifNoneMatch !== null && $ifNoneMatch !== '') {
-            $req = $req->withHeaders(['If-None-Match' => $ifNoneMatch]);
-        }
+        $req = $this->request($ifNoneMatch);
         $retryTimes = (int) config(ConfigKey::DATA_LAKE.'.retry_times', 2);
         $retrySleep = (int) config(ConfigKey::DATA_LAKE.'.retry_sleep_ms', 50);
 
@@ -58,10 +56,7 @@ class DataLakeClient
     public function fetchBinary(string $path, mixed $query = null, ?string $ifNoneMatch = null): DataLakeResponse
     {
         $url = rtrim($this->baseUrl ?? '', '/').$path;
-        $req = Http::timeout($this->timeout ?? 10)->withHeaders(['Accept' => 'application/x-protobuf']);
-        if ($ifNoneMatch !== null && $ifNoneMatch !== '') {
-            $req = $req->withHeaders(['If-None-Match' => $ifNoneMatch]);
-        }
+        $req = $this->request($ifNoneMatch)->withHeaders(['Accept' => 'application/x-protobuf']);
         $retryTimes = (int) config(ConfigKey::DATA_LAKE.'.retry_times', 2);
         $retrySleep = (int) config(ConfigKey::DATA_LAKE.'.retry_sleep_ms', 50);
 
@@ -92,6 +87,23 @@ class DataLakeClient
         $etag = $resp->header('ETag');
 
         return new DataLakeResponse($status, $etag, $status === 304 ? null : $resp->body());
+    }
+
+    /**
+     * @return PendingRequest
+     */
+    private function request(?string $ifNoneMatch = null)
+    {
+        $req = Http::timeout($this->timeout ?? 10);
+        $token = (string) config(ConfigKey::DATA_LAKE.'.token', '');
+        if ($token !== '') {
+            $req = $req->withToken($token);
+        }
+        if ($ifNoneMatch !== null && $ifNoneMatch !== '') {
+            $req = $req->withHeaders(['If-None-Match' => $ifNoneMatch]);
+        }
+
+        return $req;
     }
 
     public function getWarnings(
