@@ -184,6 +184,7 @@
                     :route-key="$routeKey"
                     :forecast="$forecast"
                     :weather="$weather"
+                    :corridor-prediction="$corridorPrediction"
                     :assistant-response="$assistantResponse"
                     :wire-poll="$wirePoll"
                 />

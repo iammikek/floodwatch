@@ -110,6 +110,30 @@ class DataLakeClientContractTest extends TestCase
         $this->assertArrayHasKey('properties', $feature);
     }
 
+    public function test_predictions_response_shape_is_locked(): void
+    {
+        $fixture = $this->loadFixture('data_lake_predictions.json');
+
+        Http::fake([
+            'http://lake.test/v1/predictions*' => Http::response($fixture, 200, ['ETag' => 'W/"pred-1"']),
+        ]);
+
+        $res = (new DataLakeClient)->getPredictions(corridor: 'a361-muchelney');
+
+        $this->assertSame(200, $res->status);
+        $this->assertSame('W/"pred-1"', $res->etag);
+        $this->assertIsArray($res->body);
+        $this->assertSame('floodwatch.prediction.v0', $res->body['schema']);
+        $this->assertArrayHasKey('prediction', $res->body);
+        $this->assertArrayHasKey('dispatch', $res->body);
+        $this->assertArrayHasKey('method', $res->body);
+        foreach (['verdict', 'verdictLabel', 'summary', 'confidence'] as $key) {
+            $this->assertArrayHasKey($key, $res->body['prediction'], "prediction missing {$key}");
+        }
+        $this->assertArrayHasKey('safeToPass', $res->body['dispatch']);
+        $this->assertArrayHasKey('name', $res->body['method']);
+    }
+
     /**
      * @return array<string, mixed>
      */

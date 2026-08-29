@@ -131,6 +131,32 @@ class DataLakeClientTest extends TestCase
         $this->assertSame('FeatureCollection', $res->body['type']);
     }
 
+    public function test_fetch_predictions_200_returns_body(): void
+    {
+        Config::set(ConfigKey::DATA_LAKE.'.base_url', 'http://lake.test');
+        Config::set(ConfigKey::DATA_LAKE.'.timeout', 5);
+
+        Http::fake([
+            'http://lake.test/v1/predictions*' => Http::response(
+                ['schema' => 'floodwatch.prediction.v0', 'prediction' => ['verdict' => 'clear']],
+                200,
+                ['ETag' => 'W/"pred1"']
+            ),
+        ]);
+
+        $client = new DataLakeClient;
+        $res = $client->getPredictions(corridor: 'a361-muchelney', historyDays: 90);
+
+        $this->assertSame(200, $res->status);
+        $this->assertSame('W/"pred1"', $res->etag);
+        $this->assertSame('floodwatch.prediction.v0', $res->body['schema']);
+        Http::assertSent(function ($request) {
+            return str_contains($request->url(), '/v1/predictions')
+                && str_contains($request->url(), 'corridor=a361-muchelney')
+                && str_contains($request->url(), 'history_days=90');
+        });
+    }
+
     public function test_sends_bearer_token_when_configured(): void
     {
         Config::set(ConfigKey::DATA_LAKE.'.base_url', 'http://lake.test');

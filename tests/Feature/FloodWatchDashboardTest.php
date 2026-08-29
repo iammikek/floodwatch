@@ -68,6 +68,27 @@ class FloodWatchDashboardTest extends TestCase
             ->assertSee(trans_choice('flood-watch.dashboard.active_incidents_count', 1));
     }
 
+    public function test_corridor_risk_panel_shows_lake_prediction(): void
+    {
+        $fixture = json_decode(
+            (string) file_get_contents(base_path('tests/fixtures/data_lake_predictions.json')),
+            true,
+            512,
+            JSON_THROW_ON_ERROR
+        );
+
+        Livewire::test('flood-watch-dashboard')
+            ->set('assistantResponse', 'Summary.')
+            ->set('layoutVariant', 'desktop')
+            ->set('corridorPrediction', $fixture)
+            ->assertSee(__('flood-watch.dashboard.prediction_panel'))
+            ->assertSee('A361 Muchelney corridor')
+            ->assertSee('At risk within window')
+            ->assertSee(__('flood-watch.dashboard.prediction_time_to_impact', ['hours' => 6]))
+            ->assertSee(__('flood-watch.dashboard.prediction_hold_dispatch'))
+            ->assertSee('Hold non-urgent A361 runs through Muchelney after 15:00 local.');
+    }
+
     public function test_river_response_panel_shows_status_mix_and_prioritised_gauges(): void
     {
         $html = Livewire::test('flood-watch-dashboard')
