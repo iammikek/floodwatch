@@ -4,6 +4,15 @@ A fast, region‑aware flood and road status assistant for the South West — on
 
 Laravel 12 application integrating flood data with National Highways road status for the **South West** (Bristol, Somerset, Devon, Cornwall). Correlates Environment Agency flood warnings, river and sea levels, and road incidents into a **Single Source of Truth** for flood and road viability.
 
+## Commercial Direction
+
+Flood Watch is being shaped as a **route resilience and upstream impact** product for fleet operators, not just a generic public flood map.
+
+- **Primary job**: help operators decide which corridors are risky now and which may become risky after upstream rainfall.
+- **Current experience**: a desktop-first operational cockpit with route context, warning overlays, river response, and corridor risk summaries.
+- **Near-term product**: add rainfall and hydrology trends so the UI shows when water is building upstream before disruption is visible on the road.
+- **Longer-term moat**: catchment, lag-time, and high-ground flow intelligence that explains where rain falls, where it can travel, and which roads or areas it may threaten next.
+
 ## Scope: South West
 
 The assistant covers the South West with **region-specific prompts** that tailor advice to the user's location:
@@ -211,7 +220,8 @@ See [docs/deployment.md](docs/deployment.md) for deployment targets and runbooks
 - **[Deployment](docs/deployment.md)** — Railway runbook and pre‑deployment checklist
 - **[Risk Correlation](docs/risk_correlation.md)** — How flood warnings are correlated with road incidents
 - **[API Optimization Guide](docs/api_optimization_guide.md)** — Performance optimization strategies and best practices
-- **[RAG Implementation Plan](docs/rag-implementation-plan.md)** — Plan for Retrieval-Augmented Generation to enhance LLM responses
+- **[Data Lake Migration](docs/DATA_LAKE_MIGRATION_PLAN.md)** — Laravel ↔ data lake boundary, rollout, and contract hardening
+- **[Performance](docs/performance.md)** — OSRM limits, scaling notes, and production considerations
 - **[Contributing](contributing.md)** — Development guidelines and workflow
 
 ## License

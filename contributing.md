@@ -310,13 +310,15 @@ it('handles OpenAI errors gracefully', function () {
 ```
 docs/
 ├── agents-and-llm.md           # Tools, APIs, outputs, limitations (LLM)
-├── API_OPTIMIZATION_GUIDE.md   # Performance optimization strategies
-├── architecture.md              # System design, data flow
-├── SCHEMA.md                    # Database schema, entity relationships
-├── RISK_CORRELATION.md          # Flood/road correlation logic
-├── DEPLOYMENT.md                # Deployment instructions
-├── TROUBLESHOOTING.md           # Common issues and solutions
-└── build/                       # Feature build docs
+├── api.md                      # Public app routes and controller surface
+├── api_optimization_guide.md   # Performance optimization strategies
+├── architecture.md             # System design and data flow
+├── DATA_LAKE_MIGRATION_PLAN.md # Laravel ↔ data lake boundary
+├── deployment.md               # Deployment instructions
+├── risk_correlation.md         # Flood/road correlation logic
+├── tests.md                    # Test strategy and commands
+├── troubleshooting.md          # Common issues and solutions
+└── build/                      # Per-feature Cursor build specs
 ```
 
 ### Updating LLM Documentation
@@ -329,7 +331,7 @@ When modifying `FloodWatchService` or prompt builder:
    - Error handling
    - Caching
 
-2. Update `docs/API_OPTIMIZATION_GUIDE.md` if improving:
+2. Update `docs/api_optimization_guide.md` if improving:
    - Performance
    - Token usage
    - Caching strategies

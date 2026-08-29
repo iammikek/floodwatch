@@ -1,6 +1,6 @@
 # Data Sources
 
-Overview of current and planned APIs. Full research (National Rail, emergency services) in `docs/archive/data_sources.md`.
+Overview of current and planned APIs.
 
 ---
 
@@ -17,8 +17,6 @@ Overview of current and planned APIs. Full research (National Rail, emergency se
 
 ## National Rail (Planned)
 
-**Ref**: `docs/archive/data_sources.md` – full research, LDB/Darwin access, surfacing options.
-
 **Implementation plan**:
 
 - **Config**: `config/flood-watch.php` → `rail_stations` per region (e.g. Exeter, Dawlish, Plymouth, Bristol, Taunton)
@@ -34,6 +32,5 @@ Overview of current and planned APIs. Full research (National Rail, emergency se
 
 | Doc | Purpose |
 |-----|---------|
-| `docs/archive/data_sources.md` | Full research, National Rail, emergency services |
 | `docs/plan.md` | Backlog, National Rail priority |
 | `config/flood-watch.php` | Regions, correlation, future `rail_stations` structure |

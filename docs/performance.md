@@ -79,4 +79,4 @@ See `docs/CONSIDERATIONS.md` §4 (LLM costs) and §5 (postcode granularity for c
 
 - `docs/CONSIDERATIONS.md` – Risks, API dependency, LLM cost, cache tuning
 - `docs/deployment.md` – Load testing, warm cache, pre-deploy checklist
-- `docs/build/04-route-check.md` – OSRM config (`FLOOD_WATCH_OSRM_URL`)
+- `config/flood-watch.php` and `.env` – OSRM configuration (`FLOOD_WATCH_OSRM_URL`)
