@@ -11,14 +11,14 @@ Single development plan consolidating roadmap, backlog, data sources, and implem
 
 Effort estimates assume **Cursor agentic** (AI-assisted development). Phase 1 items can be built in **hours–days**.
 
-**Build order** (see `docs/build/README.md`):
+**Build order**:
 
 0. **Foundation** (do first): Migrations, models, config, admin gate, reverse-geocode, lang; ~45–60 min  
 1. **Admin dashboard** (early) → 2. Search history → 3. Use my location → 4. Bookmarks → 5. Route check → 6. Donations → 7. Backend polling
 
-**Agentic tips**: Use plan mode for docs; switch to agent mode for implementation. Run tests after each feature. TDD: failing test first, then implementation.
+**Implementation specs**: `docs/build/` – per-feature build specs for Cursor.
 
-**Implementation specs**: `docs/build/` – per-feature build specs for Cursor (migrations, models, services, tests, UI).
+**Agentic tips**: Use plan mode for docs; switch to agent mode for implementation. Run tests after each feature. TDD: failing test first, then implementation.
 
 ---
 
@@ -164,7 +164,7 @@ flowchart LR
 
 ## Smarter Route Verdict – Plan
 
-Extend RouteCheck verdict with predictive/hydrological context. See detailed spec: `docs/build/09-smarter-route-verdict.md`.
+Extend RouteCheck verdict with predictive and hydrological context within the existing route-check workflow.
 
 - Goals
   - Rivers on route: detect stations near the route; upgrade to “At risk” when elevated.
@@ -203,7 +203,7 @@ Users support the project via **donations**. The app stays free; donations offse
 
 **Approach**: Soft ask, non-intrusive. No in-app payment processing; link to external donation page.
 
-**Ref**: `docs/archive/monetisation_plan.md` for platform comparison.
+**Ref**: keep donations external and low-friction (Ko-fi, Buy Me a Coffee, or PayPal).
 
 ---
 
@@ -383,6 +383,5 @@ Reverb as second service or process; Redis if scaling. Alternative: Pusher (free
 | `docs/TROUBLESHOOTING.md` | LLM timeout, circuit breaker, cache |
 | `docs/CONSIDERATIONS.md` | Risks, API dependency, regional scope, costs |
 | `docs/DATA_SOURCES.md` | Current + planned APIs; National Rail implementation plan |
-| `docs/NEXT_STEPS.md` | Success metrics, extended next steps |
 | `docs/schema.md` | Database schema, object map, entity relationships |
 | `docs/build/` | Implementation specs for Cursor (per-feature build order) |

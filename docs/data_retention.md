@@ -28,7 +28,7 @@ Overview of data that grows over time, retention policies, and pruning. See `doc
 | **Growth** | One row per successful search |
 | **Recommended retention** | 90 days |
 | **Task** | Add `PruneUserSearchesCommand` or scheduled job. Delete rows where `searched_at < now()->subDays(90)`. Register in `bootstrap/app.php` schedule. |
-| **Ref** | `docs/build/01-search-history.md` Retention section |
+| **Ref** | `app/Services/UserSearchService.php` and `docs/schema.md` |
 
 ### failed_jobs
 
@@ -78,6 +78,6 @@ Overview of data that grows over time, retention policies, and pruning. See `doc
 | Doc | Purpose |
 |-----|---------|
 | `docs/schema.md` | Table definitions, indexes |
-| `docs/build/01-search-history.md` | user_searches retention note |
+| `app/Services/UserSearchService.php` | Search history persistence path |
 | `config/flood-watch.php` | Retention config keys |
 | `bootstrap/app.php` | Scheduled commands |

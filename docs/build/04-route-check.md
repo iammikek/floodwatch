@@ -196,7 +196,7 @@ Place in revised wireframe position so the section appears as you build:
 - **To**: Empty until user enters.
 - **Result panel**: Hidden until check runs.
 - **Mobile** (< `lg`): Text verdict + summary + alternatives (no map).
-- **Desktop** (`lg`+): Text in Route Check block + route polyline on map (floods/incidents overlaid). See `docs/archive/WIREFRAME_REVISED_brief.md`.
+- **Desktop** (`lg`+): Text in Route Check block + route polyline on map (floods/incidents overlaid). See `public/wireframes/revised-brief.html`.
 
 ---
 

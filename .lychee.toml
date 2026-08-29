@@ -8,9 +8,6 @@ exclude = [
     "https://openai.com/.*",
     # Localhost URLs (expected in installation docs)
     "http://localhost.*",
-    # Placeholder links in documentation (monetisation_plan.md)
-    "file://.*/docs/archive/link$",
-    "file://.*/docs/archive/url$",
     # External site favicon (404, not our issue)
     "https://contributing.md/.*",
     # Open Rail Data wiki uses bot protection (403)
@@ -21,9 +18,6 @@ exclude = [
     "https://automica\\.io/.*",
     "https://status\\.openai\\.com/.*",
 ]
-
-# Ignore archived docs (many stale external refs; not part of active contract)
-exclude_path = ["docs/archive"]
 
 # Accept redirects and common bot-block / rate-limit responses as non-fatal in CI
 accept = [200, 204, 301, 302, 307, 308, 403, 429]
