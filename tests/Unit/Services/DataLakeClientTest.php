@@ -130,4 +130,43 @@ class DataLakeClientTest extends TestCase
         $this->assertSame('W/"p1"', $res->etag);
         $this->assertSame('FeatureCollection', $res->body['type']);
     }
+
+    public function test_sends_bearer_token_when_configured(): void
+    {
+        Config::set(ConfigKey::DATA_LAKE.'.base_url', 'http://lake.test');
+        Config::set(ConfigKey::DATA_LAKE.'.timeout', 5);
+        Config::set(ConfigKey::DATA_LAKE.'.token', 'lake-secret');
+
+        Http::fake([
+            'http://lake.test/v1/warnings*' => Http::response(['items' => []], 200),
+        ]);
+
+        (new DataLakeClient)->getWarnings(region: 'SOM');
+
+        Http::assertSent(function ($request) {
+            $auth = $request->header('Authorization');
+            $value = is_array($auth) ? ($auth[0] ?? '') : (string) $auth;
+
+            return $value === 'Bearer lake-secret'
+                && str_contains($request->url(), '/v1/warnings');
+        });
+    }
+
+    public function test_omits_bearer_token_when_not_configured(): void
+    {
+        Config::set(ConfigKey::DATA_LAKE.'.base_url', 'http://lake.test');
+        Config::set(ConfigKey::DATA_LAKE.'.timeout', 5);
+        Config::set(ConfigKey::DATA_LAKE.'.token', '');
+
+        Http::fake([
+            'http://lake.test/v1/warnings*' => Http::response(['items' => []], 200),
+        ]);
+
+        (new DataLakeClient)->getWarnings(region: 'SOM');
+
+        Http::assertSent(function ($request) {
+            return ! $request->hasHeader('Authorization')
+                && str_contains($request->url(), '/v1/warnings');
+        });
+    }
 }

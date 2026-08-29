@@ -50,9 +50,14 @@ class HealthController extends Controller
             }
             $warningsUrl = "{$baseUrl}/v1/warnings?bbox=-3.1,50.9,-2.6,51.2&limit=1";
             $measurementsUrl = "{$baseUrl}/v1/measurements?bbox=-3.1,50.9,-2.6,51.2&aggregate=raw&limit=1";
+            $http = Http::timeout(self::HEALTH_TIMEOUT);
+            $token = (string) config('flood-watch.data_lake.token', '');
+            if ($token !== '') {
+                $http = $http->withToken($token);
+            }
             $t0 = microtime(true);
-            $wr = Http::timeout(self::HEALTH_TIMEOUT)->get($warningsUrl);
-            $mr = Http::timeout(self::HEALTH_TIMEOUT)->get($measurementsUrl);
+            $wr = $http->get($warningsUrl);
+            $mr = $http->get($measurementsUrl);
             $latencyMs = (int) round((microtime(true) - $t0) * 1000);
             $ok = $wr->successful() && $mr->successful();
 
