@@ -4,10 +4,12 @@ Mock payloads: [`prediction-risk.json`](app/src/data/prediction-risk.json), [`pr
 
 **Product intent:** predictions are driven by **mined EA historical hydrology** (plus rainfall when available), not by live-warning popups alone.
 
-## Future lake surface (proposed)
+## Lake surface (v0 implemented)
 
-`GET /v1/predictions?corridor=&region=&as_of=`  
-or a `prediction` object inside `GET /v1/retrieve-context`.
+`GET /v1/predictions?corridor=a361-muchelney&history_days=120`  
+`GET /v1/predictions/corridors`
+
+v0 method: `historic_stage_trajectory_v0` — station-relative percentiles + recent slope from mined EA readings under `data/raw/ea/readings/`. Primary measure for A361 Muchelney slice: Gaw Bridge `52119-level-stage-i-15_min-mASD` (longest local history). Midelney stands in for Muchelney (no EA gauge with that name).
 
 ## Shape
 

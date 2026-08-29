@@ -1,44 +1,64 @@
 <script setup>
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import scenarioRisk from './data/scenario-risk.json';
 import scenarioStable from './data/scenario-stable.json';
-import predictionRisk from './data/prediction-risk.json';
-import predictionStable from './data/prediction-stable.json';
 import { PRESETS } from './data/presets.js';
 import { seriesForGauge } from './data/expandSeries.js';
+import { fetchPrediction } from './lib/fetchPrediction.js';
 import CorridorRisk from './components/CorridorRisk.vue';
 import RiverResponse from './components/RiverResponse.vue';
 import LeanMap from './components/LeanMap.vue';
 import InspectorPanel from './components/InspectorPanel.vue';
 import PredictionPanel from './components/PredictionPanel.vue';
 
+const CORRIDOR_ID = 'a361-muchelney';
+
 const scenarios = {
   risk: scenarioRisk,
   stable: scenarioStable,
 };
 
-const predictionsByScenario = {
-  risk: predictionRisk,
-  stable: predictionStable,
-};
-
 const scenarioId = ref('risk');
 const presetId = ref('dispatch');
 const selected = ref(null);
+const predictionDoc = ref(null);
+const predictionSource = ref('mock');
+const predictionError = ref(null);
+const loadingPrediction = ref(false);
 
 const scenario = computed(() => scenarios[scenarioId.value]);
-const predictionDoc = computed(() => predictionsByScenario[scenarioId.value]);
 const preset = computed(() => PRESETS[presetId.value]);
 
 const selectedSeries = computed(() => {
-  if (!selected.value || selected.value.type !== 'gauge') return [];
+  if (!selected.value || selected.value.type !== 'gauge' || !predictionDoc.value) return [];
   return seriesForGauge(predictionDoc.value, selected.value.id);
 });
+
+async function loadPrediction() {
+  loadingPrediction.value = true;
+  predictionError.value = null;
+  try {
+    // Scenario toggle still drives mock when lake URL unset.
+    // When VITE_LAKE_API_URL is set, always hit live corridor prediction.
+    const { source, doc } = await fetchPrediction(CORRIDOR_ID, {
+      scenarioId: scenarioId.value,
+    });
+    predictionSource.value = source;
+    predictionDoc.value = doc;
+  } catch (err) {
+    predictionError.value = err instanceof Error ? err.message : String(err);
+  } finally {
+    loadingPrediction.value = false;
+  }
+}
 
 watch(scenarioId, () => {
   selected.value = null;
   presetId.value = scenario.value.preset || 'dispatch';
+  loadPrediction();
 });
+
+onMounted(loadPrediction);
 
 function setScenario(id) {
   scenarioId.value = id;
@@ -63,16 +83,20 @@ const elevatedCount = computed(
       <div>
         <h1>Operator cockpit · prediction prototype</h1>
         <p>
-          Historic-analogue prediction panel (mock lake contract) + lean map.
-          Live pins are context — prediction is the product.
+          Corridor <code>{{ CORRIDOR_ID }}</code> —
+          source: <strong>{{ predictionSource }}</strong>
+          <span v-if="loadingPrediction"> · loading…</span>
         </p>
       </div>
     </header>
 
     <div class="note">
-      <strong>Product intent.</strong> Predictions from mined EA history (mock
-      <code>floodwatch.prediction.v0</code>). See
-      <code>docs/ux-wireframes/prediction-contract.md</code>. Not a live model yet.
+      <strong>Product intent.</strong> Predictions from mined EA stage history
+      (<code>GET /v1/predictions</code> when <code>VITE_LAKE_API_URL</code> is set; else mock JSON).
+    </div>
+
+    <div v-if="predictionError" class="note" style="border-color: #7a1f1f; background: #fdecec">
+      <strong>Prediction error.</strong> {{ predictionError }}
     </div>
 
     <div class="toolbar" role="group" aria-label="Scenario">
@@ -81,21 +105,21 @@ const elevatedCount = computed(
         :aria-pressed="scenarioId === 'risk'"
         @click="setScenario('risk')"
       >
-        Scenario: at risk
+        Scenario: at risk (mock UI)
       </button>
       <button
         type="button"
         :aria-pressed="scenarioId === 'stable'"
         @click="setScenario('stable')"
       >
-        Scenario: stable
+        Scenario: stable (mock UI)
       </button>
     </div>
 
     <div class="frame">
       <div class="chrome">
         <span class="dot" /><span class="dot" /><span class="dot" />
-        floodwatch.local / cockpit · prediction-first mock
+        floodwatch.local / cockpit · prediction-first
       </div>
 
       <div class="layout">
@@ -134,7 +158,11 @@ const elevatedCount = computed(
             :route-label="scenario.route.verdictLabel"
           />
 
-          <PredictionPanel :prediction-doc="predictionDoc" :gauges="scenario.riverLevels" />
+          <PredictionPanel
+            v-if="predictionDoc"
+            :prediction-doc="predictionDoc"
+            :gauges="scenario.riverLevels"
+          />
 
           <div class="map-shell">
             <LeanMap
