@@ -70,6 +70,19 @@ jobs:
       - name: Build frontend
         run: yarn build
 
+      - name: Run dashboard regression tests
+        run: php artisan test tests/Feature/FloodWatchDashboardTest.php --compact
+        env:
+          APP_ENV: testing
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: testing
+          DB_USERNAME: sail
+          DB_PASSWORD: password
+          FLOOD_WATCH_CACHE_STORE: flood-watch-array
+          OPENAI_API_KEY: test-key-for-ci
+
       - name: Run tests
         run: php artisan test --compact
         env:
