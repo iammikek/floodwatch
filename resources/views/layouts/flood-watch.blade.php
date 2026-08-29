@@ -47,6 +47,7 @@
                 map: null,
                 tileLayer: null,
                 mapStyleOpen: false,
+                layersOpen: false,
                 minSeverity: 'auto',
                 selectedTileId: (() => {
                     try {
@@ -55,6 +56,57 @@
                     } catch (e) {}
                     return (config.tileLayers && config.tileLayers[0]) ? config.tileLayers[0].id : null;
                 })(),
+                layers: (() => {
+                    const defaults = {
+                        warnings: true,
+                        floodZones: false,
+                        riverLevels: true,
+                        roadIncidents: true,
+                        route: true,
+                    };
+                    try {
+                        const saved = typeof localStorage !== 'undefined' ? localStorage.getItem('flood-watch-map-layers') : null;
+                        if (!saved) return defaults;
+                        const parsed = JSON.parse(saved);
+                        return { ...defaults, ...(parsed || {}) };
+                    } catch (e) {
+                        return defaults;
+                    }
+                })(),
+                searchFloodLayer: null,
+                lakeWarningsLayer: null,
+                lakePolygonsLayer: null,
+                stationLayerGroup: null,
+                incidentLayerGroup: null,
+                routeLayerGroup: null,
+                toggleLayer(key) {
+                    if (!Object.prototype.hasOwnProperty.call(this.layers, key)) return;
+                    this.layers[key] = !!this.layers[key];
+                    try { localStorage.setItem('flood-watch-map-layers', JSON.stringify(this.layers)); } catch (e) {}
+                    this.syncOverlayVisibility();
+                    if (this.layers[key]) {
+                        if (key === 'warnings' && typeof this._fetchLakeWarnings === 'function') this._fetchLakeWarnings(2);
+                        if (key === 'floodZones' && typeof this._fetchInlinePolygons === 'function') this._fetchInlinePolygons();
+                        if (key === 'riverLevels' && typeof this._fetchRiverLevels === 'function') this._fetchRiverLevels(2);
+                    }
+                },
+                syncOverlayVisibility() {
+                    if (!this.map) return;
+                    const setVisible = (layer, visible) => {
+                        if (!layer) return;
+                        if (visible) {
+                            if (!this.map.hasLayer(layer)) layer.addTo(this.map);
+                        } else if (this.map.hasLayer(layer)) {
+                            this.map.removeLayer(layer);
+                        }
+                    };
+                    setVisible(this.searchFloodLayer, !!this.layers.warnings);
+                    setVisible(this.lakeWarningsLayer, !!this.layers.warnings);
+                    setVisible(this.lakePolygonsLayer, !!this.layers.floodZones);
+                    setVisible(this.stationLayerGroup, !!this.layers.riverLevels);
+                    setVisible(this.incidentLayerGroup, !!this.layers.roadIncidents);
+                    setVisible(this.routeLayerGroup, !!this.layers.route);
+                },
                 onMinSeverityChange() {
                     if (!this.map) return;
                     if (this._warnTimer) clearTimeout(this._warnTimer);
@@ -172,7 +224,6 @@
                             this.stationLayerGroup = typeof L.MarkerClusterGroup === 'function'
                                 ? L.markerClusterGroup({ animate: false })
                                 : L.layerGroup();
-                            this.stationLayerGroup.addTo(this.map);
                         }
                         this.stationLayerGroup.clearLayers();
                         const list = Array.isArray(this.stations) ? this.stations : [];
@@ -184,6 +235,7 @@
                                 this.stationLayerGroup.addLayer(m);
                             }
                         });
+                        this.syncOverlayVisibility();
                     };
                     const addMarkers = (L) => {
                         if (this.hasUser) {
@@ -194,6 +246,10 @@
                         }
                         addStationsLayer(L);
                         (() => {
+                            if (!this.searchFloodLayer) {
+                                this.searchFloodLayer = L.layerGroup();
+                            }
+                            this.searchFloodLayer.clearLayers();
                             const byArea = {};
                             (this.floods || []).forEach(f => {
                                 const id = f.floodAreaID || (f.lat != null && (f.lng != null || f.long != null) ? [f.lat, f.lng ?? f.long].join(',') : null);
@@ -203,8 +259,6 @@
                                 if (!existing || level < (existing.severityLevel ?? 4)) byArea[id] = f;
                             });
                             const deduped = Object.values(byArea);
-                            const useClusters = typeof L.MarkerClusterGroup === 'function';
-                            const floodCluster = useClusters ? L.markerClusterGroup({ animate: false }) : null;
                             deduped.forEach(f => {
                                 const geo = this.normalizeFloodPolygon(f.polygon);
                                 if (geo) {
@@ -214,46 +268,42 @@
                                         onEachFeature: (feature, layer) => {
                                             layer.bindPopup(this.floodPopup(f));
                                         }
-                                    }).addTo(this.map);
+                                    }).addTo(this.searchFloodLayer);
                                 }
                                 const flng = f.lng ?? f.long;
                                 if (f.lat != null && flng != null) {
                                     const m = L.marker([f.lat, flng], { icon: this.floodIcon(f) }).bindPopup(this.floodPopup(f));
-                                    if (floodCluster) floodCluster.addLayer(m);
-                                    else m.addTo(this.map);
+                                    this.searchFloodLayer.addLayer(m);
                                 }
                             });
-                            if (floodCluster) floodCluster.addTo(this.map);
                         })();
-                        if (typeof L.MarkerClusterGroup === 'function') {
-                            const incidentCluster = L.markerClusterGroup({ animate: false });
-                            (this.incidents || []).forEach(i => {
-                                const ilng = i.lng ?? i.long;
-                                if (i.lat != null && ilng != null) {
-                                    const m = L.marker([i.lat, ilng], { icon: this.incidentIcon(i) }).bindPopup(this.incidentPopup(i));
-                                    incidentCluster.addLayer(m);
-                                }
-                            });
-                            incidentCluster.addTo(this.map);
-                        } else {
-                            (this.incidents || []).forEach(i => {
-                                const ilng = i.lng ?? i.long;
-                                if (i.lat != null && ilng != null) {
-                                    L.marker([i.lat, ilng], { icon: this.incidentIcon(i) })
-                                        .addTo(this.map)
-                                        .bindPopup(this.incidentPopup(i));
-                                }
-                            });
+                        if (!this.incidentLayerGroup) {
+                            this.incidentLayerGroup = typeof L.MarkerClusterGroup === 'function'
+                                ? L.markerClusterGroup({ animate: false })
+                                : L.layerGroup();
                         }
+                        this.incidentLayerGroup.clearLayers();
+                        (this.incidents || []).forEach(i => {
+                            const ilng = i.lng ?? i.long;
+                            if (i.lat != null && ilng != null) {
+                                const m = L.marker([i.lat, ilng], { icon: this.incidentIcon(i) }).bindPopup(this.incidentPopup(i));
+                                this.incidentLayerGroup.addLayer(m);
+                            }
+                        });
                         if (this.routeGeometry && this.routeGeometry.length >= 2) {
+                            if (!this.routeLayerGroup) {
+                                this.routeLayerGroup = L.layerGroup();
+                            }
+                            this.routeLayerGroup.clearLayers();
                             const latLngs = this.routeGeometry.map(c => [c[1], c[0]]);
                             const routeLayer = L.polyline(latLngs, { color: '#2563eb', weight: 5, opacity: 0.8 });
-                            routeLayer.addTo(this.map);
+                            routeLayer.addTo(this.routeLayerGroup);
                             const hasSearchMarkers = this.hasUser || (this.floods && this.floods.length > 0) || (this.incidents && this.incidents.length > 0) || (this.stations && this.stations.length > 0);
                             if (!hasSearchMarkers) {
                                 this.map.fitBounds(routeLayer.getBounds(), { padding: [20, 20], maxZoom: 12 });
                             }
                         }
+                        this.syncOverlayVisibility();
                         this.map.invalidateSize();
                     };
                     this.fitToIncidents = () => {
@@ -309,6 +359,15 @@
                             if (this.polygonsUrl) {
                                 const fetchInlinePolygons = async () => {
                                     if (!(this.lakeEnabled && this.map && typeof this.map.getBounds === 'function')) return;
+                                    if (!this.layers.floodZones) {
+                                        if (this.lakePolygonsLayer) this.lakePolygonsLayer.clearLayers();
+                                        this.syncOverlayVisibility();
+                                        return;
+                                    }
+                                    if (!this.lakePolygonsLayer) {
+                                        this.lakePolygonsLayer = L.layerGroup();
+                                    }
+                                    this.lakePolygonsLayer.clearLayers();
                                     const b = this.map.getBounds();
                                     const bbox = [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()].join(',');
                                     const q = new URLSearchParams();
@@ -320,7 +379,8 @@
                                             const geo = await res.json();
                                             if (geo && geo.type && Array.isArray(geo.features)) {
                                                 const style = { color: '#f59e0b', fillColor: '#f59e0b', fillOpacity: 0.25, weight: 1, opacity: 0.6 };
-                                                L.geoJSON(geo, { style: () => style }).addTo(this.map);
+                                                L.geoJSON(geo, { style: () => style }).addTo(this.lakePolygonsLayer);
+                                                this.syncOverlayVisibility();
                                             }
                                         }
                                     } catch (e) {}
@@ -347,6 +407,7 @@
                                         } catch (e) {}
                                     }
                                 }
+                                this._fetchInlinePolygons = fetchInlinePolygons;
                             }
                             const addLakeWarningsLayer = (L) => {
                                 if (!this.map) return;
@@ -354,11 +415,16 @@
                                     this.lakeWarningsLayer = typeof L.MarkerClusterGroup === 'function'
                                         ? L.markerClusterGroup({ animate: false })
                                         : L.layerGroup();
-                                    this.lakeWarningsLayer.addTo(this.map);
                                 }
+                                this.syncOverlayVisibility();
                             };
                             const fetchLakeWarnings = (retriesLeft = 2) => {
                                 if (!(this.lakeEnabled && this.warningsUrl && this.map)) return;
+                                if (!this.layers.warnings) {
+                                    if (this.lakeWarningsLayer) this.lakeWarningsLayer.clearLayers();
+                                    this.syncOverlayVisibility();
+                                    return;
+                                }
                                 const b = this.map.getBounds();
                                 const bbox = [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()].join(',');
                                 const zoom = this.map.getZoom();
@@ -393,6 +459,7 @@
                                                 else m.addTo(this.lakeWarningsLayer);
                                             }
                                         });
+                                        this.syncOverlayVisibility();
                                     })
                                     .catch(() => {
                                         if (retriesLeft > 0) setTimeout(() => fetchLakeWarnings(retriesLeft - 1), 1000);
@@ -425,6 +492,11 @@
                                 };
                                 const fetchRiverLevels = (retriesLeft = 2) => {
                                     if (!this.riverLevelsUrl) return;
+                                    if (!this.layers.riverLevels) {
+                                        if (this.stationLayerGroup) this.stationLayerGroup.clearLayers();
+                                        this.syncOverlayVisibility();
+                                        return;
+                                    }
                                     const center = this.map && this.map.getCenter ? this.map.getCenter() : (this.center ? { lat: Number(this.center.lat), lng: Number(this.center.lng ?? this.center.long) } : null);
                                     if (!center || !Number.isFinite(center.lat) || !Number.isFinite(center.lng)) return;
                                     const zoom = this.map && this.map.getZoom ? this.map.getZoom() : 13;
@@ -458,6 +530,7 @@
                                     this.map.whenReady(() => setTimeout(() => fetchRiverLevels(2), 300));
                                 }
                                 setTimeout(() => fetchRiverLevels(2), 800);
+                                this._fetchRiverLevels = fetchRiverLevels;
                             }
                             let lastSentBounds = null;
                             const sendBounds = () => {

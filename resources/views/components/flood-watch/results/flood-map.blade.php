@@ -76,6 +76,51 @@
                         <option value="4">Severity: All</option>
                     </select>
                 </div>
+                <div @click.outside="layersOpen = false">
+                    <button
+                        type="button"
+                        @click="layersOpen = !layersOpen"
+                        class="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/95 border border-slate-200 shadow-sm text-xs font-medium text-slate-700 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 w-full justify-between"
+                        :aria-expanded="layersOpen"
+                    >
+                        <span>{{ __('flood-watch.map.operational_layers') }}</span>
+                        <svg class="w-3.5 h-3.5 shrink-0 transition-transform" :class="{ 'rotate-180': layersOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div
+                        x-show="layersOpen"
+                        x-transition:enter="transition ease-out duration-100"
+                        x-transition:enter-start="opacity-0 scale-95"
+                        x-transition:enter-end="opacity-100 scale-100"
+                        x-transition:leave="transition ease-in duration-75"
+                        x-transition:leave-start="opacity-100 scale-100"
+                        x-transition:leave-end="opacity-0 scale-95"
+                        class="absolute top-full right-0 mt-1 w-56 bg-white border border-slate-200 shadow-lg z-10 p-2 space-y-1"
+                        style="display: none;"
+                    >
+                        <label class="flex items-center justify-between gap-3 rounded px-2 py-1.5 text-xs text-slate-700 hover:bg-slate-50">
+                            <span>{{ __('flood-watch.map.live_warnings') }}</span>
+                            <input type="checkbox" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500" x-model="layers.warnings" @change="toggleLayer('warnings')">
+                        </label>
+                        <label class="flex items-center justify-between gap-3 rounded px-2 py-1.5 text-xs text-slate-700 hover:bg-slate-50">
+                            <span>{{ __('flood-watch.map.flood_zones') }}</span>
+                            <input type="checkbox" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500" x-model="layers.floodZones" @change="toggleLayer('floodZones')">
+                        </label>
+                        <label class="flex items-center justify-between gap-3 rounded px-2 py-1.5 text-xs text-slate-700 hover:bg-slate-50">
+                            <span>{{ __('flood-watch.map.river_gauges') }}</span>
+                            <input type="checkbox" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500" x-model="layers.riverLevels" @change="toggleLayer('riverLevels')">
+                        </label>
+                        <label class="flex items-center justify-between gap-3 rounded px-2 py-1.5 text-xs text-slate-700 hover:bg-slate-50">
+                            <span>{{ __('flood-watch.map.road_disruption') }}</span>
+                            <input type="checkbox" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500" x-model="layers.roadIncidents" @change="toggleLayer('roadIncidents')">
+                        </label>
+                        @if ($routeGeometry)
+                            <label class="flex items-center justify-between gap-3 rounded px-2 py-1.5 text-xs text-slate-700 hover:bg-slate-50">
+                                <span>{{ __('flood-watch.map.active_route') }}</span>
+                                <input type="checkbox" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500" x-model="layers.route" @change="toggleLayer('route')">
+                            </label>
+                        @endif
+                    </div>
+                </div>
             </div>
         </div>
         @if (count($incidents) > 0)
@@ -102,18 +147,18 @@
         @endif
         <div class="flex flex-wrap gap-x-4 gap-y-2 px-3 py-2 bg-slate-50 border-t border-slate-200 text-xs text-slate-600">
             @if ($hasUserLocation)
-                <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon flood-map-legend-user">📍</span> {{ __('flood-watch.dashboard.your_location') }}</span>
+            <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon flood-map-legend-user">📍</span> {{ __('flood-watch.dashboard.your_location') }}</span>
             @endif
             @if ($routeGeometry)
-                <span class="flex items-center gap-1.5"><span class="inline-block w-4 h-0.5 bg-blue-600 rounded"></span> {{ __('flood-watch.dashboard.route_line') }}</span>
+                <span class="flex items-center gap-1.5"><span class="inline-block w-4 h-0.5 bg-blue-600 rounded"></span> {{ __('flood-watch.map.active_route') }}</span>
             @endif
-            <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon">💧</span> {{ __('flood-watch.dashboard.river_gauge') }}</span>
+            <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon">💧</span> {{ __('flood-watch.map.river_gauges') }}</span>
             <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon">⚙</span> {{ __('flood-watch.dashboard.pumping_station') }}</span>
             <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon">🛡</span> {{ __('flood-watch.dashboard.barrier') }}</span>
             <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon">〰</span> {{ __('flood-watch.dashboard.drain') }}</span>
-            <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon flood-map-marker-incident">🛣</span> {{ __('flood-watch.dashboard.road_incident') }}</span>
-            <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon flood-map-legend-flood">⚠</span> {{ __('flood-watch.dashboard.flood_warning') }}</span>
-            <span class="flex items-center gap-1.5"><span class="flood-map-legend-polygon" style="display:inline-block;width:12px;height:12px;background:#f59e0b;opacity:0.4;border:1px solid #f59e0b;border-radius:2px"></span> {{ __('flood-watch.dashboard.flood_area') }}</span>
+            <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon flood-map-marker-incident">🛣</span> {{ __('flood-watch.map.road_disruption') }}</span>
+            <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon flood-map-legend-flood">⚠</span> {{ __('flood-watch.map.live_warnings') }}</span>
+            <span class="flex items-center gap-1.5"><span class="flood-map-legend-polygon" style="display:inline-block;width:12px;height:12px;background:#f59e0b;opacity:0.4;border:1px solid #f59e0b;border-radius:2px"></span> {{ __('flood-watch.map.flood_zones') }}</span>
             <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon flood-map-legend-elevated">●</span> {{ __('flood-watch.dashboard.elevated') }}</span>
             <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon flood-map-legend-expected">●</span> {{ __('flood-watch.dashboard.expected') }}</span>
             <span class="flex items-center gap-1.5"><span class="flood-map-legend-icon flood-map-legend-low">●</span> {{ __('flood-watch.dashboard.low') }}</span>

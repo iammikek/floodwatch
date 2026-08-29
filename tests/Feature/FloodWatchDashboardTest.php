@@ -32,7 +32,92 @@ class FloodWatchDashboardTest extends TestCase
             ->set('layoutVariant', 'desktop')
             ->assertSee(__('flood-watch.dashboard.flood_risk'))
             ->assertSee(__('flood-watch.dashboard.road_status'))
-            ->assertSee(__('flood-watch.dashboard.forecast_outlook'));
+            ->assertSee(__('flood-watch.dashboard.forecast_outlook'))
+            ->assertSee(__('flood-watch.dashboard.corridor_risk'))
+            ->assertSee(__('flood-watch.dashboard.river_response'));
+    }
+
+    public function test_corridor_risk_panel_shows_route_headline_counts_and_summary(): void
+    {
+        Livewire::test('flood-watch-dashboard')
+            ->set('assistantResponse', 'Summary.')
+            ->set('layoutVariant', 'desktop')
+            ->set('floods', [
+                ['severityLevel' => 1, 'severity' => 'Severe Flood Warning', 'description' => 'Critical flood'],
+                ['severityLevel' => 2, 'severity' => 'Flood Warning', 'description' => 'Expected flooding'],
+                ['severityLevel' => 3, 'severity' => 'Flood Alert', 'description' => 'Possible flooding'],
+            ])
+            ->set('incidents', [
+                ['road' => 'A361', 'statusLabel' => 'Closed'],
+            ])
+            ->set('riverLevels', [
+                ['station' => 'Langport', 'levelStatus' => 'elevated', 'value' => 3.42, 'unit' => 'm'],
+            ])
+            ->set('routeCheckResult', [
+                'verdict' => 'blocked',
+                'summary' => 'Road flooding blocks the corridor.',
+            ])
+            ->assertSee(__('flood-watch.dashboard.headline_severe_flooding'))
+            ->assertSee('Road flooding blocks the corridor.')
+            ->assertSee(__('flood-watch.route_check.verdict_blocked'))
+            ->assertSee('1')
+            ->assertSee(__('flood-watch.dashboard.severe_warnings'))
+            ->assertSee(__('flood-watch.dashboard.flood_warnings'))
+            ->assertSee(__('flood-watch.dashboard.flood_alerts'))
+            ->assertSee(trans_choice('flood-watch.dashboard.elevated_gauges_count', 1))
+            ->assertSee(trans_choice('flood-watch.dashboard.active_incidents_count', 1));
+    }
+
+    public function test_river_response_panel_shows_status_mix_and_prioritised_gauges(): void
+    {
+        $html = Livewire::test('flood-watch-dashboard')
+            ->set('assistantResponse', 'Summary.')
+            ->set('layoutVariant', 'desktop')
+            ->set('riverLevels', [
+                ['station' => 'River Tone', 'river' => 'Tone', 'levelStatus' => 'expected', 'value' => 1.11, 'unit' => 'm', 'dateTime' => '2026-07-12T09:30:00Z'],
+                ['station' => 'River Parrett', 'river' => 'Parrett', 'levelStatus' => 'elevated', 'value' => 3.42, 'unit' => 'm', 'dateTime' => '2026-07-12T10:00:00Z'],
+                ['station' => 'River Cary', 'river' => 'Cary', 'levelStatus' => 'low', 'value' => 0.82, 'unit' => 'm', 'dateTime' => '2026-07-12T08:00:00Z'],
+                ['station' => 'River Yeo', 'river' => 'Yeo', 'levelStatus' => 'mystery', 'value' => 0.40, 'unit' => 'm', 'dateTime' => '2026-07-12T07:00:00Z'],
+            ])
+            ->html();
+
+        expect($html)
+            ->toContain(__('flood-watch.dashboard.river_response'))
+            ->toContain(__('flood-watch.dashboard.priority_gauges'))
+            ->toContain(__('flood-watch.dashboard.monitored_stations'))
+            ->toContain('River Parrett')
+            ->toContain('River Tone')
+            ->toContain('River Cary')
+            ->toContain('River Yeo');
+
+        expect(strpos($html, 'River Parrett'))->toBeLessThan(strpos($html, 'River Tone'));
+    }
+
+    public function test_river_response_panel_shows_empty_state_without_gauges(): void
+    {
+        Livewire::test('flood-watch-dashboard')
+            ->set('assistantResponse', 'Summary.')
+            ->set('layoutVariant', 'desktop')
+            ->set('riverLevels', [])
+            ->assertSee(__('flood-watch.dashboard.no_river_levels'));
+    }
+
+    public function test_map_shows_operational_layer_controls_and_labels(): void
+    {
+        Livewire::test('flood-watch-dashboard')
+            ->set('assistantResponse', 'Summary.')
+            ->set('mapCenter', ['lat' => 51.0358, 'lng' => -2.8318])
+            ->set('layoutVariant', 'desktop')
+            ->set('routeCheckResult', [
+                'route_geometry' => [[-2.8318, 51.0358], [-2.5778, 51.4545]],
+                'route_key' => 'route-key',
+            ])
+            ->assertSee(__('flood-watch.map.operational_layers'))
+            ->assertSee(__('flood-watch.map.live_warnings'))
+            ->assertSee(__('flood-watch.map.flood_zones'))
+            ->assertSee(__('flood-watch.map.river_gauges'))
+            ->assertSee(__('flood-watch.map.road_disruption'))
+            ->assertSee(__('flood-watch.map.active_route'));
     }
 
     public function test_flood_watch_dashboard_has_location_input(): void
@@ -1288,7 +1373,7 @@ class FloodWatchDashboardTest extends TestCase
             ->html();
 
         expect($html)->toContain('grid-cols-2')
-            ->toContain('grid-cols-3');
+            ->toContain('lg:grid-cols-4');
     }
 
     public function test_only_one_results_layout_rendered_no_duplicate_ids(): void
