@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>02 Map layers — Flood Watch wireframe</title>
+  <link rel="stylesheet" href="./wireframe.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600;650&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="page">
+    <header class="topbar">
+      <div>
+        <h1>02 · Map layers</h1>
+        <p>Operational layers control — from flood-map WIP.</p>
+      </div>
+      <nav class="nav" aria-label="Wireframe pages">
+        <a href="./index.html">Index</a>
+        <a href="./01-operator-cockpit.html">01 Cockpit</a>
+        <a href="./02-map-layers.html" aria-current="page">02 Map layers</a>
+        <a href="./03-upstream-trends.html">03 Trends</a>
+      </nav>
+    </header>
+
+    <div class="note">
+      <strong>Constraint.</strong> Fewer layers on by default. No popup-heavy markers.
+      Prefer <em>presets</em> that swap a small set of overlays; detail goes to the inspector panel (see <a href="./04-lean-map.html">04</a>).
+    </div>
+
+    <div class="frame">
+      <div class="chrome"><span class="dot"></span><span class="dot"></span><span class="dot"></span> sparse overlays · presets first</div>
+      <div class="map" style="min-height:420px;">
+        <div class="map-tools" style="width:14rem;">
+          <div class="box">Basemap · Streets ▾</div>
+          <div class="box" style="border-style:solid; border-width:2px;">
+            <p class="label" style="margin:0;">View preset</p>
+            <p class="copy" style="margin:0.35rem 0;"><strong>[ Dispatch ]</strong> · Hydrology · Minimal</p>
+            <div class="stat"><span>Route</span><b>on</b></div>
+            <div class="stat"><span>Warnings (cap)</span><b>on</b></div>
+            <div class="stat"><span>Roads</span><b>on</b></div>
+            <div class="stat"><span>Gauges</span><b>off</b></div>
+            <div class="stat"><span>Flood zones</span><b>off</b></div>
+            <p class="annot">Dispatch = lean; Hydrology turns gauges on, roads optional</p>
+          </div>
+          <div class="box dashed">
+            <p class="label">Advanced ▾</p>
+            <p class="copy" style="margin:0;">Per-layer toggles hidden until needed</p>
+          </div>
+        </div>
+        <div class="map-blob" style="left:30%; top:25%; width:18%; height:22%; opacity:0.5;"></div>
+        <div class="map-route"></div>
+        <div class="map-pin elevated" style="left:36%; top:42%; display:none;"></div>
+        <div class="map-pin incident" style="left:50%; top:55%;"></div>
+        <div class="map-legend">
+          <span>Route</span>
+          <span>Warnings (limited)</span>
+          <span>Road disruption</span>
+          <span>Click → panel, not popup</span>
+        </div>
+      </div>
+    </div>
+
+    <section class="review-list">
+      <h2>Decide</h2>
+      <ol>
+        <li>Default preset = Dispatch (route + capped warnings + roads)?</li>
+        <li>Flood zones only in Hydrology / on demand (heavy polygons)?</li>
+        <li>Hard cap markers per viewport (e.g. top-N by severity) — yes/no?</li>
+      </ol>
+    </section>
+  </div>
+</body>
+</html>
