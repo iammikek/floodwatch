@@ -21,6 +21,7 @@
     'forecast',
     'weather',
     'assistantResponse',
+    'corridorPrediction' => null,
     'wirePoll' => false,
 ])
 
@@ -54,6 +55,7 @@
         :incidents="$incidents"
         :river-levels="$riverLevels"
         :route-check-result="$routeCheckResult"
+        :corridor-prediction="$corridorPrediction"
     />
 
     {{-- AI summary / advice (reuses summary component) --}}

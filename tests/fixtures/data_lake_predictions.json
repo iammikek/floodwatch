@@ -1,0 +1,51 @@
+{
+  "schema": "floodwatch.prediction.v0",
+  "as_of": "2026-08-29T12:00:00Z",
+  "region": "SOM",
+  "corridor": {
+    "id": "a361-muchelney",
+    "label": "A361 Muchelney corridor"
+  },
+  "prediction": {
+    "verdict": "at_risk",
+    "verdictLabel": "At risk within window",
+    "timeToImpactHours": 6,
+    "impactWindow": {
+      "from": "2026-08-29T15:00:00Z",
+      "to": "2026-08-29T21:00:00Z"
+    },
+    "confidence": 0.62,
+    "confidenceLabel": "Medium",
+    "summary": "Historic stage analogues suggest corridor disruption within about 6 hours."
+  },
+  "drivers": [
+    {
+      "type": "gauge_trajectory",
+      "ref": "52119-level-stage-i-15_min-mASD",
+      "label": "Gaw Bridge · River Parrett",
+      "signal": "rising_toward_high"
+    }
+  ],
+  "affectedAreas": [
+    {
+      "id": "area-muchelney-lanes",
+      "label": "Muchelney low lanes",
+      "kind": "road_segment",
+      "risk": "high"
+    }
+  ],
+  "dispatch": {
+    "implication": "Hold non-urgent A361 runs through Muchelney after 15:00 local.",
+    "safeToPass": false
+  },
+  "method": {
+    "name": "historic_stage_trajectory_v0",
+    "inputs": ["ea_stage_history", "live_stage"],
+    "notes": "v0 historic stage trajectory from mined EA readings — illustrative skill, not validated forecast."
+  },
+  "observables": {
+    "seriesStart": "2026-08-28T21:00:00Z",
+    "keyGaugeId": "52119-level-stage-i-15_min-mASD",
+    "gaugeSeries": {}
+  }
+}

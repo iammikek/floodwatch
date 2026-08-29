@@ -167,6 +167,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Corridor predictions (data lake historic-analogue v0)
+    |--------------------------------------------------------------------------
+    */
+
+    'predictions' => [
+        'enabled' => (bool) env('FLOOD_WATCH_PREDICTIONS_ENABLED', true),
+        'default_corridor' => env('FLOOD_WATCH_PREDICTION_CORRIDOR', 'a361-muchelney'),
+        'history_days' => (int) env('FLOOD_WATCH_PREDICTION_HISTORY_DAYS', 120),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Somerset Council roadworks and travel (scraped)
     |--------------------------------------------------------------------------
     |

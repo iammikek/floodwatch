@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Enums\IncidentType;
 use App\Models\LocationBookmark;
 use App\Models\UserSearch;
+use App\Services\CorridorPredictionService;
 use App\Services\FloodWatchService;
 use App\Services\FloodWatchTrendService;
 use App\Services\LocationResolver;
@@ -41,6 +42,9 @@ class FloodWatchDashboard extends Component
     public array $weather = [];
 
     public array $riverLevels = [];
+
+    /** @var array<string, mixed>|null floodwatch.prediction.v0 from data lake */
+    public ?array $corridorPrediction = null;
 
     public ?array $mapCenter = null;
 
@@ -446,14 +450,14 @@ class FloodWatchDashboard extends Component
             $this->stream(to: 'searchStatus', content: __('flood-watch.progress.looking_up_location'), replace: true);
             $validation = $locationResolver->resolve($locationTrimmed);
             if (! $validation['valid']) {
-                $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'mapBounds', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
+                $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'corridorPrediction', 'mapCenter', 'mapBounds', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
                 $this->error = $validation['error'] ?? __('flood-watch.errors.invalid_location');
                 $this->loading = false;
 
                 return;
             }
             if (! $validation['in_area']) {
-                $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'mapBounds', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
+                $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'corridorPrediction', 'mapCenter', 'mapBounds', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
                 $this->error = $validation['error'] ?? __('flood-watch.errors.outside_area');
                 $this->loading = false;
 
@@ -471,7 +475,7 @@ class FloodWatchDashboard extends Component
         $result = $locationResolver->reverseFromCoords($lat, $lng);
 
         if (! $result['valid']) {
-            $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'mapBounds', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
+            $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'corridorPrediction', 'mapCenter', 'mapBounds', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
             $this->error = $result['error'] ?? __('flood-watch.dashboard.gps_error');
             $this->loading = false;
 
@@ -479,7 +483,7 @@ class FloodWatchDashboard extends Component
         }
 
         if (! $result['in_area']) {
-            $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'mapBounds', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
+            $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'corridorPrediction', 'mapCenter', 'mapBounds', 'hasUserLocation', 'lastChecked', 'retryAfterTimestamp']);
             $this->error = __('flood-watch.errors.outside_area');
             $this->loading = false;
 
@@ -509,7 +513,7 @@ class FloodWatchDashboard extends Component
         UserSearchService $userSearchService,
         ?array $validation
     ): void {
-        $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'mapCenter', 'mapBounds', 'hasUserLocation', 'lastChecked', 'error', 'retryAfterTimestamp', 'displayLocation', 'outcode']);
+        $this->reset(['assistantResponse', 'floods', 'incidents', 'forecast', 'weather', 'riverLevels', 'corridorPrediction', 'mapCenter', 'mapBounds', 'hasUserLocation', 'lastChecked', 'error', 'retryAfterTimestamp', 'displayLocation', 'outcode']);
         $this->loading = true;
 
         if (Auth::guest()) {
@@ -555,6 +559,7 @@ class FloodWatchDashboard extends Component
                 $this->forecast = $result['forecast'] ?? [];
                 $this->weather = $result['weather'] ?? [];
                 $this->riverLevels = $result['riverLevels'] ?? [];
+                $this->corridorPrediction = null;
                 $this->lastChecked = $result['lastChecked'] ?? null;
                 $lat = $userLat ?? config('flood-watch.default_lat');
                 $lng = $userLng ?? config('flood-watch.default_lng');
@@ -576,6 +581,7 @@ class FloodWatchDashboard extends Component
             $this->forecast = $result['forecast'] ?? [];
             $this->weather = $result['weather'] ?? [];
             $this->riverLevels = $result['riverLevels'] ?? [];
+            $this->corridorPrediction = app(CorridorPredictionService::class)->getPrediction();
             $lat = $userLat ?? config('flood-watch.default_lat');
             $lng = $userLng ?? config('flood-watch.default_lng');
             $this->mapCenter = ['lat' => $lat, 'lng' => $lng];
@@ -795,6 +801,7 @@ class FloodWatchDashboard extends Component
         $this->forecast = is_array($data['forecast'] ?? null) ? $data['forecast'] : [];
         $this->weather = is_array($data['weather'] ?? null) ? $data['weather'] : [];
         $this->riverLevels = is_array($data['riverLevels'] ?? null) ? $data['riverLevels'] : [];
+        $this->corridorPrediction = is_array($data['corridorPrediction'] ?? null) ? $data['corridorPrediction'] : null;
         $this->mapCenter = is_array($data['mapCenter'] ?? null) ? $data['mapCenter'] : null;
         $this->hasUserLocation = (bool) ($data['hasUserLocation'] ?? false);
         $this->lastChecked = is_string($data['lastChecked'] ?? null) ? $data['lastChecked'] : null;

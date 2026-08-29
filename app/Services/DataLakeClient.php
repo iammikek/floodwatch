@@ -237,4 +237,15 @@ class DataLakeClient
 
         return $this->fetchBinary("/v1/warnings/tiles/{$z}/{$x}/{$y}.pbf", $query, $ifNoneMatch);
     }
+
+    public function getPredictions(
+        string $corridor,
+        int $historyDays = 120,
+        ?string $ifNoneMatch = null
+    ): DataLakeResponse {
+        return $this->fetch('/v1/predictions', [
+            'corridor' => $corridor,
+            'history_days' => $historyDays,
+        ], $ifNoneMatch);
+    }
 }
