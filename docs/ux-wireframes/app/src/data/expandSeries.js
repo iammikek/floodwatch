@@ -1,5 +1,6 @@
 /**
  * Expand compact hour-value arrays into { t, v } points for sparklines.
+ * Works with prediction.observables or legacy trends objects.
  */
 export function expandHourSeries(values, seriesStartIso) {
   const start = Date.parse(seriesStartIso);
@@ -10,12 +11,22 @@ export function expandHourSeries(values, seriesStartIso) {
   }));
 }
 
-export function seriesForGauge(trends, gaugeId) {
-  if (!trends?.gaugeSeries?.[gaugeId]) return [];
-  return expandHourSeries(trends.gaugeSeries[gaugeId], trends.seriesStart);
+function observables(bundle) {
+  return bundle?.observables ?? bundle ?? {};
 }
 
-export function rainfallSeries(trends) {
-  if (!trends?.rainfallUpstreamMm) return [];
-  return expandHourSeries(trends.rainfallUpstreamMm, trends.seriesStart);
+export function seriesForGauge(bundle, gaugeId) {
+  const obs = observables(bundle);
+  if (!obs.gaugeSeries?.[gaugeId]) return [];
+  return expandHourSeries(obs.gaugeSeries[gaugeId], obs.seriesStart);
+}
+
+export function rainfallSeries(bundle) {
+  const obs = observables(bundle);
+  if (!obs.rainfallUpstreamMm) return [];
+  return expandHourSeries(obs.rainfallUpstreamMm, obs.seriesStart);
+}
+
+export function keyGaugeId(bundle) {
+  return observables(bundle).keyGaugeId ?? null;
 }

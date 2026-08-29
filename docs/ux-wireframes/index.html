@@ -14,61 +14,38 @@
     <header class="topbar">
       <div>
         <h1>Flood Watch UX wireframes</h1>
-        <p>Operator cockpit prototypes for review — not production UI. Mapped from <code>feature/commercial-dashboard</code> WIP.</p>
+        <p>Prediction-first logistics cockpit — mined EA history → time-to-impact.</p>
       </div>
       <nav class="nav" aria-label="Wireframe pages">
         <a href="./index.html" aria-current="page">Index</a>
         <a href="./01-operator-cockpit.html">01 Cockpit</a>
-        <a href="./02-map-layers.html">02 Map layers</a>
-        <a href="./03-upstream-trends.html">03 Trends</a>
+        <a href="./02-map-layers.html">02 Layers</a>
         <a href="./04-lean-map.html">04 Lean map</a>
+        <a href="./prediction-contract.md">Contract</a>
       </nav>
     </header>
 
     <div class="note">
-      <strong>Purpose.</strong> Review hierarchy and operator job-to-be-done before committing to more app code.
-      Fake Somerset corridor data. Open the HTML files locally in a browser.
+      <strong>Purpose.</strong> UX for predictions driven by mined EA history — not popup-dense live maps.
+      Vue app: <code>cd app && npm install && npm run dev</code> → http://localhost:5177/
+      Contract: <a href="./prediction-contract.md">prediction-contract.md</a> (<code>floodwatch.prediction.v0</code>).
     </div>
 
     <section class="box" style="margin-bottom:1rem;">
-      <p class="label">Interactive Vue prototype</p>
-      <p style="margin:0.35rem 0; font-size:0.92rem;">
-        Real components + mock JSON live in <code>app/</code>.
-        From that folder: <code>npm install && npm run dev</code> (port 5177).
-      </p>
-      <p style="margin:0; font-size:0.92rem;">
-        <a href="./app/"><strong>Open Vue app</strong></a> (after <code>npm run dev</code> — Vite serves <code>/</code>, not this static link).
-      </p>
-    </section>
-
-    <section class="box" style="margin-bottom:1rem;">
-      <p class="label">Design constraints (agreed direction)</p>
+      <p class="label">Design constraints</p>
       <ul style="margin:0.35rem 0 0; padding-left:1.2rem; font-size:0.92rem;">
-        <li><strong>Lean map</strong> — spatial only; avoid dense markers and popup-heavy UX (slow to render/refresh).</li>
-        <li><strong>Detail in panels</strong> — select a feature → inspector / corridor / river strips update.</li>
-        <li><strong>Client ownership of the map</strong> — Livewire is questionable for this surface; Vue (or Inertia+Vue island) is the preferred spike for scale/performance. Laravel + lake stay the backends.</li>
+        <li><strong>Prediction is the product</strong> — live map is spatial context.</li>
+        <li><strong>Lean map</strong> — select → inspector; no popup-heavy UX.</li>
+        <li><strong>Vue island</strong> for map + prediction panels; Laravel + lake stay backends.</li>
       </ul>
     </section>
 
     <section class="box">
-      <p class="label">Screens</p>
+      <p class="label">Artifacts</p>
       <ol>
-        <li><a href="./01-operator-cockpit.html"><strong>01 Operator cockpit</strong></a> — risk + route, corridor risk strip, map, summary cards, river response. Toggle <em>at risk</em> vs <em>stable</em>.</li>
-        <li><a href="./02-map-layers.html"><strong>02 Map layers</strong></a> — prefer presets over many toggles; keep default layers sparse.</li>
-        <li><a href="./03-upstream-trends.html"><strong>03 Upstream trends (stub)</strong></a> — near-term product idea; fake series. Not in Blade WIP.</li>
-        <li><a href="./04-lean-map.html"><strong>04 Lean map + inspector</strong></a> — selection → panel; no popovers as primary info.</li>
-      </ol>
-    </section>
-
-    <section class="review-list">
-      <h2>Review questions</h2>
-      <ol>
-        <li>Does corridor risk belong above the map, or should the map lead?</li>
-        <li>Are flood exposure counts + route verdict redundant with the four summary cards below the map?</li>
-        <li>Is river response the right depth for dispatch, or should it collapse until elevated?</li>
-        <li>Layer <em>presets</em> (Dispatch / Hydrology) vs a full checkbox menu?</li>
-        <li>For trends: same page as cockpit, or a dedicated “outlook” mode?</li>
-        <li>Spike Vue cockpit island next, or finish HTML wireframe iteration first?</li>
+        <li><strong>Vue app</strong> (<code>app/</code>) — prediction panel + lean map + mock prediction JSON.</li>
+        <li><a href="./01-operator-cockpit.html">01</a> · <a href="./02-map-layers.html">02</a> · <a href="./04-lean-map.html">04</a> — static wireframes.</li>
+        <li><a href="./prediction-contract.md">Prediction contract</a> — proposed lake API shape.</li>
       </ol>
     </section>
   </div>

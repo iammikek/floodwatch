@@ -2,24 +2,24 @@
 import { computed, ref, watch } from 'vue';
 import scenarioRisk from './data/scenario-risk.json';
 import scenarioStable from './data/scenario-stable.json';
-import trendsRisk from './data/trends-risk.json';
-import trendsStable from './data/trends-stable.json';
+import predictionRisk from './data/prediction-risk.json';
+import predictionStable from './data/prediction-stable.json';
 import { PRESETS } from './data/presets.js';
 import { seriesForGauge } from './data/expandSeries.js';
 import CorridorRisk from './components/CorridorRisk.vue';
 import RiverResponse from './components/RiverResponse.vue';
 import LeanMap from './components/LeanMap.vue';
 import InspectorPanel from './components/InspectorPanel.vue';
-import UpstreamOutlook from './components/UpstreamOutlook.vue';
+import PredictionPanel from './components/PredictionPanel.vue';
 
 const scenarios = {
   risk: scenarioRisk,
   stable: scenarioStable,
 };
 
-const trendsByScenario = {
-  risk: trendsRisk,
-  stable: trendsStable,
+const predictionsByScenario = {
+  risk: predictionRisk,
+  stable: predictionStable,
 };
 
 const scenarioId = ref('risk');
@@ -27,12 +27,12 @@ const presetId = ref('dispatch');
 const selected = ref(null);
 
 const scenario = computed(() => scenarios[scenarioId.value]);
-const trends = computed(() => trendsByScenario[scenarioId.value]);
+const predictionDoc = computed(() => predictionsByScenario[scenarioId.value]);
 const preset = computed(() => PRESETS[presetId.value]);
 
 const selectedSeries = computed(() => {
   if (!selected.value || selected.value.type !== 'gauge') return [];
-  return seriesForGauge(trends.value, selected.value.id);
+  return seriesForGauge(predictionDoc.value, selected.value.id);
 });
 
 watch(scenarioId, () => {
@@ -55,39 +55,24 @@ function onSelect(feature) {
 const elevatedCount = computed(
   () => scenario.value.riverLevels.filter((g) => g.levelStatus === 'elevated').length,
 );
-
-const floodSummary = computed(() => {
-  const floods = scenario.value.floods;
-  if (!floods.length) return 'No flood warnings in view.';
-  const counts = {};
-  for (const f of floods) {
-    counts[f.severity] = (counts[f.severity] || 0) + 1;
-  }
-  return Object.entries(counts)
-    .map(([label, n]) => `${label}: ${n}`)
-    .join('; ');
-});
-
-const roadSummary = computed(() => {
-  const incidents = scenario.value.incidents;
-  if (!incidents.length) return 'Roads clear';
-  return incidents.map((i) => `${i.road} ${i.statusLabel}`).join('; ');
-});
 </script>
 
 <template>
   <div class="page">
     <header class="topbar">
       <div>
-        <h1>Operator cockpit · Vue prototype</h1>
-        <p>Lean map + inspector sparklines + upstream outlook (mock JSON).</p>
+        <h1>Operator cockpit · prediction prototype</h1>
+        <p>
+          Historic-analogue prediction panel (mock lake contract) + lean map.
+          Live pins are context — prediction is the product.
+        </p>
       </div>
     </header>
 
     <div class="note">
-      <strong>Prototype only.</strong> Scenarios in
-      <code>src/data/scenario-*.json</code>; trends in
-      <code>src/data/trends-*.json</code>. Not wired to Laravel or the lake.
+      <strong>Product intent.</strong> Predictions from mined EA history (mock
+      <code>floodwatch.prediction.v0</code>). See
+      <code>docs/ux-wireframes/prediction-contract.md</code>. Not a live model yet.
     </div>
 
     <div class="toolbar" role="group" aria-label="Scenario">
@@ -110,7 +95,7 @@ const roadSummary = computed(() => {
     <div class="frame">
       <div class="chrome">
         <span class="dot" /><span class="dot" /><span class="dot" />
-        floodwatch.local / cockpit · Vue island mock
+        floodwatch.local / cockpit · prediction-first mock
       </div>
 
       <div class="layout">
@@ -149,7 +134,7 @@ const roadSummary = computed(() => {
             :route-label="scenario.route.verdictLabel"
           />
 
-          <UpstreamOutlook :trends="trends" :gauges="scenario.riverLevels" />
+          <PredictionPanel :prediction-doc="predictionDoc" :gauges="scenario.riverLevels" />
 
           <div class="map-shell">
             <LeanMap
@@ -166,26 +151,6 @@ const roadSummary = computed(() => {
             />
             <InspectorPanel :feature="selected" :series="selectedSeries" />
           </div>
-
-          <div class="grid-4">
-            <div class="box">
-              <p class="label">Flood exposure</p>
-              <p class="copy">{{ floodSummary }}</p>
-            </div>
-            <div class="box">
-              <p class="label">Road status</p>
-              <p class="copy">{{ roadSummary }}</p>
-            </div>
-            <div class="box">
-              <p class="label">Current route</p>
-              <p class="copy">{{ scenario.route.summary }}</p>
-            </div>
-            <div class="box">
-              <p class="label">Forecast outlook</p>
-              <p class="copy">{{ scenario.forecastOutlook }}</p>
-            </div>
-          </div>
-          <p class="annot">Summary cards may be redundant with corridor strip — review later</p>
 
           <RiverResponse
             :gauges="scenario.riverLevels"
