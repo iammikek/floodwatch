@@ -19,6 +19,9 @@ exclude = [
     "https://status\\.openai\\.com/.*",
 ]
 
+# Ignore Vite app deps under wireframes (lychee would otherwise crawl them)
+exclude_path = ["docs/ux-wireframes/app/node_modules"]
+
 # Accept redirects and common bot-block / rate-limit responses as non-fatal in CI
 accept = [200, 204, 301, 302, 307, 308, 403, 429]
 

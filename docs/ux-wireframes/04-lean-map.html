@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>04 Lean map — Flood Watch wireframe</title>
+  <link rel="stylesheet" href="./wireframe.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600;650&display=swap" rel="stylesheet" />
+  <style>
+    .split {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 0.75rem;
+      min-height: 420px;
+    }
+    @media (max-width: 900px) { .split { grid-template-columns: 1fr; } }
+    .map-lean .map-blob { opacity: 0.55; }
+    .map-lean .map-pin.selected {
+      width: 14px; height: 14px;
+      outline: 2px solid var(--annot);
+      outline-offset: 2px;
+    }
+    .do-dont {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+    @media (max-width: 700px) { .do-dont { grid-template-columns: 1fr; } }
+    .do-dont .box h3 { margin: 0 0 0.4rem; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="topbar">
+      <div>
+        <h1>04 · Lean map + panel detail</h1>
+        <p>Design rule: map is spatial; detail lives in panels — not popovers.</p>
+      </div>
+      <nav class="nav" aria-label="Wireframe pages">
+        <a href="./index.html">Index</a>
+        <a href="./01-operator-cockpit.html">01 Cockpit</a>
+        <a href="./02-map-layers.html">02 Layers</a>
+        <a href="./03-upstream-trends.html">03 Trends</a>
+        <a href="./04-lean-map.html" aria-current="page">04 Lean map</a>
+      </nav>
+    </header>
+
+    <div class="note">
+      <strong>Principle.</strong> Dense markers + Leaflet popups slow render and pan/refresh.
+      Keep overlays sparse; on select, drive the <em>inspector panel</em> (and corridor / river strips). Map stays dumb and fast.
+    </div>
+
+    <div class="frame">
+      <div class="chrome"><span class="dot"></span><span class="dot"></span><span class="dot"></span> click gauge → panel updates · no popup</div>
+      <div class="split">
+        <div class="map map-lean" style="min-height:400px;">
+          <div class="map-tools" style="width:9.5rem;">
+            <div class="box">Layers · Dispatch ▾</div>
+            <div class="box">Sev · auto</div>
+          </div>
+          <div class="map-blob" style="left:26%; top:24%; width:20%; height:26%;"></div>
+          <div class="map-route"></div>
+          <div class="map-pin elevated" style="left:32%; top:38%;"></div>
+          <div class="map-pin elevated selected" style="left:46%; top:34%;" title="Selected"></div>
+          <div class="map-pin" style="left:58%; top:48%;"></div>
+          <div class="map-pin incident" style="left:40%; top:56%;"></div>
+          <div class="map-legend">
+            <span>Few symbols</span>
+            <span>No popup chrome</span>
+            <span>Selection ring only</span>
+          </div>
+        </div>
+
+        <div class="box" style="display:flex; flex-direction:column; gap:0.65rem;">
+          <p class="label">Inspector · selected feature</p>
+          <p class="title">Muchelney · River Parrett</p>
+          <div class="stat"><span>Status</span><b class="danger">Elevated</b></div>
+          <div class="stat"><span>Level</span><b>2.18 m</b></div>
+          <div class="stat"><span>Updated</span><b>29 Aug, 09:00</b></div>
+          <div class="stat"><span>Typical range</span><b>0.40–1.90 m</b></div>
+          <p class="copy">Corridor impact: sits on active A361 route segment.</p>
+          <p class="annot">Same slot used for warning / incident / gauge — one panel, swap content</p>
+          <div class="box dashed" style="margin-top:auto;">
+            <p class="label">Also updates</p>
+            <p class="copy" style="margin:0;">Priority gauges highlight · corridor headline if relevant · optional sparkline here later</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="do-dont">
+      <div class="box">
+        <h3>Do</h3>
+        <ul style="margin:0; padding-left:1.1rem; font-size:0.9rem;">
+          <li>Cluster or density-cap markers; show counts not 200 popups</li>
+          <li>Viewport fetch only; debounce moveend</li>
+          <li>Polygons as light fills; detail on select</li>
+          <li>Layer presets (Dispatch / Hydrology) over many toggles</li>
+        </ul>
+      </div>
+      <div class="box">
+        <h3>Don’t</h3>
+        <ul style="margin:0; padding-left:1.1rem; font-size:0.9rem;">
+          <li>Bind rich HTML popups to every marker</li>
+          <li>Re-create the whole map on Livewire morph</li>
+          <li>Stack warnings + zones + all gauges + incidents at once by default</li>
+          <li>Put primary copy only inside map chrome</li>
+        </ul>
+      </div>
+    </div>
+
+    <section class="review-list">
+      <h2>Stack note (for later spike)</h2>
+      <ol>
+        <li><strong>Livewire</strong> is fine for forms/search/auth; painful when the map must survive frequent DOM morphs.</li>
+        <li><strong>Vue (or Inertia+Vue) island</strong> for the cockpit map + inspector keeps Leaflet owned by one client tree — better scale for pan/layer/select.</li>
+        <li>Laravel stays API/session owner; lake stays data plane. No need to rewrite the whole app to validate this.</li>
+      </ol>
+    </section>
+  </div>
+</body>
+</html>

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>03 Upstream trends — Flood Watch wireframe</title>
+  <link rel="stylesheet" href="./wireframe.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600;650&display=swap" rel="stylesheet" />
+  <style>
+    .spark {
+      height: 72px;
+      border: 1.5px solid var(--line);
+      background:
+        linear-gradient(180deg, transparent 69%, #ddd 69%, #ddd 70%, transparent 70%),
+        #fff;
+      position: relative;
+      overflow: hidden;
+    }
+    .spark svg { width: 100%; height: 100%; display: block; }
+    .timeline {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 0.35rem;
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      color: var(--muted);
+      margin-top: 0.35rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="topbar">
+      <div>
+        <h1>03 · Upstream trends (stub)</h1>
+        <p>Near-term product story — not in Blade WIP. Fake series only.</p>
+      </div>
+      <nav class="nav" aria-label="Wireframe pages">
+        <a href="./index.html">Index</a>
+        <a href="./01-operator-cockpit.html">01 Cockpit</a>
+        <a href="./02-map-layers.html">02 Map layers</a>
+        <a href="./03-upstream-trends.html" aria-current="page">03 Trends</a>
+        <a href="./04-lean-map.html">04 Lean map</a>
+      </nav>
+    </header>
+
+    <div class="note">
+      <strong>Intent.</strong> Show water building upstream <em>before</em> road disruption.
+      Lake rainfall endpoint is still a stub — this wireframe is for UX sequencing only.
+    </div>
+
+    <div class="frame">
+      <div class="chrome"><span class="dot"></span><span class="dot"></span><span class="dot"></span> optional panel · placement TBD</div>
+
+      <div class="box" style="margin-bottom:0.75rem;">
+        <p class="label">Upstream outlook · next 24h</p>
+        <p class="title">Rainfall upstream of A361 is building; Parrett gauges likely to rise this evening.</p>
+        <p class="copy">Catchment: Upper Parrett · Lag estimate: 6–10h (illustrative)</p>
+        <p class="annot">Could sit under corridor risk, or replace forecast card</p>
+      </div>
+
+      <div class="grid-2">
+        <div class="box">
+          <p class="label">Rainfall (upstream, mm)</p>
+          <div class="spark" aria-hidden="true">
+            <svg viewBox="0 0 200 72" preserveAspectRatio="none">
+              <polyline fill="none" stroke="#111" stroke-width="2"
+                points="0,60 20,58 40,55 60,40 80,35 100,20 120,18 140,22 160,30 180,28 200,25" />
+            </svg>
+          </div>
+          <div class="timeline">
+            <span>06</span><span>09</span><span>12</span><span>15</span><span>18</span><span>21</span>
+          </div>
+          <p class="annot">Needs lake / Met data later</p>
+        </div>
+        <div class="box">
+          <p class="label">Key gauge · Westonzoyland (m)</p>
+          <div class="spark" aria-hidden="true">
+            <svg viewBox="0 0 200 72" preserveAspectRatio="none">
+              <polyline fill="none" stroke="#7a1f1f" stroke-width="2"
+                points="0,50 20,48 40,47 60,45 80,42 100,38 120,32 140,28 160,22 180,18 200,16" />
+              <line x1="0" y1="24" x2="200" y2="24" stroke="#8a5a00" stroke-dasharray="4 3" stroke-width="1" />
+            </svg>
+          </div>
+          <div class="timeline">
+            <span>−12h</span><span>−9</span><span>−6</span><span>−3</span><span>now</span><span>+3</span>
+          </div>
+          <p class="copy">Dashed = typical high · rising toward threshold</p>
+          <p class="annot">Can use existing measurements aggregate=hour</p>
+        </div>
+      </div>
+
+      <div class="grid-corridor" style="margin-top:0.75rem;">
+        <div class="box">
+          <p class="label">Dispatch implication</p>
+          <p class="title">Hold non-urgent A361 runs after 16:00</p>
+          <p class="copy">Illustrative recommendation — product copy TBD</p>
+        </div>
+        <div class="box dashed">
+          <p class="label">Confidence</p>
+          <p class="title" style="font-size:1rem;">Medium</p>
+          <p class="copy">Based on upstream rain + gauge slope</p>
+        </div>
+        <div class="box dashed">
+          <p class="label">Data deps</p>
+          <p class="copy">Rainfall API · measurements · (later) catchment lag model</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="review-list">
+      <h2>Decide</h2>
+      <ol>
+        <li>Ship cockpit (01) first without trends?</li>
+        <li>If trends land later: same scroll, tab, or separate “Outlook” mode?</li>
+        <li>Is a dispatch implication line helpful or too assertive without a model?</li>
+      </ol>
+    </section>
+  </div>
+</body>
+</html>

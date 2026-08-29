@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>01 Operator cockpit — Flood Watch wireframe</title>
+  <link rel="stylesheet" href="./wireframe.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600;650&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="page">
+    <header class="topbar">
+      <div>
+        <h1>01 · Operator cockpit</h1>
+        <p>Desktop results column — mirrors corridor-risk + river-response WIP.</p>
+      </div>
+      <nav class="nav" aria-label="Wireframe pages">
+        <a href="./index.html">Index</a>
+        <a href="./01-operator-cockpit.html" aria-current="page">01 Cockpit</a>
+        <a href="./02-map-layers.html">02 Map layers</a>
+        <a href="./03-upstream-trends.html">03 Trends</a>
+        <a href="./04-lean-map.html">04 Lean map</a>
+      </nav>
+    </header>
+
+    <div class="note">
+      <strong>Job.</strong> Help a fleet operator decide whether a monitored corridor is safe to dispatch <em>now</em>.
+      Annotations in blue are review notes, not UI copy.
+    </div>
+
+    <div class="scenario-strip" role="group" aria-label="Scenario">
+      <button type="button" id="btn-risk" aria-pressed="true" data-scenario="risk">Scenario: at risk</button>
+      <button type="button" id="btn-stable" aria-pressed="false" data-scenario="stable">Scenario: stable</button>
+    </div>
+
+    <div class="frame">
+      <div class="chrome"><span class="dot"></span><span class="dot"></span><span class="dot"></span> floodwatch.local / dashboard · desktop</div>
+
+      <div class="layout">
+        <aside class="sidebar">
+          <div class="box dashed">
+            <p class="label">Search / location</p>
+            <p class="title" style="font-size:0.95rem">TA7 · Somerset Levels</p>
+            <p class="copy">Postcode / place · Use my location · Bookmarks</p>
+            <p class="annot">Existing left rail — unchanged in this pass</p>
+          </div>
+          <div class="box dashed">
+            <p class="label">History</p>
+            <p class="copy">Recent searches list…</p>
+          </div>
+        </aside>
+
+        <div class="main">
+          <!-- Row: risk + route -->
+          <div class="grid-2">
+            <div class="box">
+              <p class="label">Your risk</p>
+              <p class="title risk-house">House / area: elevated attention</p>
+              <p class="copy risk-roads">Roads: disruption nearby</p>
+              <p class="annot">Existing risk block</p>
+            </div>
+            <div class="box">
+              <p class="label">Route check</p>
+              <p class="title route-verdict">At risk</p>
+              <p class="copy route-summary">A361 Muchelney corridor — flood warning intersects active route.</p>
+              <p class="annot">Existing route-check; feeds corridor strip</p>
+            </div>
+          </div>
+
+          <!-- Corridor risk -->
+          <div class="grid-corridor" id="corridor-risk">
+            <div class="box">
+              <p class="label">Corridor risk</p>
+              <p class="title corridor-headline">Flood warnings and route risk are active on monitored corridors.</p>
+              <p class="copy corridor-guidance">A361 Muchelney corridor — flood warning intersects active route.</p>
+              <p class="annot">NEW · primary operator headline</p>
+            </div>
+            <div class="box">
+              <p class="label">Flood exposure</p>
+              <div class="stat"><span>Severe warnings</span><b class="danger exposure-severe">0</b></div>
+              <div class="stat"><span>Flood warnings</span><b class="warn exposure-warning">2</b></div>
+              <div class="stat"><span>Flood alerts</span><b class="warn exposure-alert">1</b></div>
+              <p class="annot">NEW · counts from live warnings</p>
+            </div>
+            <div class="box">
+              <p class="label">Current route</p>
+              <p class="title route-label">At risk</p>
+              <p class="copy"><span class="elevated-count">3</span> elevated gauges</p>
+              <p class="copy"><span class="incident-count">2</span> active incidents</p>
+              <p class="annot">NEW · verdict + supporting signals</p>
+            </div>
+          </div>
+
+          <div class="box dashed ai-block">
+            <p class="label">AI summary</p>
+            <p class="copy ai-copy">Optional advice block when assistant has run…</p>
+          </div>
+
+          <!-- Map -->
+          <div class="box" style="padding:0; overflow:hidden;">
+            <div class="map" aria-label="Map wireframe">
+              <div class="map-tools">
+                <div class="box">Basemap ▾</div>
+                <div class="box">Severity: auto ▾</div>
+                <div class="box" style="border-style:solid;">
+                  <strong>Operational layers</strong>
+                  <div class="stat"><span>Live warnings</span><b>on</b></div>
+                  <div class="stat"><span>Flood zones</span><b>off</b></div>
+                  <div class="stat"><span>River gauges</span><b>on</b></div>
+                  <div class="stat"><span>Road disruption</span><b>on</b></div>
+                  <div class="stat"><span>Active route</span><b>on</b></div>
+                </div>
+              </div>
+              <div class="map-blob" style="left:28%; top:22%; width:22%; height:28%;"></div>
+              <div class="map-route"></div>
+              <div class="map-pin elevated" style="left:34%; top:40%;" title="Elevated gauge"></div>
+              <div class="map-pin elevated" style="left:48%; top:36%;"></div>
+              <div class="map-pin" style="left:58%; top:48%;"></div>
+              <div class="map-pin incident" style="left:42%; top:58%;"></div>
+              <div class="map-legend">
+                <span>Route</span>
+                <span>River gauges</span>
+                <span>Road disruption</span>
+                <span>Live warnings</span>
+                <span>Flood zones</span>
+              </div>
+            </div>
+            <p class="annot" style="padding:0.5rem 0.75rem;">Map stays full-width; layers control is WIP on flood-map</p>
+          </div>
+
+          <!-- Summary cards -->
+          <div class="grid-4">
+            <div class="box">
+              <p class="label">Flood exposure</p>
+              <p class="copy card-flood">Flood Warning: 2; Flood Alert: 1</p>
+            </div>
+            <div class="box">
+              <p class="label">Road status</p>
+              <p class="copy card-road">A361 Closed; B3165 Delays</p>
+            </div>
+            <div class="box">
+              <p class="label">Current route</p>
+              <p class="copy card-route">A361 Muchelney corridor — flood warning intersects active route.</p>
+            </div>
+            <div class="box">
+              <p class="label">Forecast outlook</p>
+              <p class="copy">Further showers overnight; rivers responsive.</p>
+            </div>
+          </div>
+          <p class="annot">May overlap corridor strip — candidate to simplify after review</p>
+
+          <!-- River response -->
+          <div class="box" id="river-response">
+            <div class="grid-2">
+              <div>
+                <p class="label">River response</p>
+                <p class="title river-headline">12 monitored gauges in the current map area</p>
+                <p class="copy">Judge whether the corridor is stable, elevated, or reacting unevenly across nearby gauges.</p>
+                <p class="annot">NEW · operator-facing hydrology strip</p>
+              </div>
+              <div>
+                <div class="bar" aria-hidden="true">
+                  <span class="elevated" id="bar-elevated"></span>
+                  <span class="expected" id="bar-expected"></span>
+                  <span class="low" id="bar-low"></span>
+                  <span class="unknown" id="bar-unknown"></span>
+                </div>
+                <div class="grid-4" style="margin-top:0.65rem;">
+                  <div class="box" style="padding:0.45rem;">
+                    <p class="label">Elevated</p>
+                    <p class="title danger count-elevated" style="font-size:1.25rem;">3</p>
+                  </div>
+                  <div class="box" style="padding:0.45rem;">
+                    <p class="label">Expected</p>
+                    <p class="title count-expected" style="font-size:1.25rem;">5</p>
+                  </div>
+                  <div class="box" style="padding:0.45rem;">
+                    <p class="label">Low</p>
+                    <p class="title count-low" style="font-size:1.25rem;">3</p>
+                  </div>
+                  <div class="box" style="padding:0.45rem;">
+                    <p class="label">Monitored</p>
+                    <p class="title count-total" style="font-size:1.25rem;">12</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p class="label" style="margin-top:0.85rem;">Priority gauges</p>
+            <div class="gauge-grid" id="priority-gauges">
+              <div class="box">
+                <div style="display:flex;justify-content:space-between;gap:0.5rem;">
+                  <div>
+                    <p class="title" style="font-size:0.95rem;">Westonzoyland</p>
+                    <p class="copy">River Parrett</p>
+                  </div>
+                  <span class="tag danger">Elevated</span>
+                </div>
+                <p class="copy"><b>2.41 m</b> · 29 Aug, 09:15</p>
+              </div>
+              <div class="box">
+                <div style="display:flex;justify-content:space-between;gap:0.5rem;">
+                  <div>
+                    <p class="title" style="font-size:0.95rem;">Muchelney</p>
+                    <p class="copy">River Parrett</p>
+                  </div>
+                  <span class="tag danger">Elevated</span>
+                </div>
+                <p class="copy"><b>2.18 m</b> · 29 Aug, 09:00</p>
+              </div>
+              <div class="box">
+                <div style="display:flex;justify-content:space-between;gap:0.5rem;">
+                  <div>
+                    <p class="title" style="font-size:0.95rem;">Langport</p>
+                    <p class="copy">River Parrett</p>
+                  </div>
+                  <span class="tag" style="color:#2f6fed;">Expected</span>
+                </div>
+                <p class="copy"><b>1.62 m</b> · 29 Aug, 09:15</p>
+              </div>
+              <div class="box">
+                <div style="display:flex;justify-content:space-between;gap:0.5rem;">
+                  <div>
+                    <p class="title" style="font-size:0.95rem;">Burrowbridge</p>
+                    <p class="copy">River Parrett</p>
+                  </div>
+                  <span class="tag" style="color:#2f6fed;">Expected</span>
+                </div>
+                <p class="copy"><b>1.44 m</b> · 29 Aug, 08:45</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="box dashed">
+            <p class="label">Weather + flood list</p>
+            <p class="copy">Existing lower sections (weather cards, flood warning list) continue below…</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section class="review-list">
+      <h2>On this screen, decide</h2>
+      <ol>
+        <li>Keep corridor risk above the map?</li>
+        <li>Drop or merge the four summary cards if corridor strip stays?</li>
+        <li>Should priority gauges link to map focus when clicked (prototype later)?</li>
+      </ol>
+    </section>
+  </div>
+
+  <script>
+    const scenarios = {
+      risk: {
+        house: 'House / area: elevated attention',
+        roads: 'Roads: disruption nearby',
+        verdict: 'At risk',
+        summary: 'A361 Muchelney corridor — flood warning intersects active route.',
+        headline: 'Flood warnings and route risk are active on monitored corridors.',
+        severe: 0, warning: 2, alert: 1,
+        elevated: 3, expected: 5, low: 3, total: 12,
+        incidents: 2,
+        floodCard: 'Flood Warning: 2; Flood Alert: 1',
+        roadCard: 'A361 Closed; B3165 Delays',
+        riverHeadline: '12 monitored gauges in the current map area',
+      },
+      stable: {
+        house: 'House / area: no immediate risk',
+        roads: 'Roads: clear in search area',
+        verdict: 'Clear',
+        summary: 'No route selected — monitoring Somerset Levels bbox.',
+        headline: 'No immediate corridor threats detected.',
+        severe: 0, warning: 0, alert: 0,
+        elevated: 0, expected: 7, low: 5, total: 12,
+        incidents: 0,
+        floodCard: 'No flood warnings in view.',
+        roadCard: 'Roads clear',
+        riverHeadline: '12 monitored gauges in the current map area',
+      },
+    };
+
+    function apply(name) {
+      const s = scenarios[name];
+      document.querySelector('.risk-house').textContent = s.house;
+      document.querySelector('.risk-roads').textContent = s.roads;
+      document.querySelector('.route-verdict').textContent = s.verdict;
+      document.querySelector('.route-summary').textContent = s.summary;
+      document.querySelector('.corridor-headline').textContent = s.headline;
+      document.querySelector('.corridor-guidance').textContent = s.summary;
+      document.querySelector('.route-label').textContent = s.verdict;
+      document.querySelector('.exposure-severe').textContent = s.severe;
+      document.querySelector('.exposure-warning').textContent = s.warning;
+      document.querySelector('.exposure-alert').textContent = s.alert;
+      document.querySelector('.elevated-count').textContent = s.elevated;
+      document.querySelector('.incident-count').textContent = s.incidents;
+      document.querySelector('.card-flood').textContent = s.floodCard;
+      document.querySelector('.card-road').textContent = s.roadCard;
+      document.querySelector('.card-route').textContent = s.summary;
+      document.querySelector('.river-headline').textContent = s.riverHeadline;
+      document.querySelector('.count-elevated').textContent = s.elevated;
+      document.querySelector('.count-expected').textContent = s.expected;
+      document.querySelector('.count-low').textContent = s.low;
+      document.querySelector('.count-total').textContent = s.total;
+      const t = Math.max(1, s.total);
+      document.getElementById('bar-elevated').style.width = (s.elevated / t * 100) + '%';
+      document.getElementById('bar-expected').style.width = (s.expected / t * 100) + '%';
+      document.getElementById('bar-low').style.width = (s.low / t * 100) + '%';
+      document.getElementById('bar-unknown').style.width = ((t - s.elevated - s.expected - s.low) / t * 100) + '%';
+      document.getElementById('btn-risk').setAttribute('aria-pressed', name === 'risk');
+      document.getElementById('btn-stable').setAttribute('aria-pressed', name === 'stable');
+    }
+
+    document.getElementById('btn-risk').addEventListener('click', () => apply('risk'));
+    document.getElementById('btn-stable').addEventListener('click', () => apply('stable'));
+    apply('risk');
+  </script>
+</body>
+</html>

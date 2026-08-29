@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Flood Watch — UX wireframes</title>
+  <link rel="stylesheet" href="./wireframe.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600;650&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="page">
+    <header class="topbar">
+      <div>
+        <h1>Flood Watch UX wireframes</h1>
+        <p>Prediction-first logistics cockpit — mined EA history → time-to-impact.</p>
+      </div>
+      <nav class="nav" aria-label="Wireframe pages">
+        <a href="./index.html" aria-current="page">Index</a>
+        <a href="./01-operator-cockpit.html">01 Cockpit</a>
+        <a href="./02-map-layers.html">02 Layers</a>
+        <a href="./04-lean-map.html">04 Lean map</a>
+        <a href="./prediction-contract.md">Contract</a>
+      </nav>
+    </header>
+
+    <div class="note">
+      <strong>Purpose.</strong> UX for predictions driven by mined EA history — not popup-dense live maps.
+      Vue app: <code>cd app && npm install && npm run dev</code> → http://localhost:5177/
+      Contract: <a href="./prediction-contract.md">prediction-contract.md</a> (<code>floodwatch.prediction.v0</code>).
+    </div>
+
+    <section class="box" style="margin-bottom:1rem;">
+      <p class="label">Design constraints</p>
+      <ul style="margin:0.35rem 0 0; padding-left:1.2rem; font-size:0.92rem;">
+        <li><strong>Prediction is the product</strong> — live map is spatial context.</li>
+        <li><strong>Lean map</strong> — select → inspector; no popup-heavy UX.</li>
+        <li><strong>Vue island</strong> for map + prediction panels; Laravel + lake stay backends.</li>
+      </ul>
+    </section>
+
+    <section class="box">
+      <p class="label">Artifacts</p>
+      <ol>
+        <li><strong>Vue app</strong> (<code>app/</code>) — prediction panel + lean map + mock prediction JSON.</li>
+        <li><a href="./01-operator-cockpit.html">01</a> · <a href="./02-map-layers.html">02</a> · <a href="./04-lean-map.html">04</a> — static wireframes.</li>
+        <li><a href="./prediction-contract.md">Prediction contract</a> — proposed lake API shape.</li>
+      </ol>
+    </section>
+  </div>
+</body>
+</html>
