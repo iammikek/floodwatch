@@ -5,7 +5,7 @@ defineProps({
   source: {
     type: String,
     default: 'static',
-    validator: (v) => ['lake', 'static', 'pending'].includes(v),
+    validator: (v) => ['lake', 'live', 'static', 'pending'].includes(v),
   },
 });
 </script>

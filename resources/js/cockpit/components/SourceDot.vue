@@ -7,12 +7,13 @@ defineProps({
   source: {
     type: String,
     default: 'static',
-    validator: (v) => ['lake', 'static', 'pending'].includes(v),
+    validator: (v) => ['lake', 'live', 'static', 'pending'].includes(v),
   },
 });
 
 const labels = {
   lake: 'Connected to data lake',
+  live: 'Live via Laravel (roads / route)',
   static: 'Static / fixture data',
   pending: 'Loading data source…',
 };
@@ -21,7 +22,7 @@ const labels = {
 <template>
   <span
     class="source-dot"
-    :class="source"
+    :class="source === 'live' ? 'lake' : source"
     role="img"
     :aria-label="labels[source] ?? labels.static"
     :title="labels[source] ?? labels.static"
