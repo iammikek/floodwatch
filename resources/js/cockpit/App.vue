@@ -41,15 +41,18 @@ const inspectorRef = ref(null);
 const scenario = computed(() => scenarios[scenarioId.value]);
 const preset = computed(() => PRESETS[presetId.value]);
 
-const floods = computed(() =>
-  useDemoFixtures.value ? scenario.value.floods : liveFloods.value,
-);
-const gauges = computed(() =>
-  useDemoFixtures.value ? scenario.value.riverLevels : liveGauges.value,
-);
-const incidents = computed(() =>
-  useDemoFixtures.value ? scenario.value.incidents : liveIncidents.value,
-);
+const floods = computed(() => {
+  if (loading.value) return [];
+  return useDemoFixtures.value ? scenario.value.floods : liveFloods.value;
+});
+const gauges = computed(() => {
+  if (loading.value) return [];
+  return useDemoFixtures.value ? scenario.value.riverLevels : liveGauges.value;
+});
+const incidents = computed(() => {
+  if (loading.value) return [];
+  return useDemoFixtures.value ? scenario.value.incidents : liveIncidents.value;
+});
 const elevatedCount = computed(
   () => gauges.value.filter((g) => g.levelStatus === 'elevated').length,
 );
@@ -65,6 +68,7 @@ const locationLabel = computed(() =>
 );
 
 const houseRisk = computed(() => {
+  if (loading.value) return '';
   if (useDemoFixtures.value) return scenario.value.houseRisk;
   if (floods.value.some((f) => (f.severityLevel ?? 4) <= 2)) {
     return 'House / area: flood warnings active nearby';
@@ -74,6 +78,7 @@ const houseRisk = computed(() => {
 });
 
 const roadsRisk = computed(() => {
+  if (loading.value) return '';
   if (useDemoFixtures.value) return scenario.value.roadsRisk;
   const n = incidents.value.length;
   if (n > 0) return `Roads: ${n} live incident(s) near corridor`;
@@ -83,6 +88,7 @@ const roadsRisk = computed(() => {
 });
 
 const corridorHeadline = computed(() => {
+  if (loading.value) return '';
   if (useDemoFixtures.value) return scenario.value.corridor.headline;
   if (liveRoute.value?.verdictLabel && liveRoute.value.verdict !== 'error') {
     return `${liveRoute.value.verdictLabel} — ${DEFAULT_ROUTE.from} → ${DEFAULT_ROUTE.to}`;
@@ -97,6 +103,7 @@ const corridorHeadline = computed(() => {
 });
 
 const corridorGuidance = computed(() => {
+  if (loading.value) return '';
   if (useDemoFixtures.value) return scenario.value.corridor.guidance;
   if (liveRoute.value?.summary) return liveRoute.value.summary;
   return (
@@ -106,6 +113,7 @@ const corridorGuidance = computed(() => {
 });
 
 const routeLabel = computed(() => {
+  if (loading.value) return '';
   if (useDemoFixtures.value) return scenario.value.route.verdictLabel;
   if (liveRoute.value?.verdictLabel) return liveRoute.value.verdictLabel;
   const v = predictionDoc.value?.prediction?.verdict;
@@ -115,6 +123,7 @@ const routeLabel = computed(() => {
 });
 
 const routeSummary = computed(() => {
+  if (loading.value) return '';
   if (useDemoFixtures.value) return scenario.value.route.summary;
   if (liveRoute.value?.summary) {
     return `${liveRoute.value.summary} (${liveRoute.value.from} → ${liveRoute.value.to})`;
@@ -123,6 +132,7 @@ const routeSummary = computed(() => {
 });
 
 const routeGeometry = computed(() => {
+  if (loading.value) return [];
   if (useDemoFixtures.value) return scenario.value.route.geometry;
   return liveRoute.value?.routeGeometry ?? [];
 });
@@ -132,10 +142,22 @@ const selectedSeries = computed(() => {
   return seriesForGauge(predictionDoc.value, selected.value.id);
 });
 
+function clearLiveFeeds() {
+  predictionDoc.value = null;
+  predictionSource.value = 'pending';
+  mapSource.value = 'pending';
+  roadSource.value = 'pending';
+  liveGauges.value = [];
+  liveFloods.value = [];
+  liveIncidents.value = [];
+  liveRoute.value = null;
+}
+
 async function loadLive() {
   loading.value = true;
   statusNotes.value = [];
   selected.value = null;
+  clearLiveFeeds();
   try {
     if (useDemoFixtures.value) {
       predictionSource.value = 'mock';
@@ -398,15 +420,25 @@ const inspectorPanelSource = computed(() => {
 
         <div class="main">
           <div class="grid-2">
-            <div class="box">
+            <div class="box" :class="{ 'is-waiting': loading }">
               <PanelHeading :source="mapPanelSource">Your risk</PanelHeading>
-              <p class="title">{{ houseRisk }}</p>
-              <p class="copy">{{ roadsRisk }}</p>
+              <template v-if="loading">
+                <p class="waiting-copy">Waiting for risk signals…</p>
+              </template>
+              <template v-else>
+                <p class="title">{{ houseRisk }}</p>
+                <p class="copy">{{ roadsRisk }}</p>
+              </template>
             </div>
-            <div class="box">
+            <div class="box" :class="{ 'is-waiting': loading }">
               <PanelHeading :source="roadsPanelSource">Route check</PanelHeading>
-              <p class="title">{{ routeLabel }}</p>
-              <p class="copy">{{ routeSummary }}</p>
+              <template v-if="loading">
+                <p class="waiting-copy">Waiting for route check…</p>
+              </template>
+              <template v-else>
+                <p class="title">{{ routeLabel }}</p>
+                <p class="copy">{{ routeSummary }}</p>
+              </template>
             </div>
           </div>
 
@@ -417,19 +449,24 @@ const inspectorPanelSource = computed(() => {
             :headline="corridorHeadline"
             :guidance="corridorGuidance"
             :route-label="routeLabel"
+            :loading="loading"
             :corridor-source="eitherPanelSource"
             :flood-source="mapPanelSource"
             :route-source="roadsPanelSource"
           />
 
           <PredictionPanel
-            v-if="predictionDoc"
+            v-if="predictionDoc && !loading"
             :prediction-doc="predictionDoc"
             :gauges="gauges"
             :source="predictionPanelSource"
           />
+          <div v-else-if="loading" class="box outlook is-waiting">
+            <PanelHeading source="pending">Corridor prediction · historic EA analogues</PanelHeading>
+            <p class="waiting-copy">Waiting for prediction…</p>
+          </div>
 
-          <div class="map-shell">
+          <div class="map-shell" :class="{ 'is-waiting': loading }">
             <LeanMap
               :center="mapCenter"
               :zoom="mapZoom"

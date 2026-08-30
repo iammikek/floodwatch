@@ -9,6 +9,7 @@ const props = defineProps({
   headline: { type: String, required: true },
   guidance: { type: String, required: true },
   routeLabel: { type: String, required: true },
+  loading: { type: Boolean, default: false },
   corridorSource: { type: String, default: 'static' },
   floodSource: { type: String, default: 'static' },
   routeSource: { type: String, default: 'static' },
@@ -16,6 +17,7 @@ const props = defineProps({
 
 const counts = computed(() => {
   const out = { severe: 0, warning: 0, alert: 0 };
+  if (props.loading) return out;
   for (const flood of props.floods) {
     const level = Number(flood.severityLevel ?? 4);
     const label = String(flood.severity ?? '').toLowerCase();
@@ -28,23 +30,38 @@ const counts = computed(() => {
 </script>
 
 <template>
-  <div class="grid-3">
+  <div class="grid-3" :class="{ 'is-waiting': loading }">
     <div class="box">
       <PanelHeading :source="corridorSource">Corridor risk</PanelHeading>
-      <p class="title">{{ headline }}</p>
-      <p class="copy">{{ guidance }}</p>
+      <template v-if="loading">
+        <p class="waiting-copy">Waiting for corridor signals…</p>
+      </template>
+      <template v-else>
+        <p class="title">{{ headline }}</p>
+        <p class="copy">{{ guidance }}</p>
+      </template>
     </div>
     <div class="box">
       <PanelHeading :source="floodSource">Flood exposure</PanelHeading>
-      <div class="stat"><span>Severe warnings</span><b class="danger">{{ counts.severe }}</b></div>
-      <div class="stat"><span>Flood warnings</span><b class="warn">{{ counts.warning }}</b></div>
-      <div class="stat"><span>Flood alerts</span><b class="warn">{{ counts.alert }}</b></div>
+      <template v-if="loading">
+        <p class="waiting-copy">Waiting for flood warnings…</p>
+      </template>
+      <template v-else>
+        <div class="stat"><span>Severe warnings</span><b class="danger">{{ counts.severe }}</b></div>
+        <div class="stat"><span>Flood warnings</span><b class="warn">{{ counts.warning }}</b></div>
+        <div class="stat"><span>Flood alerts</span><b class="warn">{{ counts.alert }}</b></div>
+      </template>
     </div>
     <div class="box">
       <PanelHeading :source="routeSource">Current route</PanelHeading>
-      <p class="title">{{ routeLabel }}</p>
-      <p class="copy">{{ elevatedCount }} elevated gauges</p>
-      <p class="copy">{{ incidents.length }} active incidents</p>
+      <template v-if="loading">
+        <p class="waiting-copy">Waiting for route status…</p>
+      </template>
+      <template v-else>
+        <p class="title">{{ routeLabel }}</p>
+        <p class="copy">{{ elevatedCount }} elevated gauges</p>
+        <p class="copy">{{ incidents.length }} active incidents</p>
+      </template>
     </div>
   </div>
 </template>
