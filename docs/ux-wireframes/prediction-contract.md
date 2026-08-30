@@ -1,6 +1,6 @@
 # Prediction contract (prototype) — `floodwatch.prediction.v0`
 
-Mock payloads: [`prediction-risk.json`](app/src/data/prediction-risk.json), [`prediction-stable.json`](app/src/data/prediction-stable.json). Live UI: Laravel route `/cockpit` (sources under `resources/js/cockpit/`).
+Mock payloads: [`prediction-risk.json`](app/src/data/prediction-risk.json), [`prediction-stable.json`](app/src/data/prediction-stable.json). Live UI: Laravel home `/` (sources under `resources/js/cockpit/`; `/cockpit` redirects here).
 
 **Product intent:** predictions are driven by **mined EA historical hydrology** (plus rainfall when available), not by live-warning popups alone.
 

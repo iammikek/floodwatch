@@ -18,7 +18,7 @@ class FloodWatchDashboardTest extends TestCase
 
     public function test_home_page_renders_flood_watch_dashboard_component(): void
     {
-        $response = $this->get('/');
+        $response = $this->get('/legacy');
 
         $response->assertStatus(200);
         $response->assertSeeLivewire('flood-watch-dashboard');
@@ -161,7 +161,7 @@ class FloodWatchDashboardTest extends TestCase
     {
         Config::set('flood-watch.donation_url', 'https://ko-fi.com/example');
 
-        $response = $this->get('/');
+        $response = $this->get('/legacy');
 
         $response->assertStatus(200);
         $response->assertSee(__('flood-watch.dashboard.support_development'), false);
@@ -633,7 +633,7 @@ class FloodWatchDashboardTest extends TestCase
 
     public function test_check_status_button_has_spinner_markup(): void
     {
-        $response = $this->get('/');
+        $response = $this->get('/legacy');
 
         $response->assertStatus(200);
         $response->assertSee('animate-spin', false);
@@ -1042,7 +1042,7 @@ class FloodWatchDashboardTest extends TestCase
 
     public function test_use_my_location_button_is_visible(): void
     {
-        $response = $this->get('/');
+        $response = $this->get('/legacy');
 
         $response->assertStatus(200);
         $response->assertSee(__('flood-watch.dashboard.use_my_location'), false);

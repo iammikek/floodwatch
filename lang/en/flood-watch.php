@@ -3,8 +3,10 @@
 return [
     'cockpit' => [
         'title' => 'Operator cockpit',
-        'badge' => 'Prototype',
-        'legacy_dashboard' => 'Legacy dashboard',
+        'badge' => 'Live',
+        'legacy_dashboard' => 'Classic dashboard',
+        'classic_banner' => 'You are on the classic Livewire dashboard.',
+        'back_to_cockpit' => 'Back to operator cockpit',
     ],
 
     'progress' => [
