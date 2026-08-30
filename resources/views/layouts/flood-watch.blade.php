@@ -14,12 +14,15 @@
         @livewireStyles
     </head>
     <body>
-        <div class="bg-slate-50 border-b border-slate-200 px-4 py-2">
-            <div class="max-w-2xl lg:max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2 text-sm">
-                <span class="text-slate-600">{{ __('flood-watch.cockpit.classic_banner') }}</span>
-                <a href="{{ route('home') }}" class="text-blue-600 hover:text-blue-700 font-medium">{{ __('flood-watch.cockpit.back_to_cockpit') }}</a>
+        <nav class="border-b border-slate-200 bg-slate-50" aria-label="{{ __('flood-watch.cockpit.nav_label') }}">
+            <div class="max-w-2xl lg:max-w-6xl mx-auto px-4 py-1.5 flex items-center justify-between gap-3 text-xs text-slate-500">
+                <a href="{{ route('home') }}" class="font-medium text-slate-600 hover:text-slate-900">{{ config('app.name') }}</a>
+                <div class="flex items-center gap-1">
+                    <a href="{{ route('home') }}" class="rounded px-2 py-0.5 hover:bg-slate-200 hover:text-slate-900">{{ __('flood-watch.cockpit.nav_cockpit') }}</a>
+                    <a href="{{ route('legacy.dashboard') }}" class="rounded px-2 py-0.5 bg-slate-200 font-semibold text-slate-900" aria-current="page">{{ __('flood-watch.cockpit.nav_classic') }}</a>
+                </div>
             </div>
-        </div>
+        </nav>
         @auth
             <header class="bg-white border-b border-slate-200 px-4 py-2">
                 <div class="max-w-2xl lg:max-w-6xl mx-auto flex justify-between items-center">
