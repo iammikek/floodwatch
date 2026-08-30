@@ -1,11 +1,13 @@
 <script setup>
 import { computed } from 'vue';
 import Sparkline from './Sparkline.vue';
+import PanelHeading from './PanelHeading.vue';
 
 const props = defineProps({
   feature: { type: Object, default: null },
   /** Hour series for selected gauge, already expanded */
   series: { type: Array, default: () => [] },
+  source: { type: String, default: 'static' },
 });
 
 const title = computed(() => {
@@ -37,7 +39,7 @@ const slopeLabel = computed(() => {
 
 <template>
   <div class="box" style="display: flex; flex-direction: column; gap: 0.55rem; min-height: 360px">
-    <p class="label">Inspector · selected feature</p>
+    <PanelHeading :source="source">Inspector · selected feature</PanelHeading>
 
     <template v-if="!feature">
       <p class="title" style="font-size: 1rem">Select a marker or priority gauge</p>

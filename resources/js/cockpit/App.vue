@@ -11,6 +11,7 @@ import RiverResponse from './components/RiverResponse.vue';
 import LeanMap from './components/LeanMap.vue';
 import InspectorPanel from './components/InspectorPanel.vue';
 import PredictionPanel from './components/PredictionPanel.vue';
+import PanelHeading from './components/PanelHeading.vue';
 
 const CORRIDOR_ID = 'a361-muchelney';
 
@@ -202,6 +203,37 @@ const dataSourceLabel = computed(() => {
   if (useDemoFixtures.value) return 'demo fixtures';
   return `prediction:${predictionSource.value} · map:${mapSource.value}`;
 });
+
+/** @param {'prediction'|'map'|'either'} kind */
+function resolvePanelSource(kind) {
+  if (useDemoFixtures.value) return 'static';
+  if (loading.value) return 'pending';
+  if (kind === 'prediction') {
+    if (predictionSource.value === 'pending') return 'pending';
+    return predictionSource.value === 'lake' ? 'lake' : 'static';
+  }
+  if (kind === 'map') {
+    if (mapSource.value === 'pending') return 'pending';
+    return mapSource.value === 'lake' ? 'lake' : 'static';
+  }
+  // either: green if any live lake feed
+  const pred = predictionSource.value === 'lake';
+  const map = mapSource.value === 'lake';
+  if (predictionSource.value === 'pending' && mapSource.value === 'pending') return 'pending';
+  return pred || map ? 'lake' : 'static';
+}
+
+const predictionPanelSource = computed(() => resolvePanelSource('prediction'));
+const mapPanelSource = computed(() => resolvePanelSource('map'));
+const eitherPanelSource = computed(() => resolvePanelSource('either'));
+
+const inspectorPanelSource = computed(() => {
+  if (!selected.value) return 'static';
+  if (selected.value.type === 'incident') return 'static';
+  if (selected.value.type === 'gauge') return mapPanelSource.value;
+  if (selected.value.type === 'warning') return mapPanelSource.value;
+  return 'static';
+});
 </script>
 
 <template>
@@ -279,12 +311,12 @@ const dataSourceLabel = computed(() => {
       <div class="layout">
         <aside class="sidebar">
           <div class="box dashed">
-            <p class="label">Search / location</p>
+            <PanelHeading source="static">Search / location</PanelHeading>
             <p class="title" style="font-size: 0.95rem">{{ locationLabel }}</p>
             <p class="copy">Postcode / place · bookmarks (placeholder)</p>
           </div>
           <div class="box dashed">
-            <p class="label">History</p>
+            <PanelHeading source="static">History</PanelHeading>
             <p class="copy">Recent searches…</p>
           </div>
         </aside>
@@ -292,12 +324,12 @@ const dataSourceLabel = computed(() => {
         <div class="main">
           <div class="grid-2">
             <div class="box">
-              <p class="label">Your risk</p>
+              <PanelHeading :source="mapPanelSource">Your risk</PanelHeading>
               <p class="title">{{ houseRisk }}</p>
               <p class="copy">{{ roadsRisk }}</p>
             </div>
             <div class="box">
-              <p class="label">Route check</p>
+              <PanelHeading :source="predictionPanelSource">Route check</PanelHeading>
               <p class="title">{{ routeLabel }}</p>
               <p class="copy">
                 {{
@@ -316,12 +348,16 @@ const dataSourceLabel = computed(() => {
             :headline="corridorHeadline"
             :guidance="corridorGuidance"
             :route-label="routeLabel"
+            :corridor-source="eitherPanelSource"
+            :flood-source="mapPanelSource"
+            :route-source="predictionPanelSource"
           />
 
           <PredictionPanel
             v-if="predictionDoc"
             :prediction-doc="predictionDoc"
             :gauges="gauges"
+            :source="predictionPanelSource"
           />
 
           <div class="map-shell">
@@ -334,17 +370,23 @@ const dataSourceLabel = computed(() => {
               :route-geometry="routeGeometry"
               :preset="preset"
               :selected-id="selected?.id ?? null"
+              :source="mapPanelSource"
               @select="onSelect"
               @update:preset="setPreset"
             />
             <div ref="inspectorRef" tabindex="-1" class="inspector-focus">
-              <InspectorPanel :feature="selected" :series="selectedSeries" />
+              <InspectorPanel
+                :feature="selected"
+                :series="selectedSeries"
+                :source="inspectorPanelSource"
+              />
             </div>
           </div>
 
           <RiverResponse
             :gauges="gauges"
             :loading="loading"
+            :source="mapPanelSource"
             :selected-id="selected?.id ?? null"
             @select="onSelect"
           />

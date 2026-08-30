@@ -2,6 +2,7 @@
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import L from 'leaflet';
 import { PRESETS } from '../data/presets.js';
+import PanelHeading from './PanelHeading.vue';
 
 const props = defineProps({
   center: { type: Array, required: true },
@@ -12,6 +13,7 @@ const props = defineProps({
   routeGeometry: { type: Array, default: () => [] },
   preset: { type: Object, required: true },
   selectedId: { type: String, default: null },
+  source: { type: String, default: 'static' },
 });
 
 const emit = defineEmits(['select', 'update:preset']);
@@ -142,7 +144,7 @@ watch(
   <div class="map-wrap">
     <div class="map-controls">
       <div class="box">
-        <p class="label" style="margin: 0 0 0.35rem">View preset</p>
+        <PanelHeading :source="source">View preset</PanelHeading>
         <button
           v-for="p in Object.values(PRESETS)"
           :key="p.id"
