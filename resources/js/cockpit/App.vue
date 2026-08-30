@@ -313,7 +313,7 @@ const inspectorPanelSource = computed(() => {
   <div class="page">
     <header class="topbar">
       <div>
-        <h1>Operator cockpit · prediction prototype</h1>
+        <h1>Operator cockpit</h1>
         <p>
           Corridor <code>{{ CORRIDOR_ID }}</code> —
           source: <strong>{{ dataSourceLabel }}</strong>
@@ -380,7 +380,7 @@ const inspectorPanelSource = computed(() => {
     <div class="frame">
       <div class="chrome">
         <span class="dot" /><span class="dot" /><span class="dot" />
-        floodwatch.local / cockpit · prediction-first
+        floodwatch.local · prediction-first
       </div>
 
       <div class="layout">

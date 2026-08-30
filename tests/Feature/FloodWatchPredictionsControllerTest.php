@@ -76,10 +76,19 @@ class FloodWatchPredictionsControllerTest extends TestCase
 
     public function test_cockpit_page_renders(): void
     {
-        $response = $this->get('/cockpit');
+        $response = $this->get('/');
 
         $response->assertOk()
             ->assertSee('id="app"', false)
             ->assertSee(__('flood-watch.cockpit.title'), false);
+
+        $this->get('/cockpit')->assertRedirect('/');
+    }
+
+    public function test_legacy_dashboard_still_available(): void
+    {
+        $this->get('/legacy')
+            ->assertOk()
+            ->assertSeeLivewire('flood-watch-dashboard');
     }
 }

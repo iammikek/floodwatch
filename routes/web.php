@@ -47,11 +47,11 @@ Route::get('/api/lake/warnings', FloodWatchWarningsController::class)
     ->middleware(['throttle:flood-watch-api'])
     ->name('flood-watch.warnings');
 
-Route::view('/cockpit', 'cockpit')->name('cockpit');
-
-Route::livewire('/', 'flood-watch-dashboard');
-
+Route::view('/', 'cockpit')->name('home');
+Route::redirect('/cockpit', '/')->name('cockpit');
 Route::redirect('/dashboard', '/')->name('dashboard');
+
+Route::livewire('/legacy', 'flood-watch-dashboard')->name('legacy.dashboard');
 
 Route::middleware('auth')->get('/admin', DashboardController::class)->name('admin.dashboard');
 

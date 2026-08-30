@@ -14,10 +14,16 @@
         @livewireStyles
     </head>
     <body>
+        <div class="bg-slate-50 border-b border-slate-200 px-4 py-2">
+            <div class="max-w-2xl lg:max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2 text-sm">
+                <span class="text-slate-600">{{ __('flood-watch.cockpit.classic_banner') }}</span>
+                <a href="{{ route('home') }}" class="text-blue-600 hover:text-blue-700 font-medium">{{ __('flood-watch.cockpit.back_to_cockpit') }}</a>
+            </div>
+        </div>
         @auth
             <header class="bg-white border-b border-slate-200 px-4 py-2">
                 <div class="max-w-2xl lg:max-w-6xl mx-auto flex justify-between items-center">
-                    <a href="{{ url('/') }}" class="shrink-0 flex items-center">
+                    <a href="{{ route('home') }}" class="shrink-0 flex items-center">
                         <x-application-logo class="block h-4 w-auto fill-current text-slate-800" />
                     </a>
                     <div class="flex items-center gap-3">

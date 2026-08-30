@@ -141,11 +141,11 @@ Run tests: `sail test`
 sail up -d          # Start containers
 sail test           # Run tests
 sail artisan ...    # Artisan commands
-npm run dev         # Vite (includes Vue cockpit at /cockpit)
+npm run dev         # Vite (includes Vue cockpit at /)
 npm run test:cockpit
 ```
 
-Operator cockpit prototype (Vue): open [http://localhost/cockpit](http://localhost/cockpit) while `npm run dev` (or after `npm run build`). Livewire dashboard remains at `/`.
+Operator cockpit (Vue) is the home page at [http://localhost/](http://localhost/). The classic Livewire dashboard remains at [http://localhost/legacy](http://localhost/legacy) (`/cockpit` redirects to `/`).
 
 Development plan (backlog, roadmap): [docs/plan.md](docs/plan.md)
 

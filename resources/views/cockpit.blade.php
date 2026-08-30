@@ -14,10 +14,10 @@
     <header class="border-b border-slate-200 bg-white px-4 py-2">
         <div class="mx-auto flex max-w-7xl items-center justify-between gap-4">
             <div class="flex items-center gap-3">
-                <a href="{{ url('/') }}" class="text-sm font-medium text-slate-700 hover:text-slate-900">{{ config('app.name') }}</a>
+                <a href="{{ route('home') }}" class="text-sm font-medium text-slate-700 hover:text-slate-900">{{ config('app.name') }}</a>
                 <span class="text-xs uppercase tracking-wide text-slate-400">{{ __('flood-watch.cockpit.badge') }}</span>
             </div>
-            <a href="{{ url('/') }}" class="text-sm text-blue-600 hover:text-blue-700">{{ __('flood-watch.cockpit.legacy_dashboard') }}</a>
+            <a href="{{ route('legacy.dashboard') }}" class="text-sm text-blue-600 hover:text-blue-700">{{ __('flood-watch.cockpit.legacy_dashboard') }}</a>
         </div>
     </header>
     <div id="app"></div>
