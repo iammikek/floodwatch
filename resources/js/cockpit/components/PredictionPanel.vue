@@ -1,12 +1,14 @@
 <script setup>
 import { computed } from 'vue';
 import Sparkline from './Sparkline.vue';
+import PanelHeading from './PanelHeading.vue';
 import { rainfallSeries, seriesForGauge, keyGaugeId } from '../data/expandSeries.js';
 
 const props = defineProps({
   /** floodwatch.prediction.v0 mock */
   predictionDoc: { type: Object, required: true },
   gauges: { type: Array, default: () => [] },
+  source: { type: String, default: 'static' },
 });
 
 const p = computed(() => props.predictionDoc.prediction);
@@ -49,7 +51,7 @@ function riskClass(risk) {
 
 <template>
   <section class="box outlook">
-    <p class="label">Corridor prediction · historic EA analogues</p>
+    <PanelHeading :source="source">Corridor prediction · historic EA analogues</PanelHeading>
     <p class="title" :class="verdictClass">{{ p.verdictLabel }}</p>
     <p class="copy">{{ p.summary }}</p>
 

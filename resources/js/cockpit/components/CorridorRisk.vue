@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue';
+import PanelHeading from './PanelHeading.vue';
 
 const props = defineProps({
   floods: { type: Array, default: () => [] },
@@ -8,6 +9,9 @@ const props = defineProps({
   headline: { type: String, required: true },
   guidance: { type: String, required: true },
   routeLabel: { type: String, required: true },
+  corridorSource: { type: String, default: 'static' },
+  floodSource: { type: String, default: 'static' },
+  routeSource: { type: String, default: 'static' },
 });
 
 const counts = computed(() => {
@@ -26,18 +30,18 @@ const counts = computed(() => {
 <template>
   <div class="grid-3">
     <div class="box">
-      <p class="label">Corridor risk</p>
+      <PanelHeading :source="corridorSource">Corridor risk</PanelHeading>
       <p class="title">{{ headline }}</p>
       <p class="copy">{{ guidance }}</p>
     </div>
     <div class="box">
-      <p class="label">Flood exposure</p>
+      <PanelHeading :source="floodSource">Flood exposure</PanelHeading>
       <div class="stat"><span>Severe warnings</span><b class="danger">{{ counts.severe }}</b></div>
       <div class="stat"><span>Flood warnings</span><b class="warn">{{ counts.warning }}</b></div>
       <div class="stat"><span>Flood alerts</span><b class="warn">{{ counts.alert }}</b></div>
     </div>
     <div class="box">
-      <p class="label">Current route</p>
+      <PanelHeading :source="routeSource">Current route</PanelHeading>
       <p class="title">{{ routeLabel }}</p>
       <p class="copy">{{ elevatedCount }} elevated gauges</p>
       <p class="copy">{{ incidents.length }} active incidents</p>

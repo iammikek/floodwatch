@@ -75,6 +75,17 @@ body {
   border: 1.5px solid var(--line);
   padding: 0.75rem;
 }
+.panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0 0 0.35rem;
+}
+.panel-heading .label {
+  margin: 0;
+  min-width: 0;
+}
 .box.dashed {
   border-style: dashed;
   background: repeating-linear-gradient(-45deg, #fff, #fff 6px, #f2f2f0 6px, #f2f2f0 12px);
@@ -129,6 +140,23 @@ body {
 }
 .gauge-card { cursor: pointer; }
 .gauge-card.is-selected { outline: 2px solid var(--annot); outline-offset: 1px; }
+.status-filter {
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  border: 1px solid transparent;
+  background: inherit;
+  font: inherit;
+  color: inherit;
+}
+.status-filter:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+.status-filter[aria-pressed="true"] {
+  outline: 2px solid var(--annot);
+  outline-offset: 1px;
+}
 
 .map-shell {
   display: grid;
