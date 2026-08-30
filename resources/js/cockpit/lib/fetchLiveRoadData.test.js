@@ -60,6 +60,39 @@ describe('fetchLiveRoadData', () => {
     expect(route.routeGeometry).toHaveLength(2);
   });
 
+  it('passes custom From/To into the route-check query', async () => {
+    const fetchImpl = vi.fn(async (url) => {
+      if (String(url).includes('/flood-watch/incidents')) {
+        return { ok: true, json: async () => ({ items: [] }) };
+      }
+      if (String(url).includes('/flood-watch/route-check')) {
+        expect(String(url)).toContain('from=Langport');
+        expect(String(url)).toContain('to=Taunton');
+        return {
+          ok: true,
+          json: async () => ({
+            verdict: 'delays',
+            verdict_label: 'Delays',
+            summary: 'Slow going.',
+            route_geometry: [],
+            from: 'Langport',
+            to: 'Taunton',
+          }),
+        };
+      }
+      return { ok: false, status: 404 };
+    });
+
+    const { route } = await fetchLiveRoadData({
+      fetchImpl,
+      from: 'Langport',
+      to: 'Taunton',
+    });
+    expect(route.from).toBe('Langport');
+    expect(route.to).toBe('Taunton');
+    expect(route.verdictLabel).toBe('Delays');
+  });
+
   it('falls back to mock when both road feeds fail', async () => {
     const { source, incidents, route, error } = await fetchLiveRoadData({
       fetchImpl: async () => ({ ok: false, status: 503 }),
