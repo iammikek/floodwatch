@@ -318,6 +318,7 @@ docs/
 ├── risk_correlation.md         # Flood/road correlation logic
 ├── tests.md                    # Test strategy and commands
 ├── troubleshooting.md          # Common issues and solutions
+├── ux-wireframes/              # Design archive; live Vue cockpit is /cockpit
 └── build/                      # Per-feature Cursor build specs
 ```
 

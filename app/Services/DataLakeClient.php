@@ -248,4 +248,9 @@ class DataLakeClient
             'history_days' => $historyDays,
         ], $ifNoneMatch);
     }
+
+    public function getPredictionCorridors(?string $ifNoneMatch = null): DataLakeResponse
+    {
+        return $this->fetch('/v1/predictions/corridors', [], $ifNoneMatch);
+    }
 }

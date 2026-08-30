@@ -1,6 +1,12 @@
 <?php
 
 return [
+    'cockpit' => [
+        'title' => 'Operator cockpit',
+        'badge' => 'Prototype',
+        'legacy_dashboard' => 'Legacy dashboard',
+    ],
+
     'progress' => [
         'looking_up_location' => 'Looking up location…',
         'fetching_prefetch' => 'Fetching flood forecast, weather and river levels…',

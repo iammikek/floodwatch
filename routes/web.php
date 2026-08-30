@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\FloodWatchPolygonsController;
+use App\Http\Controllers\FloodWatchPredictionsController;
 use App\Http\Controllers\FloodWatchRiverLevelsController;
 use App\Http\Controllers\FloodWatchTilesController;
 use App\Http\Controllers\FloodWatchWarningsController;
@@ -19,6 +20,12 @@ Route::get('/flood-watch/polygons', FloodWatchPolygonsController::class)
 Route::get('/flood-watch/river-levels', FloodWatchRiverLevelsController::class)
     ->middleware([EnsureFloodWatchSession::class, 'throttle:flood-watch-api'])
     ->name('flood-watch.river-levels');
+Route::get('/flood-watch/predictions', FloodWatchPredictionsController::class)
+    ->middleware([EnsureFloodWatchSession::class, 'throttle:flood-watch-api'])
+    ->name('flood-watch.predictions');
+Route::get('/flood-watch/predictions/corridors', [FloodWatchPredictionsController::class, 'corridors'])
+    ->middleware([EnsureFloodWatchSession::class, 'throttle:flood-watch-api'])
+    ->name('flood-watch.predictions.corridors');
 Route::get('/api/lake/warnings/tiles/{z}/{x}/{y}.pbf', [FloodWatchTilesController::class, 'warningsTile'])
     ->middleware(['throttle:flood-watch-api'])
     ->whereNumber(['z', 'x', 'y'])
@@ -31,6 +38,8 @@ Route::get('/api/lake/polygons/tiles/{dataset}/{z}/{x}/{y}.pbf', [FloodWatchTile
 Route::get('/api/lake/warnings', FloodWatchWarningsController::class)
     ->middleware(['throttle:flood-watch-api'])
     ->name('flood-watch.warnings');
+
+Route::view('/cockpit', 'cockpit')->name('cockpit');
 
 Route::livewire('/', 'flood-watch-dashboard');
 
