@@ -5,8 +5,11 @@ return [
         'title' => 'Operator cockpit',
         'badge' => 'Live',
         'legacy_dashboard' => 'Classic dashboard',
-        'classic_banner' => 'You are on the classic Livewire dashboard.',
-        'back_to_cockpit' => 'Back to operator cockpit',
+        'nav_label' => 'Primary',
+        'nav_cockpit' => 'Cockpit',
+        'nav_classic' => 'Classic',
+        'classic_banner' => 'Classic Livewire view',
+        'back_to_cockpit' => 'Cockpit',
     ],
 
     'progress' => [

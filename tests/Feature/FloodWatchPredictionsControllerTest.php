@@ -80,7 +80,9 @@ class FloodWatchPredictionsControllerTest extends TestCase
 
         $response->assertOk()
             ->assertSee('id="app"', false)
-            ->assertSee(__('flood-watch.cockpit.title'), false);
+            ->assertSee(__('flood-watch.cockpit.title'), false)
+            ->assertSee(__('flood-watch.cockpit.nav_cockpit'), false)
+            ->assertSee(__('flood-watch.cockpit.nav_classic'), false);
 
         $this->get('/cockpit')->assertRedirect('/');
     }

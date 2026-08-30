@@ -5,9 +5,10 @@ import PanelHeading from './PanelHeading.vue';
 import { rainfallSeries, seriesForGauge, keyGaugeId } from '../data/expandSeries.js';
 
 const props = defineProps({
-  /** floodwatch.prediction.v0 mock */
+  /** floodwatch.prediction.v0 */
   predictionDoc: { type: Object, required: true },
   gauges: { type: Array, default: () => [] },
+  /** Overall prediction feed: lake | static | pending */
   source: { type: String, default: 'static' },
 });
 
@@ -16,7 +17,25 @@ const rain = computed(() => rainfallSeries(props.predictionDoc));
 const kgId = computed(() => keyGaugeId(props.predictionDoc));
 const keyGauge = computed(() => props.gauges.find((g) => g.id === kgId.value) ?? null);
 const keySeries = computed(() => seriesForGauge(props.predictionDoc, kgId.value));
-const guide = computed(() => keyGauge.value?.typicalHigh ?? null);
+const guide = computed(
+  () =>
+    keyGauge.value?.typicalHigh ??
+    props.predictionDoc?.observables?.primaryAnalysis?.p95 ??
+    null,
+);
+
+/** Green only when this series is actually present on a live lake prediction. */
+const rainfallSource = computed(() => {
+  if (props.source === 'pending') return 'pending';
+  if (props.source === 'lake' && rain.value.length > 0) return 'lake';
+  return 'static';
+});
+
+const gaugeSeriesSource = computed(() => {
+  if (props.source === 'pending') return 'pending';
+  if (props.source === 'lake' && keySeries.value.length > 0) return 'lake';
+  return 'static';
+});
 
 const verdictClass = computed(() => {
   const v = p.value.verdict;
@@ -82,15 +101,17 @@ function riskClass(risk) {
     </div>
 
     <div class="grid-2" style="margin-top: 0.75rem">
-      <div>
-        <p class="label">Supporting · upstream rainfall (mm)</p>
+      <div class="box" style="padding: 0.55rem">
+        <PanelHeading :source="rainfallSource">Supporting · upstream rainfall (mm)</PanelHeading>
         <Sparkline :points="rain" />
         <p class="annot">Observable only — prediction uses history + trajectory</p>
       </div>
-      <div>
-        <p class="label">Supporting · {{ keyGauge?.station ?? kgId }} (m)</p>
+      <div class="box" style="padding: 0.55rem">
+        <PanelHeading :source="gaugeSeriesSource">
+          Supporting · {{ keyGauge?.station ?? kgId }} (m)
+        </PanelHeading>
         <Sparkline :points="keySeries" :guide="guide" stroke="#7a1f1f" />
-        <p class="copy">Dashed = typical high</p>
+        <p class="copy">Dashed = typical high (historic p95 when live)</p>
       </div>
     </div>
 
