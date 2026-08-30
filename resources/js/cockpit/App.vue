@@ -6,6 +6,7 @@ import { PRESETS } from './data/presets.js';
 import { seriesForGauge } from './data/expandSeries.js';
 import { fetchPrediction } from './lib/fetchPrediction.js';
 import { CORRIDOR_CENTER, fetchLiveMapData } from './lib/fetchLiveMapData.js';
+import { DEFAULT_ROUTE, fetchLiveRoadData } from './lib/fetchLiveRoadData.js';
 import CorridorRisk from './components/CorridorRisk.vue';
 import RiverResponse from './components/RiverResponse.vue';
 import LeanMap from './components/LeanMap.vue';
@@ -20,7 +21,7 @@ const scenarios = {
   stable: scenarioStable,
 };
 
-/** Demo fixtures only — default path is live lake via Laravel proxies. */
+/** Demo fixtures only — default path is live lake + Laravel road feeds. */
 const useDemoFixtures = ref(false);
 const scenarioId = ref('risk');
 const presetId = ref('dispatch');
@@ -28,8 +29,11 @@ const selected = ref(null);
 const predictionDoc = ref(null);
 const predictionSource = ref('pending');
 const mapSource = ref('pending');
+const roadSource = ref('pending');
 const liveGauges = ref([]);
 const liveFloods = ref([]);
+const liveIncidents = ref([]);
+const liveRoute = ref(null);
 const statusNotes = ref([]);
 const loading = ref(true);
 const inspectorRef = ref(null);
@@ -42,6 +46,9 @@ const floods = computed(() =>
 );
 const gauges = computed(() =>
   useDemoFixtures.value ? scenario.value.riverLevels : liveGauges.value,
+);
+const incidents = computed(() =>
+  useDemoFixtures.value ? scenario.value.incidents : liveIncidents.value,
 );
 const elevatedCount = computed(
   () => gauges.value.filter((g) => g.levelStatus === 'elevated').length,
@@ -68,13 +75,18 @@ const houseRisk = computed(() => {
 
 const roadsRisk = computed(() => {
   if (useDemoFixtures.value) return scenario.value.roadsRisk;
+  const n = incidents.value.length;
+  if (n > 0) return `Roads: ${n} live incident(s) near corridor`;
   return floods.value.length > 0
-    ? `Roads: ${floods.value.length} lake warning(s) in corridor bbox`
-    : 'Roads: no lake flood warnings in corridor bbox';
+    ? `Roads: ${floods.value.length} lake warning(s); no road incidents in view`
+    : 'Roads: no live incidents or lake warnings in view';
 });
 
 const corridorHeadline = computed(() => {
   if (useDemoFixtures.value) return scenario.value.corridor.headline;
+  if (liveRoute.value?.verdictLabel && liveRoute.value.verdict !== 'error') {
+    return `${liveRoute.value.verdictLabel} — ${DEFAULT_ROUTE.from} → ${DEFAULT_ROUTE.to}`;
+  }
   const verdict = predictionDoc.value?.prediction?.verdictLabel;
   if (verdict) return verdict;
   if (floods.value.some((f) => (f.severityLevel ?? 4) <= 2)) {
@@ -86,23 +98,34 @@ const corridorHeadline = computed(() => {
 
 const corridorGuidance = computed(() => {
   if (useDemoFixtures.value) return scenario.value.corridor.guidance;
+  if (liveRoute.value?.summary) return liveRoute.value.summary;
   return (
     predictionDoc.value?.prediction?.summary ||
-    'Live gauges and warnings from the data lake via Laravel proxies.'
+    'Live gauges, warnings, incidents, and route check via Laravel.'
   );
 });
 
 const routeLabel = computed(() => {
   if (useDemoFixtures.value) return scenario.value.route.verdictLabel;
+  if (liveRoute.value?.verdictLabel) return liveRoute.value.verdictLabel;
   const v = predictionDoc.value?.prediction?.verdict;
   if (v === 'likely_impassable' || v === 'at_risk') return 'At risk';
   if (v === 'watch') return 'Watch';
   return 'Clear';
 });
 
-const routeGeometry = computed(() =>
-  useDemoFixtures.value ? scenario.value.route.geometry : [],
-);
+const routeSummary = computed(() => {
+  if (useDemoFixtures.value) return scenario.value.route.summary;
+  if (liveRoute.value?.summary) {
+    return `${liveRoute.value.summary} (${liveRoute.value.from} → ${liveRoute.value.to})`;
+  }
+  return 'Route check unavailable — showing prediction fallback.';
+});
+
+const routeGeometry = computed(() => {
+  if (useDemoFixtures.value) return scenario.value.route.geometry;
+  return liveRoute.value?.routeGeometry ?? [];
+});
 
 const selectedSeries = computed(() => {
   if (!selected.value || selected.value.type !== 'gauge' || !predictionDoc.value) return [];
@@ -114,35 +137,72 @@ async function loadLive() {
   statusNotes.value = [];
   selected.value = null;
   try {
-    const [prediction, mapData] = await Promise.all([
-      fetchPrediction(CORRIDOR_ID, {
-        scenarioId: scenarioId.value,
-        preferMock: useDemoFixtures.value,
+    if (useDemoFixtures.value) {
+      predictionSource.value = 'mock';
+      predictionDoc.value = (
+        await fetchPrediction(CORRIDOR_ID, {
+          scenarioId: scenarioId.value,
+          preferMock: true,
+        })
+      ).doc;
+      mapSource.value = 'mock';
+      roadSource.value = 'mock';
+      liveGauges.value = scenario.value.riverLevels;
+      liveFloods.value = scenario.value.floods;
+      liveIncidents.value = scenario.value.incidents;
+      liveRoute.value = {
+        verdict: scenario.value.route.verdict,
+        verdictLabel: scenario.value.route.verdictLabel,
+        summary: scenario.value.route.summary,
+        routeGeometry: scenario.value.route.geometry,
+        from: DEFAULT_ROUTE.from,
+        to: DEFAULT_ROUTE.to,
+      };
+      return;
+    }
+
+    const [prediction, mapData, roadData] = await Promise.all([
+      fetchPrediction(CORRIDOR_ID, { scenarioId: scenarioId.value }),
+      fetchLiveMapData({
+        center: CORRIDOR_CENTER.center,
+        mockGauges: scenario.value.riverLevels,
+        mockFloods: scenario.value.floods,
       }),
-      useDemoFixtures.value
-        ? Promise.resolve({
-            source: 'mock',
-            gauges: scenario.value.riverLevels,
-            floods: scenario.value.floods,
-          })
-        : fetchLiveMapData({
-            center: CORRIDOR_CENTER.center,
-            mockGauges: scenario.value.riverLevels,
-            mockFloods: scenario.value.floods,
-          }),
+      fetchLiveRoadData({
+        lat: CORRIDOR_CENTER.center[0],
+        lng: CORRIDOR_CENTER.center[1],
+        mockIncidents: scenario.value.incidents,
+        mockRoute: {
+          verdict: scenario.value.route.verdict,
+          verdictLabel: scenario.value.route.verdictLabel,
+          summary: scenario.value.route.summary,
+          routeGeometry: scenario.value.route.geometry,
+          from: DEFAULT_ROUTE.from,
+          to: DEFAULT_ROUTE.to,
+        },
+      }),
     ]);
 
     predictionSource.value = prediction.source;
     predictionDoc.value = prediction.doc;
-    if (prediction.error && prediction.source === 'mock' && !useDemoFixtures.value) {
+    if (prediction.error && prediction.source === 'mock') {
       statusNotes.value.push(`Prediction: ${prediction.error} — using mock prediction.`);
     }
 
     mapSource.value = mapData.source;
     liveGauges.value = mapData.gauges;
     liveFloods.value = mapData.floods;
-    if (mapData.error && mapData.source === 'mock' && !useDemoFixtures.value) {
+    if (mapData.error && mapData.source === 'mock') {
       statusNotes.value.push(`Map overlays: ${mapData.error} — using demo fixtures.`);
+    }
+
+    roadSource.value = roadData.source;
+    liveIncidents.value = roadData.incidents;
+    liveRoute.value = roadData.route;
+    if (roadData.error && roadData.source === 'mock') {
+      statusNotes.value.push(`Roads: ${roadData.error} — using demo fixtures.`);
+    } else if (roadData.error) {
+      statusNotes.value.push(`Roads (partial): ${roadData.error}`);
     }
   } catch (err) {
     statusNotes.value.push(err instanceof Error ? err.message : String(err));
@@ -201,10 +261,10 @@ function onSelect(feature) {
 const dataSourceLabel = computed(() => {
   if (loading.value) return 'loading…';
   if (useDemoFixtures.value) return 'demo fixtures';
-  return `prediction:${predictionSource.value} · map:${mapSource.value}`;
+  return `prediction:${predictionSource.value} · map:${mapSource.value} · roads:${roadSource.value}`;
 });
 
-/** @param {'prediction'|'map'|'either'} kind */
+/** @param {'prediction'|'map'|'roads'|'either'} kind */
 function resolvePanelSource(kind) {
   if (useDemoFixtures.value) return 'static';
   if (loading.value) return 'pending';
@@ -216,20 +276,33 @@ function resolvePanelSource(kind) {
     if (mapSource.value === 'pending') return 'pending';
     return mapSource.value === 'lake' ? 'lake' : 'static';
   }
-  // either: green if any live lake feed
+  if (kind === 'roads') {
+    if (roadSource.value === 'pending') return 'pending';
+    return roadSource.value === 'live' ? 'live' : 'static';
+  }
   const pred = predictionSource.value === 'lake';
   const map = mapSource.value === 'lake';
-  if (predictionSource.value === 'pending' && mapSource.value === 'pending') return 'pending';
-  return pred || map ? 'lake' : 'static';
+  const roads = roadSource.value === 'live';
+  if (
+    predictionSource.value === 'pending' &&
+    mapSource.value === 'pending' &&
+    roadSource.value === 'pending'
+  ) {
+    return 'pending';
+  }
+  if (pred || map) return 'lake';
+  if (roads) return 'live';
+  return 'static';
 }
 
 const predictionPanelSource = computed(() => resolvePanelSource('prediction'));
 const mapPanelSource = computed(() => resolvePanelSource('map'));
+const roadsPanelSource = computed(() => resolvePanelSource('roads'));
 const eitherPanelSource = computed(() => resolvePanelSource('either'));
 
 const inspectorPanelSource = computed(() => {
   if (!selected.value) return 'static';
-  if (selected.value.type === 'incident') return 'static';
+  if (selected.value.type === 'incident') return roadsPanelSource.value;
   if (selected.value.type === 'gauge') return mapPanelSource.value;
   if (selected.value.type === 'warning') return mapPanelSource.value;
   return 'static';
@@ -250,10 +323,12 @@ const inspectorPanelSource = computed(() => {
     </header>
 
     <div class="note">
-      <strong>Product intent.</strong> Cockpit is fed by the data lake through Laravel:
+      <strong>Product intent.</strong> Cockpit is fed by the data lake and Laravel road services:
       <code>GET /flood-watch/predictions</code>,
       <code>GET /flood-watch/river-levels</code>,
-      <code>GET /api/lake/warnings</code>.
+      <code>GET /api/lake/warnings</code>,
+      <code>GET /flood-watch/incidents</code>,
+      <code>GET /flood-watch/route-check</code>.
       Demo fixtures are opt-in only.
     </div>
 
@@ -329,28 +404,22 @@ const inspectorPanelSource = computed(() => {
               <p class="copy">{{ roadsRisk }}</p>
             </div>
             <div class="box">
-              <PanelHeading :source="predictionPanelSource">Route check</PanelHeading>
+              <PanelHeading :source="roadsPanelSource">Route check</PanelHeading>
               <p class="title">{{ routeLabel }}</p>
-              <p class="copy">
-                {{
-                  useDemoFixtures
-                    ? scenario.route.summary
-                    : 'Route geometry not wired yet — verdict from lake prediction.'
-                }}
-              </p>
+              <p class="copy">{{ routeSummary }}</p>
             </div>
           </div>
 
           <CorridorRisk
             :floods="floods"
-            :incidents="useDemoFixtures ? scenario.incidents : []"
+            :incidents="incidents"
             :elevated-count="elevatedCount"
             :headline="corridorHeadline"
             :guidance="corridorGuidance"
             :route-label="routeLabel"
             :corridor-source="eitherPanelSource"
             :flood-source="mapPanelSource"
-            :route-source="predictionPanelSource"
+            :route-source="roadsPanelSource"
           />
 
           <PredictionPanel
@@ -365,7 +434,7 @@ const inspectorPanelSource = computed(() => {
               :center="mapCenter"
               :zoom="mapZoom"
               :floods="floods"
-              :incidents="useDemoFixtures ? scenario.incidents : []"
+              :incidents="incidents"
               :gauges="gauges"
               :route-geometry="routeGeometry"
               :preset="preset"

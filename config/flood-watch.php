@@ -179,6 +179,17 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Operator cockpit defaults
+    |--------------------------------------------------------------------------
+    */
+
+    'cockpit' => [
+        'default_route_from' => env('FLOOD_WATCH_COCKPIT_ROUTE_FROM', 'Muchelney, Somerset'),
+        'default_route_to' => env('FLOOD_WATCH_COCKPIT_ROUTE_TO', 'Bridgwater, Somerset'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Somerset Council roadworks and travel (scraped)
     |--------------------------------------------------------------------------
     |

@@ -1,9 +1,11 @@
 <?php
 
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\FloodWatchIncidentsController;
 use App\Http\Controllers\FloodWatchPolygonsController;
 use App\Http\Controllers\FloodWatchPredictionsController;
 use App\Http\Controllers\FloodWatchRiverLevelsController;
+use App\Http\Controllers\FloodWatchRouteCheckController;
 use App\Http\Controllers\FloodWatchTilesController;
 use App\Http\Controllers\FloodWatchWarningsController;
 use App\Http\Controllers\HealthController;
@@ -26,6 +28,12 @@ Route::get('/flood-watch/predictions', FloodWatchPredictionsController::class)
 Route::get('/flood-watch/predictions/corridors', [FloodWatchPredictionsController::class, 'corridors'])
     ->middleware([EnsureFloodWatchSession::class, 'throttle:flood-watch-api'])
     ->name('flood-watch.predictions.corridors');
+Route::get('/flood-watch/incidents', FloodWatchIncidentsController::class)
+    ->middleware([EnsureFloodWatchSession::class, 'throttle:flood-watch-api'])
+    ->name('flood-watch.incidents');
+Route::get('/flood-watch/route-check', FloodWatchRouteCheckController::class)
+    ->middleware([EnsureFloodWatchSession::class, 'throttle:flood-watch-api'])
+    ->name('flood-watch.route-check');
 Route::get('/api/lake/warnings/tiles/{z}/{x}/{y}.pbf', [FloodWatchTilesController::class, 'warningsTile'])
     ->middleware(['throttle:flood-watch-api'])
     ->whereNumber(['z', 'x', 'y'])
