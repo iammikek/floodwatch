@@ -455,14 +455,25 @@ const inspectorPanelSource = computed(() => {
 
       <div class="layout">
         <aside class="sidebar">
-          <div class="box dashed">
-            <PanelHeading source="static">Search / location</PanelHeading>
+          <div class="box">
+            <PanelHeading :source="mapPanelSource">Map focus</PanelHeading>
             <p class="title" style="font-size: 0.95rem">{{ locationLabel }}</p>
-            <p class="copy">Postcode / place · bookmarks (placeholder)</p>
+            <p class="copy">
+              Gauges, warnings, and incidents load for this map area
+              ({{ CORRIDOR_CENTER.radiusKm }} km).
+            </p>
           </div>
-          <div class="box dashed">
-            <PanelHeading source="static">History</PanelHeading>
-            <p class="copy">Recent searches…</p>
+          <div class="box" :class="{ 'is-waiting': routeBusy }">
+            <PanelHeading :source="roadsPanelSource">Active route</PanelHeading>
+            <template v-if="routeBusy">
+              <p class="waiting-copy">Waiting for route…</p>
+            </template>
+            <template v-else>
+              <p class="title" style="font-size: 0.95rem">
+                {{ routeFrom.trim() || '—' }} → {{ routeTo.trim() || '—' }}
+              </p>
+              <p class="copy">{{ routeLabel || 'Set From/To in Route check, then Check route.' }}</p>
+            </template>
           </div>
         </aside>
 
