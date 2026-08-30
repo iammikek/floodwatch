@@ -49,4 +49,13 @@ describe('RiverResponse status filters', () => {
     await filters[3].trigger('click'); // monitored / all
     expect(wrapper.findAll('.gauge-card')[0].text()).toContain('High');
   });
+
+  it('greys out and hides gauge counts while loading', () => {
+    const wrapper = mount(RiverResponse, { props: { gauges, loading: true } });
+    expect(wrapper.classes()).toContain('is-waiting');
+    expect(wrapper.text()).toContain('Waiting for gauges');
+    expect(wrapper.text()).not.toContain('monitored gauges');
+    expect(wrapper.findAll('.gauge-card')).toHaveLength(0);
+    expect(wrapper.findAll('button.status-filter')).toHaveLength(0);
+  });
 });

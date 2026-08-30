@@ -88,108 +88,109 @@ function formatTime(iso) {
 </script>
 
 <template>
-  <div class="box">
+  <div class="box" :class="{ 'is-waiting': loading }">
     <PanelHeading :source="source">River response</PanelHeading>
-    <div class="grid-2">
-      <div>
-        <p class="title">
-          <template v-if="loading">Loading gauges from the data lake…</template>
-          <template v-else>{{ gauges.length }} monitored gauges in the current map area</template>
-        </p>
-        <p class="copy">
-          Judge whether the corridor is stable, elevated, or reacting unevenly across nearby gauges.
-          Click a status count to filter priority gauges.
-        </p>
-      </div>
-      <div>
-        <div class="bar" aria-hidden="true">
-          <span class="elevated" :style="{ width: widths.elevated + '%' }" />
-          <span class="expected" :style="{ width: widths.expected + '%' }" />
-          <span class="low" :style="{ width: widths.low + '%' }" />
-          <span class="unknown" :style="{ width: widths.unknown + '%' }" />
+    <template v-if="loading">
+      <p class="waiting-copy">Waiting for gauges…</p>
+    </template>
+    <template v-else>
+      <div class="grid-2">
+        <div>
+          <p class="title">{{ gauges.length }} monitored gauges in the current map area</p>
+          <p class="copy">
+            Judge whether the corridor is stable, elevated, or reacting unevenly across nearby gauges.
+            Click a status count to filter priority gauges.
+          </p>
         </div>
-        <div
-          class="grid-4"
-          style="margin-top: 0.65rem"
-          role="group"
-          aria-label="Filter gauges by status"
-        >
-          <button
-            type="button"
-            class="box status-filter"
-            style="padding: 0.45rem"
-            :aria-pressed="statusFilter === 'elevated'"
-            :disabled="!counts.elevated"
-            @click="setStatusFilter('elevated')"
-          >
-            <p class="label">Elevated</p>
-            <p class="title danger" style="font-size: 1.25rem">{{ counts.elevated }}</p>
-          </button>
-          <button
-            type="button"
-            class="box status-filter"
-            style="padding: 0.45rem"
-            :aria-pressed="statusFilter === 'expected'"
-            :disabled="!counts.expected"
-            @click="setStatusFilter('expected')"
-          >
-            <p class="label">Expected</p>
-            <p class="title" style="font-size: 1.25rem">{{ counts.expected }}</p>
-          </button>
-          <button
-            type="button"
-            class="box status-filter"
-            style="padding: 0.45rem"
-            :aria-pressed="statusFilter === 'low'"
-            :disabled="!counts.low"
-            @click="setStatusFilter('low')"
-          >
-            <p class="label">Low</p>
-            <p class="title" style="font-size: 1.25rem">{{ counts.low }}</p>
-          </button>
-          <button
-            type="button"
-            class="box status-filter"
-            style="padding: 0.45rem"
-            :aria-pressed="statusFilter === 'all'"
-            @click="setStatusFilter('all')"
-          >
-            <p class="label">Monitored</p>
-            <p class="title" style="font-size: 1.25rem">{{ gauges.length }}</p>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <p class="label" style="margin-top: 0.85rem">{{ priorityLabel }}</p>
-    <div v-if="priority.length" class="gauge-grid">
-      <button
-        v-for="g in priority"
-        :key="g.id"
-        type="button"
-        class="box gauge-card"
-        :class="{ 'is-selected': selectedId === g.id }"
-        @click="emit('select', g)"
-      >
-        <div style="display: flex; justify-content: space-between; gap: 0.5rem">
-          <div>
-            <p class="title" style="font-size: 0.95rem">{{ g.station }}</p>
-            <p class="copy">{{ g.river }}</p>
+        <div>
+          <div class="bar" aria-hidden="true">
+            <span class="elevated" :style="{ width: widths.elevated + '%' }" />
+            <span class="expected" :style="{ width: widths.expected + '%' }" />
+            <span class="low" :style="{ width: widths.low + '%' }" />
+            <span class="unknown" :style="{ width: widths.unknown + '%' }" />
           </div>
-          <span class="tag" :class="statusClass(g.levelStatus)">{{ g.levelStatus }}</span>
+          <div
+            class="grid-4"
+            style="margin-top: 0.65rem"
+            role="group"
+            aria-label="Filter gauges by status"
+          >
+            <button
+              type="button"
+              class="box status-filter"
+              style="padding: 0.45rem"
+              :aria-pressed="statusFilter === 'elevated'"
+              :disabled="!counts.elevated"
+              @click="setStatusFilter('elevated')"
+            >
+              <p class="label">Elevated</p>
+              <p class="title danger" style="font-size: 1.25rem">{{ counts.elevated }}</p>
+            </button>
+            <button
+              type="button"
+              class="box status-filter"
+              style="padding: 0.45rem"
+              :aria-pressed="statusFilter === 'expected'"
+              :disabled="!counts.expected"
+              @click="setStatusFilter('expected')"
+            >
+              <p class="label">Expected</p>
+              <p class="title" style="font-size: 1.25rem">{{ counts.expected }}</p>
+            </button>
+            <button
+              type="button"
+              class="box status-filter"
+              style="padding: 0.45rem"
+              :aria-pressed="statusFilter === 'low'"
+              :disabled="!counts.low"
+              @click="setStatusFilter('low')"
+            >
+              <p class="label">Low</p>
+              <p class="title" style="font-size: 1.25rem">{{ counts.low }}</p>
+            </button>
+            <button
+              type="button"
+              class="box status-filter"
+              style="padding: 0.45rem"
+              :aria-pressed="statusFilter === 'all'"
+              @click="setStatusFilter('all')"
+            >
+              <p class="label">Monitored</p>
+              <p class="title" style="font-size: 1.25rem">{{ gauges.length }}</p>
+            </button>
+          </div>
         </div>
-        <p class="copy">
-          <b>{{ Number(g.value).toFixed(2) }} {{ g.unit }}</b>
-          · {{ formatTime(g.dateTime) }}
-        </p>
-      </button>
-    </div>
-    <p v-else class="copy" style="margin-top: 0.35rem">
-      <template v-if="loading">Waiting for gauges…</template>
-      <template v-else-if="statusFilter !== 'all'">
-        No {{ statusFilter }} gauges in this map area.
-      </template>
-      <template v-else>No gauges in this map area.</template>
-    </p>
+      </div>
+
+      <p class="label" style="margin-top: 0.85rem">{{ priorityLabel }}</p>
+      <div v-if="priority.length" class="gauge-grid">
+        <button
+          v-for="g in priority"
+          :key="g.id"
+          type="button"
+          class="box gauge-card"
+          :class="{ 'is-selected': selectedId === g.id }"
+          @click="emit('select', g)"
+        >
+          <div style="display: flex; justify-content: space-between; gap: 0.5rem">
+            <div>
+              <p class="title" style="font-size: 0.95rem">{{ g.station }}</p>
+              <p class="copy">{{ g.river }}</p>
+            </div>
+            <span class="tag" :class="statusClass(g.levelStatus)">{{ g.levelStatus }}</span>
+          </div>
+          <p class="copy">
+            <b>{{ Number(g.value).toFixed(2) }} {{ g.unit }}</b>
+            · {{ formatTime(g.dateTime) }}
+          </p>
+        </button>
+      </div>
+      <p v-else class="copy" style="margin-top: 0.35rem">
+        <template v-if="statusFilter !== 'all'">
+          No {{ statusFilter }} gauges in this map area.
+        </template>
+        <template v-else>No gauges in this map area.</template>
+      </p>
+    </template>
   </div>
 </template>

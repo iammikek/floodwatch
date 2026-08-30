@@ -24,4 +24,23 @@ describe('CorridorRisk', () => {
     const stats = wrapper.findAll('.stat b').map((n) => n.text());
     expect(stats).toEqual(expect.arrayContaining(['1', '1', '1']));
   });
+
+  it('greys out and hides counts while loading', () => {
+    const wrapper = mount(CorridorRisk, {
+      props: {
+        floods: [{ severity: 'Flood Warning', severityLevel: 2 }],
+        incidents: [{ id: 1 }],
+        elevatedCount: 2,
+        headline: 'Test headline',
+        guidance: 'Guidance',
+        routeLabel: 'Clear',
+        loading: true,
+      },
+    });
+    expect(wrapper.classes()).toContain('is-waiting');
+    expect(wrapper.text()).toContain('Waiting for corridor signals');
+    expect(wrapper.text()).not.toContain('Test headline');
+    expect(wrapper.text()).not.toContain('Clear');
+    expect(wrapper.findAll('.stat')).toHaveLength(0);
+  });
 });
