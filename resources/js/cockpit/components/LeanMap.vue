@@ -120,6 +120,21 @@ onBeforeUnmount(() => {
   }
 });
 
+function sameCenter(a, b) {
+  if (!Array.isArray(a) || !Array.isArray(b) || a.length < 2 || b.length < 2) return false;
+  return Number(a[0]) === Number(b[0]) && Number(a[1]) === Number(b[1]);
+}
+
+watch(
+  () => [props.center, props.zoom],
+  ([center, zoom], previous) => {
+    if (!map) return;
+    const [prevCenter, prevZoom] = previous ?? [];
+    if (sameCenter(center, prevCenter) && zoom === prevZoom) return;
+    map.setView(center, zoom, { animate: false });
+  },
+);
+
 watch(
   () => [
     props.floods,
@@ -128,12 +143,8 @@ watch(
     props.routeGeometry,
     props.preset,
     props.selectedId,
-    props.center,
-    props.zoom,
   ],
   () => {
-    if (!map) return;
-    map.setView(props.center, props.zoom, { animate: false });
     rebuildOverlays();
   },
   { deep: true },
