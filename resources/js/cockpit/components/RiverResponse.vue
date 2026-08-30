@@ -4,6 +4,7 @@ import { computed } from 'vue';
 const props = defineProps({
   gauges: { type: Array, default: () => [] },
   selectedId: { type: String, default: null },
+  loading: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(['select']);
@@ -60,7 +61,10 @@ function formatTime(iso) {
     <div class="grid-2">
       <div>
         <p class="label">River response</p>
-        <p class="title">{{ gauges.length }} monitored gauges in the current map area</p>
+        <p class="title">
+          <template v-if="loading">Loading gauges from the data lake…</template>
+          <template v-else>{{ gauges.length }} monitored gauges in the current map area</template>
+        </p>
         <p class="copy">
           Judge whether the corridor is stable, elevated, or reacting unevenly across nearby gauges.
         </p>
