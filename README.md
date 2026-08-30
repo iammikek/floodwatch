@@ -141,7 +141,11 @@ Run tests: `sail test`
 sail up -d          # Start containers
 sail test           # Run tests
 sail artisan ...    # Artisan commands
+npm run dev         # Vite (includes Vue cockpit at /cockpit)
+npm run test:cockpit
 ```
+
+Operator cockpit prototype (Vue): open [http://localhost/cockpit](http://localhost/cockpit) while `npm run dev` (or after `npm run build`). Livewire dashboard remains at `/`.
 
 Development plan (backlog, roadmap): [docs/plan.md](docs/plan.md)
 
@@ -178,6 +182,7 @@ What routes through the lake:
 - Warnings: `GET /v1/warnings` with `bbox` when map-centered
 - Measurements: `GET /v1/measurements` with `bbox`, optional `from`, `to`, and `aggregate=raw|hour|day`
 - Polygons: `GET /v1/polygons?inline=true&bbox=…` for small viewports (rendered directly on the map)
+- Predictions: `GET /v1/predictions` (Laravel proxy: `/flood-watch/predictions` for the Vue cockpit)
 
 Caching and robustness:
 - ETag-aware caching for warnings and measurements; on 304, the app serves the cached body
