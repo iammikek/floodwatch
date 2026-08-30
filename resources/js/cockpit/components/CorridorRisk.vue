@@ -10,6 +10,8 @@ const props = defineProps({
   guidance: { type: String, required: true },
   routeLabel: { type: String, required: true },
   loading: { type: Boolean, default: false },
+  /** Route-only refresh — greys the Current route tile without blanking floods. */
+  routeLoading: { type: Boolean, default: false },
   corridorSource: { type: String, default: 'static' },
   floodSource: { type: String, default: 'static' },
   routeSource: { type: String, default: 'static' },
@@ -52,9 +54,9 @@ const counts = computed(() => {
         <div class="stat"><span>Flood alerts</span><b class="warn">{{ counts.alert }}</b></div>
       </template>
     </div>
-    <div class="box">
+    <div class="box" :class="{ 'is-waiting': routeLoading && !loading }">
       <PanelHeading :source="routeSource">Current route</PanelHeading>
-      <template v-if="loading">
+      <template v-if="loading || routeLoading">
         <p class="waiting-copy">Waiting for route status…</p>
       </template>
       <template v-else>

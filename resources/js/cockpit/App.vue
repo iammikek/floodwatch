@@ -6,13 +6,14 @@ import { PRESETS } from './data/presets.js';
 import { seriesForGauge } from './data/expandSeries.js';
 import { fetchPrediction } from './lib/fetchPrediction.js';
 import { CORRIDOR_CENTER, fetchLiveMapData } from './lib/fetchLiveMapData.js';
-import { DEFAULT_ROUTE, fetchLiveRoadData } from './lib/fetchLiveRoadData.js';
+import { DEFAULT_ROUTE, fetchLiveRoadData, fetchRouteCheck } from './lib/fetchLiveRoadData.js';
 import CorridorRisk from './components/CorridorRisk.vue';
 import RiverResponse from './components/RiverResponse.vue';
 import LeanMap from './components/LeanMap.vue';
 import InspectorPanel from './components/InspectorPanel.vue';
 import PredictionPanel from './components/PredictionPanel.vue';
 import PanelHeading from './components/PanelHeading.vue';
+import RouteCheckForm from './components/RouteCheckForm.vue';
 
 const CORRIDOR_ID = 'a361-muchelney';
 
@@ -36,10 +37,14 @@ const liveIncidents = ref([]);
 const liveRoute = ref(null);
 const statusNotes = ref([]);
 const loading = ref(true);
+const routeChecking = ref(false);
+const routeFrom = ref(DEFAULT_ROUTE.from);
+const routeTo = ref(DEFAULT_ROUTE.to);
 const inspectorRef = ref(null);
 
 const scenario = computed(() => scenarios[scenarioId.value]);
 const preset = computed(() => PRESETS[presetId.value]);
+const routeBusy = computed(() => loading.value || routeChecking.value);
 
 const floods = computed(() => {
   if (loading.value) return [];
@@ -91,7 +96,7 @@ const corridorHeadline = computed(() => {
   if (loading.value) return '';
   if (useDemoFixtures.value) return scenario.value.corridor.headline;
   if (liveRoute.value?.verdictLabel && liveRoute.value.verdict !== 'error') {
-    return `${liveRoute.value.verdictLabel} — ${DEFAULT_ROUTE.from} → ${DEFAULT_ROUTE.to}`;
+    return `${liveRoute.value.verdictLabel} — ${liveRoute.value.from} → ${liveRoute.value.to}`;
   }
   const verdict = predictionDoc.value?.prediction?.verdictLabel;
   if (verdict) return verdict;
@@ -113,7 +118,7 @@ const corridorGuidance = computed(() => {
 });
 
 const routeLabel = computed(() => {
-  if (loading.value) return '';
+  if (loading.value || routeChecking.value) return '';
   if (useDemoFixtures.value) return scenario.value.route.verdictLabel;
   if (liveRoute.value?.verdictLabel) return liveRoute.value.verdictLabel;
   const v = predictionDoc.value?.prediction?.verdict;
@@ -123,8 +128,10 @@ const routeLabel = computed(() => {
 });
 
 const routeSummary = computed(() => {
-  if (loading.value) return '';
-  if (useDemoFixtures.value) return scenario.value.route.summary;
+  if (loading.value || routeChecking.value) return '';
+  if (useDemoFixtures.value) {
+    return `${scenario.value.route.summary} (${routeFrom.value} → ${routeTo.value})`;
+  }
   if (liveRoute.value?.summary) {
     return `${liveRoute.value.summary} (${liveRoute.value.from} → ${liveRoute.value.to})`;
   }
@@ -177,8 +184,8 @@ async function loadLive() {
         verdictLabel: scenario.value.route.verdictLabel,
         summary: scenario.value.route.summary,
         routeGeometry: scenario.value.route.geometry,
-        from: DEFAULT_ROUTE.from,
-        to: DEFAULT_ROUTE.to,
+        from: routeFrom.value,
+        to: routeTo.value,
       };
       return;
     }
@@ -193,14 +200,16 @@ async function loadLive() {
       fetchLiveRoadData({
         lat: CORRIDOR_CENTER.center[0],
         lng: CORRIDOR_CENTER.center[1],
+        from: routeFrom.value,
+        to: routeTo.value,
         mockIncidents: scenario.value.incidents,
         mockRoute: {
           verdict: scenario.value.route.verdict,
           verdictLabel: scenario.value.route.verdictLabel,
           summary: scenario.value.route.summary,
           routeGeometry: scenario.value.route.geometry,
-          from: DEFAULT_ROUTE.from,
-          to: DEFAULT_ROUTE.to,
+          from: routeFrom.value,
+          to: routeTo.value,
         },
       }),
     ]);
@@ -230,6 +239,45 @@ async function loadLive() {
     statusNotes.value.push(err instanceof Error ? err.message : String(err));
   } finally {
     loading.value = false;
+  }
+}
+
+/**
+ * Re-run only the From→To route check (keeps gauges / prediction / incidents).
+ */
+async function runRouteCheck() {
+  const from = routeFrom.value.trim();
+  const to = routeTo.value.trim();
+  if (!from || !to || routeBusy.value) return;
+
+  routeChecking.value = true;
+  statusNotes.value = statusNotes.value.filter((n) => !String(n).startsWith('Route check:'));
+  try {
+    if (useDemoFixtures.value) {
+      liveRoute.value = {
+        verdict: scenario.value.route.verdict,
+        verdictLabel: scenario.value.route.verdictLabel,
+        summary: scenario.value.route.summary,
+        routeGeometry: scenario.value.route.geometry,
+        from,
+        to,
+      };
+      roadSource.value = 'mock';
+      return;
+    }
+
+    const route = await fetchRouteCheck({ from, to });
+    liveRoute.value = route;
+    roadSource.value = 'live';
+    if (route.verdict === 'error') {
+      statusNotes.value.push(`Route check: ${route.summary || 'Could not resolve route.'}`);
+    }
+  } catch (err) {
+    statusNotes.value.push(
+      `Route check: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  } finally {
+    routeChecking.value = false;
   }
 }
 
@@ -430,15 +478,24 @@ const inspectorPanelSource = computed(() => {
                 <p class="copy">{{ roadsRisk }}</p>
               </template>
             </div>
-            <div class="box" :class="{ 'is-waiting': loading }">
+            <div class="box">
               <PanelHeading :source="roadsPanelSource">Route check</PanelHeading>
-              <template v-if="loading">
-                <p class="waiting-copy">Waiting for route check…</p>
-              </template>
-              <template v-else>
-                <p class="title">{{ routeLabel }}</p>
-                <p class="copy">{{ routeSummary }}</p>
-              </template>
+              <RouteCheckForm
+                v-model:from="routeFrom"
+                v-model:to="routeTo"
+                :disabled="loading"
+                :checking="routeChecking"
+                @check="runRouteCheck"
+              />
+              <div class="route-result" :class="{ 'is-waiting': routeBusy }">
+                <template v-if="routeBusy">
+                  <p class="waiting-copy">Waiting for route check…</p>
+                </template>
+                <template v-else>
+                  <p class="title">{{ routeLabel }}</p>
+                  <p class="copy">{{ routeSummary }}</p>
+                </template>
+              </div>
             </div>
           </div>
 
@@ -450,6 +507,7 @@ const inspectorPanelSource = computed(() => {
             :guidance="corridorGuidance"
             :route-label="routeLabel"
             :loading="loading"
+            :route-loading="routeChecking"
             :corridor-source="eitherPanelSource"
             :flood-source="mapPanelSource"
             :route-source="roadsPanelSource"

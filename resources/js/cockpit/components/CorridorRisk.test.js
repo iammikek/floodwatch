@@ -43,4 +43,25 @@ describe('CorridorRisk', () => {
     expect(wrapper.text()).not.toContain('Clear');
     expect(wrapper.findAll('.stat')).toHaveLength(0);
   });
+
+  it('greys only the Current route tile during routeLoading', () => {
+    const wrapper = mount(CorridorRisk, {
+      props: {
+        floods: [{ severity: 'Flood Warning', severityLevel: 2 }],
+        incidents: [{ id: 1 }],
+        elevatedCount: 2,
+        headline: 'Test headline',
+        guidance: 'Guidance',
+        routeLabel: 'Clear',
+        routeLoading: true,
+      },
+    });
+    expect(wrapper.classes()).not.toContain('is-waiting');
+    expect(wrapper.text()).toContain('Test headline');
+    expect(wrapper.text()).toContain('Waiting for route status');
+    expect(wrapper.text()).not.toContain('Clear');
+    expect(wrapper.findAll('.stat b').map((n) => n.text())).toEqual(
+      expect.arrayContaining(['1']),
+    );
+  });
 });
