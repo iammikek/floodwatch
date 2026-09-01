@@ -47,4 +47,23 @@ describe('geolocation', () => {
 
     await expect(getCurrentPosition()).rejects.toThrow(/permission denied/i);
   });
+
+  it('retries with low accuracy when GPS is unavailable', async () => {
+    Object.defineProperty(window, 'isSecureContext', { value: true, configurable: true });
+    const getCurrentPositionMock = vi.fn((success, reject, options) => {
+      if (options.enableHighAccuracy) {
+        reject({ code: 2 });
+        return;
+      }
+      success({ coords: { latitude: 51.04, longitude: -2.83 } });
+    });
+    vi.stubGlobal('navigator', {
+      geolocation: { getCurrentPosition: getCurrentPositionMock },
+    });
+
+    const pos = await getCurrentPosition();
+    expect(pos.coords.latitude).toBe(51.04);
+    expect(getCurrentPositionMock).toHaveBeenCalledTimes(2);
+    expect(getCurrentPositionMock.mock.calls[1][2].enableHighAccuracy).toBe(false);
+  });
 });

@@ -23,7 +23,7 @@ export function geolocationErrorMessage(error) {
     return 'Location permission denied. Allow access in your browser or enter a postcode.';
   }
   if (code === 2) {
-    return 'Location unavailable. Try entering a postcode.';
+    return 'Location unavailable. On Mac, enable Location Services for your browser in System Settings, or enter a postcode.';
   }
   if (code === 3) {
     return 'Location request timed out. Try again or enter a postcode.';
@@ -32,25 +32,61 @@ export function geolocationErrorMessage(error) {
 }
 
 /**
+ * @param {PositionOptions} options
+ * @returns {Promise<GeolocationPosition>}
+ */
+function requestPosition(options) {
+  return new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(resolve, reject, options);
+  });
+}
+
+/**
+ * High-accuracy first; falls back to network/cached fix (common on desktop).
+ *
  * @param {PositionOptions} [options]
  * @returns {Promise<GeolocationPosition>}
  */
-export function getCurrentPosition(options = {}) {
+export async function getCurrentPosition(options = {}) {
   const blocked = geolocationBlockedReason();
   if (blocked) {
-    return Promise.reject(new Error(blocked));
+    throw new Error(blocked);
   }
 
-  return new Promise((resolve, reject) => {
-    navigator.geolocation.getCurrentPosition(
-      resolve,
-      (error) => reject(new Error(geolocationErrorMessage(error))),
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
-        ...options,
-      },
-    );
-  });
+  const accurate = {
+    enableHighAccuracy: true,
+    timeout: 10000,
+    maximumAge: 0,
+    ...options,
+  };
+
+  try {
+    return await requestPosition(accurate);
+  } catch (firstError) {
+    const code =
+      firstError && typeof firstError === 'object'
+        ? /** @type {{ code?: number }} */ (firstError).code
+        : null;
+
+    // Permission denied — no point retrying.
+    if (code === 1) {
+      throw new Error(geolocationErrorMessage(firstError));
+    }
+
+    // Unavailable or slow GPS — retry with Wi‑Fi / cached position (desktop-friendly).
+    if (code === 2 || code === 3) {
+      try {
+        return await requestPosition({
+          enableHighAccuracy: false,
+          timeout: 15000,
+          maximumAge: 300000,
+          ...options,
+        });
+      } catch (secondError) {
+        throw new Error(geolocationErrorMessage(secondError));
+      }
+    }
+
+    throw new Error(geolocationErrorMessage(firstError));
+  }
 }
