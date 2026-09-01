@@ -146,7 +146,7 @@ describe('fetchLiveMapData helpers', () => {
     });
     expect(source).toBe('lake');
     expect(gauges[0].station).toBe('Gaw Bridge');
-    expect(floods[0].id).toBe('fallback-warn');
+    expect(floods).toHaveLength(0);
     expect(error).toMatch(/502/);
   });
 });

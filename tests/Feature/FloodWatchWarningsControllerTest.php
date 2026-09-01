@@ -45,9 +45,10 @@ it('returns empty items when no bbox/region/county provided', function () {
     $resp->assertJson(['items' => []]);
 });
 
-it('propagates non-success codes', function () {
+it('returns empty items when lake is unavailable', function () {
     config(['flood-watch.data_lake.base_url' => 'https://lake.example.test']);
     Http::fake(fn (Request $request) => Http::response([], 502));
     $resp = getJson('/api/lake/warnings?region=SOM');
-    $resp->assertStatus(502);
+    $resp->assertOk();
+    $resp->assertJson(['items' => []]);
 });

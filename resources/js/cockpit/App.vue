@@ -7,8 +7,9 @@ import { seriesForGauge } from './data/expandSeries.js';
 import { fetchPrediction } from './lib/fetchPrediction.js';
 import { CORRIDOR_CENTER, fetchLiveMapData } from './lib/fetchLiveMapData.js';
 import { DEFAULT_ROUTE, fetchLiveRoadData, fetchRouteCheck } from './lib/fetchLiveRoadData.js';
-import { initialRoute, loadRecentRoutes, rememberRecentRoute, saveStoredRoute } from './lib/routeStorage.js';
+import { initialRoute, loadRecentRoutes, loadStoredRoute, rememberRecentRoute, saveStoredRoute } from './lib/routeStorage.js';
 import { fetchBookmarks } from './lib/fetchBookmarks.js';
+import { resolveRouteFromOnLoad } from './lib/defaultBookmarkRoute.js';
 import RecentRoutesPanel from './components/RecentRoutesPanel.vue';
 import BookmarksPanel from './components/BookmarksPanel.vue';
 import CorridorRisk from './components/CorridorRisk.vue';
@@ -237,6 +238,8 @@ async function loadLive() {
     liveFloods.value = mapData.floods;
     if (mapData.error && mapData.source === 'mock') {
       statusNotes.value.push(`Map overlays: ${mapData.error} — using demo fixtures.`);
+    } else if (mapData.error) {
+      statusNotes.value.push(`Map overlays (partial): ${mapData.error}`);
     }
 
     roadSource.value = roadData.source;
@@ -286,6 +289,19 @@ async function loadBookmarks() {
     bookmarksAuthenticated.value = false;
   } finally {
     bookmarksLoading.value = false;
+  }
+}
+
+function applyDefaultBookmarkOnLoad() {
+  if (useDemoFixtures.value) return;
+  const resolved = resolveRouteFromOnLoad({
+    storedRoute: loadStoredRoute(),
+    bookmarks: bookmarks.value,
+    fallbackFrom: DEFAULT_ROUTE.from,
+  });
+  routeFrom.value = resolved.from;
+  if (resolved.bookmark) {
+    focusMapOn(resolved.bookmark.lat, resolved.bookmark.lng);
   }
 }
 
@@ -383,9 +399,10 @@ function onKeydown(event) {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  await loadBookmarks();
+  applyDefaultBookmarkOnLoad();
   loadLive();
-  loadBookmarks();
   window.addEventListener('keydown', onKeydown);
 });
 
