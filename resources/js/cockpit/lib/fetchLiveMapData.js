@@ -245,8 +245,8 @@ export async function fetchLiveMapData({
 
   return {
     source: 'lake',
-    gauges: gaugesOk ? gaugesResult.value : mockGauges,
-    floods: floodsOk ? floodsResult.value : mockFloods,
+    gauges: gaugesOk ? gaugesResult.value : [],
+    floods: floodsOk ? floodsResult.value : [],
     ...(errors.length ? { error: errors.join('; ') } : {}),
   };
 }

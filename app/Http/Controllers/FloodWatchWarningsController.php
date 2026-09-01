@@ -67,6 +67,7 @@ class FloodWatchWarningsController extends Controller
                 ->header('Cache-Control', 'public, max-age=300');
         }
 
-        return response()->json(['items' => []], $resp->status);
+        return response()->json(['items' => []], 200)
+            ->header('Cache-Control', 'public, max-age=60');
     }
 }
