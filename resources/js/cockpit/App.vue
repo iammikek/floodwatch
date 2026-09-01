@@ -7,7 +7,10 @@ import { seriesForGauge } from './data/expandSeries.js';
 import { fetchPrediction } from './lib/fetchPrediction.js';
 import { CORRIDOR_CENTER, fetchLiveMapData } from './lib/fetchLiveMapData.js';
 import { DEFAULT_ROUTE, fetchLiveRoadData, fetchRouteCheck } from './lib/fetchLiveRoadData.js';
-import { initialRoute, saveStoredRoute } from './lib/routeStorage.js';
+import { initialRoute, loadRecentRoutes, rememberRecentRoute, saveStoredRoute } from './lib/routeStorage.js';
+import { fetchBookmarks } from './lib/fetchBookmarks.js';
+import RecentRoutesPanel from './components/RecentRoutesPanel.vue';
+import BookmarksPanel from './components/BookmarksPanel.vue';
 import CorridorRisk from './components/CorridorRisk.vue';
 import RiverResponse from './components/RiverResponse.vue';
 import LeanMap from './components/LeanMap.vue';
@@ -42,6 +45,11 @@ const routeChecking = ref(false);
 const initial = initialRoute(DEFAULT_ROUTE);
 const routeFrom = ref(initial.from);
 const routeTo = ref(initial.to);
+const recentRoutes = ref(loadRecentRoutes());
+const bookmarks = ref([]);
+const bookmarksAuthenticated = ref(false);
+const bookmarksLoading = ref(true);
+const routeFitToken = ref(0);
 const inspectorRef = ref(null);
 
 const scenario = computed(() => scenarios[scenarioId.value]);
@@ -244,6 +252,34 @@ async function loadLive() {
   }
 }
 
+function requestRouteFit() {
+  routeFitToken.value += 1;
+}
+
+function noteRecentRoute(from, to) {
+  recentRoutes.value = rememberRecentRoute({ from, to });
+}
+
+function maybeFitRoute(route) {
+  if (route?.routeGeometry?.length >= 2) {
+    requestRouteFit();
+  }
+}
+
+async function loadBookmarks() {
+  bookmarksLoading.value = true;
+  try {
+    const result = await fetchBookmarks();
+    bookmarks.value = result.items;
+    bookmarksAuthenticated.value = result.authenticated;
+  } catch {
+    bookmarks.value = [];
+    bookmarksAuthenticated.value = false;
+  } finally {
+    bookmarksLoading.value = false;
+  }
+}
+
 /**
  * Re-run only the From→To route check (keeps gauges / prediction / incidents).
  */
@@ -265,6 +301,8 @@ async function runRouteCheck() {
         to,
       };
       roadSource.value = 'mock';
+      noteRecentRoute(from, to);
+      maybeFitRoute(liveRoute.value);
       return;
     }
 
@@ -273,6 +311,9 @@ async function runRouteCheck() {
     roadSource.value = 'live';
     if (route.verdict === 'error') {
       statusNotes.value.push(`Route check: ${route.summary || 'Could not resolve route.'}`);
+    } else {
+      noteRecentRoute(from, to);
+      maybeFitRoute(route);
     }
   } catch (err) {
     statusNotes.value.push(
@@ -286,6 +327,16 @@ async function runRouteCheck() {
 function onRouteGpsError(message) {
   statusNotes.value = statusNotes.value.filter((n) => !String(n).startsWith('GPS:'));
   statusNotes.value.push(`GPS: ${message}`);
+}
+
+function applyRecentRoute(route) {
+  routeFrom.value = route.from;
+  routeTo.value = route.to;
+  runRouteCheck();
+}
+
+function applyBookmarkFrom(bookmark) {
+  routeFrom.value = bookmark.location;
 }
 
 watch([routeFrom, routeTo], ([from, to]) => {
@@ -320,6 +371,7 @@ function onKeydown(event) {
 
 onMounted(() => {
   loadLive();
+  loadBookmarks();
   window.addEventListener('keydown', onKeydown);
 });
 
@@ -486,6 +538,18 @@ const inspectorPanelSource = computed(() => {
               <p class="copy">{{ routeLabel || 'Set From/To in Route check, then Check route.' }}</p>
             </template>
           </div>
+          <RecentRoutesPanel
+            :routes="recentRoutes"
+            :disabled="routeBusy"
+            @select="applyRecentRoute"
+          />
+          <BookmarksPanel
+            :bookmarks="bookmarks"
+            :authenticated="bookmarksAuthenticated"
+            :loading="bookmarksLoading"
+            :disabled="routeBusy"
+            @select="applyBookmarkFrom"
+          />
         </aside>
 
         <div class="main">
@@ -555,6 +619,7 @@ const inspectorPanelSource = computed(() => {
               :incidents="incidents"
               :gauges="gauges"
               :route-geometry="routeGeometry"
+              :route-fit-token="routeFitToken"
               :preset="preset"
               :selected-id="selected?.id ?? null"
               :source="mapPanelSource"

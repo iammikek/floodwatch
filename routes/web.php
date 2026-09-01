@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\FloodWatchBookmarksController;
 use App\Http\Controllers\FloodWatchIncidentsController;
 use App\Http\Controllers\FloodWatchPolygonsController;
 use App\Http\Controllers\FloodWatchPredictionsController;
@@ -38,6 +39,9 @@ Route::get('/flood-watch/route-check', FloodWatchRouteCheckController::class)
 Route::get('/flood-watch/reverse-geocode', FloodWatchReverseGeocodeController::class)
     ->middleware([EnsureFloodWatchSession::class, 'throttle:flood-watch-api'])
     ->name('flood-watch.reverse-geocode');
+Route::get('/flood-watch/bookmarks', FloodWatchBookmarksController::class)
+    ->middleware([EnsureFloodWatchSession::class, 'throttle:flood-watch-api'])
+    ->name('flood-watch.bookmarks');
 Route::get('/api/lake/warnings/tiles/{z}/{x}/{y}.pbf', [FloodWatchTilesController::class, 'warningsTile'])
     ->middleware(['throttle:flood-watch-api'])
     ->whereNumber(['z', 'x', 'y'])
