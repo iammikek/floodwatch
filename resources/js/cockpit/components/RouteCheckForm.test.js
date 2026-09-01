@@ -69,6 +69,7 @@ describe('RouteCheckForm', () => {
   });
 
   it('sets From from GPS via reverse geocode', async () => {
+    Object.defineProperty(window, 'isSecureContext', { value: true, configurable: true });
     vi.stubGlobal('navigator', {
       geolocation: {
         getCurrentPosition: (success) =>
@@ -101,5 +102,20 @@ describe('RouteCheckForm', () => {
 
     await wrapper.find('button.route-gps').trigger('click');
     expect(wrapper.emitted('gps-error')?.[0]?.[0]).toMatch(/not available/i);
+  });
+
+  it('emits gps-error when not a secure context', async () => {
+    Object.defineProperty(window, 'isSecureContext', { value: false, configurable: true });
+    vi.stubGlobal('navigator', { geolocation: {} });
+
+    const wrapper = mount(RouteCheckForm, {
+      props: {
+        from: 'A',
+        to: 'B',
+      },
+    });
+
+    await wrapper.find('button.route-gps').trigger('click');
+    expect(wrapper.emitted('gps-error')?.[0]?.[0]).toMatch(/HTTPS or localhost/i);
   });
 });

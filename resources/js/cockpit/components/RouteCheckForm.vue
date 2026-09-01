@@ -1,5 +1,10 @@
 <script setup>
 import { ref } from 'vue';
+import {
+  geolocationBlockedReason,
+  geolocationErrorMessage,
+  getCurrentPosition,
+} from '../lib/geolocation.js';
 import { reverseGeocodeFromCoords } from '../lib/reverseGeocode.js';
 
 const props = defineProps({
@@ -27,24 +32,30 @@ function swap() {
 
 async function useMyLocation() {
   if (props.disabled || props.checking || gpsLoading.value) return;
-  if (!navigator.geolocation) {
-    emit('gps-error', 'Geolocation is not available in this browser.');
+
+  const blocked = geolocationBlockedReason();
+  if (blocked) {
+    emit('gps-error', blocked);
     return;
   }
 
   gpsLoading.value = true;
   try {
-    const position = await new Promise((resolve, reject) => {
-      navigator.geolocation.getCurrentPosition(resolve, reject, {
-        enableHighAccuracy: true,
-        timeout: 10000,
-      });
-    });
+    const position = await getCurrentPosition();
 
-    const result = await reverseGeocodeFromCoords({
-      lat: position.coords.latitude,
-      lng: position.coords.longitude,
-    });
+    let result;
+    try {
+      result = await reverseGeocodeFromCoords({
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+      });
+    } catch (err) {
+      emit(
+        'gps-error',
+        err instanceof Error ? err.message : 'Reverse geocode request failed.',
+      );
+      return;
+    }
 
     if (result.valid && result.inArea && result.location) {
       from.value = result.location;
@@ -52,8 +63,11 @@ async function useMyLocation() {
     }
 
     emit('gps-error', result.error ?? 'Could not resolve your location.');
-  } catch {
-    emit('gps-error', 'Could not get your location.');
+  } catch (err) {
+    emit(
+      'gps-error',
+      err instanceof Error ? err.message : geolocationErrorMessage(err),
+    );
   } finally {
     gpsLoading.value = false;
   }
