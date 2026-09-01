@@ -23,6 +23,8 @@ export async function fetchBookmarks({ fetchImpl = fetch } = {}) {
       id: Number(row.id),
       label: String(row.label ?? ''),
       location: String(row.location ?? ''),
+      lat: row.lat != null ? Number(row.lat) : null,
+      lng: row.lng != null ? Number(row.lng) : null,
       is_default: Boolean(row.is_default ?? row.isDefault),
     }))
     .filter((row) => row.id && row.location),

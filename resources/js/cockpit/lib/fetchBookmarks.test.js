@@ -8,7 +8,7 @@ describe('fetchBookmarks', () => {
       json: async () => ({
         authenticated: true,
         items: [
-          { id: 1, label: 'Home', location: 'TA10 0DP', is_default: true },
+          { id: 1, label: 'Home', location: 'TA10 0DP', lat: 51.04, lng: -2.83, is_default: true },
         ],
       }),
     }));
@@ -18,5 +18,7 @@ describe('fetchBookmarks', () => {
     expect(result.items[0].label).toBe('Home');
     expect(result.items[0].is_default).toBe(true);
     expect(result.authenticated).toBe(true);
+    expect(result.items[0].lat).toBe(51.04);
+    expect(result.items[0].lng).toBe(-2.83);
   });
 });

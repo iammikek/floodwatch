@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import scenarioRisk from './data/scenario-risk.json';
 import scenarioStable from './data/scenario-stable.json';
 import { PRESETS } from './data/presets.js';
@@ -50,10 +50,12 @@ const bookmarks = ref([]);
 const bookmarksAuthenticated = ref(false);
 const bookmarksLoading = ref(true);
 const routeFitToken = ref(0);
+const mapFocusToken = ref(0);
+const mapFocusCenter = ref(null);
 const inspectorRef = ref(null);
 
 const scenario = computed(() => scenarios[scenarioId.value]);
-const preset = computed(() => PRESETS[presetId.value]);
+const preset = computed(() => PRESETS[presetId.value] ?? PRESETS.dispatch);
 const routeBusy = computed(() => loading.value || routeChecking.value);
 
 const floods = computed(() => {
@@ -256,12 +258,19 @@ function requestRouteFit() {
   routeFitToken.value += 1;
 }
 
+function focusMapOn(lat, lng, zoom = 12) {
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+  mapFocusCenter.value = { center: [lat, lng], zoom };
+  mapFocusToken.value += 1;
+}
+
 function noteRecentRoute(from, to) {
   recentRoutes.value = rememberRecentRoute({ from, to });
 }
 
-function maybeFitRoute(route) {
+async function maybeFitRoute(route) {
   if (route?.routeGeometry?.length >= 2) {
+    await nextTick();
     requestRouteFit();
   }
 }
@@ -302,7 +311,7 @@ async function runRouteCheck() {
       };
       roadSource.value = 'mock';
       noteRecentRoute(from, to);
-      maybeFitRoute(liveRoute.value);
+      await maybeFitRoute(liveRoute.value);
       return;
     }
 
@@ -313,7 +322,7 @@ async function runRouteCheck() {
       statusNotes.value.push(`Route check: ${route.summary || 'Could not resolve route.'}`);
     } else {
       noteRecentRoute(from, to);
-      maybeFitRoute(route);
+      await maybeFitRoute(route);
     }
   } catch (err) {
     statusNotes.value.push(
@@ -337,6 +346,11 @@ function applyRecentRoute(route) {
 
 function applyBookmarkFrom(bookmark) {
   routeFrom.value = bookmark.location;
+  if (routeTo.value.trim()) {
+    runRouteCheck();
+    return;
+  }
+  focusMapOn(bookmark.lat, bookmark.lng);
 }
 
 watch([routeFrom, routeTo], ([from, to]) => {
@@ -453,17 +467,42 @@ const inspectorPanelSource = computed(() => {
           <span v-if="loading"> · loading…</span>
         </p>
       </div>
+      <div class="toolbar" role="group" aria-label="Data mode">
+        <button
+          type="button"
+          :aria-pressed="!useDemoFixtures"
+          @click="useDemoFixtures = false"
+        >
+          Live lake (via Laravel)
+        </button>
+        <button
+          type="button"
+          :aria-pressed="useDemoFixtures"
+          @click="useDemoFixtures = true"
+        >
+          Demo fixtures
+        </button>
+        <template v-if="useDemoFixtures">
+          <button
+            type="button"
+            :aria-pressed="scenarioId === 'risk'"
+            @click="setScenario('risk')"
+          >
+            Scenario: at risk
+          </button>
+          <button
+            type="button"
+            :aria-pressed="scenarioId === 'stable'"
+            @click="setScenario('stable')"
+          >
+            Scenario: stable
+          </button>
+        </template>
+        <button type="button" @click="loadLive" :disabled="loading">
+          Refresh
+        </button>
+      </div>
     </header>
-
-    <div class="note">
-      <strong>Product intent.</strong> Cockpit is fed by the data lake and Laravel road services:
-      <code>GET /flood-watch/predictions</code>,
-      <code>GET /flood-watch/river-levels</code>,
-      <code>GET /api/lake/warnings</code>,
-      <code>GET /flood-watch/incidents</code>,
-      <code>GET /flood-watch/route-check</code>.
-      Demo fixtures are opt-in only.
-    </div>
 
     <div
       v-for="(note, idx) in statusNotes"
@@ -472,42 +511,6 @@ const inspectorPanelSource = computed(() => {
       style="border-color: #7a1f1f; background: #fdecec"
     >
       <strong>Notice.</strong> {{ note }}
-    </div>
-
-    <div class="toolbar" role="group" aria-label="Data mode">
-      <button
-        type="button"
-        :aria-pressed="!useDemoFixtures"
-        @click="useDemoFixtures = false"
-      >
-        Live lake (via Laravel)
-      </button>
-      <button
-        type="button"
-        :aria-pressed="useDemoFixtures"
-        @click="useDemoFixtures = true"
-      >
-        Demo fixtures
-      </button>
-      <template v-if="useDemoFixtures">
-        <button
-          type="button"
-          :aria-pressed="scenarioId === 'risk'"
-          @click="setScenario('risk')"
-        >
-          Scenario: at risk
-        </button>
-        <button
-          type="button"
-          :aria-pressed="scenarioId === 'stable'"
-          @click="setScenario('stable')"
-        >
-          Scenario: stable
-        </button>
-      </template>
-      <button type="button" @click="loadLive" :disabled="loading">
-        Refresh
-      </button>
     </div>
 
     <div class="frame">
@@ -620,6 +623,8 @@ const inspectorPanelSource = computed(() => {
               :gauges="gauges"
               :route-geometry="routeGeometry"
               :route-fit-token="routeFitToken"
+              :map-focus-token="mapFocusToken"
+              :map-focus-center="mapFocusCenter"
               :preset="preset"
               :selected-id="selected?.id ?? null"
               :source="mapPanelSource"
