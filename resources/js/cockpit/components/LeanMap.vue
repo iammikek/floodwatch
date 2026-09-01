@@ -1,7 +1,7 @@
 <script setup>
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import L from 'leaflet';
-import { PRESETS } from '../data/presets.js';
+import { boundsFromRouteGeometry } from '../lib/fitRouteBounds.js';
 import PanelHeading from './PanelHeading.vue';
 
 const props = defineProps({
@@ -14,6 +14,8 @@ const props = defineProps({
   preset: { type: Object, required: true },
   selectedId: { type: String, default: null },
   source: { type: String, default: 'static' },
+  /** Increment to fit the map viewport to the active route polyline. */
+  routeFitToken: { type: Number, default: 0 },
 });
 
 const emit = defineEmits(['select', 'update:preset']);
@@ -99,6 +101,13 @@ function rebuildOverlays() {
   }
 }
 
+function fitMapToRoute() {
+  if (!map) return;
+  const bounds = boundsFromRouteGeometry(props.routeGeometry);
+  if (!bounds) return;
+  map.fitBounds(bounds, { padding: [36, 36], maxZoom: 13 });
+}
+
 onMounted(() => {
   map = L.map(mapEl.value, {
     zoomControl: true,
@@ -148,6 +157,15 @@ watch(
     rebuildOverlays();
   },
   { deep: true },
+);
+
+watch(
+  () => props.routeFitToken,
+  (token) => {
+    if (!map || !token) return;
+    rebuildOverlays();
+    fitMapToRoute();
+  },
 );
 </script>
 

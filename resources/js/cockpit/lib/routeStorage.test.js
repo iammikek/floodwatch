@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { ROUTE_STORAGE_KEY, initialRoute, loadStoredRoute, saveStoredRoute } from './routeStorage.js';
+import { ROUTE_STORAGE_KEY, initialRoute, loadStoredRoute, rememberRecentRoute, saveStoredRoute } from './routeStorage.js';
 import { DEFAULT_ROUTE } from './fetchLiveRoadData.js';
 
 describe('routeStorage', () => {
@@ -38,6 +38,24 @@ describe('routeStorage', () => {
       setItem: vi.fn(),
     });
     expect(loadStoredRoute()).toBeNull();
+    vi.unstubAllGlobals();
+  });
+
+  it('remembers recent routes without duplicates', () => {
+    const store = new Map();
+    vi.stubGlobal('localStorage', {
+      getItem: (k) => store.get(k) ?? null,
+      setItem: (k, v) => store.set(k, v),
+    });
+
+    rememberRecentRoute({ from: 'Langport', to: 'Taunton' });
+    const second = rememberRecentRoute({ from: 'Muchelney', to: 'Bridgwater' });
+    expect(second).toHaveLength(2);
+    expect(second[0].from).toBe('Muchelney');
+
+    const third = rememberRecentRoute({ from: 'Langport', to: 'Taunton' });
+    expect(third[0]).toEqual({ from: 'Langport', to: 'Taunton' });
+    expect(third).toHaveLength(2);
     vi.unstubAllGlobals();
   });
 });

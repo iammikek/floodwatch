@@ -295,3 +295,30 @@ body {
   cursor: not-allowed;
 }
 .route-result { margin-top: 0.15rem; }
+
+.sidebar-chip {
+  display: block;
+  width: 100%;
+  margin-top: 0.35rem;
+  padding: 0.4rem 0.55rem;
+  border: 1.5px solid var(--line);
+  background: #fff;
+  font: inherit;
+  font-size: 0.82rem;
+  text-align: left;
+  cursor: pointer;
+}
+.sidebar-chip.is-default {
+  border-color: var(--annot);
+  background: #eef4ff;
+}
+.sidebar-chip:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.sidebar-chip:first-of-type {
+  margin-top: 0.15rem;
+}
+.box .copy a {
+  color: var(--annot);
+}

@@ -3,6 +3,59 @@
  */
 
 export const ROUTE_STORAGE_KEY = 'flood-watch-cockpit-route';
+export const ROUTE_HISTORY_KEY = 'flood-watch-cockpit-route-history';
+export const MAX_RECENT_ROUTES = 5;
+
+/**
+ * @returns {Array<{ from: string, to: string }>}
+ */
+export function loadRecentRoutes() {
+  if (typeof localStorage === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(ROUTE_HISTORY_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map((row) => ({
+        from: typeof row?.from === 'string' ? row.from.trim() : '',
+        to: typeof row?.to === 'string' ? row.to.trim() : '',
+      }))
+      .filter((row) => row.from && row.to)
+      .slice(0, MAX_RECENT_ROUTES);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * @param {Array<{ from: string, to: string }>} routes
+ */
+function saveRecentRoutes(routes) {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(ROUTE_HISTORY_KEY, JSON.stringify(routes.slice(0, MAX_RECENT_ROUTES)));
+  } catch {
+    // ignore quota / private mode
+  }
+}
+
+/**
+ * @param {{ from: string, to: string }} route
+ * @returns {Array<{ from: string, to: string }>}
+ */
+export function rememberRecentRoute(route) {
+  const from = route.from?.trim?.() ?? '';
+  const to = route.to?.trim?.() ?? '';
+  if (!from || !to) return loadRecentRoutes();
+
+  const next = [{ from, to }, ...loadRecentRoutes().filter((r) => r.from !== from || r.to !== to)].slice(
+    0,
+    MAX_RECENT_ROUTES,
+  );
+  saveRecentRoutes(next);
+  return next;
+}
 
 /**
  * @returns {{ from: string, to: string } | null}
