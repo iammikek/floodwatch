@@ -31,6 +31,7 @@ Implementation specs for Cursor agentic development. Build in order; each spec i
 
 | # | Spec | Est. | Purpose |
 |---|------|------|---------|
+| **11** | **[Prediction v1 — historic analogues (USP)](11-prediction-v1-analogues.md)** | ~2–3 w | Multi-gauge analogue engine, backfill, prediction-first cockpit |
 | 9 | [Smarter route verdict](09-smarter-route-verdict.md) | ~8–10 h | Rivers on route, wet areas, Muchelney rule |
 | 10 | [Analytics layer](10-analytics-layer.md) | ~2–4 h | Operational metrics, trends, dashboard, alerts |
 
