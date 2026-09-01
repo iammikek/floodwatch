@@ -17,7 +17,14 @@ describe('RecentRoutesPanel', () => {
 
 describe('BookmarksPanel', () => {
   it('emits select with bookmark location', async () => {
-    const bookmark = { id: 1, label: 'Home', location: 'TA10 0DP', is_default: true };
+    const bookmark = {
+      id: 1,
+      label: 'Home',
+      location: 'TA10 0DP',
+      lat: 51.04,
+      lng: -2.83,
+      is_default: true,
+    };
     const wrapper = mount(BookmarksPanel, {
       props: { bookmarks: [bookmark] },
     });

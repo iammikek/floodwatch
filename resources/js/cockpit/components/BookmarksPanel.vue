@@ -29,7 +29,7 @@ const emit = defineEmits(['select']);
         {{ bookmark.label }} · {{ bookmark.location }}
       </button>
       <p class="copy">
-        Tap to set route From.
+        Tap to set route From and refresh the map.
         <a :href="profileUrl">Manage bookmarks</a>
       </p>
     </template>

@@ -1,8 +1,11 @@
 <script setup>
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { onBeforeUnmount, onMounted, ref, watch, nextTick, computed } from 'vue';
 import L from 'leaflet';
+import { PRESETS } from '../data/presets.js';
 import { boundsFromRouteGeometry } from '../lib/fitRouteBounds.js';
 import PanelHeading from './PanelHeading.vue';
+
+const presetOptions = computed(() => Object.values(PRESETS ?? {}));
 
 const props = defineProps({
   center: { type: Array, required: true },
@@ -16,6 +19,10 @@ const props = defineProps({
   source: { type: String, default: 'static' },
   /** Increment to fit the map viewport to the active route polyline. */
   routeFitToken: { type: Number, default: 0 },
+  /** Increment to pan the map to mapFocusCenter (bookmark / point focus). */
+  mapFocusToken: { type: Number, default: 0 },
+  /** @type {{ center: [number, number], zoom?: number } | null} */
+  mapFocusCenter: { type: Object, default: null },
 });
 
 const emit = defineEmits(['select', 'update:preset']);
@@ -42,9 +49,10 @@ function rebuildOverlays() {
     overlay = L.layerGroup().addTo(map);
   }
 
-  const layers = props.preset.layers;
-  const warningCap = props.preset.warningCap ?? 8;
-  const gaugeCap = props.preset.gaugeCap ?? 12;
+  const preset = props.preset ?? PRESETS.dispatch;
+  const layers = preset.layers ?? PRESETS.dispatch.layers;
+  const warningCap = preset.warningCap ?? PRESETS.dispatch.warningCap ?? 8;
+  const gaugeCap = preset.gaugeCap ?? PRESETS.dispatch.gaugeCap ?? 12;
 
   if (layers.route && props.routeGeometry?.length >= 2) {
     const latLngs = props.routeGeometry.map(([lng, lat]) => [lat, lng]);
@@ -108,7 +116,10 @@ function fitMapToRoute() {
   map.fitBounds(bounds, { padding: [36, 36], maxZoom: 13 });
 }
 
-onMounted(() => {
+onMounted(async () => {
+  await nextTick();
+  if (!mapEl.value) return;
+
   map = L.map(mapEl.value, {
     zoomControl: true,
     attributionControl: false,
@@ -161,10 +172,22 @@ watch(
 
 watch(
   () => props.routeFitToken,
-  (token) => {
+  async (token) => {
     if (!map || !token) return;
     rebuildOverlays();
+    await nextTick();
     fitMapToRoute();
+  },
+);
+
+watch(
+  () => props.mapFocusToken,
+  async (token) => {
+    if (!map || !token || !props.mapFocusCenter?.center) return;
+    const [lat, lng] = props.mapFocusCenter.center;
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+    await nextTick();
+    map.setView([lat, lng], props.mapFocusCenter.zoom ?? 12, { animate: true });
   },
 );
 </script>
@@ -175,7 +198,7 @@ watch(
       <div class="box">
         <PanelHeading :source="source">View preset</PanelHeading>
         <button
-          v-for="p in Object.values(PRESETS)"
+          v-for="p in presetOptions"
           :key="p.id"
           type="button"
           class="preset-btn"
@@ -186,10 +209,10 @@ watch(
         </button>
       </div>
       <div class="box dashed">
-        <span>route {{ preset.layers.route ? 'on' : 'off' }}</span><br />
-        <span>warnings {{ preset.layers.warnings ? 'on' : 'off' }}</span><br />
-        <span>roads {{ preset.layers.incidents ? 'on' : 'off' }}</span><br />
-        <span>gauges {{ preset.layers.gauges ? 'on' : 'off' }}</span>
+        <span>route {{ (preset ?? PRESETS.dispatch).layers.route ? 'on' : 'off' }}</span><br />
+        <span>warnings {{ (preset ?? PRESETS.dispatch).layers.warnings ? 'on' : 'off' }}</span><br />
+        <span>roads {{ (preset ?? PRESETS.dispatch).layers.incidents ? 'on' : 'off' }}</span><br />
+        <span>gauges {{ (preset ?? PRESETS.dispatch).layers.gauges ? 'on' : 'off' }}</span>
       </div>
     </div>
     <div ref="mapEl" class="map-el" />
