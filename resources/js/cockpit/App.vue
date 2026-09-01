@@ -7,6 +7,7 @@ import { seriesForGauge } from './data/expandSeries.js';
 import { fetchPrediction } from './lib/fetchPrediction.js';
 import { CORRIDOR_CENTER, fetchLiveMapData } from './lib/fetchLiveMapData.js';
 import { DEFAULT_ROUTE, fetchLiveRoadData, fetchRouteCheck } from './lib/fetchLiveRoadData.js';
+import { initialRoute, saveStoredRoute } from './lib/routeStorage.js';
 import CorridorRisk from './components/CorridorRisk.vue';
 import RiverResponse from './components/RiverResponse.vue';
 import LeanMap from './components/LeanMap.vue';
@@ -38,8 +39,9 @@ const liveRoute = ref(null);
 const statusNotes = ref([]);
 const loading = ref(true);
 const routeChecking = ref(false);
-const routeFrom = ref(DEFAULT_ROUTE.from);
-const routeTo = ref(DEFAULT_ROUTE.to);
+const initial = initialRoute(DEFAULT_ROUTE);
+const routeFrom = ref(initial.from);
+const routeTo = ref(initial.to);
 const inspectorRef = ref(null);
 
 const scenario = computed(() => scenarios[scenarioId.value]);
@@ -281,6 +283,15 @@ async function runRouteCheck() {
   }
 }
 
+function onRouteGpsError(message) {
+  statusNotes.value = statusNotes.value.filter((n) => !String(n).startsWith('GPS:'));
+  statusNotes.value.push(`GPS: ${message}`);
+}
+
+watch([routeFrom, routeTo], ([from, to]) => {
+  saveStoredRoute({ from, to });
+});
+
 watch(useDemoFixtures, () => {
   if (useDemoFixtures.value) {
     presetId.value = scenario.value.preset || 'dispatch';
@@ -497,6 +508,7 @@ const inspectorPanelSource = computed(() => {
                 :disabled="loading"
                 :checking="routeChecking"
                 @check="runRouteCheck"
+                @gps-error="onRouteGpsError"
               />
               <div class="route-result" :class="{ 'is-waiting': routeBusy }">
                 <template v-if="routeBusy">

@@ -247,6 +247,12 @@ body {
   .route-swap { justify-self: start; }
 }
 .route-field { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+.route-from-row {
+  display: flex;
+  gap: 0.35rem;
+  align-items: stretch;
+}
+.route-from-row input { flex: 1; min-width: 0; }
 .route-field .label { margin: 0; }
 .route-field input {
   width: 100%;
@@ -262,7 +268,8 @@ body {
   cursor: not-allowed;
 }
 .route-swap,
-.route-submit {
+.route-submit,
+.route-gps {
   font-family: var(--mono);
   font-size: 0.8rem;
   min-height: 2.25rem;
@@ -271,6 +278,10 @@ body {
   background: var(--panel);
   cursor: pointer;
 }
+.route-gps {
+  padding-inline: 0.45rem;
+  flex-shrink: 0;
+}
 .route-swap { padding-inline: 0.5rem; }
 .route-submit {
   background: var(--ink);
@@ -278,7 +289,8 @@ body {
   white-space: nowrap;
 }
 .route-swap:disabled,
-.route-submit:disabled {
+.route-submit:disabled,
+.route-gps:disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }
