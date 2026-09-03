@@ -573,17 +573,19 @@ const inspectorPanelSource = computed(() => {
         </aside>
 
         <div class="main">
-          <div class="grid-2">
-            <div class="box" :class="{ 'is-waiting': loading }">
-              <PanelHeading :source="mapPanelSource">Your risk</PanelHeading>
-              <template v-if="loading">
-                <p class="waiting-copy">Waiting for risk signals…</p>
-              </template>
-              <template v-else>
-                <p class="title">{{ houseRisk }}</p>
-                <p class="copy">{{ roadsRisk }}</p>
-              </template>
-            </div>
+          <PredictionPanel
+            v-if="predictionDoc && !loading"
+            class="primary-panel"
+            :prediction-doc="predictionDoc"
+            :gauges="gauges"
+            :source="predictionPanelSource"
+          />
+          <div v-else-if="loading" class="box outlook primary-panel is-waiting">
+            <PanelHeading source="pending">Corridor prediction · historic EA analogues</PanelHeading>
+            <p class="waiting-copy">Waiting for prediction…</p>
+          </div>
+
+          <div class="grid-2 support-grid">
             <div class="box">
               <PanelHeading :source="roadsPanelSource">Route check</PanelHeading>
               <RouteCheckForm
@@ -604,9 +606,20 @@ const inspectorPanelSource = computed(() => {
                 </template>
               </div>
             </div>
+            <div class="box" :class="{ 'is-waiting': loading }">
+              <PanelHeading :source="mapPanelSource">Your risk</PanelHeading>
+              <template v-if="loading">
+                <p class="waiting-copy">Waiting for risk signals…</p>
+              </template>
+              <template v-else>
+                <p class="title">{{ houseRisk }}</p>
+                <p class="copy">{{ roadsRisk }}</p>
+              </template>
+            </div>
           </div>
 
           <CorridorRisk
+            class="corridor-summary"
             :floods="floods"
             :incidents="incidents"
             :elevated-count="elevatedCount"
@@ -619,17 +632,6 @@ const inspectorPanelSource = computed(() => {
             :flood-source="mapPanelSource"
             :route-source="roadsPanelSource"
           />
-
-          <PredictionPanel
-            v-if="predictionDoc && !loading"
-            :prediction-doc="predictionDoc"
-            :gauges="gauges"
-            :source="predictionPanelSource"
-          />
-          <div v-else-if="loading" class="box outlook is-waiting">
-            <PanelHeading source="pending">Corridor prediction · historic EA analogues</PanelHeading>
-            <p class="waiting-copy">Waiting for prediction…</p>
-          </div>
 
           <div class="map-shell" :class="{ 'is-waiting': loading }">
             <LeanMap
