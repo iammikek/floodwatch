@@ -16,6 +16,8 @@ Laravel same-origin proxy for the cockpit:
 
 v0 method: `historic_stage_trajectory_v0` — station-relative percentiles + recent slope from mined EA readings under `data/raw/ea/readings/`. Primary measure for A361 Muchelney slice: Gaw Bridge `52119-level-stage-i-15_min-mASD` (longest local history). Midelney stands in for Muchelney (no EA gauge with that name).
 
+**v1 build spec (USP):** [`docs/build/11-prediction-v1-analogues.md`](../build/11-prediction-v1-analogues.md) — multi-gauge historic analogue matching, `floodwatch.prediction.v1`, prediction-first cockpit.
+
 ## Shape
 
 | Field | Role |

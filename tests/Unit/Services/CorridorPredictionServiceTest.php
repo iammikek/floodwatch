@@ -36,8 +36,9 @@ class CorridorPredictionServiceTest extends TestCase
         Config::set(ConfigKey::DATA_LAKE.'.base_url', 'http://lake.test');
 
         $body = [
-            'schema' => 'floodwatch.prediction.v0',
+            'schema' => 'floodwatch.prediction.v1',
             'prediction' => ['verdict' => 'clear'],
+            'method' => ['name' => 'historic_analogue_v1'],
         ];
         $client = Mockery::mock(DataLakeClient::class);
         $client->shouldReceive('getPredictions')

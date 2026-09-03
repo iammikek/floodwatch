@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Log;
 use Throwable;
 
 /**
- * Fetches floodwatch.prediction.v0 corridor predictions from the data lake.
+ * Fetches floodwatch.prediction.v1 corridor predictions from the data lake.
  */
 class CorridorPredictionService
 {
@@ -52,7 +52,7 @@ class CorridorPredictionService
             return null;
         }
 
-        if (($res->body['schema'] ?? null) !== 'floodwatch.prediction.v0') {
+        if (($res->body['schema'] ?? null) !== 'floodwatch.prediction.v1') {
             Log::warning('Corridor prediction schema mismatch', [
                 'corridor' => $corridorId,
                 'schema' => $res->body['schema'] ?? null,

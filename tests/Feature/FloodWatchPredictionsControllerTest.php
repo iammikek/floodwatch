@@ -43,9 +43,11 @@ class FloodWatchPredictionsControllerTest extends TestCase
             ->getJson('/flood-watch/predictions?corridor=a361-muchelney');
 
         $response->assertOk()
-            ->assertJsonPath('schema', 'floodwatch.prediction.v0')
+            ->assertJsonPath('schema', 'floodwatch.prediction.v1')
             ->assertJsonPath('corridor.id', 'a361-muchelney')
-            ->assertJsonPath('prediction.verdict', 'at_risk');
+            ->assertJsonPath('prediction.verdict', 'at_risk')
+            ->assertJsonPath('method.name', 'historic_analogue_v1')
+            ->assertJsonPath('drivers.1.type', 'historic_analogue');
     }
 
     public function test_predictions_returns_503_when_lake_unavailable(): void

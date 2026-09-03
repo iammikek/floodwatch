@@ -138,7 +138,7 @@ class DataLakeClientTest extends TestCase
 
         Http::fake([
             'http://lake.test/v1/predictions*' => Http::response(
-                ['schema' => 'floodwatch.prediction.v0', 'prediction' => ['verdict' => 'clear']],
+                ['schema' => 'floodwatch.prediction.v1', 'prediction' => ['verdict' => 'clear']],
                 200,
                 ['ETag' => 'W/"pred1"']
             ),
@@ -149,7 +149,7 @@ class DataLakeClientTest extends TestCase
 
         $this->assertSame(200, $res->status);
         $this->assertSame('W/"pred1"', $res->etag);
-        $this->assertSame('floodwatch.prediction.v0', $res->body['schema']);
+        $this->assertSame('floodwatch.prediction.v1', $res->body['schema']);
         Http::assertSent(function ($request) {
             return str_contains($request->url(), '/v1/predictions')
                 && str_contains($request->url(), 'corridor=a361-muchelney')

@@ -5,7 +5,7 @@ import PanelHeading from './PanelHeading.vue';
 import { rainfallSeries, seriesForGauge, keyGaugeId } from '../data/expandSeries.js';
 
 const props = defineProps({
-  /** floodwatch.prediction.v0 */
+  /** floodwatch.prediction.v1 */
   predictionDoc: { type: Object, required: true },
   gauges: { type: Array, default: () => [] },
   /** Overall prediction feed: lake | static | pending */

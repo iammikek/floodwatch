@@ -123,8 +123,9 @@ class DataLakeClientContractTest extends TestCase
         $this->assertSame(200, $res->status);
         $this->assertSame('W/"pred-1"', $res->etag);
         $this->assertIsArray($res->body);
-        $this->assertSame('floodwatch.prediction.v0', $res->body['schema']);
+        $this->assertSame('floodwatch.prediction.v1', $res->body['schema']);
         $this->assertArrayHasKey('prediction', $res->body);
+        $this->assertArrayHasKey('drivers', $res->body);
         $this->assertArrayHasKey('dispatch', $res->body);
         $this->assertArrayHasKey('method', $res->body);
         foreach (['verdict', 'verdictLabel', 'summary', 'confidence'] as $key) {
@@ -132,6 +133,7 @@ class DataLakeClientContractTest extends TestCase
         }
         $this->assertArrayHasKey('safeToPass', $res->body['dispatch']);
         $this->assertArrayHasKey('name', $res->body['method']);
+        $this->assertArrayHasKey('parameters', $res->body['method']);
     }
 
     /**
