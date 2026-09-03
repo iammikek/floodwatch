@@ -43,7 +43,7 @@ class FloodWatchDashboard extends Component
 
     public array $riverLevels = [];
 
-    /** @var array<string, mixed>|null floodwatch.prediction.v0 from data lake */
+    /** @var array<string, mixed>|null floodwatch.prediction.v1 from data lake */
     public ?array $corridorPrediction = null;
 
     public ?array $mapCenter = null;

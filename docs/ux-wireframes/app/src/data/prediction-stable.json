@@ -1,5 +1,5 @@
 {
-  "schema": "floodwatch.prediction.v0",
+  "schema": "floodwatch.prediction.v1",
   "as_of": "2026-08-29T09:15:00Z",
   "region": "SOM",
   "corridor": {
@@ -35,7 +35,7 @@
     "safeToPass": true
   },
   "method": {
-    "name": "historic_analogue_v0",
+    "name": "historic_analogue_v1",
     "inputs": ["ea_stage_history", "live_stage", "rainfall_proxy_mock"],
     "notes": "UX contract mock — not a live model. Future lake: GET /v1/predictions or /v1/retrieve-context prediction block."
   },

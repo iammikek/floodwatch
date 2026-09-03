@@ -1,5 +1,5 @@
 /**
- * Load floodwatch.prediction.v0 for a corridor.
+ * Load floodwatch.prediction.v1 for a corridor.
  * Prefer lake API when VITE_LAKE_API_URL is set; else use bundled mock.
  */
 import predictionRisk from '../data/prediction-risk.json';

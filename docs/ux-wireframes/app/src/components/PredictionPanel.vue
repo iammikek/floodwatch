@@ -4,7 +4,7 @@ import Sparkline from './Sparkline.vue';
 import { rainfallSeries, seriesForGauge, keyGaugeId } from '../data/expandSeries.js';
 
 const props = defineProps({
-  /** floodwatch.prediction.v0 mock */
+  /** floodwatch.prediction.v1 mock */
   predictionDoc: { type: Object, required: true },
   gauges: { type: Array, default: () => [] },
 });

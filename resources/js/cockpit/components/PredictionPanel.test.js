@@ -12,7 +12,7 @@ describe('PredictionPanel', () => {
     });
     expect(wrapper.text()).toContain(predictionRisk.prediction.verdictLabel);
     expect(wrapper.text()).toContain('Muchelney low lanes');
-    expect(wrapper.text()).toContain('historic_analogue_v0');
+    expect(wrapper.text()).toContain('historic_analogue_v1');
   });
 
   it('renders clear verdict without affected areas list items', () => {

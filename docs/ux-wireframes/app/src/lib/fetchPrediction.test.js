@@ -5,7 +5,7 @@ describe('fetchPrediction', () => {
   it('returns mock when no base URL', async () => {
     const { source, doc } = await fetchPrediction('a361-muchelney', { baseUrl: '' });
     expect(source).toBe('mock');
-    expect(doc.schema).toBe('floodwatch.prediction.v0');
+    expect(doc.schema).toBe('floodwatch.prediction.v1');
     expect(doc.prediction.verdict).toBeTruthy();
   });
 

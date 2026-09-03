@@ -1,6 +1,6 @@
 # Build: Prediction v1 — Historic EA Analogues (USP)
 
-**Status:** Draft spec  
+**Status:** Implemented in core repos; keep as design + rollout record  
 **Ref:** `docs/ux-wireframes/prediction-contract.md`, `docs/plan.md`, `docs/DATA_LAKE_MIGRATION_PLAN.md`  
 **Repos:** `flood-watch` (Laravel + cockpit), `flood-watch-data-lake` (engine + data)
 
@@ -12,7 +12,7 @@ Predictions are the **USP**. Warnings, river levels, route check, and map layers
 
 > Given mined EA hydrology for a corridor, say **what happens next**, **when**, and **how confident** we are — before formal flood warnings or road closures.
 
-Today the cockpit shows **“Corridor prediction · historic EA analogues”**, but the live engine is **`historic_stage_trajectory_v0`** (single-gauge percentiles + slope). Mock JSON still describes `historic_analogue` drivers the lake does not produce. That gap undermines the USP.
+This document captured the gap between the original cockpit wording and the first live implementation. That gap has now been closed by the v1 rollout: the lake serves `historic_analogue_v1`, Laravel accepts `floodwatch.prediction.v1`, and cockpit mocks/docs have been aligned to the live contract.
 
 **v1 goal:** ship a defensible **multi-gauge historic analogue matcher** on the A361 Muchelney corridor, with honest confidence, eval fixtures, and **prediction-first** cockpit layout.
 
@@ -25,7 +25,7 @@ Today the cockpit shows **“Corridor prediction · historic EA analogues”**, 
 | **Data lake** | `GET /v1/predictions`, `predict_corridor()` in `api/services/predictions.py`, corridor registry in `api/config/corridors.py` | No true analogue search; needs 2–3 yr backfill per corridor gauge |
 | **Laravel** | `CorridorPredictionService`, `GET /flood-watch/predictions`, session gate | Returns 503 when lake down; cockpit silently falls back to mock |
 | **Cockpit** | `PredictionPanel.vue`, `fetchPrediction.js` | Prediction sits **below** risk/route blocks; mock fallback masks outages |
-| **Contract** | `floodwatch.prediction.v0` | Mock drivers use `historic_analogue`; live uses `gauge_trajectory` + `historic_percentile` |
+| **Contract** | `floodwatch.prediction.v1` | Keep mocks, Laravel proxy, and cockpit rendering pinned to the live v1 schema |
 
 Primary measure (longest history): Gaw Bridge `52119-level-stage-i-15_min-mASD`.  
 Corridor gauges: Gaw Bridge, Midelney, Westonzoyland PS, Langport Great Bow.
@@ -289,7 +289,7 @@ if (!res.ok) {
 | Sparse EA history on Midelney / Langport | Require min 80% gauge coverage in window; degrade to 3-gauge fingerprint with note in `method.notes` |
 | Analogue false confidence | Cap confidence; show `analogue_consensus` driver with counts; eval before marketing “skill” |
 | Lake down in prod | Error panel + status notice; warnings/route still work |
-| Schema drift mock vs live | Bump to v1; drop mock `historic_analogue_v0` method name in fixtures |
+| Schema drift mock vs live | Keep fixture, README, and cockpit docs pinned to `floodwatch.prediction.v1` / `historic_analogue_v1` |
 
 ---
 
