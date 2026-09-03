@@ -5,7 +5,7 @@ describe('fetchPrediction', () => {
   it('returns mock when preferMock is set', async () => {
     const { source, doc } = await fetchPrediction('a361-muchelney', { preferMock: true });
     expect(source).toBe('mock');
-    expect(doc.schema).toBe('floodwatch.prediction.v0');
+    expect(doc.schema).toBe('floodwatch.prediction.v1');
     expect(doc.prediction.verdict).toBeTruthy();
   });
 
@@ -30,7 +30,7 @@ describe('fetchPrediction', () => {
       fetchImpl: async () => ({ ok: false, status: 503 }),
     });
     expect(source).toBe('mock');
-    expect(doc.schema).toBe('floodwatch.prediction.v0');
+    expect(doc.schema).toBe('floodwatch.prediction.v1');
     expect(error).toMatch(/503/);
   });
 });

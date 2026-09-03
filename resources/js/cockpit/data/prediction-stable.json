@@ -1,5 +1,5 @@
 {
-  "schema": "floodwatch.prediction.v0",
+  "schema": "floodwatch.prediction.v1",
   "as_of": "2026-08-29T09:15:00Z",
   "region": "SOM",
   "corridor": {
@@ -35,9 +35,15 @@
     "safeToPass": true
   },
   "method": {
-    "name": "historic_analogue_v0",
-    "inputs": ["ea_stage_history", "live_stage", "rainfall_proxy_mock"],
-    "notes": "UX contract mock — not a live model. Future lake: GET /v1/predictions or /v1/retrieve-context prediction block."
+    "name": "historic_analogue_v1",
+    "inputs": ["ea_stage_history_hour", "corridor_gauge_set"],
+    "parameters": {
+      "windowHours": 24,
+      "historyDays": 120,
+      "topK": 20,
+      "minSimilarity": 0.85
+    },
+    "notes": "Mock v1 contract for cockpit fallback. Not a live rainfall-lag or depth model."
   },
   "observables": {
     "seriesStart": "2026-08-28T21:00:00Z",

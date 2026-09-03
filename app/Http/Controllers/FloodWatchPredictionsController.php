@@ -14,7 +14,7 @@ class FloodWatchPredictionsController extends Controller
     ) {}
 
     /**
-     * Return floodwatch.prediction.v0 for a corridor (proxied from the data lake).
+     * Return floodwatch.prediction.v1 for a corridor (proxied from the data lake).
      */
     public function __invoke(Request $request): JsonResponse
     {

@@ -1,5 +1,5 @@
 /**
- * Load floodwatch.prediction.v0 for a corridor via Laravel (same-origin).
+ * Load floodwatch.prediction.v1 for a corridor via Laravel (same-origin).
  * Falls back to bundled mock when the API is unavailable.
  */
 import predictionRisk from '../data/prediction-risk.json';
@@ -36,7 +36,7 @@ export async function fetchPrediction(
       throw new Error(`Prediction request failed: ${res.status}`);
     }
     const doc = await res.json();
-    if (!doc || doc.schema !== 'floodwatch.prediction.v0') {
+    if (!doc || doc.schema !== 'floodwatch.prediction.v1') {
       throw new Error('Prediction schema mismatch');
     }
     return { source: 'lake', doc };
