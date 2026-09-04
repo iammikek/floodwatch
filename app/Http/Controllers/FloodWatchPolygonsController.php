@@ -24,7 +24,10 @@ class FloodWatchPolygonsController extends Controller
             $outcode = (string) $request->query('outcode', '');
             $region = $this->mapOutcodeToRegion($outcode);
             $dataset = 'flood_zones';
-            $format = 'simplified';
+            $format = (string) $request->query('format', 'simplified');
+            if (! in_array($format, ['simplified', 'normalized'], true)) {
+                $format = 'simplified';
+            }
             $store = config('flood-watch.cache_store', 'flood-watch');
             $ttlMinutes = (int) config('flood-watch.cache_ttl_minutes', 0);
             $prefix = config('flood-watch.cache_key_prefix', 'flood-watch');
@@ -48,7 +51,7 @@ class FloodWatchPolygonsController extends Controller
                     'error' => $e->getMessage(),
                 ]);
 
-                return response()->json([]);
+                return response()->json(['type' => 'FeatureCollection', 'features' => []]);
             }
 
             if ($resp->status === 304 && is_array($cached) && isset($cached['body'])) {
@@ -68,9 +71,9 @@ class FloodWatchPolygonsController extends Controller
             }
 
             if ($resp->status !== 200 || ! is_array($resp->body)) {
-                return response()->json([]);
+                return response()->json(['type' => 'FeatureCollection', 'features' => []]);
             }
-            $geo = $resp->body;
+            $geo = $this->featureCollectionFromLakeBody($resp->body);
             if ($ttlMinutes > 0 && $resp->etag) {
                 Cache::store($store)->put($cacheKey, ['etag' => $resp->etag, 'body' => $geo], now()->addMinutes($ttlMinutes));
             }
@@ -109,6 +112,28 @@ class FloodWatchPolygonsController extends Controller
         }
 
         return response()->json($polygons);
+    }
+
+    /**
+     * Lake /v1/polygons wraps GeoJSON in { data: FeatureCollection }; accept either shape.
+     *
+     * @param  array<string, mixed>  $body
+     * @return array{type: string, features: list<mixed>}
+     */
+    private function featureCollectionFromLakeBody(array $body): array
+    {
+        $candidate = $body;
+        if (isset($body['data']) && is_array($body['data'])) {
+            $candidate = $body['data'];
+        }
+        if (($candidate['type'] ?? null) === 'FeatureCollection' && is_array($candidate['features'] ?? null)) {
+            return [
+                'type' => 'FeatureCollection',
+                'features' => array_values($candidate['features']),
+            ];
+        }
+
+        return ['type' => 'FeatureCollection', 'features' => []];
     }
 
     private function mapOutcodeToRegion(string $outcode): string
