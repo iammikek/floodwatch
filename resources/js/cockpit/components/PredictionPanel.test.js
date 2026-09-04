@@ -54,6 +54,40 @@ describe('PredictionPanel', () => {
     expect(wrapper.text()).toMatch(/~\d+(\.\d+)?h to impact/);
   });
 
+  it('summarises drivers instead of listing every analogue hour', () => {
+    const doc = structuredClone(predictionRisk);
+    doc.drivers = [
+      {
+        type: 'gauge_trajectory',
+        label: 'Gaw Bridge · River Parrett',
+        signal: 'elevated_and_rising',
+      },
+      ...Array.from({ length: 8 }, (_, i) => ({
+        type: 'historic_analogue',
+        label: 'Aug 2026 analogue',
+        ref: `2026-08-10T${String(10 + i).padStart(2, '0')}:00:00Z`,
+        similarity: 0.99 - i * 0.001,
+        outcome: 'clear',
+      })),
+      {
+        type: 'analogue_consensus',
+        ref: 'k8',
+        label: '8 matched windows',
+        impactRate: 0,
+        watchRate: 0.1,
+      },
+    ];
+    const wrapper = mount(PredictionPanel, {
+      props: { predictionDoc: doc, gauges: [], source: 'lake' },
+    });
+    const text = wrapper.text();
+    expect(text).toContain('Why this verdict');
+    expect(text).toContain('8 matched windows');
+    expect(text).toContain('Aug 2026');
+    expect(text).not.toMatch(/sim 0\.9/);
+    expect(text.split('Aug 2026').length - 1).toBe(1);
+  });
+
   it('marks supporting charts lake vs static from live series presence', () => {
     const liveDoc = structuredClone(predictionRisk);
     liveDoc.observables.rainfallUpstreamMm = [];

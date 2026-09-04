@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import Sparkline from './Sparkline.vue';
 import PanelHeading from './PanelHeading.vue';
 import { rainfallSeries, seriesForGauge, keyGaugeId } from '../data/expandSeries.js';
+import { summarizeDrivers } from '../lib/summarizeDrivers.js';
 
 const props = defineProps({
   /** floodwatch.prediction.v1 */
@@ -26,6 +27,8 @@ const guide = computed(
     primaryAnalysis.value?.p95 ??
     null,
 );
+
+const driverSummary = computed(() => summarizeDrivers(props.predictionDoc?.drivers));
 
 const gaugeTitle = computed(() => {
   if (keyGauge.value?.station) return keyGauge.value.station;
@@ -178,15 +181,35 @@ function riskClass(risk) {
 
     <div class="grid-2" style="margin-top: 0.75rem">
       <div>
-        <p class="label">Drivers</p>
+        <p class="label">Why this verdict</p>
+        <template v-if="driverSummary.consensus">
+          <div class="stat">
+            <span>{{ driverSummary.consensus.label }}</span>
+            <b>{{ driverSummary.consensus.detail }}</b>
+          </div>
+        </template>
         <div
-          v-for="(d, i) in predictionDoc.drivers"
-          :key="i"
+          v-for="(row, i) in driverSummary.analogues"
+          :key="`a-${i}`"
           class="stat"
         >
-          <span>{{ d.label }}</span>
-          <b>{{ d.signal || (d.similarity != null ? `sim ${d.similarity}` : d.type) }}</b>
+          <span>{{ row.label }}</span>
+          <b>{{ row.detail }}</b>
         </div>
+        <div
+          v-for="(g, i) in driverSummary.gauges"
+          :key="`g-${i}`"
+          class="stat"
+        >
+          <span>{{ g.label }}</span>
+          <b>{{ g.signal }}</b>
+        </div>
+        <p
+          v-if="!driverSummary.consensus && !driverSummary.analogues.length && !driverSummary.gauges.length"
+          class="copy"
+        >
+          No analogue evidence in this window.
+        </p>
       </div>
       <div>
         <p class="label">Predicted affected areas</p>
