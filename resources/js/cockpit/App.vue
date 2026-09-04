@@ -45,7 +45,10 @@ const liveFloods = ref([]);
 const liveIncidents = ref([]);
 const liveRoute = ref(null);
 const statusNotes = ref([]);
+/** True while any live feed is in flight (disables Refresh). */
 const loading = ref(true);
+const predictionLoading = ref(true);
+const mapLoading = ref(true);
 const routeChecking = ref(false);
 const initial = initialRoute(DEFAULT_ROUTE);
 const routeFrom = ref(initial.from);
@@ -70,15 +73,15 @@ const preset = computed(() => PRESETS[presetId.value] ?? PRESETS.place);
 const routeBusy = computed(() => loading.value || routeChecking.value);
 
 const floods = computed(() => {
-  if (loading.value) return [];
+  if (mapLoading.value && !useDemoFixtures.value) return [];
   return useDemoFixtures.value ? scenario.value.floods : liveFloods.value;
 });
 const gauges = computed(() => {
-  if (loading.value) return [];
+  if (mapLoading.value && !useDemoFixtures.value) return [];
   return useDemoFixtures.value ? scenario.value.riverLevels : liveGauges.value;
 });
 const incidents = computed(() => {
-  if (loading.value) return [];
+  if (mapLoading.value && !useDemoFixtures.value) return [];
   return useDemoFixtures.value ? scenario.value.incidents : liveIncidents.value;
 });
 const elevatedCount = computed(
@@ -98,7 +101,7 @@ const locationLabel = computed(() => {
 });
 
 const houseRisk = computed(() => {
-  if (loading.value) return '';
+  if (mapLoading.value) return '';
   if (useDemoFixtures.value) return scenario.value.houseRisk;
   if (floods.value.some((f) => (f.severityLevel ?? 4) <= 2)) {
     return 'Place: flood warnings active nearby';
@@ -108,7 +111,7 @@ const houseRisk = computed(() => {
 });
 
 const roadsRisk = computed(() => {
-  if (loading.value) return '';
+  if (mapLoading.value) return '';
   if (useDemoFixtures.value) return scenario.value.roadsRisk;
   const n = incidents.value.length;
   if (n > 0) return `Area roads: ${n} live incident(s) near place`;
@@ -118,7 +121,7 @@ const roadsRisk = computed(() => {
 });
 
 const corridorHeadline = computed(() => {
-  if (loading.value) return '';
+  if (predictionLoading.value && mapLoading.value) return '';
   if (useDemoFixtures.value) return scenario.value.corridor.headline;
   if (SHOW_ROUTE_VIEW && liveRoute.value?.verdictLabel && liveRoute.value.verdict !== 'error') {
     return `${liveRoute.value.verdictLabel} — ${liveRoute.value.from} → ${liveRoute.value.to}`;
@@ -135,7 +138,7 @@ const corridorHeadline = computed(() => {
 });
 
 const corridorGuidance = computed(() => {
-  if (loading.value) return '';
+  if (predictionLoading.value && mapLoading.value) return '';
   if (useDemoFixtures.value) return scenario.value.corridor.guidance;
   if (SHOW_ROUTE_VIEW && liveRoute.value?.summary) return liveRoute.value.summary;
   return (
@@ -217,8 +220,17 @@ async function loadStorms() {
 /**
  * @param {{ asOf?: string|null }} [opts]
  */
+function syncBusyFlag() {
+  loading.value = predictionLoading.value || mapLoading.value;
+}
+
+/**
+ * @param {{ asOf?: string|null }} [opts]
+ */
 async function loadLive({ asOf = null } = {}) {
   loading.value = true;
+  predictionLoading.value = true;
+  mapLoading.value = true;
   statusNotes.value = [];
   selected.value = null;
   clearLiveFeeds();
@@ -257,10 +269,33 @@ async function loadLive({ asOf = null } = {}) {
     const predictionPromise = fetchPrediction(CORRIDOR_ID, {
       scenarioId: scenarioId.value,
       asOf: asOf || undefined,
+    }).then((prediction) => {
+      predictionSource.value = prediction.source;
+      predictionDoc.value = prediction.doc;
+      if (prediction.error && prediction.source === 'error') {
+        statusNotes.value.push(`Prediction unavailable: ${prediction.error}`);
+      }
+      predictionLoading.value = false;
+      syncBusyFlag();
+      return prediction;
     });
+
     const mapPromise = fetchLiveMapData({
       center: mapCenterPoint,
+    }).then((mapData) => {
+      mapSource.value = mapData.source;
+      liveGauges.value = mapData.gauges;
+      liveFloods.value = mapData.floods;
+      if (mapData.error && mapData.source === 'error') {
+        statusNotes.value.push(`Map overlays unavailable: ${mapData.error}`);
+      } else if (mapData.error) {
+        statusNotes.value.push(`Map overlays (partial): ${mapData.error}`);
+      }
+      mapLoading.value = false;
+      syncBusyFlag();
+      return mapData;
     });
+
     const roadPromise = SHOW_ROUTE_VIEW
       ? fetchLiveRoadData({
           lat: mapCenterPoint[0],
@@ -280,27 +315,7 @@ async function loadLive({ asOf = null } = {}) {
             error: err instanceof Error ? err.message : String(err),
           }));
 
-    const [prediction, mapData, roadData] = await Promise.all([
-      predictionPromise,
-      mapPromise,
-      roadPromise,
-    ]);
-
-    predictionSource.value = prediction.source;
-    predictionDoc.value = prediction.doc;
-    if (prediction.error && prediction.source === 'error') {
-      statusNotes.value.push(`Prediction unavailable: ${prediction.error}`);
-    }
-
-    mapSource.value = mapData.source;
-    liveGauges.value = mapData.gauges;
-    liveFloods.value = mapData.floods;
-    if (mapData.error && mapData.source === 'error') {
-      statusNotes.value.push(`Map overlays unavailable: ${mapData.error}`);
-    } else if (mapData.error) {
-      statusNotes.value.push(`Map overlays (partial): ${mapData.error}`);
-    }
-
+    const roadData = await roadPromise;
     roadSource.value = roadData.source;
     liveIncidents.value = roadData.incidents ?? [];
     liveRoute.value = SHOW_ROUTE_VIEW ? roadData.route : null;
@@ -311,9 +326,13 @@ async function loadLive({ asOf = null } = {}) {
         statusNotes.value.push(`Roads (partial): ${roadData.error}`);
       }
     }
+
+    await Promise.all([predictionPromise, mapPromise]);
   } catch (err) {
     statusNotes.value.push(err instanceof Error ? err.message : String(err));
   } finally {
+    predictionLoading.value = false;
+    mapLoading.value = false;
     loading.value = false;
   }
 }
@@ -516,11 +535,14 @@ function onKeydown(event) {
   }
 }
 
-onMounted(async () => {
-  await loadBookmarks();
-  applyDefaultPlaceOnLoad();
-  await loadStorms();
-  loadLive();
+onMounted(() => {
+  // Storms are independent of place focus — do not block live map/prediction.
+  void loadStorms();
+  void (async () => {
+    await loadBookmarks();
+    applyDefaultPlaceOnLoad();
+    await loadLive();
+  })();
   window.addEventListener('keydown', onKeydown);
 });
 
@@ -541,7 +563,7 @@ function onSelect(feature) {
 }
 
 const dataSourceLabel = computed(() => {
-  if (loading.value) return 'loading…';
+  if (predictionLoading.value || mapLoading.value) return 'loading…';
   if (useDemoFixtures.value) return 'demo fixtures';
   const replay = replayMode.value ? ' · replay' : '';
   return `prediction:${predictionSource.value} · map:${mapSource.value}${replay}`;
@@ -550,14 +572,13 @@ const dataSourceLabel = computed(() => {
 /** @param {'prediction'|'map'|'roads'|'either'} kind */
 function resolvePanelSource(kind) {
   if (useDemoFixtures.value) return 'static';
-  if (loading.value) return 'pending';
   if (kind === 'prediction') {
-    if (predictionSource.value === 'pending') return 'pending';
+    if (predictionLoading.value || predictionSource.value === 'pending') return 'pending';
     if (predictionSource.value === 'error') return 'pending';
     return predictionSource.value === 'lake' ? 'lake' : 'static';
   }
   if (kind === 'map') {
-    if (mapSource.value === 'pending') return 'pending';
+    if (mapLoading.value || mapSource.value === 'pending') return 'pending';
     if (mapSource.value === 'error') return 'pending';
     return mapSource.value === 'lake' ? 'lake' : 'static';
   }
@@ -608,7 +629,7 @@ const inspectorPanelSource = computed(() => {
         <p>
           Corridor <code>{{ CORRIDOR_ID }}</code> —
           source: <strong>{{ dataSourceLabel }}</strong>
-          <span v-if="loading"> · loading…</span>
+          <span v-if="predictionLoading || mapLoading"> · loading…</span>
           <span v-if="replayMode && selectedStorm"> · storm {{ selectedStorm.label }}</span>
         </p>
       </div>
@@ -685,7 +706,7 @@ const inspectorPanelSource = computed(() => {
           <StormReplayPanel
             :storms="storms"
             :selected-id="selectedStormId"
-            :loading="loading"
+            :loading="predictionLoading"
             :source="stormsPanelSource"
             :replay-active="replayMode"
             @select="onSelectStorm"
@@ -719,14 +740,14 @@ const inspectorPanelSource = computed(() => {
 
         <div class="main">
           <PredictionPanel
-            v-if="predictionDoc && !loading"
+            v-if="predictionDoc && !predictionLoading"
             class="primary-panel"
             :prediction-doc="predictionDoc"
             :gauges="gauges"
             :source="predictionPanelSource"
             :replay-label="replayMode && selectedStorm ? selectedStorm.label : null"
           />
-          <div v-else-if="loading" class="box outlook primary-panel is-waiting">
+          <div v-else-if="predictionLoading" class="box outlook primary-panel is-waiting">
             <PanelHeading source="pending">Corridor prediction · historic EA analogues</PanelHeading>
             <p class="waiting-copy">Waiting for prediction…</p>
           </div>
@@ -739,9 +760,9 @@ const inspectorPanelSource = computed(() => {
           </div>
 
           <div class="grid-2 support-grid">
-            <div class="box" :class="{ 'is-waiting': loading }">
+            <div class="box" :class="{ 'is-waiting': mapLoading }">
               <PanelHeading :source="mapPanelSource">Your risk</PanelHeading>
-              <template v-if="loading">
+              <template v-if="mapLoading">
                 <p class="waiting-copy">Waiting for risk signals…</p>
               </template>
               <template v-else>
@@ -749,9 +770,9 @@ const inspectorPanelSource = computed(() => {
                 <p class="copy">{{ roadsRisk }}</p>
               </template>
             </div>
-            <div class="box" :class="{ 'is-waiting': loading }">
+            <div class="box" :class="{ 'is-waiting': predictionLoading && mapLoading }">
               <PanelHeading :source="eitherPanelSource">Place outlook</PanelHeading>
-              <template v-if="loading">
+              <template v-if="predictionLoading && mapLoading">
                 <p class="waiting-copy">Waiting for place outlook…</p>
               </template>
               <template v-else>
@@ -794,14 +815,14 @@ const inspectorPanelSource = computed(() => {
             :headline="corridorHeadline"
             :guidance="corridorGuidance"
             :route-label="SHOW_ROUTE_VIEW ? routeLabel : (predictionDoc?.prediction?.verdictLabel || '—')"
-            :loading="loading"
+            :loading="mapLoading && predictionLoading"
             :route-loading="routeChecking"
             :corridor-source="eitherPanelSource"
             :flood-source="mapPanelSource"
             :route-source="SHOW_ROUTE_VIEW ? roadsPanelSource : predictionPanelSource"
           />
 
-          <div class="map-shell map-shell-place" :class="{ 'is-waiting': loading }">
+          <div class="map-shell map-shell-place" :class="{ 'is-waiting': mapLoading }">
             <LeanMap
               :center="mapCenter"
               :zoom="mapZoom"
@@ -829,7 +850,7 @@ const inspectorPanelSource = computed(() => {
 
           <RiverResponse
             :gauges="gauges"
-            :loading="loading"
+            :loading="mapLoading"
             :source="mapPanelSource"
             :selected-id="selected?.id ?? null"
             @select="onSelect"
