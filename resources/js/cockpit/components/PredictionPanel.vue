@@ -10,6 +10,8 @@ const props = defineProps({
   gauges: { type: Array, default: () => [] },
   /** Overall prediction feed: lake | static | pending */
   source: { type: String, default: 'static' },
+  /** When set, prediction is a storm replay (not live). */
+  replayLabel: { type: String, default: null },
 });
 
 const p = computed(() => props.predictionDoc.prediction);
@@ -104,7 +106,10 @@ function riskClass(risk) {
 
 <template>
   <section class="box outlook">
-    <PanelHeading :source="source">Corridor prediction · historic EA analogues</PanelHeading>
+    <PanelHeading :source="source">
+      {{ replayLabel ? 'Storm replay · historic EA analogues' : 'Corridor prediction · historic EA analogues' }}
+    </PanelHeading>
+    <p v-if="replayLabel" class="annot">Replaying {{ replayLabel }} (not live)</p>
     <p class="title" :class="verdictClass">{{ p.verdictLabel }}</p>
     <p class="copy">{{ p.summary }}</p>
 

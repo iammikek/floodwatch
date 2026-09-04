@@ -76,6 +76,51 @@ class FloodWatchPredictionsControllerTest extends TestCase
             ->assertJsonPath('corridors.0.id', 'a361-muchelney');
     }
 
+    public function test_storms_proxies_lake_catalogue(): void
+    {
+        Http::fake([
+            'http://lake.test/v1/storms*' => Http::response([
+                'storms' => [
+                    [
+                        'id' => 'eval-2020-02',
+                        'label' => 'Storm Dennis (Feb 2020)',
+                        'as_of' => '2020-02-16T12:00:00Z',
+                        'corridor' => 'a361-muchelney',
+                    ],
+                ],
+            ], 200),
+        ]);
+
+        $response = $this->withSession(['flood_watch_loaded' => true])
+            ->getJson('/flood-watch/storms?corridor=a361-muchelney');
+
+        $response->assertOk()
+            ->assertJsonPath('storms.0.id', 'eval-2020-02');
+    }
+
+    public function test_predictions_forwards_as_of_query(): void
+    {
+        $fixture = json_decode(
+            (string) file_get_contents(base_path('tests/fixtures/data_lake_predictions.json')),
+            true,
+            512,
+            JSON_THROW_ON_ERROR
+        );
+
+        Http::fake([
+            'http://lake.test/v1/predictions*' => Http::response($fixture, 200),
+        ]);
+
+        $response = $this->withSession(['flood_watch_loaded' => true])
+            ->getJson('/flood-watch/predictions?corridor=a361-muchelney&as_of=2020-02-16T12:00:00Z');
+
+        $response->assertOk();
+        Http::assertSent(function ($request) {
+            return str_contains($request->url(), '/v1/predictions')
+                && str_contains($request->url(), 'as_of=2020-02-16T12%3A00%3A00Z');
+        });
+    }
+
     public function test_cockpit_page_renders(): void
     {
         $response = $this->get('/');

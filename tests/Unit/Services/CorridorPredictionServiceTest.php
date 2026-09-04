@@ -43,10 +43,35 @@ class CorridorPredictionServiceTest extends TestCase
         $client = Mockery::mock(DataLakeClient::class);
         $client->shouldReceive('getPredictions')
             ->once()
-            ->with('a361-muchelney', 120)
+            ->with('a361-muchelney', 120, null, null)
             ->andReturn(new DataLakeResponse(200, 'W/"x"', $body));
 
         $doc = (new CorridorPredictionService($client))->getPrediction();
+
+        $this->assertSame($body, $doc);
+    }
+
+    public function test_forwards_as_of_to_client(): void
+    {
+        Config::set('flood-watch.predictions.enabled', true);
+        Config::set('flood-watch.predictions.default_corridor', 'a361-muchelney');
+
+        $body = [
+            'schema' => 'floodwatch.prediction.v1',
+            'prediction' => ['verdict' => 'at_risk'],
+            'method' => ['name' => 'historic_analogue_v1'],
+        ];
+        $client = Mockery::mock(DataLakeClient::class);
+        $client->shouldReceive('getPredictions')
+            ->once()
+            ->with('a361-muchelney', 120, null, '2020-02-16T12:00:00Z')
+            ->andReturn(new DataLakeResponse(200, 'W/"x"', $body));
+
+        $doc = (new CorridorPredictionService($client))->getPrediction(
+            null,
+            null,
+            '2020-02-16T12:00:00Z'
+        );
 
         $this->assertSame($body, $doc);
     }

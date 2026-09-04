@@ -82,6 +82,20 @@ vi.mock('./lib/fetchBookmarks.js', () => ({
   })),
 }));
 
+vi.mock('./lib/fetchStorms.js', () => ({
+  fetchStorms: vi.fn(async () => ({
+    source: 'lake',
+    items: [
+      {
+        id: 'eval-2020-02',
+        label: 'Storm Dennis (Feb 2020)',
+        as_of: '2020-02-16T12:00:00Z',
+        notes: 'test',
+      },
+    ],
+  })),
+}));
+
 vi.mock('./lib/defaultBookmarkRoute.js', () => ({
   resolveRouteFromOnLoad: vi.fn(({ fallbackFrom }) => ({
     from: fallbackFrom,
@@ -95,10 +109,12 @@ async function flushApp() {
   await Promise.resolve();
   await Promise.resolve();
   await nextTick();
+  await Promise.resolve();
+  await nextTick();
 }
 
 describe('Cockpit App', () => {
-  it('renders prediction ahead of support panels in the main column', async () => {
+  it('renders place-first main column with prediction ahead of map', async () => {
     const wrapper = mount(App, {
       global: {
         stubs: {
@@ -109,10 +125,13 @@ describe('Cockpit App', () => {
 
     await flushApp();
 
+    expect(wrapper.text()).toContain('Monitor place');
+    expect(wrapper.text()).not.toContain('Route check');
+    expect(wrapper.text()).toContain('Storm replay');
+    expect(wrapper.text()).toContain('Historical incidents here');
+
     const classOrder = Array.from(wrapper.find('.main').element.children).map((el) => el.className);
     expect(classOrder[0]).toContain('primary-panel');
-    expect(classOrder[1]).toContain('support-grid');
-    expect(classOrder[2]).toContain('corridor-summary');
-    expect(classOrder[3]).toContain('map-shell');
+    expect(classOrder.some((c) => c.includes('map-shell'))).toBe(true);
   });
 });

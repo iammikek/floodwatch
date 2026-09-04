@@ -24,6 +24,22 @@ describe('fetchPrediction', () => {
     );
   });
 
+  it('forwards as_of for storm replay', async () => {
+    const payload = mockPrediction('risk');
+    const fetchImpl = vi.fn(async () => ({
+      ok: true,
+      json: async () => payload,
+    }));
+    await fetchPrediction('a361-muchelney', {
+      fetchImpl,
+      asOf: '2020-02-16T12:00:00Z',
+    });
+    expect(fetchImpl).toHaveBeenCalledWith(
+      '/flood-watch/predictions?corridor=a361-muchelney&as_of=2020-02-16T12%3A00%3A00Z',
+      expect.any(Object),
+    );
+  });
+
   it('returns error with no doc when API fails', async () => {
     const { source, doc, error } = await fetchPrediction('a361-muchelney', {
       scenarioId: 'risk',

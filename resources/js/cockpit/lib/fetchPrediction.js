@@ -16,18 +16,20 @@ export function mockPrediction(scenarioId = 'risk') {
 
 /**
  * @param {string} corridorId
- * @param {{ scenarioId?: string, fetchImpl?: typeof fetch, preferMock?: boolean }} [opts]
+ * @param {{ scenarioId?: string, fetchImpl?: typeof fetch, preferMock?: boolean, asOf?: string }} [opts]
  * @returns {Promise<{ source: 'lake'|'mock'|'error', doc: object|null, error?: string }>}
  */
 export async function fetchPrediction(
   corridorId,
-  { scenarioId = 'risk', fetchImpl = fetch, preferMock = false } = {},
+  { scenarioId = 'risk', fetchImpl = fetch, preferMock = false, asOf } = {},
 ) {
   if (preferMock) {
     return { source: 'mock', doc: mockPrediction(scenarioId) };
   }
 
-  const url = `/flood-watch/predictions?corridor=${encodeURIComponent(corridorId)}`;
+  const params = new URLSearchParams({ corridor: corridorId });
+  if (asOf) params.set('as_of', asOf);
+  const url = `/flood-watch/predictions?${params.toString()}`;
   try {
     const res = await fetchImpl(url, {
       headers: { Accept: 'application/json' },
