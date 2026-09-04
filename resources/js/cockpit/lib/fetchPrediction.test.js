@@ -24,13 +24,25 @@ describe('fetchPrediction', () => {
     );
   });
 
-  it('falls back to mock when API fails', async () => {
+  it('returns error with no doc when API fails', async () => {
     const { source, doc, error } = await fetchPrediction('a361-muchelney', {
       scenarioId: 'risk',
       fetchImpl: async () => ({ ok: false, status: 503 }),
     });
-    expect(source).toBe('mock');
-    expect(doc.schema).toBe('floodwatch.prediction.v1');
+    expect(source).toBe('error');
+    expect(doc).toBeNull();
     expect(error).toMatch(/503/);
+  });
+
+  it('returns error with no doc on schema mismatch', async () => {
+    const { source, doc, error } = await fetchPrediction('a361-muchelney', {
+      fetchImpl: async () => ({
+        ok: true,
+        json: async () => ({ schema: 'floodwatch.prediction.v0' }),
+      }),
+    });
+    expect(source).toBe('error');
+    expect(doc).toBeNull();
+    expect(error).toMatch(/schema mismatch/i);
   });
 });

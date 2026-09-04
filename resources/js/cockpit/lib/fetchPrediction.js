@@ -1,6 +1,6 @@
 /**
  * Load floodwatch.prediction.v1 for a corridor via Laravel (same-origin).
- * Falls back to bundled mock when the API is unavailable.
+ * Demo fixtures only when preferMock is set — live mode never invents a prediction.
  */
 import predictionRisk from '../data/prediction-risk.json';
 import predictionStable from '../data/prediction-stable.json';
@@ -17,6 +17,7 @@ export function mockPrediction(scenarioId = 'risk') {
 /**
  * @param {string} corridorId
  * @param {{ scenarioId?: string, fetchImpl?: typeof fetch, preferMock?: boolean }} [opts]
+ * @returns {Promise<{ source: 'lake'|'mock'|'error', doc: object|null, error?: string }>}
  */
 export async function fetchPrediction(
   corridorId,
@@ -42,8 +43,8 @@ export async function fetchPrediction(
     return { source: 'lake', doc };
   } catch (err) {
     return {
-      source: 'mock',
-      doc: mockPrediction(scenarioId),
+      source: 'error',
+      doc: null,
       error: err instanceof Error ? err.message : String(err),
     };
   }

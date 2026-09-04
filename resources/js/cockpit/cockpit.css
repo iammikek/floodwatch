@@ -244,6 +244,21 @@ body {
   margin-top: 0.35rem;
 }
 .outlook .title { font-size: 1.05rem; }
+.height-key {
+  margin-top: 0.55rem;
+  padding-top: 0.45rem;
+  border-top: 1px dotted #ccc;
+}
+.height-key .label { margin-bottom: 0.2rem; }
+.height-key-guide::before {
+  content: "";
+  display: inline-block;
+  width: 0.9rem;
+  height: 0;
+  margin-right: 0.35rem;
+  border-top: 1.5px dashed #8a5a00;
+  vertical-align: middle;
+}
 
 .route-form {
   display: grid;

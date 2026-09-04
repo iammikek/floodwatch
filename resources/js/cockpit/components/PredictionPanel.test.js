@@ -12,7 +12,31 @@ describe('PredictionPanel', () => {
     });
     expect(wrapper.text()).toContain(predictionRisk.prediction.verdictLabel);
     expect(wrapper.text()).toContain('Muchelney low lanes');
-    expect(wrapper.text()).toContain('historic_analogue_v0');
+    expect(wrapper.text()).toContain('historic_analogue_v1');
+  });
+
+  it('renders a stage height key for the supporting gauge chart', () => {
+    const liveDoc = structuredClone(predictionRisk);
+    liveDoc.observables.keyGaugeId = 'gauge-gaw-bridge';
+    liveDoc.observables.primaryMeasureId = '52119-level-stage-i-15_min-mASD';
+    liveDoc.observables.primaryAnalysis = { level: 1.42, p95: 2.1 };
+    liveDoc.drivers = [
+      {
+        type: 'gauge_trajectory',
+        ref: '52119-level-stage-i-15_min-mASD',
+        label: 'Gaw Bridge · River Parrett',
+        signal: 'rising',
+      },
+      ...liveDoc.drivers,
+    ];
+    const wrapper = mount(PredictionPanel, {
+      props: { predictionDoc: liveDoc, gauges: [], source: 'lake' },
+    });
+    expect(wrapper.text()).toContain('Supporting · Gaw Bridge (m)');
+    expect(wrapper.text()).toContain('Height key');
+    expect(wrapper.text()).toContain('Typical high');
+    expect(wrapper.text()).toContain('2.10 m');
+    expect(wrapper.text()).toContain('Stage metres');
   });
 
   it('renders clear verdict without affected areas list items', () => {

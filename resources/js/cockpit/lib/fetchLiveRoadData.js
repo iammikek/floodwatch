@@ -93,7 +93,8 @@ export async function fetchRouteCheck({
 }
 
 /**
- * @returns {Promise<{ source: 'live'|'mock', incidents: object[], route: object|null, error?: string }>}
+ * Live mode never invents road data — failed feeds become empty / null.
+ * @returns {Promise<{ source: 'live'|'error', incidents: object[], route: object|null, error?: string }>}
  */
 export async function fetchLiveRoadData({
   lat = CORRIDOR_CENTER.center[0],
@@ -102,8 +103,6 @@ export async function fetchLiveRoadData({
   from = DEFAULT_ROUTE.from,
   to = DEFAULT_ROUTE.to,
   fetchImpl = fetch,
-  mockIncidents = [],
-  mockRoute = null,
 } = {}) {
   const [incidentsResult, routeResult] = await Promise.allSettled([
     fetchIncidents({ lat, lng, region, fetchImpl }),
@@ -130,17 +129,17 @@ export async function fetchLiveRoadData({
 
   if (!incidentsOk && !routeOk) {
     return {
-      source: 'mock',
-      incidents: mockIncidents,
-      route: mockRoute,
+      source: 'error',
+      incidents: [],
+      route: null,
       error: errors.join('; '),
     };
   }
 
   return {
     source: 'live',
-    incidents: incidentsOk ? incidentsResult.value : mockIncidents,
-    route: routeOk ? routeResult.value : mockRoute,
+    incidents: incidentsOk ? incidentsResult.value : [],
+    route: routeOk ? routeResult.value : null,
     ...(errors.length ? { error: errors.join('; ') } : {}),
   };
 }

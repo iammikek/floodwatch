@@ -93,15 +93,13 @@ describe('fetchLiveRoadData', () => {
     expect(route.verdictLabel).toBe('Delays');
   });
 
-  it('falls back to mock when both road feeds fail', async () => {
+  it('returns empty road data when both feeds fail', async () => {
     const { source, incidents, route, error } = await fetchLiveRoadData({
       fetchImpl: async () => ({ ok: false, status: 503 }),
-      mockIncidents: [{ id: 'm1', type: 'incident', road: 'A361' }],
-      mockRoute: { verdictLabel: 'At risk', routeGeometry: [], summary: 'Mock' },
     });
-    expect(source).toBe('mock');
-    expect(incidents[0].id).toBe('m1');
-    expect(route.verdictLabel).toBe('At risk');
+    expect(source).toBe('error');
+    expect(incidents).toEqual([]);
+    expect(route).toBeNull();
     expect(error).toMatch(/503/);
   });
 });

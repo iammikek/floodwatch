@@ -148,7 +148,7 @@ const routeSummary = computed(() => {
   if (liveRoute.value?.summary) {
     return `${liveRoute.value.summary} (${liveRoute.value.from} → ${liveRoute.value.to})`;
   }
-  return 'Route check unavailable — showing prediction fallback.';
+  return 'Route check unavailable.';
 });
 
 const routeGeometry = computed(() => {
@@ -207,37 +207,26 @@ async function loadLive() {
       fetchPrediction(CORRIDOR_ID, { scenarioId: scenarioId.value }),
       fetchLiveMapData({
         center: CORRIDOR_CENTER.center,
-        mockGauges: scenario.value.riverLevels,
-        mockFloods: scenario.value.floods,
       }),
       fetchLiveRoadData({
         lat: CORRIDOR_CENTER.center[0],
         lng: CORRIDOR_CENTER.center[1],
         from: routeFrom.value,
         to: routeTo.value,
-        mockIncidents: scenario.value.incidents,
-        mockRoute: {
-          verdict: scenario.value.route.verdict,
-          verdictLabel: scenario.value.route.verdictLabel,
-          summary: scenario.value.route.summary,
-          routeGeometry: scenario.value.route.geometry,
-          from: routeFrom.value,
-          to: routeTo.value,
-        },
       }),
     ]);
 
     predictionSource.value = prediction.source;
     predictionDoc.value = prediction.doc;
-    if (prediction.error && prediction.source === 'mock') {
-      statusNotes.value.push(`Prediction: ${prediction.error} — using mock prediction.`);
+    if (prediction.error && prediction.source === 'error') {
+      statusNotes.value.push(`Prediction unavailable: ${prediction.error}`);
     }
 
     mapSource.value = mapData.source;
     liveGauges.value = mapData.gauges;
     liveFloods.value = mapData.floods;
-    if (mapData.error && mapData.source === 'mock') {
-      statusNotes.value.push(`Map overlays: ${mapData.error} — using demo fixtures.`);
+    if (mapData.error && mapData.source === 'error') {
+      statusNotes.value.push(`Map overlays unavailable: ${mapData.error}`);
     } else if (mapData.error) {
       statusNotes.value.push(`Map overlays (partial): ${mapData.error}`);
     }
@@ -245,8 +234,8 @@ async function loadLive() {
     roadSource.value = roadData.source;
     liveIncidents.value = roadData.incidents;
     liveRoute.value = roadData.route;
-    if (roadData.error && roadData.source === 'mock') {
-      statusNotes.value.push(`Roads: ${roadData.error} — using demo fixtures.`);
+    if (roadData.error && roadData.source === 'error') {
+      statusNotes.value.push(`Roads unavailable: ${roadData.error}`);
     } else if (roadData.error) {
       statusNotes.value.push(`Roads (partial): ${roadData.error}`);
     }
@@ -434,14 +423,17 @@ function resolvePanelSource(kind) {
   if (loading.value) return 'pending';
   if (kind === 'prediction') {
     if (predictionSource.value === 'pending') return 'pending';
+    if (predictionSource.value === 'error') return 'pending';
     return predictionSource.value === 'lake' ? 'lake' : 'static';
   }
   if (kind === 'map') {
     if (mapSource.value === 'pending') return 'pending';
+    if (mapSource.value === 'error') return 'pending';
     return mapSource.value === 'lake' ? 'lake' : 'static';
   }
   if (kind === 'roads') {
     if (roadSource.value === 'pending') return 'pending';
+    if (roadSource.value === 'error') return 'pending';
     return roadSource.value === 'live' ? 'live' : 'static';
   }
   const pred = predictionSource.value === 'lake';
@@ -583,6 +575,13 @@ const inspectorPanelSource = computed(() => {
           <div v-else-if="loading" class="box outlook primary-panel is-waiting">
             <PanelHeading source="pending">Corridor prediction · historic EA analogues</PanelHeading>
             <p class="waiting-copy">Waiting for prediction…</p>
+          </div>
+          <div v-else class="box outlook primary-panel">
+            <PanelHeading source="pending">Corridor prediction · historic EA analogues</PanelHeading>
+            <p class="title">Prediction unavailable</p>
+            <p class="copy">
+              No live prediction to show. We do not substitute demo data in live mode.
+            </p>
           </div>
 
           <div class="grid-2 support-grid">

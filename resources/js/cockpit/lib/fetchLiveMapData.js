@@ -200,15 +200,14 @@ export async function fetchWarnings({
 
 /**
  * Load map overlays from the lake (via Laravel).
- * @returns {Promise<{ source: 'lake'|'mock', gauges: object[], floods: object[], error?: string }>}
+ * Live mode never invents overlays — failed feeds become empty lists.
+ * @returns {Promise<{ source: 'lake'|'error', gauges: object[], floods: object[], error?: string }>}
  */
 export async function fetchLiveMapData({
   center = CORRIDOR_CENTER.center,
   radiusKm = CORRIDOR_CENTER.radiusKm,
   region = CORRIDOR_CENTER.region,
   fetchImpl = fetch,
-  mockGauges = [],
-  mockFloods = [],
 } = {}) {
   const [lat, lng] = center;
   const [gaugesResult, floodsResult] = await Promise.allSettled([
@@ -236,9 +235,9 @@ export async function fetchLiveMapData({
 
   if (!gaugesOk && !floodsOk) {
     return {
-      source: 'mock',
-      gauges: mockGauges,
-      floods: mockFloods,
+      source: 'error',
+      gauges: [],
+      floods: [],
       error: errors.join('; '),
     };
   }
