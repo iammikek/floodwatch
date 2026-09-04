@@ -1,6 +1,6 @@
 /**
  * Load floodwatch.prediction.v1 for a corridor via Laravel (same-origin).
- * Falls back to bundled mock when the API is unavailable.
+ * Demo fixtures only when preferMock is set — live mode never invents a prediction.
  */
 import predictionRisk from '../data/prediction-risk.json';
 import predictionStable from '../data/prediction-stable.json';
@@ -16,17 +16,20 @@ export function mockPrediction(scenarioId = 'risk') {
 
 /**
  * @param {string} corridorId
- * @param {{ scenarioId?: string, fetchImpl?: typeof fetch, preferMock?: boolean }} [opts]
+ * @param {{ scenarioId?: string, fetchImpl?: typeof fetch, preferMock?: boolean, asOf?: string }} [opts]
+ * @returns {Promise<{ source: 'lake'|'mock'|'error', doc: object|null, error?: string }>}
  */
 export async function fetchPrediction(
   corridorId,
-  { scenarioId = 'risk', fetchImpl = fetch, preferMock = false } = {},
+  { scenarioId = 'risk', fetchImpl = fetch, preferMock = false, asOf } = {},
 ) {
   if (preferMock) {
     return { source: 'mock', doc: mockPrediction(scenarioId) };
   }
 
-  const url = `/flood-watch/predictions?corridor=${encodeURIComponent(corridorId)}`;
+  const params = new URLSearchParams({ corridor: corridorId });
+  if (asOf) params.set('as_of', asOf);
+  const url = `/flood-watch/predictions?${params.toString()}`;
   try {
     const res = await fetchImpl(url, {
       headers: { Accept: 'application/json' },
@@ -42,8 +45,8 @@ export async function fetchPrediction(
     return { source: 'lake', doc };
   } catch (err) {
     return {
-      source: 'mock',
-      doc: mockPrediction(scenarioId),
+      source: 'error',
+      doc: null,
       error: err instanceof Error ? err.message : String(err),
     };
   }

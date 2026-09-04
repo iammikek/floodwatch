@@ -241,16 +241,32 @@ class DataLakeClient
     public function getPredictions(
         string $corridor,
         int $historyDays = 120,
-        ?string $ifNoneMatch = null
+        ?string $ifNoneMatch = null,
+        ?string $asOf = null
     ): DataLakeResponse {
-        return $this->fetch('/v1/predictions', [
+        $query = [
             'corridor' => $corridor,
             'history_days' => $historyDays,
-        ], $ifNoneMatch);
+        ];
+        if ($asOf !== null && $asOf !== '') {
+            $query['as_of'] = $asOf;
+        }
+
+        return $this->fetch('/v1/predictions', $query, $ifNoneMatch);
     }
 
     public function getPredictionCorridors(?string $ifNoneMatch = null): DataLakeResponse
     {
         return $this->fetch('/v1/predictions/corridors', [], $ifNoneMatch);
+    }
+
+    public function getStorms(?string $corridor = null, ?string $ifNoneMatch = null): DataLakeResponse
+    {
+        $query = [];
+        if ($corridor !== null && $corridor !== '') {
+            $query['corridor'] = $corridor;
+        }
+
+        return $this->fetch('/v1/storms', $query, $ifNoneMatch);
     }
 }

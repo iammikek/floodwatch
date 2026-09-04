@@ -1,4 +1,20 @@
+/**
+ * Map layer presets. Place mode is the default product surface;
+ * route-oriented presets are retained for the later Check route alternate view.
+ */
 export const PRESETS = {
+  place: {
+    id: 'place',
+    label: 'Place',
+    layers: {
+      route: false,
+      warnings: true,
+      incidents: false,
+      gauges: true,
+    },
+    warningCap: 12,
+    gaugeCap: 16,
+  },
   dispatch: {
     id: 'dispatch',
     label: 'Dispatch',
@@ -14,7 +30,7 @@ export const PRESETS = {
     id: 'hydrology',
     label: 'Hydrology',
     layers: {
-      route: true,
+      route: false,
       warnings: true,
       incidents: false,
       gauges: true,
@@ -26,7 +42,7 @@ export const PRESETS = {
     id: 'minimal',
     label: 'Minimal',
     layers: {
-      route: true,
+      route: false,
       warnings: false,
       incidents: false,
       gauges: false,
@@ -34,3 +50,6 @@ export const PRESETS = {
     warningCap: 0,
   },
 };
+
+/** Default preset for the place-first cockpit. */
+export const PLACE_PRESET_ID = 'place';

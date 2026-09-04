@@ -10,6 +10,8 @@ const props = defineProps({
   gauges: { type: Array, default: () => [] },
   /** Overall prediction feed: lake | static | pending */
   source: { type: String, default: 'static' },
+  /** When set, prediction is a storm replay (not live). */
+  replayLabel: { type: String, default: null },
 });
 
 const p = computed(() => props.predictionDoc.prediction);
@@ -17,12 +19,46 @@ const rain = computed(() => rainfallSeries(props.predictionDoc));
 const kgId = computed(() => keyGaugeId(props.predictionDoc));
 const keyGauge = computed(() => props.gauges.find((g) => g.id === kgId.value) ?? null);
 const keySeries = computed(() => seriesForGauge(props.predictionDoc, kgId.value));
+const primaryAnalysis = computed(() => props.predictionDoc?.observables?.primaryAnalysis ?? null);
 const guide = computed(
   () =>
     keyGauge.value?.typicalHigh ??
-    props.predictionDoc?.observables?.primaryAnalysis?.p95 ??
+    primaryAnalysis.value?.p95 ??
     null,
 );
+
+const gaugeTitle = computed(() => {
+  if (keyGauge.value?.station) return keyGauge.value.station;
+  const primaryId = props.predictionDoc?.observables?.primaryMeasureId;
+  const driver = (props.predictionDoc?.drivers ?? []).find(
+    (d) =>
+      d.type === 'gauge_trajectory' &&
+      (d.ref === kgId.value || d.ref === primaryId),
+  );
+  if (driver?.label) {
+    return String(driver.label).split('·')[0].trim();
+  }
+  return kgId.value ?? 'Primary gauge';
+});
+
+const latestStage = computed(() => {
+  if (Number.isFinite(primaryAnalysis.value?.level)) return Number(primaryAnalysis.value.level);
+  if (keySeries.value.length) return Number(keySeries.value[keySeries.value.length - 1].v);
+  if (Number.isFinite(keyGauge.value?.value)) return Number(keyGauge.value.value);
+  return null;
+});
+
+const seriesRange = computed(() => {
+  if (!keySeries.value.length) return null;
+  const values = keySeries.value.map((pt) => Number(pt.v)).filter(Number.isFinite);
+  if (!values.length) return null;
+  return { min: Math.min(...values), max: Math.max(...values) };
+});
+
+function formatMetres(value) {
+  if (!Number.isFinite(value)) return '—';
+  return `${value.toFixed(2)} m`;
+}
 
 /** Green only when this series is actually present on a live lake prediction. */
 const rainfallSource = computed(() => {
@@ -70,7 +106,10 @@ function riskClass(risk) {
 
 <template>
   <section class="box outlook">
-    <PanelHeading :source="source">Corridor prediction · historic EA analogues</PanelHeading>
+    <PanelHeading :source="source">
+      {{ replayLabel ? 'Storm replay · historic EA analogues' : 'Corridor prediction · historic EA analogues' }}
+    </PanelHeading>
+    <p v-if="replayLabel" class="annot">Replaying {{ replayLabel }} (not live)</p>
     <p class="title" :class="verdictClass">{{ p.verdictLabel }}</p>
     <p class="copy">{{ p.summary }}</p>
 
@@ -108,10 +147,32 @@ function riskClass(risk) {
       </div>
       <div class="box" style="padding: 0.55rem">
         <PanelHeading :source="gaugeSeriesSource">
-          Supporting · {{ keyGauge?.station ?? kgId }} (m)
+          Supporting · {{ gaugeTitle }} (m)
         </PanelHeading>
         <Sparkline :points="keySeries" :guide="guide" stroke="#7a1f1f" />
-        <p class="copy">Dashed = typical high (historic p95 when live)</p>
+        <div class="height-key" aria-label="Stage height key">
+          <p class="label">Height key</p>
+          <div class="stat">
+            <span>Unit</span>
+            <b>Stage metres (m)</b>
+          </div>
+          <div class="stat">
+            <span>Latest</span>
+            <b>{{ formatMetres(latestStage) }}</b>
+          </div>
+          <div class="stat">
+            <span class="height-key-guide">Typical high</span>
+            <b>{{ formatMetres(guide) }}</b>
+          </div>
+          <div v-if="seriesRange" class="stat">
+            <span>Chart window</span>
+            <b>{{ formatMetres(seriesRange.min) }} – {{ formatMetres(seriesRange.max) }}</b>
+          </div>
+          <p class="copy">
+            Dashed line = typical high (historic p95 of mined EA stage for this gauge).
+            Higher = deeper water at the station, not road depth.
+          </p>
+        </div>
       </div>
     </div>
 

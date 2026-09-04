@@ -116,15 +116,13 @@ describe('fetchLiveMapData helpers', () => {
     expect(floods[0].type).toBe('warning');
   });
 
-  it('falls back to mock overlays when both requests fail', async () => {
+  it('returns empty overlays when both requests fail', async () => {
     const { source, gauges, floods, error } = await fetchLiveMapData({
       fetchImpl: async () => ({ ok: false, status: 503 }),
-      mockGauges: [{ id: 'g1', type: 'gauge', station: 'Mock', lat: 1, lng: 2, levelStatus: 'low' }],
-      mockFloods: [{ id: 'w1', type: 'warning', lat: 1, lng: 2, description: 'Mock' }],
     });
-    expect(source).toBe('mock');
-    expect(gauges[0].id).toBe('g1');
-    expect(floods[0].id).toBe('w1');
+    expect(source).toBe('error');
+    expect(gauges).toEqual([]);
+    expect(floods).toEqual([]);
     expect(error).toMatch(/503/);
   });
 
@@ -142,7 +140,6 @@ describe('fetchLiveMapData helpers', () => {
     });
     const { source, gauges, floods, error } = await fetchLiveMapData({
       fetchImpl,
-      mockFloods: [{ id: 'fallback-warn', type: 'warning', lat: 1, lng: 2 }],
     });
     expect(source).toBe('lake');
     expect(gauges[0].station).toBe('Gaw Bridge');

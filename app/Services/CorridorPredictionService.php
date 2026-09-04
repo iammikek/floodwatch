@@ -19,8 +19,11 @@ class CorridorPredictionService
     /**
      * @return array<string, mixed>|null Prediction document, or null if unavailable
      */
-    public function getPrediction(?string $corridor = null, ?int $historyDays = null): ?array
-    {
+    public function getPrediction(
+        ?string $corridor = null,
+        ?int $historyDays = null,
+        ?string $asOf = null
+    ): ?array {
         if (! (bool) config('flood-watch.predictions.enabled', true)) {
             return null;
         }
@@ -33,7 +36,7 @@ class CorridorPredictionService
         $days = $historyDays ?? (int) config('flood-watch.predictions.history_days', 120);
 
         try {
-            $res = $this->client->getPredictions($corridorId, $days);
+            $res = $this->client->getPredictions($corridorId, $days, null, $asOf);
         } catch (Throwable $e) {
             Log::warning('Corridor prediction lake request failed', [
                 'corridor' => $corridorId,
