@@ -372,12 +372,35 @@ body {
 .history-link {
   display: flex;
   flex-direction: column;
-  gap: 0.1rem;
+  gap: 0.15rem;
   width: 100%;
-  padding: 0.4rem 0.55rem;
+  padding: 0.45rem 0.55rem;
   border: 1.5px solid var(--line);
   background: #fff;
   font: inherit;
   text-align: left;
   cursor: pointer;
+}
+.history-link.is-selected {
+  border-color: var(--ink, #1c1917);
+  background: #fafaf9;
+}
+.history-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.55rem;
+  align-items: baseline;
+}
+.history-kind {
+  font-size: 0.72rem;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #92400e;
+}
+.history-kind[data-severity='high'] {
+  color: #9f1239;
+}
+.history-kind[data-severity='low'] {
+  color: #3f6212;
 }

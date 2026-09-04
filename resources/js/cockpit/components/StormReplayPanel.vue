@@ -39,7 +39,7 @@ const emit = defineEmits(['select', 'clear']);
       >
         Return to live
       </button>
-      <p class="copy">Pick a storm to run corridor prediction as-of that event.</p>
+      <p class="copy">Pick a storm or history event to run corridor prediction as-of that date.</p>
     </template>
   </div>
 </template>
