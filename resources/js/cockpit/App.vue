@@ -205,6 +205,9 @@ async function loadStorms() {
       label: storm.label,
       asOf: storm.as_of,
       notes: storm.notes || '',
+      kind: storm.kind || null,
+      severity: storm.severity || null,
+      impactSummary: storm.impact_summary || storm.notes || '',
       expectedVerdict: storm.expected_verdict || null,
     }));
   } catch (err) {
@@ -715,6 +718,7 @@ const inspectorPanelSource = computed(() => {
           <PlaceHistoryPanel
             :incidents="placeIncidents"
             :source="stormsPanelSource"
+            :selected-id="selectedStormId"
             @select="onSelectStorm"
           />
           <template v-if="SHOW_ROUTE_VIEW">
