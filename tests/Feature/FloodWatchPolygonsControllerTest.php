@@ -65,9 +65,15 @@ class FloodWatchPolygonsControllerTest extends TestCase
 
         Http::fake([
             'http://lake.test/v1/polygons*' => Http::response([
-                'type' => 'FeatureCollection',
-                'features' => [
-                    ['type' => 'Feature', 'geometry' => ['type' => 'Polygon', 'coordinates' => [[[-2.83, 51.04], [-2.82, 51.04], [-2.82, 51.05], [-2.83, 51.05], [-2.83, 51.04]]]]],
+                'region_id' => 'SOM',
+                'dataset' => 'flood_zones',
+                'format' => 'simplified',
+                'count' => 1,
+                'data' => [
+                    'type' => 'FeatureCollection',
+                    'features' => [
+                        ['type' => 'Feature', 'geometry' => ['type' => 'Polygon', 'coordinates' => [[[-2.83, 51.04], [-2.82, 51.04], [-2.82, 51.05], [-2.83, 51.05], [-2.83, 51.04]]]]],
+                    ],
                 ],
             ], 200, ['ETag' => 'W/"p1"']),
         ]);
@@ -79,5 +85,6 @@ class FloodWatchPolygonsControllerTest extends TestCase
         $data = $response->json();
         $this->assertSame('FeatureCollection', $data['type'] ?? null);
         $this->assertIsArray($data['features'] ?? null);
+        $this->assertCount(1, $data['features']);
     }
 }

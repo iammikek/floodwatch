@@ -691,7 +691,7 @@ const inspectorPanelSource = computed(() => {
             <PanelHeading :source="mapPanelSource">Place focus</PanelHeading>
             <p class="title" style="font-size: 0.95rem">{{ locationLabel }}</p>
             <p class="copy">
-              Gauges and flood bounds load for this map area
+              Gauges and flood bounds (EA Flood Zones) load for this map area
               ({{ CORRIDOR_CENTER.radiusKm }} km).
             </p>
           </div>
