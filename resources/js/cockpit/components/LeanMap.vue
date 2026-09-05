@@ -7,7 +7,8 @@ import { fetchFloodZones } from '../lib/fetchFloodZones.js';
 import {
   emphasizeFloodZones,
   floodZoneStyleForFeature,
-  normalizeImpactBbox,
+  impactEnvelope,
+  normalizeImpactGeometry,
 } from '../lib/floodZoneEmphasis.js';
 import PanelHeading from './PanelHeading.vue';
 
@@ -66,6 +67,10 @@ const floodBoundsCaption = computed(() => {
   const mode = String(props.historyEvent.bounds_mode || '').toLowerCase();
   if (mode === 'none') return 'none (event)';
   if (base === 'off' || base === 'error') return base;
+  if (base === 'event' || props.historyEvent?.impact_geometry) {
+    const sev = props.historyEvent.severity || 'event';
+    return `extent · ${sev}`;
+  }
   const sev = props.historyEvent.severity || 'event';
   return `${base} · ${sev}`;
 });
@@ -94,25 +99,19 @@ function syncImpactBoundsOutline() {
     map.removeLayer(impactBoundsLayer);
     impactBoundsLayer = null;
   }
-  const bbox = normalizeImpactBbox(props.historyEvent?.impact_bbox);
-  if (!bbox || String(props.historyEvent?.bounds_mode || '').toLowerCase() === 'none') {
-    return;
-  }
-  const [w, s, e, n] = bbox;
-  impactBoundsLayer = L.rectangle(
-    [
-      [s, w],
-      [n, e],
-    ],
-    {
+  const geom = normalizeImpactGeometry(props.historyEvent);
+  if (!geom) return;
+  impactBoundsLayer = L.geoJSON(geom, {
+    style: {
       color: '#7c2d12',
-      weight: 2,
-      dashArray: '6 4',
-      fill: false,
-      opacity: 0.9,
-      interactive: false,
+      weight: 3,
+      dashArray: '8 5',
+      fillColor: '#7c2d12',
+      fillOpacity: 0.06,
+      opacity: 1,
     },
-  ).addTo(map);
+    interactive: false,
+  }).addTo(map);
 }
 
 function layersEnabled() {
@@ -224,7 +223,7 @@ async function loadFloodZonesForViewport() {
     return;
   }
 
-  const impact = normalizeImpactBbox(event?.impact_bbox);
+  const impact = impactEnvelope(event);
   let west;
   let south;
   let east;
@@ -322,6 +321,8 @@ watch(
       if (moveTimer) clearTimeout(moveTimer);
       floodZonesToken += 1;
       floodZonesStatus.value = 'waiting';
+      // Keep the event outline in sync even while polygon fetch waits on prediction.
+      syncImpactBoundsOutline();
       return;
     }
     if (wasDeferred && layersEnabled().floodZones) {
@@ -388,9 +389,12 @@ watch(
     props.historyEvent?.severity,
     props.historyEvent?.bounds_mode,
     JSON.stringify(props.historyEvent?.impact_bbox ?? null),
+    JSON.stringify(props.historyEvent?.impact_geometry ?? null),
   ],
   () => {
-    const bbox = normalizeImpactBbox(props.historyEvent?.impact_bbox);
+    // Outline must update immediately — do not wait on deferred FZ polygon fetch.
+    syncImpactBoundsOutline();
+    const bbox = impactEnvelope(props.historyEvent);
     if (map && bbox && String(props.historyEvent?.bounds_mode || '').toLowerCase() !== 'none') {
       const [w, s, e, n] = bbox;
       map.fitBounds(
@@ -400,6 +404,9 @@ watch(
         ],
         { padding: [28, 28], maxZoom: 13, animate: true },
       );
+    } else if (map && String(props.historyEvent?.bounds_mode || '').toLowerCase() === 'none') {
+      // Clear leftover outline when switching to a no-footprint control event.
+      syncImpactBoundsOutline();
     }
     if (props.preset?.layers?.floodZones) {
       scheduleFloodZonesReload();

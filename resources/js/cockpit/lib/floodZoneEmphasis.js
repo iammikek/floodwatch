@@ -2,8 +2,9 @@
  * Flood-bound presentation for live vs place-history replay.
  *
  * Live: EA planning FZ2/FZ3 for the map viewport.
- * Replay: clip planning zones to each storm's curated impact_bbox
- * (approximate event footprint — not modelled inundation).
+ * Replay: clip planning zones to each storm's curated impact footprint
+ * (GeoJSON polygon preferred; impact_bbox envelope as fallback).
+ * Footprints are approximate — not modelled inundation.
  */
 
 /**
@@ -27,6 +28,62 @@ export function normalizeImpactBbox(raw) {
   const [w, s, e, n] = nums;
   if (e <= w || n <= s) return null;
   return [w, s, e, n];
+}
+
+/**
+ * Prefer curated impact_geometry; fall back to impact_bbox envelope as a rectangle polygon.
+ * @param {{
+ *   bounds_mode?: string|null,
+ *   impact_bbox?: unknown,
+ *   impact_geometry?: unknown,
+ * }|null|undefined} event
+ * @returns {{ type: 'FeatureCollection', features: object[] }|null}
+ */
+export function normalizeImpactGeometry(event) {
+  const mode = String(event?.bounds_mode || '').toLowerCase();
+  if (mode === 'none') return null;
+
+  const raw = event?.impact_geometry;
+  if (raw && typeof raw === 'object') {
+    const typed = /** @type {{ type?: string, features?: unknown[], geometry?: object }} */ (raw);
+    if (typed.type === 'FeatureCollection' && Array.isArray(typed.features) && typed.features.length) {
+      return { type: 'FeatureCollection', features: typed.features };
+    }
+    if (typed.type === 'Feature' && typed.geometry) {
+      return { type: 'FeatureCollection', features: [typed] };
+    }
+    if (typed.type === 'Polygon' || typed.type === 'MultiPolygon') {
+      return {
+        type: 'FeatureCollection',
+        features: [{ type: 'Feature', properties: {}, geometry: typed }],
+      };
+    }
+  }
+
+  const bbox = normalizeImpactBbox(event?.impact_bbox);
+  if (!bbox) return null;
+  const [w, s, e, n] = bbox;
+  return {
+    type: 'FeatureCollection',
+    features: [
+      {
+        type: 'Feature',
+        properties: { kind: 'impact_bbox_envelope' },
+        geometry: {
+          type: 'Polygon',
+          coordinates: [
+            [
+              [w, s],
+              [e, s],
+              [e, n],
+              [w, n],
+              [w, s],
+            ],
+          ],
+        },
+      },
+    ],
+  };
 }
 
 /**
@@ -58,6 +115,28 @@ export function geometryBbox(geom) {
 }
 
 /**
+ * Envelope for clipping / fitBounds from a storm event.
+ * @param {{
+ *   bounds_mode?: string|null,
+ *   impact_bbox?: unknown,
+ *   impact_geometry?: unknown,
+ * }|null|undefined} event
+ * @returns {[number, number, number, number]|null}
+ */
+export function impactEnvelope(event) {
+  const collection = normalizeImpactGeometry(event);
+  if (collection?.features?.length) {
+    const xs = [];
+    const ys = [];
+    for (const f of collection.features) {
+      collectCoords(f?.geometry?.coordinates, xs, ys);
+    }
+    if (xs.length) return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)];
+  }
+  return normalizeImpactBbox(event?.impact_bbox);
+}
+
+/**
  * @param {[number, number, number, number]} a
  * @param {[number, number, number, number]} b
  */
@@ -74,6 +153,7 @@ export function bboxIntersects(a, b) {
  *   severity?: string|null,
  *   bounds_mode?: string|null,
  *   impact_bbox?: unknown,
+ *   impact_geometry?: unknown,
  * }|null|undefined} event
  * @returns {{ type: 'FeatureCollection', features: object[] }}
  */
@@ -85,7 +165,7 @@ export function emphasizeFloodZones(geo, event = null) {
   }
 
   const level = normalizeEventSeverity(event?.severity);
-  const impact = normalizeImpactBbox(event?.impact_bbox);
+  const impact = impactEnvelope(event);
 
   const filtered = features.filter((f) => {
     const zone = String(f?.properties?.flood_zone || '');
