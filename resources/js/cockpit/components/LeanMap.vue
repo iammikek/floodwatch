@@ -4,6 +4,11 @@ import L from 'leaflet';
 import { PRESETS } from '../data/presets.js';
 import { boundsFromRouteGeometry } from '../lib/fitRouteBounds.js';
 import { fetchFloodZones } from '../lib/fetchFloodZones.js';
+import {
+  emphasizeFloodZones,
+  floodZoneStyleForFeature,
+  normalizeImpactBbox,
+} from '../lib/floodZoneEmphasis.js';
 import PanelHeading from './PanelHeading.vue';
 
 const presetOptions = computed(() => Object.values(PRESETS ?? {}));
@@ -24,6 +29,21 @@ const props = defineProps({
   mapFocusToken: { type: Number, default: 0 },
   /** @type {{ center: [number, number], zoom?: number } | null} */
   mapFocusCenter: { type: Object, default: null },
+  /**
+   * Selected place-history / storm replay event.
+   * Planning FZ polygons are static; severity drives filter + style emphasis.
+   * @type {{ id?: string, label?: string, severity?: string, kind?: string } | null}
+   */
+  historyEvent: { type: Object, default: null },
+  /** When false, hide Place/Dispatch/Hydrology/Minimal switcher (use-case owns layers). */
+  showPresets: { type: Boolean, default: false },
+  /** Short label for flood-bounds status line. */
+  layerStatusLabel: { type: String, default: 'flood bounds' },
+  /**
+   * When true, skip polygon fetches so lake-bound prediction can finish first.
+   * Layers reload when this returns to false.
+   */
+  deferHeavyLayers: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(['select', 'update:preset']);
@@ -32,10 +52,23 @@ const mapEl = ref(null);
 let map = null;
 let overlay = null;
 let floodZonesLayer = null;
+/** Raw lake FeatureCollection (unfiltered). */
 let floodZonesGeo = { type: 'FeatureCollection', features: [] };
 let floodZonesToken = 0;
+let impactBoundsLayer = null;
 let moveTimer = null;
 const floodZonesStatus = ref('idle');
+
+const floodBoundsCaption = computed(() => {
+  if (!(props.preset ?? PRESETS.dispatch).layers?.floodZones) return 'off';
+  const base = floodZonesStatus.value;
+  if (!props.historyEvent) return base;
+  const mode = String(props.historyEvent.bounds_mode || '').toLowerCase();
+  if (mode === 'none') return 'none (event)';
+  if (base === 'off' || base === 'error') return base;
+  const sev = props.historyEvent.severity || 'event';
+  return `${base} · ${sev}`;
+});
 
 function divIcon(kind, selected) {
   const cls = ['marker-dot', kind, selected ? 'selected' : ''].filter(Boolean).join(' ');
@@ -48,11 +81,38 @@ function divIcon(kind, selected) {
 }
 
 function floodZoneStyle(feature) {
-  const zone = String(feature?.properties?.flood_zone || '');
-  if (zone === 'FZ3') {
-    return { color: '#b45309', fillColor: '#f59e0b', fillOpacity: 0.28, weight: 1, opacity: 0.75 };
+  return floodZoneStyleForFeature(feature);
+}
+
+function paintedFloodZones() {
+  return emphasizeFloodZones(floodZonesGeo, props.historyEvent);
+}
+
+function syncImpactBoundsOutline() {
+  if (!map) return;
+  if (impactBoundsLayer) {
+    map.removeLayer(impactBoundsLayer);
+    impactBoundsLayer = null;
   }
-  return { color: '#d97706', fillColor: '#fbbf24', fillOpacity: 0.16, weight: 1, opacity: 0.55 };
+  const bbox = normalizeImpactBbox(props.historyEvent?.impact_bbox);
+  if (!bbox || String(props.historyEvent?.bounds_mode || '').toLowerCase() === 'none') {
+    return;
+  }
+  const [w, s, e, n] = bbox;
+  impactBoundsLayer = L.rectangle(
+    [
+      [s, w],
+      [n, e],
+    ],
+    {
+      color: '#7c2d12',
+      weight: 2,
+      dashArray: '6 4',
+      fill: false,
+      opacity: 0.9,
+      interactive: false,
+    },
+  ).addTo(map);
 }
 
 function layersEnabled() {
@@ -72,25 +132,27 @@ function rebuildOverlays() {
   const warningCap = props.preset?.warningCap ?? PRESETS.dispatch.warningCap ?? 8;
   const gaugeCap = props.preset?.gaugeCap ?? PRESETS.dispatch.gaugeCap ?? 12;
 
-  if (layers.floodZones && floodZonesGeo?.features?.length) {
+  const painted = paintedFloodZones();
+  if (layers.floodZones && painted?.features?.length) {
     if (!floodZonesLayer) {
       floodZonesLayer = L.geoJSON(null, { style: floodZoneStyle }).addTo(map);
       // Keep under marker overlay: bring markers to front via overlay group order.
       floodZonesLayer.bringToBack();
     }
     floodZonesLayer.clearLayers();
-    floodZonesLayer.addData(floodZonesGeo);
+    floodZonesLayer.addData(painted);
     floodZonesLayer.bringToBack();
   } else if (floodZonesLayer) {
     floodZonesLayer.clearLayers();
   }
+  syncImpactBoundsOutline();
 
   if (layers.route && props.routeGeometry?.length >= 2) {
     const latLngs = props.routeGeometry.map(([lng, lat]) => [lat, lng]);
     L.polyline(latLngs, { color: '#2563eb', weight: 4, opacity: 0.85 }).addTo(overlay);
   }
 
-  if (layers.warnings) {
+  if (layers.warnings && !props.historyEvent) {
     const list = [...props.floods]
       .sort((a, b) => (a.severityLevel ?? 4) - (b.severityLevel ?? 4))
       .slice(0, warningCap);
@@ -106,7 +168,7 @@ function rebuildOverlays() {
     }
   }
 
-  if (layers.incidents) {
+  if (layers.incidents && !props.historyEvent) {
     for (const i of props.incidents) {
       if (i.lat == null || i.lng == null) continue;
       const marker = L.marker([i.lat, i.lng], {
@@ -118,7 +180,7 @@ function rebuildOverlays() {
     }
   }
 
-  if (layers.gauges) {
+  if (layers.gauges && !props.historyEvent) {
     const list = [...props.gauges]
       .sort((a, b) => {
         const ae = a.levelStatus === 'elevated' ? 1 : 0;
@@ -147,15 +209,67 @@ async function loadFloodZonesForViewport() {
     rebuildOverlays();
     return;
   }
-  const b = map.getBounds();
-  const bbox = [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()].join(',');
+
+  if (props.deferHeavyLayers) {
+    floodZonesStatus.value = 'waiting';
+    return;
+  }
+
+  const event = props.historyEvent;
+  const mode = String(event?.bounds_mode || '').toLowerCase();
+  if (event && mode === 'none') {
+    floodZonesGeo = { type: 'FeatureCollection', features: [] };
+    floodZonesStatus.value = 'none';
+    rebuildOverlays();
+    return;
+  }
+
+  const impact = normalizeImpactBbox(event?.impact_bbox);
+  let west;
+  let south;
+  let east;
+  let north;
+  let clipped = false;
+
+  if (impact) {
+    [west, south, east, north] = impact;
+  } else {
+    const b = map.getBounds();
+    west = b.getWest();
+    south = b.getSouth();
+    east = b.getEast();
+    north = b.getNorth();
+    // Lake rejects inline bboxes wider than ~0.5°. When zoomed out, fetch a
+    // centre-clamped window so planning bounds stay visible.
+    const maxSpan = 0.45;
+    const width = Math.abs(east - west);
+    const height = Math.abs(north - south);
+    if (width > maxSpan || height > maxSpan) {
+      const c = map.getCenter();
+      const halfW = Math.min(width, maxSpan) / 2;
+      const halfH = Math.min(height, maxSpan) / 2;
+      west = c.lng - halfW;
+      east = c.lng + halfW;
+      south = c.lat - halfH;
+      north = c.lat + halfH;
+      clipped = true;
+    }
+  }
+
+  const bbox = [west, south, east, north].join(',');
   const token = ++floodZonesToken;
   floodZonesStatus.value = 'loading';
   try {
     const geo = await fetchFloodZones({ bbox });
     if (token !== floodZonesToken) return;
     floodZonesGeo = geo;
-    floodZonesStatus.value = geo.features.length ? 'lake' : 'empty';
+    if (!geo.features.length) {
+      floodZonesStatus.value = 'empty';
+    } else if (impact) {
+      floodZonesStatus.value = 'event';
+    } else {
+      floodZonesStatus.value = clipped ? 'lake·focus' : 'lake';
+    }
     rebuildOverlays();
   } catch {
     if (token !== floodZonesToken) return;
@@ -193,12 +307,35 @@ onMounted(async () => {
   }).addTo(map);
 
   rebuildOverlays();
-  await loadFloodZonesForViewport();
+  if (!props.deferHeavyLayers) {
+    await loadFloodZonesForViewport();
+  } else {
+    floodZonesStatus.value = 'waiting';
+  }
   map.on('moveend', scheduleFloodZonesReload);
 });
 
+watch(
+  () => props.deferHeavyLayers,
+  (deferred, wasDeferred) => {
+    if (deferred) {
+      if (moveTimer) clearTimeout(moveTimer);
+      floodZonesToken += 1;
+      floodZonesStatus.value = 'waiting';
+      return;
+    }
+    if (wasDeferred && layersEnabled().floodZones) {
+      scheduleFloodZonesReload();
+    }
+  },
+);
+
 onBeforeUnmount(() => {
   if (moveTimer) clearTimeout(moveTimer);
+  if (impactBoundsLayer && map) {
+    map.removeLayer(impactBoundsLayer);
+    impactBoundsLayer = null;
+  }
   if (map) {
     map.off('moveend', scheduleFloodZonesReload);
     map.remove();
@@ -246,6 +383,33 @@ watch(
 );
 
 watch(
+  () => [
+    props.historyEvent?.id,
+    props.historyEvent?.severity,
+    props.historyEvent?.bounds_mode,
+    JSON.stringify(props.historyEvent?.impact_bbox ?? null),
+  ],
+  () => {
+    const bbox = normalizeImpactBbox(props.historyEvent?.impact_bbox);
+    if (map && bbox && String(props.historyEvent?.bounds_mode || '').toLowerCase() !== 'none') {
+      const [w, s, e, n] = bbox;
+      map.fitBounds(
+        [
+          [s, w],
+          [n, e],
+        ],
+        { padding: [28, 28], maxZoom: 13, animate: true },
+      );
+    }
+    if (props.preset?.layers?.floodZones) {
+      scheduleFloodZonesReload();
+    } else {
+      rebuildOverlays();
+    }
+  },
+);
+
+watch(
   () => props.routeFitToken,
   async (token) => {
     if (!map || !token) return;
@@ -270,7 +434,7 @@ watch(
 <template>
   <div class="map-wrap">
     <div class="map-controls">
-      <div class="box">
+      <div v-if="showPresets" class="box">
         <PanelHeading :source="source">View preset</PanelHeading>
         <button
           v-for="p in presetOptions"
@@ -284,11 +448,10 @@ watch(
         </button>
       </div>
       <div class="box dashed">
-        <span>route {{ (preset ?? PRESETS.dispatch).layers.route ? 'on' : 'off' }}</span><br />
-        <span>warnings {{ (preset ?? PRESETS.dispatch).layers.warnings ? 'on' : 'off' }}</span><br />
-        <span>roads {{ (preset ?? PRESETS.dispatch).layers.incidents ? 'on' : 'off' }}</span><br />
-        <span>gauges {{ (preset ?? PRESETS.dispatch).layers.gauges ? 'on' : 'off' }}</span><br />
-        <span>flood bounds {{ (preset ?? PRESETS.dispatch).layers.floodZones ? floodZonesStatus : 'off' }}</span>
+        <span>mode {{ historyEvent ? 'history' : 'live' }}</span><br />
+        <span>warnings {{ layersEnabled().warnings ? 'on' : 'off' }}</span><br />
+        <span>gauges {{ layersEnabled().gauges ? 'on' : 'off' }}</span><br />
+        <span>{{ layerStatusLabel }} · {{ floodBoundsCaption }}</span>
       </div>
     </div>
     <div ref="mapEl" class="map-el" />

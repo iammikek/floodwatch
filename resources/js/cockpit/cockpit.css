@@ -33,6 +33,9 @@ body {
 .topbar h1 { margin: 0; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 0.02em; }
 .topbar p { margin: 0.2rem 0 0; color: var(--muted); font-size: 0.9rem; }
 .topbar .toolbar { margin-bottom: 0; justify-content: flex-end; }
+.topbar-modes { flex: 1 1 12rem; justify-content: center; }
+.use-case-btn { min-width: 5.5rem; font-weight: 600; }
+.use-case-btn[aria-pressed="true"] { background: var(--ink); color: #fff; }
 .note {
   border-left: 3px solid var(--annot);
   background: #eef4ff;
@@ -126,6 +129,8 @@ body {
 .sidebar, .main { display: flex; flex-direction: column; gap: 0.75rem; }
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
 .grid-3 { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 0.75rem; }
+.grid-3.corridor-summary-replay { grid-template-columns: 1fr; }
+.grid-3.prediction-metrics-history { grid-template-columns: 1fr 1fr; }
 .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; }
 @media (max-width: 900px) {
   .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }

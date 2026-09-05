@@ -137,23 +137,43 @@ describe('Cockpit App', () => {
 
     expect(wrapper.text()).toContain('Monitor place');
     expect(wrapper.text()).not.toContain('Route check');
-    expect(wrapper.text()).toContain('Storm replay');
-    expect(wrapper.text()).toContain('Historical incidents here');
+    expect(wrapper.text()).toContain('Live');
+    expect(wrapper.text()).toContain('History');
+    expect(wrapper.text()).toContain('Watch corridor');
 
     const classOrder = Array.from(wrapper.find('.main').element.children).map((el) => el.className);
     expect(classOrder[0]).toContain('primary-panel');
     expect(classOrder.some((c) => c.includes('map-shell'))).toBe(true);
   });
 
-  it('paints map overlays before a slow prediction resolves', async () => {
-    let resolvePrediction;
-    fetchPrediction.mockImplementationOnce(
+  it('shows prediction before map overlays finish loading', async () => {
+    let resolveMap;
+    fetchLiveMapData.mockImplementationOnce(
       () =>
         new Promise((resolve) => {
-          resolvePrediction = resolve;
+          resolveMap = resolve;
         }),
     );
-    fetchLiveMapData.mockResolvedValueOnce({
+
+    const wrapper = mount(App, {
+      global: {
+        stubs: {
+          LeanMap: {
+            props: ['gauges', 'deferHeavyLayers'],
+            template:
+              '<div class="lean-map-stub">gauges:{{ gauges.length }} defer:{{ deferHeavyLayers }}</div>',
+          },
+        },
+      },
+    });
+
+    await flushApp();
+    await flushApp();
+
+    expect(wrapper.text()).toContain('Watch corridor');
+    expect(wrapper.text()).toContain('gauges:0');
+
+    resolveMap({
       source: 'lake',
       gauges: [
         {
@@ -168,46 +188,8 @@ describe('Cockpit App', () => {
       ],
       floods: [],
     });
-
-    const wrapper = mount(App, {
-      global: {
-        stubs: {
-          LeanMap: {
-            props: ['gauges'],
-            template: '<div class="lean-map-stub">gauges:{{ gauges.length }}</div>',
-          },
-        },
-      },
-    });
-
     await flushApp();
     await flushApp();
-
     expect(wrapper.text()).toContain('gauges:1');
-    expect(wrapper.text()).toContain('Waiting for prediction');
-
-    resolvePrediction({
-      source: 'lake',
-      doc: {
-        schema: 'floodwatch.prediction.v1',
-        corridor: { id: 'a361-muchelney', label: 'A361 Muchelney corridor' },
-        prediction: {
-          verdict: 'watch',
-          verdictLabel: 'Watch corridor',
-          timeToImpactHours: 4,
-          impactWindow: null,
-          confidence: 0.64,
-          confidenceLabel: 'Medium',
-          summary: 'Historic analogue watch.',
-        },
-        drivers: [],
-        affectedAreas: [],
-        dispatch: { implication: 'Watch closely', safeToPass: false },
-        method: { name: 'historic_analogue_v1', notes: 'Analogue matcher' },
-        observables: { rainfallUpstreamMm: [], gaugeSeries: {}, primaryAnalysis: { p95: 2.1 } },
-      },
-    });
-    await flushApp();
-    expect(wrapper.text()).toContain('Watch corridor');
   });
 });

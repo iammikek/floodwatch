@@ -31,8 +31,11 @@ function formatWhen(asOf) {
 
 <template>
   <div class="box">
-    <p class="label">Historical incidents here</p>
-    <template v-if="!incidents.length">
+    <p class="label">Historical events</p>
+    <template v-if="source === 'pending'">
+      <p class="copy">Loading place history…</p>
+    </template>
+    <template v-else-if="!incidents.length">
       <p class="copy">
         Curated flood and storm events for this place will appear here.
       </p>

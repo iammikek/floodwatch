@@ -12,6 +12,8 @@ const props = defineProps({
   loading: { type: Boolean, default: false },
   /** Route-only refresh — greys the Current route tile without blanking floods. */
   routeLoading: { type: Boolean, default: false },
+  /** Storm / place-history replay — hide live route and warning tiles. */
+  replayMode: { type: Boolean, default: false },
   corridorSource: { type: String, default: 'static' },
   floodSource: { type: String, default: 'static' },
   routeSource: { type: String, default: 'static' },
@@ -19,7 +21,7 @@ const props = defineProps({
 
 const counts = computed(() => {
   const out = { severe: 0, warning: 0, alert: 0 };
-  if (props.loading) return out;
+  if (props.loading || props.replayMode) return out;
   for (const flood of props.floods) {
     const level = Number(flood.severityLevel ?? 4);
     const label = String(flood.severity ?? '').toLowerCase();
@@ -32,7 +34,10 @@ const counts = computed(() => {
 </script>
 
 <template>
-  <div class="grid-3" :class="{ 'is-waiting': loading }">
+  <div
+    class="grid-3"
+    :class="{ 'is-waiting': loading, 'corridor-summary-replay': replayMode }"
+  >
     <div class="box">
       <PanelHeading :source="corridorSource">Corridor risk</PanelHeading>
       <template v-if="loading">
@@ -43,7 +48,7 @@ const counts = computed(() => {
         <p class="copy">{{ guidance }}</p>
       </template>
     </div>
-    <div class="box">
+    <div v-if="!replayMode" class="box">
       <PanelHeading :source="floodSource">Flood exposure</PanelHeading>
       <template v-if="loading">
         <p class="waiting-copy">Waiting for flood warnings…</p>
@@ -54,7 +59,7 @@ const counts = computed(() => {
         <div class="stat"><span>Flood alerts</span><b class="warn">{{ counts.alert }}</b></div>
       </template>
     </div>
-    <div class="box" :class="{ 'is-waiting': routeLoading && !loading }">
+    <div v-if="!replayMode" class="box" :class="{ 'is-waiting': routeLoading && !loading }">
       <PanelHeading :source="routeSource">Current route</PanelHeading>
       <template v-if="loading || routeLoading">
         <p class="waiting-copy">Waiting for route status…</p>

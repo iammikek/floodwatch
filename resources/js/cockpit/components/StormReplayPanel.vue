@@ -14,7 +14,10 @@ const emit = defineEmits(['select', 'clear']);
   <div class="box">
     <p class="label">Storm replay</p>
     <p v-if="replayActive" class="annot">Replaying selected storm (not live)</p>
-    <template v-if="!storms.length">
+    <template v-if="source === 'pending'">
+      <p class="copy">Loading storm catalogue…</p>
+    </template>
+    <template v-else-if="!storms.length">
       <p class="copy">No curated storms for this place yet.</p>
     </template>
     <template v-else>
