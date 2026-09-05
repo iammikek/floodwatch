@@ -34,8 +34,27 @@ body {
 .topbar p { margin: 0.2rem 0 0; color: var(--muted); font-size: 0.9rem; }
 .topbar .toolbar { margin-bottom: 0; justify-content: flex-end; }
 .topbar-modes { flex: 1 1 12rem; justify-content: center; }
-.use-case-btn { min-width: 5.5rem; font-weight: 600; }
-.use-case-btn[aria-pressed="true"] { background: var(--ink); color: #fff; }
+.segmented {
+  display: inline-flex;
+  gap: 0;
+  padding: 0;
+  border: 1.5px solid var(--line);
+  background: var(--panel);
+}
+.segmented button {
+  margin: 0;
+  border: 0;
+  border-right: 1.5px solid var(--line);
+  border-radius: 0;
+  min-width: 4.75rem;
+  font-weight: 600;
+  background: transparent;
+}
+.segmented button:last-child { border-right: 0; }
+.segmented button[aria-pressed="true"] {
+  background: var(--ink);
+  color: #fff;
+}
 .note {
   border-left: 3px solid var(--annot);
   background: #eef4ff;

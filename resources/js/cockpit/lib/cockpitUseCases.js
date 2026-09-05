@@ -5,8 +5,9 @@
 
 export const USE_CASE_LIVE = 'live_place';
 export const USE_CASE_HISTORY = 'historical_place';
+export const USE_CASE_TRANSPORT = 'transport_route';
 
-/** @typedef {'live_place'|'historical_place'} CockpitUseCaseId */
+/** @typedef {'live_place'|'historical_place'|'transport_route'} CockpitUseCaseId */
 
 /**
  * @type {Record<CockpitUseCaseId, {
@@ -40,8 +41,11 @@ export const USE_CASES = {
       placeOutlook: true,
       corridorRisk: true,
       floodExposure: true,
-      currentRoute: true,
+      currentRoute: false,
       riverResponse: true,
+      routeCheck: false,
+      recentRoutes: false,
+      activeRoute: false,
     },
     layers: {
       route: false,
@@ -70,6 +74,9 @@ export const USE_CASES = {
       floodExposure: false,
       currentRoute: false,
       riverResponse: false,
+      routeCheck: false,
+      recentRoutes: false,
+      activeRoute: false,
     },
     layers: {
       route: false,
@@ -82,9 +89,43 @@ export const USE_CASES = {
     showMapPresets: false,
     floodZonesLabel: 'event impact footprint (approximate)',
   },
+  [USE_CASE_TRANSPORT]: {
+    id: USE_CASE_TRANSPORT,
+    label: 'Transport',
+    description: 'Check route and road exposure through this place',
+    panels: {
+      bookmarks: true,
+      stormReplay: false,
+      placeHistory: false,
+      prediction: true,
+      yourRisk: true,
+      placeOutlook: false,
+      corridorRisk: true,
+      floodExposure: true,
+      currentRoute: true,
+      riverResponse: false,
+      routeCheck: true,
+      recentRoutes: true,
+      activeRoute: true,
+    },
+    layers: {
+      route: true,
+      warnings: true,
+      incidents: true,
+      gauges: false,
+      floodZones: true,
+    },
+    showDispatch: true,
+    showMapPresets: false,
+    floodZonesLabel: 'planning flood zones (FZ2/FZ3)',
+  },
 };
 
-export const USE_CASE_OPTIONS = [USE_CASES[USE_CASE_LIVE], USE_CASES[USE_CASE_HISTORY]];
+export const USE_CASE_OPTIONS = [
+  USE_CASES[USE_CASE_LIVE],
+  USE_CASES[USE_CASE_HISTORY],
+  USE_CASES[USE_CASE_TRANSPORT],
+];
 
 /**
  * @param {string|null|undefined} id

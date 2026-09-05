@@ -139,6 +139,7 @@ describe('Cockpit App', () => {
     expect(wrapper.text()).not.toContain('Route check');
     expect(wrapper.text()).toContain('Live');
     expect(wrapper.text()).toContain('History');
+    expect(wrapper.text()).toContain('Transport');
     expect(wrapper.text()).toContain('Watch corridor');
 
     const classOrder = Array.from(wrapper.find('.main').element.children).map((el) => el.className);

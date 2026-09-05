@@ -1,5 +1,5 @@
 /**
  * Feature flags for cockpit surfaces.
- * Route check is deferred to a later alternate view; place monitoring is primary.
+ * Route / transport UI is owned by the Transport use case (see cockpitUseCases.js).
  */
-export const SHOW_ROUTE_VIEW = false;
+export const SHOW_ROUTE_VIEW = true;

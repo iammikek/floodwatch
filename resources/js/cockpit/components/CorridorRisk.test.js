@@ -65,23 +65,19 @@ describe('CorridorRisk', () => {
     );
   });
 
-  it('hides live Current route and Flood exposure during historical replay', () => {
+  it('hides Current route when showCurrentRoute is false', () => {
     const wrapper = mount(CorridorRisk, {
       props: {
         floods: [{ severity: 'Flood Warning', severityLevel: 2 }],
         incidents: [{ id: 1 }],
         elevatedCount: 2,
-        headline: 'Replay: At risk',
-        guidance: 'Historic analogues',
-        routeLabel: 'At risk within window',
-        replayMode: true,
+        headline: 'Live place',
+        guidance: 'Guidance',
+        routeLabel: 'unused',
+        showCurrentRoute: false,
       },
     });
-    expect(wrapper.text()).toContain('Replay: At risk');
+    expect(wrapper.text()).toContain('Flood exposure');
     expect(wrapper.text()).not.toContain('Current route');
-    expect(wrapper.text()).not.toContain('Flood exposure');
-    expect(wrapper.text()).not.toContain('elevated gauges');
-    expect(wrapper.text()).not.toContain('active incidents');
-    expect(wrapper.findAll('.stat')).toHaveLength(0);
   });
 });
