@@ -58,4 +58,19 @@ describe('RiverResponse status filters', () => {
     expect(wrapper.findAll('.gauge-card')).toHaveLength(0);
     expect(wrapper.findAll('button.status-filter')).toHaveLength(0);
   });
+
+  it('hides live monitored gauges during historical replay', () => {
+    const wrapper = mount(RiverResponse, {
+      props: {
+        gauges,
+        replayMode: true,
+        replayLabel: 'Storm Dennis (Feb 2020)',
+      },
+    });
+    expect(wrapper.text()).toContain('Live gauges hidden for historical replay');
+    expect(wrapper.text()).toContain('Storm Dennis (Feb 2020)');
+    expect(wrapper.text()).not.toContain('in the current map area');
+    expect(wrapper.findAll('.gauge-card')).toHaveLength(0);
+    expect(wrapper.findAll('button.status-filter')).toHaveLength(0);
+  });
 });

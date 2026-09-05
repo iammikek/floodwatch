@@ -7,6 +7,9 @@ const props = defineProps({
   selectedId: { type: String, default: null },
   loading: { type: Boolean, default: false },
   source: { type: String, default: 'static' },
+  /** When true, live gauges are intentionally hidden (storm / place-history replay). */
+  replayMode: { type: Boolean, default: false },
+  replayLabel: { type: String, default: null },
 });
 
 const emit = defineEmits(['select']);
@@ -92,6 +95,15 @@ function formatTime(iso) {
     <PanelHeading :source="source">River response</PanelHeading>
     <template v-if="loading">
       <p class="waiting-copy">Waiting for gauges…</p>
+    </template>
+    <template v-else-if="replayMode">
+      <p class="title">Live gauges hidden for historical replay</p>
+      <p class="copy">
+        Monitored levels are for the live network, not
+        {{ replayLabel || 'this storm window' }}. Use corridor prediction
+        (drivers / matched windows) for historical gauge context. Return to live
+        to see current monitored gauges.
+      </p>
     </template>
     <template v-else>
       <div class="grid-2">

@@ -13,6 +13,8 @@ const props = defineProps({
   source: { type: String, default: 'static' },
   /** When set, prediction is a storm replay (not live). */
   replayLabel: { type: String, default: null },
+  /** Live ops dispatch implication — hidden in History use case. */
+  showDispatch: { type: Boolean, default: true },
 });
 
 const p = computed(() => props.predictionDoc.prediction);
@@ -116,7 +118,11 @@ function riskClass(risk) {
     <p class="title" :class="verdictClass">{{ p.verdictLabel }}</p>
     <p class="copy">{{ p.summary }}</p>
 
-    <div class="grid-3" style="margin-top: 0.75rem">
+    <div
+      class="grid-3"
+      style="margin-top: 0.75rem"
+      :class="{ 'prediction-metrics-history': !showDispatch }"
+    >
       <div class="box" style="padding: 0.55rem">
         <p class="label">Time to impact</p>
         <p class="title" style="font-size: 1.1rem">{{ impactLabel }}</p>
@@ -130,7 +136,7 @@ function riskClass(risk) {
         </p>
         <p class="copy">{{ predictionDoc.method.notes }}</p>
       </div>
-      <div class="box" style="padding: 0.55rem">
+      <div v-if="showDispatch" class="box" style="padding: 0.55rem">
         <p class="label">Dispatch</p>
         <p class="title" style="font-size: 0.95rem">{{ predictionDoc.dispatch.implication }}</p>
         <p class="copy">
@@ -150,7 +156,7 @@ function riskClass(risk) {
       </div>
       <div class="box" style="padding: 0.55rem">
         <PanelHeading :source="gaugeSeriesSource">
-          Supporting · {{ gaugeTitle }} (m)
+          {{ replayLabel ? 'Primary stage' : 'Supporting' }} · {{ gaugeTitle }} (m)
         </PanelHeading>
         <Sparkline :points="keySeries" :guide="guide" stroke="#7a1f1f" />
         <div class="height-key" aria-label="Stage height key">

@@ -2,7 +2,6 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
 import scenarioRisk from './data/scenario-risk.json';
 import scenarioStable from './data/scenario-stable.json';
-import { PLACE_PRESET_ID, PRESETS } from './data/presets.js';
 import { seriesForGauge } from './data/expandSeries.js';
 import { fetchPrediction } from './lib/fetchPrediction.js';
 import { CORRIDOR_CENTER, fetchLiveMapData } from './lib/fetchLiveMapData.js';
@@ -12,6 +11,13 @@ import { fetchBookmarks } from './lib/fetchBookmarks.js';
 import { resolveRouteFromOnLoad } from './lib/defaultBookmarkRoute.js';
 import { SHOW_ROUTE_VIEW } from './lib/cockpitFlags.js';
 import { fetchStorms } from './lib/fetchStorms.js';
+import {
+  USE_CASE_HISTORY,
+  USE_CASE_LIVE,
+  USE_CASE_OPTIONS,
+  presetForUseCase,
+  resolveUseCase,
+} from './lib/cockpitUseCases.js';
 import RecentRoutesPanel from './components/RecentRoutesPanel.vue';
 import BookmarksPanel from './components/BookmarksPanel.vue';
 import CorridorRisk from './components/CorridorRisk.vue';
@@ -34,7 +40,7 @@ const scenarios = {
 /** Demo fixtures only — default path is live lake + Laravel road feeds. */
 const useDemoFixtures = ref(false);
 const scenarioId = ref('risk');
-const presetId = ref(PLACE_PRESET_ID);
+const useCaseId = ref(USE_CASE_LIVE);
 const selected = ref(null);
 const predictionDoc = ref(null);
 const predictionSource = ref('pending');
@@ -65,11 +71,13 @@ const inspectorRef = ref(null);
 const storms = ref([]);
 const stormsSource = ref('pending');
 const selectedStormId = ref(null);
-const replayMode = ref(false);
 const placeIncidents = ref([]);
 
 const scenario = computed(() => scenarios[scenarioId.value]);
-const preset = computed(() => PRESETS[presetId.value] ?? PRESETS.place);
+const activeUseCase = computed(() => resolveUseCase(useCaseId.value));
+const panels = computed(() => activeUseCase.value.panels);
+const preset = computed(() => presetForUseCase(useCaseId.value));
+const replayMode = computed(() => useCaseId.value === USE_CASE_HISTORY);
 const routeBusy = computed(() => loading.value || routeChecking.value);
 
 const floods = computed(() => {
@@ -103,6 +111,9 @@ const locationLabel = computed(() => {
 const houseRisk = computed(() => {
   if (mapLoading.value) return '';
   if (useDemoFixtures.value) return scenario.value.houseRisk;
+  if (replayMode.value) {
+    return 'Place: live gauges/warnings hidden during storm replay';
+  }
   if (floods.value.some((f) => (f.severityLevel ?? 4) <= 2)) {
     return 'Place: flood warnings active nearby';
   }
@@ -113,6 +124,9 @@ const houseRisk = computed(() => {
 const roadsRisk = computed(() => {
   if (mapLoading.value) return '';
   if (useDemoFixtures.value) return scenario.value.roadsRisk;
+  if (replayMode.value) {
+    return 'Area roads: live incidents omitted during storm replay';
+  }
   const n = incidents.value.length;
   if (n > 0) return `Area roads: ${n} live incident(s) near place`;
   return floods.value.length > 0
@@ -237,7 +251,6 @@ async function loadLive({ asOf = null } = {}) {
   statusNotes.value = [];
   selected.value = null;
   clearLiveFeeds();
-  replayMode.value = Boolean(asOf);
   try {
     if (useDemoFixtures.value) {
       predictionSource.value = 'mock';
@@ -269,19 +282,33 @@ async function loadLive({ asOf = null } = {}) {
       ? [activePlace.value.lat, activePlace.value.lng]
       : CORRIDOR_CENTER.center;
 
-    const predictionPromise = fetchPrediction(CORRIDOR_ID, {
+    // Prediction first: map polygon/gauge lake traffic waits so hindcast is not starved.
+    const prediction = await fetchPrediction(CORRIDOR_ID, {
       scenarioId: scenarioId.value,
       asOf: asOf || undefined,
-    }).then((prediction) => {
-      predictionSource.value = prediction.source;
-      predictionDoc.value = prediction.doc;
-      if (prediction.error && prediction.source === 'error') {
-        statusNotes.value.push(`Prediction unavailable: ${prediction.error}`);
-      }
-      predictionLoading.value = false;
-      syncBusyFlag();
-      return prediction;
     });
+    predictionSource.value = prediction.source;
+    predictionDoc.value = prediction.doc;
+    if (prediction.error && prediction.source === 'error') {
+      statusNotes.value.push(`Prediction unavailable: ${prediction.error}`);
+    }
+    predictionLoading.value = false;
+    syncBusyFlag();
+
+    // Historical replay: prediction + flood-zone emphasis only.
+    // Live gauges / warnings / road incidents belong to "now", not the storm window.
+    // Flood-zone polygons load async in LeanMap once predictionLoading clears.
+    if (asOf) {
+      mapSource.value = 'replay';
+      roadSource.value = 'replay';
+      liveGauges.value = [];
+      liveFloods.value = [];
+      liveIncidents.value = [];
+      liveRoute.value = null;
+      mapLoading.value = false;
+      syncBusyFlag();
+      return;
+    }
 
     const mapPromise = fetchLiveMapData({
       center: mapCenterPoint,
@@ -318,7 +345,7 @@ async function loadLive({ asOf = null } = {}) {
             error: err instanceof Error ? err.message : String(err),
           }));
 
-    const roadData = await roadPromise;
+    const [roadData] = await Promise.all([roadPromise, mapPromise]);
     roadSource.value = roadData.source;
     liveIncidents.value = roadData.incidents ?? [];
     liveRoute.value = SHOW_ROUTE_VIEW ? roadData.route : null;
@@ -329,8 +356,6 @@ async function loadLive({ asOf = null } = {}) {
         statusNotes.value.push(`Roads (partial): ${roadData.error}`);
       }
     }
-
-    await Promise.all([predictionPromise, mapPromise]);
   } catch (err) {
     statusNotes.value.push(err instanceof Error ? err.message : String(err));
   } finally {
@@ -486,22 +511,57 @@ function applyBookmarkFrom(bookmark) {
 }
 
 async function onSelectStorm(stormId) {
-  selectedStormId.value = stormId;
+  useCaseId.value = USE_CASE_HISTORY;
   if (!stormId) {
+    selectedStormId.value = null;
     await loadLive();
     return;
   }
   const storm = storms.value.find((s) => s.id === stormId);
   if (!storm?.as_of) {
+    selectedStormId.value = stormId;
     statusNotes.value.push('Storm has no as_of timestamp for replay.');
     return;
   }
+  // Defer polygon layers before historyEvent changes so prediction gets the lake first.
+  predictionLoading.value = true;
+  selectedStormId.value = stormId;
   await loadLive({ asOf: storm.as_of });
 }
 
 function clearStormReplay() {
   selectedStormId.value = null;
+  useCaseId.value = USE_CASE_LIVE;
   loadLive();
+}
+
+/**
+ * Top-bar dashboard type: Live vs History.
+ * @param {string} id
+ */
+async function setUseCase(id) {
+  if (id === USE_CASE_HISTORY) {
+    useCaseId.value = USE_CASE_HISTORY;
+    if (selectedStormId.value) {
+      const storm = storms.value.find((s) => s.id === selectedStormId.value);
+      if (storm?.as_of) {
+        await loadLive({ asOf: storm.as_of });
+        return;
+      }
+    }
+    clearLiveFeeds();
+    mapSource.value = 'replay';
+    roadSource.value = 'replay';
+    predictionDoc.value = null;
+    predictionSource.value = 'pending';
+    predictionLoading.value = false;
+    mapLoading.value = false;
+    loading.value = false;
+    return;
+  }
+  selectedStormId.value = null;
+  useCaseId.value = USE_CASE_LIVE;
+  await loadLive();
 }
 
 watch([routeFrom, routeTo], ([from, to]) => {
@@ -511,9 +571,9 @@ watch([routeFrom, routeTo], ([from, to]) => {
 
 watch(useDemoFixtures, () => {
   if (useDemoFixtures.value) {
-    presetId.value = scenario.value.preset || PLACE_PRESET_ID;
+    useCaseId.value = USE_CASE_LIVE;
   } else {
-    presetId.value = PLACE_PRESET_ID;
+    useCaseId.value = USE_CASE_LIVE;
   }
   selectedStormId.value = null;
   loadLive();
@@ -522,7 +582,7 @@ watch(useDemoFixtures, () => {
 watch(scenarioId, () => {
   if (!useDemoFixtures.value) return;
   selected.value = null;
-  presetId.value = scenario.value.preset || PLACE_PRESET_ID;
+  useCaseId.value = USE_CASE_LIVE;
   loadLive();
 });
 
@@ -557,10 +617,6 @@ function setScenario(id) {
   scenarioId.value = id;
 }
 
-function setPreset(id) {
-  presetId.value = id;
-}
-
 function onSelect(feature) {
   selected.value = feature;
 }
@@ -583,11 +639,13 @@ function resolvePanelSource(kind) {
   if (kind === 'map') {
     if (mapLoading.value || mapSource.value === 'pending') return 'pending';
     if (mapSource.value === 'error') return 'pending';
+    if (mapSource.value === 'replay') return 'static';
     return mapSource.value === 'lake' ? 'lake' : 'static';
   }
   if (kind === 'roads') {
     if (roadSource.value === 'pending') return 'pending';
     if (roadSource.value === 'error') return 'pending';
+    if (roadSource.value === 'replay') return 'static';
     return roadSource.value === 'live' ? 'live' : 'static';
   }
   const pred = predictionSource.value === 'lake';
@@ -628,13 +686,26 @@ const inspectorPanelSource = computed(() => {
   <div class="page page-place">
     <header class="topbar">
       <div>
-        <h1>Monitor place</h1>
+        <h1>{{ replayMode ? 'Analyse place history' : 'Monitor place' }}</h1>
         <p>
           Corridor <code>{{ CORRIDOR_ID }}</code> —
           source: <strong>{{ dataSourceLabel }}</strong>
           <span v-if="predictionLoading || mapLoading"> · loading…</span>
           <span v-if="replayMode && selectedStorm"> · storm {{ selectedStorm.label }}</span>
         </p>
+      </div>
+      <div class="toolbar topbar-modes" role="group" aria-label="Dashboard type">
+        <button
+          v-for="uc in USE_CASE_OPTIONS"
+          :key="uc.id"
+          type="button"
+          class="use-case-btn"
+          :aria-pressed="useCaseId === uc.id"
+          :disabled="loading"
+          @click="setUseCase(uc.id)"
+        >
+          {{ uc.label }}
+        </button>
       </div>
       <div class="toolbar" role="group" aria-label="Data mode">
         <button
@@ -667,7 +738,11 @@ const inspectorPanelSource = computed(() => {
             Scenario: stable
           </button>
         </template>
-        <button type="button" @click="loadLive()" :disabled="loading">
+        <button
+          type="button"
+          :disabled="loading || (replayMode && !selectedStorm)"
+          @click="replayMode && selectedStorm ? loadLive({ asOf: selectedStorm.as_of }) : loadLive()"
+        >
           Refresh
         </button>
       </div>
@@ -694,11 +769,18 @@ const inspectorPanelSource = computed(() => {
             <PanelHeading :source="mapPanelSource">Place focus</PanelHeading>
             <p class="title" style="font-size: 0.95rem">{{ locationLabel }}</p>
             <p class="copy">
-              Gauges and flood bounds (EA Flood Zones) load for this map area
-              ({{ CORRIDOR_CENTER.radiusKm }} km).
+              <template v-if="replayMode">
+                Pick a past event below to run as-of prediction and map
+                {{ activeUseCase.floodZonesLabel }}. Use Live for gauges, warnings, and dispatch.
+              </template>
+              <template v-else>
+                Live gauges and {{ activeUseCase.floodZonesLabel }} load for this map area
+                ({{ CORRIDOR_CENTER.radiusKm }} km). Switch to History to analyse a past event.
+              </template>
             </p>
           </div>
           <BookmarksPanel
+            v-if="panels.bookmarks"
             :bookmarks="bookmarks"
             :authenticated="bookmarksAuthenticated"
             :loading="bookmarksLoading"
@@ -707,6 +789,7 @@ const inspectorPanelSource = computed(() => {
             @select="applyBookmarkPlace"
           />
           <StormReplayPanel
+            v-if="panels.stormReplay"
             :storms="storms"
             :selected-id="selectedStormId"
             :loading="predictionLoading"
@@ -716,6 +799,7 @@ const inspectorPanelSource = computed(() => {
             @clear="clearStormReplay"
           />
           <PlaceHistoryPanel
+            v-if="panels.placeHistory"
             :incidents="placeIncidents"
             :source="stormsPanelSource"
             :selected-id="selectedStormId"
@@ -750,7 +834,15 @@ const inspectorPanelSource = computed(() => {
             :gauges="gauges"
             :source="predictionPanelSource"
             :replay-label="replayMode && selectedStorm ? selectedStorm.label : null"
+            :show-dispatch="activeUseCase.showDispatch"
           />
+          <div v-else-if="replayMode && !selectedStorm" class="box outlook primary-panel">
+            <PanelHeading source="pending">Storm replay · historic EA analogues</PanelHeading>
+            <p class="title">Pick a historical event</p>
+            <p class="copy">
+              Choose a storm from the sidebar to run corridor prediction as-of that date.
+            </p>
+          </div>
           <div v-else-if="predictionLoading" class="box outlook primary-panel is-waiting">
             <PanelHeading source="pending">Corridor prediction · historic EA analogues</PanelHeading>
             <p class="waiting-copy">Waiting for prediction…</p>
@@ -763,8 +855,8 @@ const inspectorPanelSource = computed(() => {
             </p>
           </div>
 
-          <div class="grid-2 support-grid">
-            <div class="box" :class="{ 'is-waiting': mapLoading }">
+          <div v-if="panels.yourRisk || panels.placeOutlook" class="grid-2 support-grid">
+            <div v-if="panels.yourRisk" class="box" :class="{ 'is-waiting': mapLoading }">
               <PanelHeading :source="mapPanelSource">Your risk</PanelHeading>
               <template v-if="mapLoading">
                 <p class="waiting-copy">Waiting for risk signals…</p>
@@ -774,7 +866,11 @@ const inspectorPanelSource = computed(() => {
                 <p class="copy">{{ roadsRisk }}</p>
               </template>
             </div>
-            <div class="box" :class="{ 'is-waiting': predictionLoading && mapLoading }">
+            <div
+              v-if="panels.placeOutlook"
+              class="box"
+              :class="{ 'is-waiting': predictionLoading && mapLoading }"
+            >
               <PanelHeading :source="eitherPanelSource">Place outlook</PanelHeading>
               <template v-if="predictionLoading && mapLoading">
                 <p class="waiting-copy">Waiting for place outlook…</p>
@@ -812,6 +908,7 @@ const inspectorPanelSource = computed(() => {
           </template>
 
           <CorridorRisk
+            v-if="panels.corridorRisk"
             class="corridor-summary"
             :floods="floods"
             :incidents="incidents"
@@ -821,12 +918,16 @@ const inspectorPanelSource = computed(() => {
             :route-label="SHOW_ROUTE_VIEW ? routeLabel : (predictionDoc?.prediction?.verdictLabel || '—')"
             :loading="mapLoading && predictionLoading"
             :route-loading="routeChecking"
+            :replay-mode="replayMode"
             :corridor-source="eitherPanelSource"
             :flood-source="mapPanelSource"
             :route-source="SHOW_ROUTE_VIEW ? roadsPanelSource : predictionPanelSource"
           />
 
-          <div class="map-shell map-shell-place" :class="{ 'is-waiting': mapLoading }">
+          <div
+            class="map-shell map-shell-place"
+            :class="{ 'is-waiting': mapLoading && !replayMode }"
+          >
             <LeanMap
               :center="mapCenter"
               :zoom="mapZoom"
@@ -838,10 +939,13 @@ const inspectorPanelSource = computed(() => {
               :map-focus-token="mapFocusToken"
               :map-focus-center="mapFocusCenter"
               :preset="preset"
+              :show-presets="activeUseCase.showMapPresets"
+              :layer-status-label="activeUseCase.floodZonesLabel"
               :selected-id="selected?.id ?? null"
+              :history-event="replayMode ? selectedStorm : null"
+              :defer-heavy-layers="predictionLoading"
               :source="mapPanelSource"
               @select="onSelect"
-              @update:preset="setPreset"
             />
             <div ref="inspectorRef" tabindex="-1" class="inspector-focus">
               <InspectorPanel
@@ -853,8 +957,10 @@ const inspectorPanelSource = computed(() => {
           </div>
 
           <RiverResponse
+            v-if="panels.riverResponse"
             :gauges="gauges"
             :loading="mapLoading"
+            :replay-mode="false"
             :source="mapPanelSource"
             :selected-id="selected?.id ?? null"
             @select="onSelect"

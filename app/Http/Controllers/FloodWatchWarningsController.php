@@ -42,14 +42,20 @@ class FloodWatchWarningsController extends Controller
         $ifNoneMatch = is_array($cached) && isset($cached['etag']) ? (string) $cached['etag'] : null;
 
         $client = new DataLakeClient;
-        $resp = $client->getWarnings(
-            bbox: $bbox ? (string) $bbox : null,
-            region: $region ? (string) $region : null,
-            since: $since ? (string) $since : null,
-            county: $county ? (string) $county : null,
-            minSeverity: $minSeverity,
-            ifNoneMatch: $ifNoneMatch
-        );
+        try {
+            $resp = $client->getWarnings(
+                bbox: $bbox ? (string) $bbox : null,
+                region: $region ? (string) $region : null,
+                since: $since ? (string) $since : null,
+                county: $county ? (string) $county : null,
+                minSeverity: $minSeverity,
+                ifNoneMatch: $ifNoneMatch
+            );
+        } catch (\Throwable $e) {
+            // Lake overload / timeout must not 500 the cockpit map overlays.
+            return response()->json(['items' => []], 200)
+                ->header('Cache-Control', 'public, max-age=30');
+        }
 
         if ($resp->status === 304 && is_array($cached) && isset($cached['body'])) {
             return response()->json($cached['body'], 200)

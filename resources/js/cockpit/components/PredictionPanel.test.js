@@ -88,6 +88,22 @@ describe('PredictionPanel', () => {
     expect(text.split('Aug 2026').length - 1).toBe(1);
   });
 
+  it('hides Dispatch block in history analysis mode', () => {
+    const wrapper = mount(PredictionPanel, {
+      props: {
+        predictionDoc: predictionRisk,
+        gauges: [],
+        source: 'lake',
+        showDispatch: false,
+        replayLabel: 'Storm Dennis (Feb 2020)',
+      },
+    });
+    expect(wrapper.text()).not.toContain('Dispatch');
+    expect(wrapper.text()).not.toContain('Safe to pass');
+    expect(wrapper.text()).not.toContain('Historic analogue match');
+    expect(wrapper.text()).toContain('Primary stage');
+  });
+
   it('marks supporting charts lake vs static from live series presence', () => {
     const liveDoc = structuredClone(predictionRisk);
     liveDoc.observables.rainfallUpstreamMm = [];
