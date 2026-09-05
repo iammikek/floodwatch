@@ -9,12 +9,12 @@ import { DEFAULT_ROUTE, fetchIncidents, fetchLiveRoadData, fetchRouteCheck } fro
 import { initialRoute, loadRecentRoutes, loadStoredRoute, rememberRecentRoute, saveStoredRoute } from './lib/routeStorage.js';
 import { fetchBookmarks } from './lib/fetchBookmarks.js';
 import { resolveRouteFromOnLoad } from './lib/defaultBookmarkRoute.js';
-import { SHOW_ROUTE_VIEW } from './lib/cockpitFlags.js';
 import { fetchStorms } from './lib/fetchStorms.js';
 import {
   USE_CASE_HISTORY,
   USE_CASE_LIVE,
   USE_CASE_OPTIONS,
+  USE_CASE_TRANSPORT,
   presetForUseCase,
   resolveUseCase,
 } from './lib/cockpitUseCases.js';
@@ -78,6 +78,8 @@ const activeUseCase = computed(() => resolveUseCase(useCaseId.value));
 const panels = computed(() => activeUseCase.value.panels);
 const preset = computed(() => presetForUseCase(useCaseId.value));
 const replayMode = computed(() => useCaseId.value === USE_CASE_HISTORY);
+const transportMode = computed(() => useCaseId.value === USE_CASE_TRANSPORT);
+const showRoutePanels = computed(() => Boolean(panels.value.routeCheck));
 const routeBusy = computed(() => loading.value || routeChecking.value);
 
 const floods = computed(() => {
@@ -137,7 +139,7 @@ const roadsRisk = computed(() => {
 const corridorHeadline = computed(() => {
   if (predictionLoading.value && mapLoading.value) return '';
   if (useDemoFixtures.value) return scenario.value.corridor.headline;
-  if (SHOW_ROUTE_VIEW && liveRoute.value?.verdictLabel && liveRoute.value.verdict !== 'error') {
+  if (showRoutePanels.value && liveRoute.value?.verdictLabel && liveRoute.value.verdict !== 'error') {
     return `${liveRoute.value.verdictLabel} — ${liveRoute.value.from} → ${liveRoute.value.to}`;
   }
   const verdict = predictionDoc.value?.prediction?.verdictLabel;
@@ -154,7 +156,7 @@ const corridorHeadline = computed(() => {
 const corridorGuidance = computed(() => {
   if (predictionLoading.value && mapLoading.value) return '';
   if (useDemoFixtures.value) return scenario.value.corridor.guidance;
-  if (SHOW_ROUTE_VIEW && liveRoute.value?.summary) return liveRoute.value.summary;
+  if (showRoutePanels.value && liveRoute.value?.summary) return liveRoute.value.summary;
   return (
     predictionDoc.value?.prediction?.summary ||
     'Live gauges and warnings via Laravel; storm replay when archive data is available.'
@@ -183,7 +185,7 @@ const routeSummary = computed(() => {
 });
 
 const routeGeometry = computed(() => {
-  if (!SHOW_ROUTE_VIEW || loading.value) return [];
+  if (!showRoutePanels.value || loading.value) return [];
   if (useDemoFixtures.value) return scenario.value.route.geometry;
   return liveRoute.value?.routeGeometry ?? [];
 });
@@ -265,7 +267,7 @@ async function loadLive({ asOf = null } = {}) {
       liveGauges.value = scenario.value.riverLevels;
       liveFloods.value = scenario.value.floods;
       liveIncidents.value = scenario.value.incidents;
-      if (SHOW_ROUTE_VIEW) {
+      if (showRoutePanels.value) {
         liveRoute.value = {
           verdict: scenario.value.route.verdict,
           verdictLabel: scenario.value.route.verdictLabel,
@@ -326,7 +328,7 @@ async function loadLive({ asOf = null } = {}) {
       return mapData;
     });
 
-    const roadPromise = SHOW_ROUTE_VIEW
+    const roadPromise = showRoutePanels.value
       ? fetchLiveRoadData({
           lat: mapCenterPoint[0],
           lng: mapCenterPoint[1],
@@ -348,8 +350,8 @@ async function loadLive({ asOf = null } = {}) {
     const [roadData] = await Promise.all([roadPromise, mapPromise]);
     roadSource.value = roadData.source;
     liveIncidents.value = roadData.incidents ?? [];
-    liveRoute.value = SHOW_ROUTE_VIEW ? roadData.route : null;
-    if (SHOW_ROUTE_VIEW) {
+    liveRoute.value = showRoutePanels.value ? roadData.route : null;
+    if (showRoutePanels.value) {
       if (roadData.error && roadData.source === 'error') {
         statusNotes.value.push(`Roads unavailable: ${roadData.error}`);
       } else if (roadData.error) {
@@ -414,16 +416,15 @@ function applyDefaultPlaceOnLoad() {
     focusMapOn(defaultBookmark.lat, defaultBookmark.lng);
     return;
   }
-  if (SHOW_ROUTE_VIEW) {
-    const resolved = resolveRouteFromOnLoad({
-      storedRoute: loadStoredRoute(),
-      bookmarks: bookmarks.value,
-      fallbackFrom: DEFAULT_ROUTE.from,
-    });
-    routeFrom.value = resolved.from;
-    if (resolved.bookmark) {
-      focusMapOn(resolved.bookmark.lat, resolved.bookmark.lng);
-    }
+  // Seed route From for Transport even when starting in Live.
+  const resolved = resolveRouteFromOnLoad({
+    storedRoute: loadStoredRoute(),
+    bookmarks: bookmarks.value,
+    fallbackFrom: DEFAULT_ROUTE.from,
+  });
+  routeFrom.value = resolved.from;
+  if (resolved.bookmark && !activePlace.value) {
+    focusMapOn(resolved.bookmark.lat, resolved.bookmark.lng);
   }
 }
 
@@ -431,7 +432,7 @@ function applyDefaultPlaceOnLoad() {
  * Re-run only the From→To route check (kept for later alternate view).
  */
 async function runRouteCheck() {
-  if (!SHOW_ROUTE_VIEW) return;
+  if (!showRoutePanels.value) return;
   const from = routeFrom.value.trim();
   const to = routeTo.value.trim();
   if (!from || !to || routeBusy.value) return;
@@ -478,7 +479,7 @@ function onRouteGpsError(message) {
 }
 
 function applyRecentRoute(route) {
-  if (!SHOW_ROUTE_VIEW) return;
+  if (!showRoutePanels.value) return;
   routeFrom.value = route.from;
   routeTo.value = route.to;
   runRouteCheck();
@@ -498,7 +499,7 @@ function applyBookmarkPlace(bookmark) {
 }
 
 function applyBookmarkFrom(bookmark) {
-  if (!SHOW_ROUTE_VIEW) {
+  if (!showRoutePanels.value) {
     applyBookmarkPlace(bookmark);
     return;
   }
@@ -536,7 +537,7 @@ function clearStormReplay() {
 }
 
 /**
- * Top-bar dashboard type: Live vs History.
+ * Top-bar dashboard type: Live | History | Transport.
  * @param {string} id
  */
 async function setUseCase(id) {
@@ -560,12 +561,17 @@ async function setUseCase(id) {
     return;
   }
   selectedStormId.value = null;
-  useCaseId.value = USE_CASE_LIVE;
+  useCaseId.value = id === USE_CASE_TRANSPORT ? USE_CASE_TRANSPORT : USE_CASE_LIVE;
   await loadLive();
+  if (useCaseId.value === USE_CASE_TRANSPORT) {
+    const from = routeFrom.value.trim();
+    const to = routeTo.value.trim();
+    if (from && to) await runRouteCheck();
+  }
 }
 
 watch([routeFrom, routeTo], ([from, to]) => {
-  if (!SHOW_ROUTE_VIEW) return;
+  if (!showRoutePanels.value) return;
   saveStoredRoute({ from, to });
 });
 
@@ -686,7 +692,15 @@ const inspectorPanelSource = computed(() => {
   <div class="page page-place">
     <header class="topbar">
       <div>
-        <h1>{{ replayMode ? 'Analyse place history' : 'Monitor place' }}</h1>
+        <h1>
+          {{
+            replayMode
+              ? 'Analyse place history'
+              : transportMode
+                ? 'Check transport'
+                : 'Monitor place'
+          }}
+        </h1>
         <p>
           Corridor <code>{{ CORRIDOR_ID }}</code> —
           source: <strong>{{ dataSourceLabel }}</strong>
@@ -694,12 +708,11 @@ const inspectorPanelSource = computed(() => {
           <span v-if="replayMode && selectedStorm"> · storm {{ selectedStorm.label }}</span>
         </p>
       </div>
-      <div class="toolbar topbar-modes" role="group" aria-label="Dashboard type">
+      <div class="toolbar topbar-modes segmented" role="group" aria-label="Dashboard type">
         <button
           v-for="uc in USE_CASE_OPTIONS"
           :key="uc.id"
           type="button"
-          class="use-case-btn"
           :aria-pressed="useCaseId === uc.id"
           :disabled="loading"
           @click="setUseCase(uc.id)"
@@ -707,21 +720,25 @@ const inspectorPanelSource = computed(() => {
           {{ uc.label }}
         </button>
       </div>
-      <div class="toolbar" role="group" aria-label="Data mode">
-        <button
-          type="button"
-          :aria-pressed="!useDemoFixtures"
-          @click="useDemoFixtures = false"
-        >
-          Live lake (via Laravel)
-        </button>
-        <button
-          type="button"
-          :aria-pressed="useDemoFixtures"
-          @click="useDemoFixtures = true"
-        >
-          Demo fixtures
-        </button>
+      <div class="toolbar" role="toolbar" aria-label="Data controls">
+        <div class="segmented" role="group" aria-label="Data source">
+          <button
+            type="button"
+            :aria-pressed="!useDemoFixtures"
+            :disabled="loading"
+            @click="useDemoFixtures = false"
+          >
+            Live lake
+          </button>
+          <button
+            type="button"
+            :aria-pressed="useDemoFixtures"
+            :disabled="loading"
+            @click="useDemoFixtures = true"
+          >
+            Demo fixtures
+          </button>
+        </div>
         <template v-if="useDemoFixtures">
           <button
             type="button"
@@ -771,11 +788,15 @@ const inspectorPanelSource = computed(() => {
             <p class="copy">
               <template v-if="replayMode">
                 Pick a past event below to run as-of prediction and map
-                {{ activeUseCase.floodZonesLabel }}. Use Live for gauges, warnings, and dispatch.
+                {{ activeUseCase.floodZonesLabel }}. Use Live for gauges and warnings.
+              </template>
+              <template v-else-if="transportMode">
+                Set From → To to check corridor road exposure, incidents, and route geometry.
+                Live keeps place gauges; History is storm replay.
               </template>
               <template v-else>
                 Live gauges and {{ activeUseCase.floodZonesLabel }} load for this map area
-                ({{ CORRIDOR_CENTER.radiusKm }} km). Switch to History to analyse a past event.
+                ({{ CORRIDOR_CENTER.radiusKm }} km). Switch to History or Transport for other jobs.
               </template>
             </p>
           </div>
@@ -785,8 +806,8 @@ const inspectorPanelSource = computed(() => {
             :authenticated="bookmarksAuthenticated"
             :loading="bookmarksLoading"
             :disabled="loading"
-            place-mode
-            @select="applyBookmarkPlace"
+            :place-mode="!showRoutePanels"
+            @select="showRoutePanels ? applyBookmarkFrom($event) : applyBookmarkPlace($event)"
           />
           <StormReplayPanel
             v-if="panels.stormReplay"
@@ -805,7 +826,7 @@ const inspectorPanelSource = computed(() => {
             :selected-id="selectedStormId"
             @select="onSelectStorm"
           />
-          <template v-if="SHOW_ROUTE_VIEW">
+          <template v-if="panels.activeRoute">
             <div class="box" :class="{ 'is-waiting': routeBusy }">
               <PanelHeading :source="roadsPanelSource">Active route</PanelHeading>
               <template v-if="routeBusy">
@@ -819,6 +840,7 @@ const inspectorPanelSource = computed(() => {
               </template>
             </div>
             <RecentRoutesPanel
+              v-if="panels.recentRoutes"
               :routes="recentRoutes"
               :disabled="routeBusy"
               @select="applyRecentRoute"
@@ -882,7 +904,7 @@ const inspectorPanelSource = computed(() => {
             </div>
           </div>
 
-          <template v-if="SHOW_ROUTE_VIEW">
+          <template v-if="panels.routeCheck">
             <div class="grid-2 support-grid">
               <div class="box">
                 <PanelHeading :source="roadsPanelSource">Route check</PanelHeading>
@@ -915,13 +937,15 @@ const inspectorPanelSource = computed(() => {
             :elevated-count="elevatedCount"
             :headline="corridorHeadline"
             :guidance="corridorGuidance"
-            :route-label="SHOW_ROUTE_VIEW ? routeLabel : (predictionDoc?.prediction?.verdictLabel || '—')"
+            :route-label="showRoutePanels ? routeLabel : (predictionDoc?.prediction?.verdictLabel || '—')"
             :loading="mapLoading && predictionLoading"
             :route-loading="routeChecking"
             :replay-mode="replayMode"
+            :show-flood-exposure="panels.floodExposure"
+            :show-current-route="panels.currentRoute"
             :corridor-source="eitherPanelSource"
             :flood-source="mapPanelSource"
-            :route-source="SHOW_ROUTE_VIEW ? roadsPanelSource : predictionPanelSource"
+            :route-source="showRoutePanels ? roadsPanelSource : predictionPanelSource"
           />
 
           <div

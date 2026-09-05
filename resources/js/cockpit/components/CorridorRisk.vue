@@ -14,6 +14,8 @@ const props = defineProps({
   routeLoading: { type: Boolean, default: false },
   /** Storm / place-history replay — hide live route and warning tiles. */
   replayMode: { type: Boolean, default: false },
+  showFloodExposure: { type: Boolean, default: true },
+  showCurrentRoute: { type: Boolean, default: true },
   corridorSource: { type: String, default: 'static' },
   floodSource: { type: String, default: 'static' },
   routeSource: { type: String, default: 'static' },
@@ -21,7 +23,7 @@ const props = defineProps({
 
 const counts = computed(() => {
   const out = { severe: 0, warning: 0, alert: 0 };
-  if (props.loading || props.replayMode) return out;
+  if (props.loading || props.replayMode || !props.showFloodExposure) return out;
   for (const flood of props.floods) {
     const level = Number(flood.severityLevel ?? 4);
     const label = String(flood.severity ?? '').toLowerCase();
@@ -48,7 +50,7 @@ const counts = computed(() => {
         <p class="copy">{{ guidance }}</p>
       </template>
     </div>
-    <div v-if="!replayMode" class="box">
+    <div v-if="!replayMode && showFloodExposure" class="box">
       <PanelHeading :source="floodSource">Flood exposure</PanelHeading>
       <template v-if="loading">
         <p class="waiting-copy">Waiting for flood warnings…</p>
@@ -59,7 +61,11 @@ const counts = computed(() => {
         <div class="stat"><span>Flood alerts</span><b class="warn">{{ counts.alert }}</b></div>
       </template>
     </div>
-    <div v-if="!replayMode" class="box" :class="{ 'is-waiting': routeLoading && !loading }">
+    <div
+      v-if="!replayMode && showCurrentRoute"
+      class="box"
+      :class="{ 'is-waiting': routeLoading && !loading }"
+    >
       <PanelHeading :source="routeSource">Current route</PanelHeading>
       <template v-if="loading || routeLoading">
         <p class="waiting-copy">Waiting for route status…</p>
