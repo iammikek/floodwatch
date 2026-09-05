@@ -5,6 +5,7 @@ import {
   floodZoneStyleForFeature,
   normalizeEventSeverity,
   normalizeImpactBbox,
+  normalizeImpactGeometry,
 } from './floodZoneEmphasis.js';
 
 const sample = {
@@ -61,6 +62,40 @@ describe('floodZoneEmphasis', () => {
     expect(
       emphasizeFloodZones(sample, { bounds_mode: 'none', severity: 'low' }).features,
     ).toHaveLength(0);
+  });
+
+  it('clips to curated impact_geometry polygons', () => {
+    const tightGeom = {
+      type: 'FeatureCollection',
+      features: [
+        {
+          type: 'Feature',
+          properties: { kind: 'curated_impact_v0' },
+          geometry: {
+            type: 'Polygon',
+            coordinates: [
+              [
+                [-2.85, 51.10],
+                [-2.80, 51.10],
+                [-2.80, 51.14],
+                [-2.85, 51.14],
+                [-2.85, 51.10],
+              ],
+            ],
+          },
+        },
+      ],
+    };
+    const tight = emphasizeFloodZones(sample, {
+      severity: 'high',
+      bounds_mode: 'impact',
+      impact_geometry: tightGeom,
+    });
+    expect(tight.features).toHaveLength(1);
+    expect(tight.features[0].properties.flood_zone).toBe('FZ3');
+    expect(normalizeImpactGeometry({ bounds_mode: 'impact', impact_geometry: tightGeom })?.features).toHaveLength(
+      1,
+    );
   });
 
   it('clips to curated impact_bbox so event footprints differ', () => {

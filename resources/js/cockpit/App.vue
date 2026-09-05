@@ -543,6 +543,8 @@ function clearStormReplay() {
 async function setUseCase(id) {
   if (id === USE_CASE_HISTORY) {
     useCaseId.value = USE_CASE_HISTORY;
+    // Refresh catalogue so impact_geometry is present after lake updates.
+    void loadStorms();
     if (selectedStormId.value) {
       const storm = storms.value.find((s) => s.id === selectedStormId.value);
       if (storm?.as_of) {
