@@ -17,9 +17,9 @@ Composition lives in [`resources/js/cockpit/lib/cockpitUseCases.js`](../resource
 
 ### History — storm replay
 
-**Job:** Analyse a past event at this place — hindcast prediction, event spatial context, volume.
+**Job:** Analyse a past event at this place — hindcast prediction, event spatial context, volume, historic warnings.
 
-**In:** Place focus, place-history picker, Return to live (via Live), map with event outline (+ optional planning FZ as reference), Prediction **as-of** (no Dispatch block), **Event volume** panel, Corridor risk (replay framing), Inspector on event layers.
+**In:** Place focus, place-history picker, Return to live (via Live), map with event outline (+ optional planning FZ as reference), Prediction **as-of** (no Dispatch block), **Historic flood warnings** (AfA435 issue evidence), **Event volume** panel, Corridor risk (replay framing), Inspector on event layers.
 
 **Out:** Flood exposure, Current route, River response, Your risk / Place outlook from live signals, live warning/gauge markers, Dispatch implication / safe-to-pass.
 
@@ -41,6 +41,7 @@ Composition lives in [`resources/js/cockpit/lib/cockpitUseCases.js`](../resource
 | Prediction (as_of, no Dispatch) | | ✓ | |
 | Event volume (LiDAR bathtub) | | ✓ | |
 | Event volume compare table | | ✓ | |
+| Historic flood warnings (AfA435) | | ✓ | |
 | Your risk / Place outlook | ✓ | | Your risk |
 | Corridor risk | ✓ | ✓ | ✓ |
 | Flood exposure | ✓ | | ✓ |
@@ -59,4 +60,4 @@ Prediction, storm catalogue, event extents, and volume are bound to the **active
 
 ## Accuracy (History only)
 
-Honesty labels → curated extents → LiDAR DTM → volume v0. Details in the data lake repo: `docs/accuracy-ladder.md` and `docs/place-lidar-volume.md`.
+Honesty labels → curated extents → LiDAR DTM → volume → historic AfA435 warnings. Details in the data lake repo: `docs/accuracy-ladder.md` and `docs/place-lidar-volume.md`.
