@@ -60,4 +60,4 @@ Prediction, storm catalogue, event extents, and volume are bound to the **active
 
 ## Accuracy (History only)
 
-Honesty labels → curated extents → LiDAR DTM → volume → historic AfA435 warnings. Details in the data lake repo: `docs/accuracy-ladder.md` and `docs/place-lidar-volume.md`.
+Honesty labels → curated extents → LiDAR DTM → volume → historic AfA435 warnings → finer DEM (1 m hotspot). HiPIMS solver deferred. Details in the data lake repo: `docs/accuracy-ladder.md`, `docs/place-lidar-volume.md`, `docs/hipims-prep.md`.

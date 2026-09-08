@@ -6,6 +6,7 @@
 export async function fetchStormVolume({
   stormId,
   place = 'a361-muchelney',
+  resolution = 'auto',
   fetchImpl = fetch,
 } = {}) {
   if (!stormId) {
@@ -13,6 +14,7 @@ export async function fetchStormVolume({
   }
   const params = new URLSearchParams();
   if (place) params.set('place', place);
+  if (resolution) params.set('resolution', resolution);
   const qs = params.toString();
   const url = `/flood-watch/storms/${encodeURIComponent(stormId)}/volume${qs ? `?${qs}` : ''}`;
   try {
