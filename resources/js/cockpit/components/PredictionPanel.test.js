@@ -17,14 +17,14 @@ describe('PredictionPanel', () => {
 
   it('renders a stage height key for the supporting gauge chart', () => {
     const liveDoc = structuredClone(predictionRisk);
-    liveDoc.observables.keyGaugeId = 'gauge-gaw-bridge';
-    liveDoc.observables.primaryMeasureId = '52119-level-stage-i-15_min-mASD';
+    liveDoc.observables.keyGaugeId = 'gauge-langport';
+    liveDoc.observables.primaryMeasureId = '52230-level-stage-i-15_min-m';
     liveDoc.observables.primaryAnalysis = { level: 1.42, p95: 2.1 };
     liveDoc.drivers = [
       {
         type: 'gauge_trajectory',
-        ref: '52119-level-stage-i-15_min-mASD',
-        label: 'Gaw Bridge · River Parrett',
+        ref: '52230-level-stage-i-15_min-m',
+        label: 'Langport Great Bow',
         signal: 'rising',
       },
       ...liveDoc.drivers,
@@ -32,7 +32,7 @@ describe('PredictionPanel', () => {
     const wrapper = mount(PredictionPanel, {
       props: { predictionDoc: liveDoc, gauges: [], source: 'lake' },
     });
-    expect(wrapper.text()).toContain('Supporting · Gaw Bridge (m)');
+    expect(wrapper.text()).toContain('Supporting · Langport Great Bow (m)');
     expect(wrapper.text()).toContain('Height key');
     expect(wrapper.text()).toContain('Typical high');
     expect(wrapper.text()).toContain('2.10 m');
