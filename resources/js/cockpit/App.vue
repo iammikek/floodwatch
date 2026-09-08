@@ -10,6 +10,7 @@ import { initialRoute, loadRecentRoutes, loadStoredRoute, rememberRecentRoute, s
 import { fetchBookmarks } from './lib/fetchBookmarks.js';
 import { resolveRouteFromOnLoad } from './lib/defaultBookmarkRoute.js';
 import { fetchStorms } from './lib/fetchStorms.js';
+import { fetchStormVolume } from './lib/fetchStormVolume.js';
 import {
   USE_CASE_HISTORY,
   USE_CASE_LIVE,
@@ -25,6 +26,7 @@ import RiverResponse from './components/RiverResponse.vue';
 import LeanMap from './components/LeanMap.vue';
 import InspectorPanel from './components/InspectorPanel.vue';
 import PredictionPanel from './components/PredictionPanel.vue';
+import EventVolumePanel from './components/EventVolumePanel.vue';
 import PanelHeading from './components/PanelHeading.vue';
 import RouteCheckForm from './components/RouteCheckForm.vue';
 import StormReplayPanel from './components/StormReplayPanel.vue';
@@ -72,6 +74,9 @@ const storms = ref([]);
 const stormsSource = ref('pending');
 const selectedStormId = ref(null);
 const placeIncidents = ref([]);
+const volumeDoc = ref(null);
+const volumeSource = ref('pending');
+const volumeLoading = ref(false);
 
 const scenario = computed(() => scenarios[scenarioId.value]);
 const activeUseCase = computed(() => resolveUseCase(useCaseId.value));
@@ -233,6 +238,30 @@ async function loadStorms() {
     statusNotes.value.push(
       `Storm catalogue unavailable: ${err instanceof Error ? err.message : String(err)}`,
     );
+  }
+}
+
+async function loadVolume(stormId) {
+  if (!stormId || !panels.value.eventVolume) {
+    volumeDoc.value = null;
+    volumeSource.value = 'pending';
+    volumeLoading.value = false;
+    return;
+  }
+  volumeLoading.value = true;
+  volumeSource.value = 'pending';
+  try {
+    const result = await fetchStormVolume({ stormId, place: CORRIDOR_ID });
+    volumeDoc.value = result.doc;
+    volumeSource.value = result.source === 'lake' ? 'lake' : result.source === 'error' ? 'pending' : 'static';
+  } catch (err) {
+    volumeDoc.value = null;
+    volumeSource.value = 'pending';
+    statusNotes.value.push(
+      `Volume unavailable: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  } finally {
+    volumeLoading.value = false;
   }
 }
 
@@ -532,6 +561,8 @@ async function onSelectStorm(stormId) {
 
 function clearStormReplay() {
   selectedStormId.value = null;
+  volumeDoc.value = null;
+  volumeSource.value = 'pending';
   useCaseId.value = USE_CASE_LIVE;
   loadLive();
 }
@@ -547,10 +578,14 @@ async function setUseCase(id) {
     void loadStorms();
     if (selectedStormId.value) {
       const storm = storms.value.find((s) => s.id === selectedStormId.value);
+      void loadVolume(selectedStormId.value);
       if (storm?.as_of) {
         await loadLive({ asOf: storm.as_of });
         return;
       }
+    } else {
+      volumeDoc.value = null;
+      volumeSource.value = 'pending';
     }
     clearLiveFeeds();
     mapSource.value = 'replay';
@@ -563,6 +598,8 @@ async function setUseCase(id) {
     return;
   }
   selectedStormId.value = null;
+  volumeDoc.value = null;
+  volumeSource.value = 'pending';
   useCaseId.value = id === USE_CASE_TRANSPORT ? USE_CASE_TRANSPORT : USE_CASE_LIVE;
   await loadLive();
   if (useCaseId.value === USE_CASE_TRANSPORT) {
@@ -592,6 +629,16 @@ watch(scenarioId, () => {
   selected.value = null;
   useCaseId.value = USE_CASE_LIVE;
   loadLive();
+});
+
+watch(selectedStormId, (id) => {
+  if (useCaseId.value !== USE_CASE_HISTORY) {
+    volumeDoc.value = null;
+    volumeSource.value = 'pending';
+    volumeLoading.value = false;
+    return;
+  }
+  void loadVolume(id);
 });
 
 watch(selected, async (feature) => {
@@ -630,10 +677,30 @@ function onSelect(feature) {
 }
 
 const dataSourceLabel = computed(() => {
-  if (predictionLoading.value || mapLoading.value) return 'loading…';
+  if (feedsLoading.value) return 'loading…';
   if (useDemoFixtures.value) return 'demo fixtures';
   const replay = replayMode.value ? ' · replay' : '';
   return `prediction:${predictionSource.value} · map:${mapSource.value}${replay}`;
+});
+
+/** Any in-flight lake/map/volume feed — drives the topbar loading indicator. */
+const feedsLoading = computed(() => {
+  if (predictionLoading.value || mapLoading.value) return true;
+  if (volumeLoading.value && panels.value.eventVolume) return true;
+  if (stormsSource.value === 'pending' && (replayMode.value || panels.value.placeHistory)) {
+    return true;
+  }
+  return false;
+});
+
+const loadingStatusLabel = computed(() => {
+  if (!feedsLoading.value) return '';
+  const parts = [];
+  if (predictionLoading.value) parts.push('prediction');
+  if (mapLoading.value) parts.push('map');
+  if (volumeLoading.value && panels.value.eventVolume) parts.push('volume');
+  if (stormsSource.value === 'pending' && panels.value.placeHistory) parts.push('storms');
+  return parts.length ? `Loading ${parts.join(' · ')}` : 'Loading data';
 });
 
 /** @param {'prediction'|'map'|'roads'|'either'} kind */
@@ -681,6 +748,12 @@ const stormsPanelSource = computed(() => {
   return 'static';
 });
 
+const volumePanelSource = computed(() => {
+  if (volumeLoading.value || volumeSource.value === 'pending') return 'pending';
+  if (volumeSource.value === 'lake') return 'lake';
+  return 'static';
+});
+
 const inspectorPanelSource = computed(() => {
   if (!selected.value) return 'static';
   if (selected.value.type === 'incident') return roadsPanelSource.value;
@@ -691,7 +764,7 @@ const inspectorPanelSource = computed(() => {
 </script>
 
 <template>
-  <div class="page page-place">
+  <div class="page page-place" :class="{ 'page-loading': feedsLoading }">
     <header class="topbar">
       <div>
         <h1>
@@ -706,7 +779,15 @@ const inspectorPanelSource = computed(() => {
         <p>
           Corridor <code>{{ CORRIDOR_ID }}</code> —
           source: <strong>{{ dataSourceLabel }}</strong>
-          <span v-if="predictionLoading || mapLoading"> · loading…</span>
+          <span
+            v-if="feedsLoading"
+            class="loading-inline"
+            role="status"
+            aria-live="polite"
+          >
+            <span class="loading-spinner" aria-hidden="true" />
+            {{ loadingStatusLabel }}
+          </span>
           <span v-if="replayMode && selectedStorm"> · storm {{ selectedStorm.label }}</span>
         </p>
       </div>
@@ -762,10 +843,24 @@ const inspectorPanelSource = computed(() => {
           :disabled="loading || (replayMode && !selectedStorm)"
           @click="replayMode && selectedStorm ? loadLive({ asOf: selectedStorm.as_of }) : loadLive()"
         >
+          <span
+            v-if="feedsLoading"
+            class="loading-spinner loading-spinner-dark"
+            aria-hidden="true"
+          />
           Refresh
         </button>
       </div>
     </header>
+    <div
+      v-if="feedsLoading"
+      class="loading-bar"
+      role="progressbar"
+      aria-busy="true"
+      :aria-label="loadingStatusLabel"
+    >
+      <span class="loading-bar-indeterminate" />
+    </div>
 
     <div
       v-for="(note, idx) in statusNotes"
@@ -878,6 +973,14 @@ const inspectorPanelSource = computed(() => {
               No live prediction to show. We do not substitute demo data in live mode.
             </p>
           </div>
+
+          <EventVolumePanel
+            v-if="panels.eventVolume && selectedStormId"
+            :volume-doc="volumeDoc"
+            :loading="volumeLoading"
+            :source="volumePanelSource"
+            :storm-label="selectedStorm?.label ?? null"
+          />
 
           <div v-if="panels.yourRisk || panels.placeOutlook" class="grid-2 support-grid">
             <div v-if="panels.yourRisk" class="box" :class="{ 'is-waiting': mapLoading }">

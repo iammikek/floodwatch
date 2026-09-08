@@ -269,4 +269,17 @@ class DataLakeClient
 
         return $this->fetch('/v1/storms', $query, $ifNoneMatch);
     }
+
+    public function getStormVolume(
+        string $stormId,
+        ?string $place = null,
+        ?string $ifNoneMatch = null
+    ): DataLakeResponse {
+        $query = [];
+        if ($place !== null && $place !== '') {
+            $query['place'] = $place;
+        }
+
+        return $this->fetch('/v1/storms/'.rawurlencode($stormId).'/volume', $query, $ifNoneMatch);
+    }
 }

@@ -17,6 +17,7 @@ describe('cockpitUseCases', () => {
     expect(live.panels.riverResponse).toBe(true);
     expect(live.panels.stormReplay).toBe(false);
     expect(live.panels.placeHistory).toBe(false);
+    expect(live.panels.eventVolume).toBe(false);
     expect(live.showDispatch).toBe(true);
     expect(live.layers.gauges).toBe(true);
 
@@ -27,6 +28,7 @@ describe('cockpitUseCases', () => {
     expect(hist.panels.yourRisk).toBe(false);
     expect(hist.panels.stormReplay).toBe(false);
     expect(hist.panels.placeHistory).toBe(true);
+    expect(hist.panels.eventVolume).toBe(true);
     expect(hist.showDispatch).toBe(false);
     expect(hist.layers.gauges).toBe(false);
     expect(hist.layers.warnings).toBe(false);
@@ -36,6 +38,7 @@ describe('cockpitUseCases', () => {
     expect(transport.panels.currentRoute).toBe(true);
     expect(transport.panels.recentRoutes).toBe(true);
     expect(transport.panels.placeHistory).toBe(false);
+    expect(transport.panels.eventVolume).toBe(false);
     expect(transport.panels.riverResponse).toBe(false);
     expect(transport.layers.route).toBe(true);
     expect(transport.layers.incidents).toBe(true);
