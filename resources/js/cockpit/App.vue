@@ -11,6 +11,7 @@ import { fetchBookmarks } from './lib/fetchBookmarks.js';
 import { resolveRouteFromOnLoad } from './lib/defaultBookmarkRoute.js';
 import { fetchStorms } from './lib/fetchStorms.js';
 import { fetchStormVolume } from './lib/fetchStormVolume.js';
+import { fetchStormVolumeCompare } from './lib/fetchStormVolumeCompare.js';
 import {
   USE_CASE_HISTORY,
   USE_CASE_LIVE,
@@ -27,6 +28,7 @@ import LeanMap from './components/LeanMap.vue';
 import InspectorPanel from './components/InspectorPanel.vue';
 import PredictionPanel from './components/PredictionPanel.vue';
 import EventVolumePanel from './components/EventVolumePanel.vue';
+import VolumeComparePanel from './components/VolumeComparePanel.vue';
 import PanelHeading from './components/PanelHeading.vue';
 import RouteCheckForm from './components/RouteCheckForm.vue';
 import StormReplayPanel from './components/StormReplayPanel.vue';
@@ -77,6 +79,9 @@ const placeIncidents = ref([]);
 const volumeDoc = ref(null);
 const volumeSource = ref('pending');
 const volumeLoading = ref(false);
+const volumeCompareRows = ref([]);
+const volumeCompareSource = ref('pending');
+const volumeCompareLoading = ref(false);
 
 const scenario = computed(() => scenarios[scenarioId.value]);
 const activeUseCase = computed(() => resolveUseCase(useCaseId.value));
@@ -262,6 +267,31 @@ async function loadVolume(stormId) {
     );
   } finally {
     volumeLoading.value = false;
+  }
+}
+
+async function loadVolumeCompare() {
+  if (!panels.value.eventVolume) {
+    volumeCompareRows.value = [];
+    volumeCompareSource.value = 'pending';
+    volumeCompareLoading.value = false;
+    return;
+  }
+  volumeCompareLoading.value = true;
+  volumeCompareSource.value = 'pending';
+  try {
+    const result = await fetchStormVolumeCompare({ place: CORRIDOR_ID });
+    volumeCompareRows.value = result.rows;
+    volumeCompareSource.value =
+      result.source === 'lake' ? 'lake' : result.source === 'error' ? 'pending' : 'static';
+  } catch (err) {
+    volumeCompareRows.value = [];
+    volumeCompareSource.value = 'pending';
+    statusNotes.value.push(
+      `Volume compare unavailable: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  } finally {
+    volumeCompareLoading.value = false;
   }
 }
 
@@ -563,6 +593,9 @@ function clearStormReplay() {
   selectedStormId.value = null;
   volumeDoc.value = null;
   volumeSource.value = 'pending';
+  volumeCompareRows.value = [];
+  volumeCompareSource.value = 'pending';
+  volumeCompareLoading.value = false;
   useCaseId.value = USE_CASE_LIVE;
   loadLive();
 }
@@ -576,6 +609,7 @@ async function setUseCase(id) {
     useCaseId.value = USE_CASE_HISTORY;
     // Refresh catalogue so impact_geometry is present after lake updates.
     void loadStorms();
+    void loadVolumeCompare();
     if (selectedStormId.value) {
       const storm = storms.value.find((s) => s.id === selectedStormId.value);
       void loadVolume(selectedStormId.value);
@@ -600,6 +634,9 @@ async function setUseCase(id) {
   selectedStormId.value = null;
   volumeDoc.value = null;
   volumeSource.value = 'pending';
+  volumeCompareRows.value = [];
+  volumeCompareSource.value = 'pending';
+  volumeCompareLoading.value = false;
   useCaseId.value = id === USE_CASE_TRANSPORT ? USE_CASE_TRANSPORT : USE_CASE_LIVE;
   await loadLive();
   if (useCaseId.value === USE_CASE_TRANSPORT) {
@@ -636,9 +673,15 @@ watch(selectedStormId, (id) => {
     volumeDoc.value = null;
     volumeSource.value = 'pending';
     volumeLoading.value = false;
+    volumeCompareRows.value = [];
+    volumeCompareSource.value = 'pending';
+    volumeCompareLoading.value = false;
     return;
   }
   void loadVolume(id);
+  if (!volumeCompareRows.value.length && !volumeCompareLoading.value) {
+    void loadVolumeCompare();
+  }
 });
 
 watch(selected, async (feature) => {
@@ -687,6 +730,7 @@ const dataSourceLabel = computed(() => {
 const feedsLoading = computed(() => {
   if (predictionLoading.value || mapLoading.value) return true;
   if (volumeLoading.value && panels.value.eventVolume) return true;
+  if (volumeCompareLoading.value && panels.value.eventVolume) return true;
   if (stormsSource.value === 'pending' && (replayMode.value || panels.value.placeHistory)) {
     return true;
   }
@@ -699,6 +743,7 @@ const loadingStatusLabel = computed(() => {
   if (predictionLoading.value) parts.push('prediction');
   if (mapLoading.value) parts.push('map');
   if (volumeLoading.value && panels.value.eventVolume) parts.push('volume');
+  if (volumeCompareLoading.value && panels.value.eventVolume) parts.push('compare');
   if (stormsSource.value === 'pending' && panels.value.placeHistory) parts.push('storms');
   return parts.length ? `Loading ${parts.join(' · ')}` : 'Loading data';
 });
@@ -752,6 +797,18 @@ const volumePanelSource = computed(() => {
   if (volumeLoading.value || volumeSource.value === 'pending') return 'pending';
   if (volumeSource.value === 'lake') return 'lake';
   return 'static';
+});
+
+const volumeComparePanelSource = computed(() => {
+  if (volumeCompareLoading.value || volumeCompareSource.value === 'pending') return 'pending';
+  if (volumeCompareSource.value === 'lake') return 'lake';
+  return 'static';
+});
+
+const roadDepthForMap = computed(() => {
+  if (!replayMode.value) return null;
+  const road = volumeDoc.value?.road;
+  return road?.available ? road : null;
 });
 
 const inspectorPanelSource = computed(() => {
@@ -981,6 +1038,14 @@ const inspectorPanelSource = computed(() => {
             :source="volumePanelSource"
             :storm-label="selectedStorm?.label ?? null"
           />
+          <VolumeComparePanel
+            v-if="panels.eventVolume"
+            :rows="volumeCompareRows"
+            :loading="volumeCompareLoading"
+            :source="volumeComparePanelSource"
+            :selected-id="selectedStormId"
+            @select="onSelectStorm"
+          />
 
           <div v-if="panels.yourRisk || panels.placeOutlook" class="grid-2 support-grid">
             <div v-if="panels.yourRisk" class="box" :class="{ 'is-waiting': mapLoading }">
@@ -1072,6 +1137,7 @@ const inspectorPanelSource = computed(() => {
               :layer-status-label="activeUseCase.floodZonesLabel"
               :selected-id="selected?.id ?? null"
               :history-event="replayMode ? selectedStorm : null"
+              :road-depth="roadDepthForMap"
               :defer-heavy-layers="predictionLoading"
               :source="mapPanelSource"
               @select="onSelect"

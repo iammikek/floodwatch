@@ -45,6 +45,11 @@ const props = defineProps({
    * Layers reload when this returns to false.
    */
   deferHeavyLayers: { type: Boolean, default: false },
+  /**
+   * History A361 depth strip from volume API (`road.samples` with lng/lat/depthM).
+   * @type {{ available?: boolean, label?: string, samples?: Array<{lng:number,lat:number,depthM:number}> } | null}
+   */
+  roadDepth: { type: Object, default: null },
 });
 
 const emit = defineEmits(['select', 'update:preset']);
@@ -57,6 +62,7 @@ let floodZonesLayer = null;
 let floodZonesGeo = { type: 'FeatureCollection', features: [] };
 let floodZonesToken = 0;
 let impactBoundsLayer = null;
+let roadDepthLayer = null;
 let moveTimer = null;
 const floodZonesStatus = ref('idle');
 
@@ -114,6 +120,57 @@ function syncImpactBoundsOutline() {
   }).addTo(map);
 }
 
+/** Colour A361 strip segments by approximate depth (m). */
+function roadDepthColor(depthM) {
+  const d = Number(depthM);
+  if (!Number.isFinite(d) || d <= 0) return '#94a3b8';
+  if (d < 0.3) return '#38bdf8';
+  if (d < 0.5) return '#f59e0b';
+  if (d < 1.0) return '#ea580c';
+  return '#7f1d1d';
+}
+
+function syncRoadDepthStrip() {
+  if (!map) return;
+  if (roadDepthLayer) {
+    map.removeLayer(roadDepthLayer);
+    roadDepthLayer = null;
+  }
+  if (!props.historyEvent) return;
+  const road = props.roadDepth;
+  const samples = Array.isArray(road?.samples) ? road.samples : [];
+  if (!road?.available || samples.length < 2) return;
+
+  const group = L.layerGroup();
+  for (let i = 1; i < samples.length; i += 1) {
+    const a = samples[i - 1];
+    const b = samples[i];
+    if (
+      !Number.isFinite(a?.lat) ||
+      !Number.isFinite(a?.lng) ||
+      !Number.isFinite(b?.lat) ||
+      !Number.isFinite(b?.lng)
+    ) {
+      continue;
+    }
+    const depth = Math.max(Number(a.depthM) || 0, Number(b.depthM) || 0);
+    L.polyline(
+      [
+        [a.lat, a.lng],
+        [b.lat, b.lng],
+      ],
+      {
+        color: roadDepthColor(depth),
+        weight: depth >= 0.5 ? 6 : 4,
+        opacity: 0.92,
+        lineCap: 'round',
+        interactive: false,
+      },
+    ).addTo(group);
+  }
+  roadDepthLayer = group.addTo(map);
+}
+
 function layersEnabled() {
   const preset = props.preset ?? PRESETS.dispatch;
   return preset.layers ?? PRESETS.dispatch.layers;
@@ -145,6 +202,7 @@ function rebuildOverlays() {
     floodZonesLayer.clearLayers();
   }
   syncImpactBoundsOutline();
+  syncRoadDepthStrip();
 
   if (layers.route && props.routeGeometry?.length >= 2) {
     const latLngs = props.routeGeometry.map(([lng, lat]) => [lat, lng]);
@@ -394,6 +452,7 @@ watch(
   () => {
     // Outline must update immediately — do not wait on deferred FZ polygon fetch.
     syncImpactBoundsOutline();
+    syncRoadDepthStrip();
     const bbox = impactEnvelope(props.historyEvent);
     if (map && bbox && String(props.historyEvent?.bounds_mode || '').toLowerCase() !== 'none') {
       const [w, s, e, n] = bbox;
@@ -407,12 +466,25 @@ watch(
     } else if (map && String(props.historyEvent?.bounds_mode || '').toLowerCase() === 'none') {
       // Clear leftover outline when switching to a no-footprint control event.
       syncImpactBoundsOutline();
+      syncRoadDepthStrip();
     }
     if (props.preset?.layers?.floodZones) {
       scheduleFloodZonesReload();
     } else {
       rebuildOverlays();
     }
+  },
+);
+
+watch(
+  () => [
+    props.roadDepth?.available,
+    props.roadDepth?.sampleCount,
+    props.roadDepth?.waterSurfaceM,
+    props.roadDepth?.samples?.length,
+  ],
+  () => {
+    syncRoadDepthStrip();
   },
 );
 
@@ -459,6 +531,10 @@ watch(
         <span>warnings {{ layersEnabled().warnings ? 'on' : 'off' }}</span><br />
         <span>gauges {{ layersEnabled().gauges ? 'on' : 'off' }}</span><br />
         <span>{{ layerStatusLabel }} · {{ floodBoundsCaption }}</span>
+        <template v-if="historyEvent && roadDepth?.available">
+          <br />
+          <span>A361 depth strip · max {{ Number(roadDepth.maxDepthM).toFixed(2) }} m</span>
+        </template>
       </div>
     </div>
     <div ref="mapEl" class="map-el" />
