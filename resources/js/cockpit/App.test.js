@@ -173,6 +173,8 @@ describe('Cockpit App', () => {
 
     expect(wrapper.text()).toContain('Watch corridor');
     expect(wrapper.text()).toContain('gauges:0');
+    expect(wrapper.find('.loading-bar').exists()).toBe(true);
+    expect(wrapper.find('.page-loading').exists()).toBe(true);
 
     resolveMap({
       source: 'lake',

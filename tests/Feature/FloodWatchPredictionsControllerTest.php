@@ -98,6 +98,35 @@ class FloodWatchPredictionsControllerTest extends TestCase
             ->assertJsonPath('storms.0.id', 'eval-2020-02');
     }
 
+    public function test_storm_volume_proxies_lake(): void
+    {
+        Http::fake([
+            'http://lake.test/v1/storms/*/volume*' => Http::response([
+                'schema' => 'floodwatch.storm_volume.v0',
+                'stormId' => 'eval-2020-02',
+                'available' => true,
+                'prediction' => [
+                    'areaKm2' => 12.5,
+                    'meanDepthM' => 0.4,
+                    'volumeM3' => 5_000_000,
+                    'confidenceLabel' => 'Low',
+                ],
+                'method' => [
+                    'name' => 'bathtub_fill_percentile_v0',
+                    'fillPercentile' => 75,
+                    'notes' => 'Approximate bathtub.',
+                ],
+            ], 200),
+        ]);
+
+        $response = $this->withSession(['flood_watch_loaded' => true])
+            ->getJson('/flood-watch/storms/eval-2020-02/volume?place=a361-muchelney');
+
+        $response->assertOk()
+            ->assertJsonPath('schema', 'floodwatch.storm_volume.v0')
+            ->assertJsonPath('available', true);
+    }
+
     public function test_predictions_forwards_as_of_query(): void
     {
         $fixture = json_decode(

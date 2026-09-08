@@ -87,4 +87,29 @@ class FloodWatchPredictionsController extends Controller
 
         return response()->json(['storms' => []], 503);
     }
+
+    /**
+     * Bathtub volume estimate for a curated storm (History analytic).
+     */
+    public function stormVolume(Request $request, string $stormId): JsonResponse
+    {
+        $place = (string) $request->query(
+            'place',
+            (string) config('flood-watch.predictions.default_corridor', 'a361-muchelney')
+        );
+        $client = new DataLakeClient;
+        try {
+            $res = $client->getStormVolume($stormId, $place !== '' ? $place : null);
+        } catch (\Throwable $e) {
+            return response()->json(['message' => 'Volume unavailable.'], 503);
+        }
+        if ($res->status === 200 && is_array($res->body)) {
+            return response()->json($res->body);
+        }
+        if ($res->status === 404) {
+            return response()->json(['message' => 'Storm not found.'], 404);
+        }
+
+        return response()->json(['message' => 'Volume unavailable.'], 503);
+    }
 }

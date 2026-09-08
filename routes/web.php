@@ -33,6 +33,9 @@ Route::get('/flood-watch/predictions/corridors', [FloodWatchPredictionsControlle
 Route::get('/flood-watch/storms', [FloodWatchPredictionsController::class, 'storms'])
     ->middleware([EnsureFloodWatchSession::class, 'throttle:flood-watch-api'])
     ->name('flood-watch.storms');
+Route::get('/flood-watch/storms/{stormId}/volume', [FloodWatchPredictionsController::class, 'stormVolume'])
+    ->middleware([EnsureFloodWatchSession::class, 'throttle:flood-watch-api'])
+    ->name('flood-watch.storms.volume');
 Route::get('/flood-watch/incidents', FloodWatchIncidentsController::class)
     ->middleware([EnsureFloodWatchSession::class, 'throttle:flood-watch-api'])
     ->name('flood-watch.incidents');

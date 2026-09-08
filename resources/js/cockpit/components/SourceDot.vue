@@ -47,5 +47,10 @@ const labels = {
 }
 .source-dot.pending {
   background: #b0b0b0;
+  animation: source-dot-pulse 1s ease-in-out infinite;
+}
+@keyframes source-dot-pulse {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
 }
 </style>
