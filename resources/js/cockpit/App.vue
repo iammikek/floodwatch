@@ -29,6 +29,7 @@ import InspectorPanel from './components/InspectorPanel.vue';
 import PredictionPanel from './components/PredictionPanel.vue';
 import EventVolumePanel from './components/EventVolumePanel.vue';
 import VolumeComparePanel from './components/VolumeComparePanel.vue';
+import StormWarningEvidencePanel from './components/StormWarningEvidencePanel.vue';
 import PanelHeading from './components/PanelHeading.vue';
 import RouteCheckForm from './components/RouteCheckForm.vue';
 import StormReplayPanel from './components/StormReplayPanel.vue';
@@ -1031,6 +1032,12 @@ const inspectorPanelSource = computed(() => {
             </p>
           </div>
 
+          <StormWarningEvidencePanel
+            v-if="panels.warningEvidence && selectedStormId"
+            :evidence="selectedStorm?.warning_evidence ?? null"
+            :storm-label="selectedStorm?.label ?? null"
+            :source="stormsSource === 'lake' ? 'lake' : stormsSource"
+          />
           <EventVolumePanel
             v-if="panels.eventVolume && selectedStormId"
             :volume-doc="volumeDoc"
