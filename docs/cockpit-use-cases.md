@@ -40,6 +40,7 @@ Composition lives in [`resources/js/cockpit/lib/cockpitUseCases.js`](../resource
 | Prediction (live + Dispatch) | ✓ | | ✓ |
 | Prediction (as_of, no Dispatch) | | ✓ | |
 | Event volume (LiDAR bathtub) | | ✓ | |
+| Event volume compare table | | ✓ | |
 | Your risk / Place outlook | ✓ | | Your risk |
 | Corridor risk | ✓ | ✓ | ✓ |
 | Flood exposure | ✓ | | ✓ |
@@ -49,6 +50,7 @@ Composition lives in [`resources/js/cockpit/lib/cockpitUseCases.js`](../resource
 | Map: incidents + route | | | ✓ |
 | Map: planning FZ | ✓ | clipped / reference | ✓ |
 | Map: event outline | | ✓ | |
+| Map: A361 depth strip | | ✓ | |
 | Route check chrome | | | ✓ |
 
 ## Place binding

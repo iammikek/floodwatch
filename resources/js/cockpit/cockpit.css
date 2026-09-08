@@ -248,6 +248,48 @@ body {
   align-items: start;
 }
 
+.volume-compare-scroll {
+  overflow-x: auto;
+  margin-top: 0.5rem;
+}
+.volume-compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  font-family: var(--mono);
+}
+.volume-compare-table th,
+.volume-compare-table td {
+  padding: 0.35rem 0.45rem;
+  border-bottom: 1px dotted #ccc;
+  text-align: right;
+  white-space: nowrap;
+}
+.volume-compare-table thead th {
+  color: var(--muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.68rem;
+}
+.volume-compare-table tbody th {
+  text-align: left;
+  font-family: var(--font);
+  font-weight: 600;
+  max-width: 12rem;
+  white-space: normal;
+}
+.volume-compare-table tbody tr {
+  cursor: pointer;
+}
+.volume-compare-table tbody tr:hover {
+  background: #f0f4fa;
+}
+.volume-compare-table tbody tr.is-selected {
+  background: #e8eef8;
+  outline: 1px solid var(--annot);
+}
+
 .stat {
   display: flex; justify-content: space-between; gap: 0.75rem;
   font-size: 0.88rem; padding: 0.25rem 0;
