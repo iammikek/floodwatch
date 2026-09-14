@@ -273,11 +273,15 @@ class DataLakeClient
     public function getStormVolume(
         string $stormId,
         ?string $place = null,
+        ?string $resolution = null,
         ?string $ifNoneMatch = null
     ): DataLakeResponse {
         $query = [];
         if ($place !== null && $place !== '') {
             $query['place'] = $place;
+        }
+        if ($resolution !== null && $resolution !== '') {
+            $query['resolution'] = $resolution;
         }
 
         return $this->fetch('/v1/storms/'.rawurlencode($stormId).'/volume', $query, $ifNoneMatch);

@@ -15,6 +15,9 @@ const method = computed(() => props.volumeDoc?.method ?? null);
 const gauge = computed(() => method.value?.gauge ?? props.volumeDoc?.observables?.gauge ?? null);
 const road = computed(() => props.volumeDoc?.road ?? null);
 const available = computed(() => Boolean(props.volumeDoc?.available && pred.value));
+const demResolution = computed(
+  () => method.value?.resolution || props.volumeDoc?.observables?.resolution || null,
+);
 
 function formatAreaKm2(v) {
   if (!Number.isFinite(v)) return '—';
@@ -88,6 +91,10 @@ const reasonCopy = computed(() => {
       <div class="stat"><span>Mean depth</span><b>{{ formatDepth(pred.meanDepthM) }}</b></div>
       <div class="stat"><span>Max depth</span><b>{{ formatDepth(pred.maxDepthM) }}</b></div>
       <div class="stat"><span>Volume</span><b>{{ formatVolume(pred.volumeM3) }}</b></div>
+      <div v-if="demResolution" class="stat">
+        <span>DEM resolution</span>
+        <b>{{ demResolution }}</b>
+      </div>
       <p class="copy">{{ methodCopy }}</p>
 
       <template v-if="road?.available">

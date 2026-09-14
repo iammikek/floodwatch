@@ -19,7 +19,7 @@ describe('fetchStormVolume', () => {
     expect(result.source).toBe('lake');
     expect(result.doc.available).toBe(true);
     expect(fetchImpl).toHaveBeenCalledWith(
-      '/flood-watch/storms/eval-2020-02/volume?place=a361-muchelney',
+      '/flood-watch/storms/eval-2020-02/volume?place=a361-muchelney&resolution=auto',
       expect.objectContaining({ credentials: 'same-origin' }),
     );
   });

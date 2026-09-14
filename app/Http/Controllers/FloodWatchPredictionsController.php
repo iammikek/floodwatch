@@ -97,9 +97,17 @@ class FloodWatchPredictionsController extends Controller
             'place',
             (string) config('flood-watch.predictions.default_corridor', 'a361-muchelney')
         );
+        $resolutionRaw = $request->query('resolution', 'auto');
+        $resolution = is_string($resolutionRaw) && $resolutionRaw !== ''
+            ? $resolutionRaw
+            : 'auto';
         $client = new DataLakeClient;
         try {
-            $res = $client->getStormVolume($stormId, $place !== '' ? $place : null);
+            $res = $client->getStormVolume(
+                $stormId,
+                $place !== '' ? $place : null,
+                $resolution
+            );
         } catch (\Throwable $e) {
             return response()->json(['message' => 'Volume unavailable.'], 503);
         }
