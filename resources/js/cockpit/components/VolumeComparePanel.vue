@@ -7,10 +7,9 @@ const props = defineProps({
   rows: { type: Array, default: () => [] },
   loading: { type: Boolean, default: false },
   source: { type: String, default: 'pending' },
+  /** Selected storm from Historical events — highlight only; compare is not a second picker. */
   selectedId: { type: String, default: null },
 });
-
-const emit = defineEmits(['select']);
 
 function formatArea(v) {
   if (!Number.isFinite(v)) return '—';
@@ -65,6 +64,7 @@ const tableRows = computed(() =>
     <template v-else>
       <p class="copy">
         Same bathtub method across golden events — approximate, not surveyed inundation.
+        Pick an event in Historical events to analyse; the matching row highlights here.
       </p>
       <div class="volume-compare-scroll">
         <table class="volume-compare-table">
@@ -84,9 +84,6 @@ const tableRows = computed(() =>
               v-for="row in tableRows"
               :key="row.id"
               :class="{ 'is-selected': row.selected }"
-              tabindex="0"
-              @click="emit('select', row.id)"
-              @keydown.enter.prevent="emit('select', row.id)"
             >
               <th scope="row">{{ row.label }}</th>
               <td>{{ formatDepth(row.riseM) }}</td>

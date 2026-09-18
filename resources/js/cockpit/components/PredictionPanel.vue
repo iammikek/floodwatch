@@ -85,9 +85,57 @@ const verdictClass = computed(() => {
   return 'ok';
 });
 
-const impactLabel = computed(() => {
-  if (p.value.timeToImpactHours == null) return 'No timed impact';
-  return `~${p.value.timeToImpactHours}h to impact`;
+const isReplay = computed(() => Boolean(props.replayLabel));
+
+const onsetLabel = computed(() =>
+  isReplay.value ? 'Onset after as-of' : 'Onset outlook',
+);
+
+const onsetHeadline = computed(() => {
+  const hours = p.value.timeToImpactHours;
+  if (hours == null) {
+    return isReplay.value ? 'No timed onset in analogues' : 'No timed onset';
+  }
+  if (isReplay.value) {
+    return `About ${hours}h after as-of`;
+  }
+  return `~${hours}h until impact-like stage`;
+});
+
+const onsetWindowLabel = computed(() =>
+  isReplay.value ? 'Estimated onset band' : 'Outlook window',
+);
+
+const onsetExplainer = computed(() => {
+  if (isReplay.value) {
+    return (
+      'When similar past gauge windows crossed corridor stage thresholds after this ' +
+      'event’s evaluation time — timing of onset, not how severe the flood is. ' +
+      'Severity is in the verdict, volume, and warnings.'
+    );
+  }
+  return (
+    'When similar past gauge windows crossed corridor stage thresholds from now — ' +
+    'onset timing from historic analogues, not flood depth or surveyed inundation.'
+  );
+});
+
+function formatAsOf(iso) {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+const asOfCaption = computed(() => {
+  if (!isReplay.value) return null;
+  const formatted = formatAsOf(props.predictionDoc?.as_of);
+  return formatted ? `As-of ${formatted}` : null;
 });
 
 function formatWindow(window) {
@@ -124,9 +172,14 @@ function riskClass(risk) {
       :class="{ 'prediction-metrics-history': !showDispatch }"
     >
       <div class="box" style="padding: 0.55rem">
-        <p class="label">Time to impact</p>
-        <p class="title" style="font-size: 1.1rem">{{ impactLabel }}</p>
-        <p class="copy">{{ formatWindow(p.impactWindow) }}</p>
+        <p class="label">{{ onsetLabel }}</p>
+        <p class="title" style="font-size: 1.1rem">{{ onsetHeadline }}</p>
+        <p v-if="asOfCaption" class="copy">{{ asOfCaption }}</p>
+        <p class="copy">
+          <span class="onset-window-label">{{ onsetWindowLabel }}</span>
+          {{ formatWindow(p.impactWindow) }}
+        </p>
+        <p class="annot onset-explainer">{{ onsetExplainer }}</p>
       </div>
       <div class="box" style="padding: 0.55rem">
         <p class="label">Confidence</p>

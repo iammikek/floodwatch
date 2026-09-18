@@ -942,7 +942,6 @@ const inspectorPanelSource = computed(() => {
           :loading="volumeCompareLoading"
           :source="volumeComparePanelSource"
           :selected-id="selectedStormId"
-          @select="onSelectStorm"
         />
       </div>
 
