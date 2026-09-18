@@ -1145,6 +1145,7 @@ const inspectorPanelSource = computed(() => {
               :selected-id="selected?.id ?? null"
               :history-event="replayMode ? selectedStorm : null"
               :road-depth="roadDepthForMap"
+              :warning-evidence="replayMode ? (selectedStorm?.warning_evidence ?? null) : null"
               :defer-heavy-layers="predictionLoading"
               :source="mapPanelSource"
               @select="onSelect"
