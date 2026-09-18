@@ -1004,6 +1004,16 @@ const inspectorPanelSource = computed(() => {
         </aside>
 
         <div class="main">
+          <!-- History: keep compare pinned above prediction / selected-storm panels so it does not jump. -->
+          <VolumeComparePanel
+            v-if="panels.eventVolume"
+            :rows="volumeCompareRows"
+            :loading="volumeCompareLoading"
+            :source="volumeComparePanelSource"
+            :selected-id="selectedStormId"
+            @select="onSelectStorm"
+          />
+
           <PredictionPanel
             v-if="predictionDoc && !predictionLoading"
             class="primary-panel"
@@ -1044,14 +1054,6 @@ const inspectorPanelSource = computed(() => {
             :loading="volumeLoading"
             :source="volumePanelSource"
             :storm-label="selectedStorm?.label ?? null"
-          />
-          <VolumeComparePanel
-            v-if="panels.eventVolume"
-            :rows="volumeCompareRows"
-            :loading="volumeCompareLoading"
-            :source="volumeComparePanelSource"
-            :selected-id="selectedStormId"
-            @select="onSelectStorm"
           />
 
           <div v-if="panels.yourRisk || panels.placeOutlook" class="grid-2 support-grid">
