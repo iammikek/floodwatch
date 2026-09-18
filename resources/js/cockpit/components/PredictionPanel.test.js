@@ -47,11 +47,30 @@ describe('PredictionPanel', () => {
     expect(wrapper.text()).toContain('None in prediction window');
   });
 
-  it('shows timed impact when hours present', () => {
+  it('shows timed onset outlook when hours present', () => {
     const wrapper = mount(PredictionPanel, {
       props: { predictionDoc: predictionRisk, gauges: [], source: 'static' },
     });
-    expect(wrapper.text()).toMatch(/~\d+(\.\d+)?h to impact/);
+    expect(wrapper.text()).toContain('Onset outlook');
+    expect(wrapper.text()).toMatch(/~\d+(\.\d+)?h until impact-like stage/);
+    expect(wrapper.text()).toContain('onset timing from historic analogues');
+  });
+
+  it('uses History onset wording and explains meaning in replay', () => {
+    const wrapper = mount(PredictionPanel, {
+      props: {
+        predictionDoc: predictionRisk,
+        gauges: [],
+        source: 'lake',
+        showDispatch: false,
+        replayLabel: 'Storm Dennis (Feb 2020)',
+      },
+    });
+    expect(wrapper.text()).toContain('Onset after as-of');
+    expect(wrapper.text()).toMatch(/About \d+(\.\d+)?h after as-of/);
+    expect(wrapper.text()).toContain('Estimated onset band');
+    expect(wrapper.text()).toContain('not how severe the flood is');
+    expect(wrapper.text()).not.toContain('Time to impact');
   });
 
   it('summarises drivers instead of listing every analogue hour', () => {
