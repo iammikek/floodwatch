@@ -75,9 +75,13 @@ class FloodWatchPredictionsController extends Controller
             'corridor',
             (string) config('flood-watch.predictions.default_corridor', 'a361-muchelney')
         );
+        $volumeCompare = $request->boolean('volume_compare');
         $client = new DataLakeClient;
         try {
-            $res = $client->getStorms($corridor !== '' ? $corridor : null);
+            $res = $client->getStorms(
+                $corridor !== '' ? $corridor : null,
+                $volumeCompare ? true : null,
+            );
         } catch (\Throwable $e) {
             return response()->json(['storms' => []], 200);
         }
