@@ -935,6 +935,17 @@ const inspectorPanelSource = computed(() => {
         floodwatch.local · place-first
       </div>
 
+      <!-- Pin above sidebar + Storm replay prediction so selection never pushes it down. -->
+      <div v-if="panels.eventVolume" class="history-volume-compare">
+        <VolumeComparePanel
+          :rows="volumeCompareRows"
+          :loading="volumeCompareLoading"
+          :source="volumeComparePanelSource"
+          :selected-id="selectedStormId"
+          @select="onSelectStorm"
+        />
+      </div>
+
       <div class="layout">
         <aside class="sidebar">
           <div class="box">
@@ -1004,16 +1015,6 @@ const inspectorPanelSource = computed(() => {
         </aside>
 
         <div class="main">
-          <!-- History: keep compare pinned above prediction / selected-storm panels so it does not jump. -->
-          <VolumeComparePanel
-            v-if="panels.eventVolume"
-            :rows="volumeCompareRows"
-            :loading="volumeCompareLoading"
-            :source="volumeComparePanelSource"
-            :selected-id="selectedStormId"
-            @select="onSelectStorm"
-          />
-
           <PredictionPanel
             v-if="predictionDoc && !predictionLoading"
             class="primary-panel"
