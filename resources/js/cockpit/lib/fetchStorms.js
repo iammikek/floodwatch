@@ -1,13 +1,17 @@
 /**
  * Load curated storm catalogue for place-mode replay.
- * @param {{ corridor?: string, fetchImpl?: typeof fetch }} [opts]
+ * @param {{ corridor?: string, volumeCompare?: boolean, fetchImpl?: typeof fetch }} [opts]
  * @returns {Promise<{ source: 'lake'|'empty'|'error', items: Array<object>, error?: string }>}
  */
 export async function fetchStorms({
   corridor = 'a361-muchelney',
+  volumeCompare = false,
   fetchImpl = fetch,
 } = {}) {
-  const url = `/flood-watch/storms?corridor=${encodeURIComponent(corridor)}`;
+  const params = new URLSearchParams();
+  params.set('corridor', corridor);
+  if (volumeCompare) params.set('volume_compare', 'true');
+  const url = `/flood-watch/storms?${params.toString()}`;
   try {
     const res = await fetchImpl(url, {
       headers: { Accept: 'application/json' },

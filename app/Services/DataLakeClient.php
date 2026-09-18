@@ -260,11 +260,17 @@ class DataLakeClient
         return $this->fetch('/v1/predictions/corridors', [], $ifNoneMatch);
     }
 
-    public function getStorms(?string $corridor = null, ?string $ifNoneMatch = null): DataLakeResponse
-    {
+    public function getStorms(
+        ?string $corridor = null,
+        ?bool $volumeCompare = null,
+        ?string $ifNoneMatch = null
+    ): DataLakeResponse {
         $query = [];
         if ($corridor !== null && $corridor !== '') {
             $query['corridor'] = $corridor;
+        }
+        if ($volumeCompare === true) {
+            $query['volume_compare'] = 'true';
         }
 
         return $this->fetch('/v1/storms', $query, $ifNoneMatch);
