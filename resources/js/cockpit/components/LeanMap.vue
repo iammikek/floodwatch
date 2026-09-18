@@ -10,6 +10,12 @@ import {
   impactEnvelope,
   normalizeImpactGeometry,
 } from '../lib/floodZoneEmphasis.js';
+import {
+  A361_SEVERITY_FALLBACK_LINE,
+  historicWarningMarkerKind,
+  mapWarningEvidenceForMap,
+  summarizeWarningEvidenceMap,
+} from '../lib/warningEvidenceMap.js';
 import PanelHeading from './PanelHeading.vue';
 
 const presetOptions = computed(() => Object.values(PRESETS ?? {}));
@@ -50,6 +56,11 @@ const props = defineProps({
    * @type {{ available?: boolean, label?: string, samples?: Array<{lng:number,lat:number,depthM:number}> } | null}
    */
   roadDepth: { type: Object, default: null },
+  /**
+   * History AfA435 warning evidence (`floodwatch.storm_warning_evidence.v0`).
+   * Drawn as severity markers + optional A361 road accent (e.g. 2014 Severe).
+   */
+  warningEvidence: { type: Object, default: null },
 });
 
 const emit = defineEmits(['select', 'update:preset']);
@@ -63,8 +74,13 @@ let floodZonesGeo = { type: 'FeatureCollection', features: [] };
 let floodZonesToken = 0;
 let impactBoundsLayer = null;
 let roadDepthLayer = null;
+let warningEvidenceLayer = null;
 let moveTimer = null;
 const floodZonesStatus = ref('idle');
+
+const warningEvidenceSummary = computed(() =>
+  summarizeWarningEvidenceMap(props.historyEvent ? props.warningEvidence : null),
+);
 
 const floodBoundsCaption = computed(() => {
   if (!(props.preset ?? PRESETS.dispatch).layers?.floodZones) return 'off';
@@ -82,12 +98,14 @@ const floodBoundsCaption = computed(() => {
 });
 
 function divIcon(kind, selected) {
+  const severe = kind === 'historic-severe';
   const cls = ['marker-dot', kind, selected ? 'selected' : ''].filter(Boolean).join(' ');
+  const size = severe ? 14 : 12;
   return L.divIcon({
     className: '',
     html: `<div class="${cls}"></div>`,
-    iconSize: [12, 12],
-    iconAnchor: [6, 6],
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
   });
 }
 
@@ -130,6 +148,20 @@ function roadDepthColor(depthM) {
   return '#7f1d1d';
 }
 
+function a361AccentLatLngs() {
+  const road = props.roadDepth;
+  const samples = Array.isArray(road?.samples) ? road.samples : [];
+  if (road?.available && samples.length >= 2) {
+    const pts = [];
+    for (const s of samples) {
+      if (!Number.isFinite(s?.lat) || !Number.isFinite(s?.lng)) continue;
+      pts.push([s.lat, s.lng]);
+    }
+    if (pts.length >= 2) return pts;
+  }
+  return A361_SEVERITY_FALLBACK_LINE;
+}
+
 function syncRoadDepthStrip() {
   if (!map) return;
   if (roadDepthLayer) {
@@ -137,38 +169,97 @@ function syncRoadDepthStrip() {
     roadDepthLayer = null;
   }
   if (!props.historyEvent) return;
-  const road = props.roadDepth;
-  const samples = Array.isArray(road?.samples) ? road.samples : [];
-  if (!road?.available || samples.length < 2) return;
 
   const group = L.layerGroup();
-  for (let i = 1; i < samples.length; i += 1) {
-    const a = samples[i - 1];
-    const b = samples[i];
-    if (
-      !Number.isFinite(a?.lat) ||
-      !Number.isFinite(a?.lng) ||
-      !Number.isFinite(b?.lat) ||
-      !Number.isFinite(b?.lng)
-    ) {
-      continue;
+  const accent = warningEvidenceSummary.value.roadAccent;
+  const road = props.roadDepth;
+  const samples = Array.isArray(road?.samples) ? road.samples : [];
+  const hasDepth = Boolean(road?.available && samples.length >= 2);
+
+  if (hasDepth) {
+    for (let i = 1; i < samples.length; i += 1) {
+      const a = samples[i - 1];
+      const b = samples[i];
+      if (
+        !Number.isFinite(a?.lat) ||
+        !Number.isFinite(a?.lng) ||
+        !Number.isFinite(b?.lat) ||
+        !Number.isFinite(b?.lng)
+      ) {
+        continue;
+      }
+      const depth = Math.max(Number(a.depthM) || 0, Number(b.depthM) || 0);
+      L.polyline(
+        [
+          [a.lat, a.lng],
+          [b.lat, b.lng],
+        ],
+        {
+          color: roadDepthColor(depth),
+          weight: depth >= 0.5 ? 6 : 4,
+          opacity: 0.92,
+          lineCap: 'round',
+          interactive: false,
+        },
+      ).addTo(group);
     }
-    const depth = Math.max(Number(a.depthM) || 0, Number(b.depthM) || 0);
-    L.polyline(
-      [
-        [a.lat, a.lng],
-        [b.lat, b.lng],
-      ],
-      {
-        color: roadDepthColor(depth),
-        weight: depth >= 0.5 ? 6 : 4,
-        opacity: 0.92,
-        lineCap: 'round',
-        interactive: false,
-      },
-    ).addTo(group);
   }
-  roadDepthLayer = group.addTo(map);
+
+  if (accent) {
+    const latLngs = a361AccentLatLngs();
+    L.polyline(latLngs, {
+      color: '#7f1d1d',
+      weight: 14,
+      opacity: 0.22,
+      lineCap: 'round',
+      interactive: false,
+      className: 'a361-severe-glow',
+    }).addTo(group);
+    L.polyline(latLngs, {
+      color: '#991b1b',
+      weight: 5,
+      opacity: 0.95,
+      dashArray: '10 6',
+      lineCap: 'round',
+      interactive: false,
+    }).addTo(group);
+  }
+
+  if (group.getLayers().length) {
+    roadDepthLayer = group.addTo(map);
+  }
+}
+
+function syncWarningEvidenceMarkers() {
+  if (!map) return;
+  if (warningEvidenceLayer) {
+    map.removeLayer(warningEvidenceLayer);
+    warningEvidenceLayer = null;
+  }
+  if (!props.historyEvent) return;
+  const markers = mapWarningEvidenceForMap(props.warningEvidence);
+  if (!markers.length) return;
+
+  const group = L.layerGroup();
+  for (const w of markers) {
+    const kind = historicWarningMarkerKind(w.severityLevel);
+    const marker = L.marker([w.lat, w.lng], {
+      icon: divIcon(kind, props.selectedId === w.id),
+      keyboard: true,
+      title: `${w.severity}: ${w.title}`,
+      zIndexOffset: w.severityLevel === 1 ? 600 : w.severityLevel === 2 ? 400 : 200,
+    });
+    marker.on('click', () =>
+      emit('select', {
+        ...w,
+        type: 'warning',
+        description: w.title,
+        message: `${w.severity} · AfA435 issue ${String(w.issued_at || '').slice(0, 10)}`,
+      }),
+    );
+    marker.addTo(group);
+  }
+  warningEvidenceLayer = group.addTo(map);
 }
 
 function layersEnabled() {
@@ -203,6 +294,7 @@ function rebuildOverlays() {
   }
   syncImpactBoundsOutline();
   syncRoadDepthStrip();
+  syncWarningEvidenceMarkers();
 
   if (layers.route && props.routeGeometry?.length >= 2) {
     const latLngs = props.routeGeometry.map(([lng, lat]) => [lat, lng]);
@@ -381,6 +473,8 @@ watch(
       floodZonesStatus.value = 'waiting';
       // Keep the event outline in sync even while polygon fetch waits on prediction.
       syncImpactBoundsOutline();
+      syncRoadDepthStrip();
+      syncWarningEvidenceMarkers();
       return;
     }
     if (wasDeferred && layersEnabled().floodZones) {
@@ -394,6 +488,14 @@ onBeforeUnmount(() => {
   if (impactBoundsLayer && map) {
     map.removeLayer(impactBoundsLayer);
     impactBoundsLayer = null;
+  }
+  if (roadDepthLayer && map) {
+    map.removeLayer(roadDepthLayer);
+    roadDepthLayer = null;
+  }
+  if (warningEvidenceLayer && map) {
+    map.removeLayer(warningEvidenceLayer);
+    warningEvidenceLayer = null;
   }
   if (map) {
     map.off('moveend', scheduleFloodZonesReload);
@@ -453,6 +555,7 @@ watch(
     // Outline must update immediately — do not wait on deferred FZ polygon fetch.
     syncImpactBoundsOutline();
     syncRoadDepthStrip();
+    syncWarningEvidenceMarkers();
     const bbox = impactEnvelope(props.historyEvent);
     if (map && bbox && String(props.historyEvent?.bounds_mode || '').toLowerCase() !== 'none') {
       const [w, s, e, n] = bbox;
@@ -467,6 +570,7 @@ watch(
       // Clear leftover outline when switching to a no-footprint control event.
       syncImpactBoundsOutline();
       syncRoadDepthStrip();
+      syncWarningEvidenceMarkers();
     }
     if (props.preset?.layers?.floodZones) {
       scheduleFloodZonesReload();
@@ -484,6 +588,19 @@ watch(
     props.roadDepth?.samples?.length,
   ],
   () => {
+    syncRoadDepthStrip();
+  },
+);
+
+watch(
+  () => [
+    props.warningEvidence?.stormId,
+    props.warningEvidence?.items?.length,
+    props.warningEvidence?.counts?.total,
+    props.warningEvidence?.counts?.severeFloodWarning,
+  ],
+  () => {
+    syncWarningEvidenceMarkers();
     syncRoadDepthStrip();
   },
 );
@@ -534,6 +651,22 @@ watch(
         <template v-if="historyEvent && roadDepth?.available">
           <br />
           <span>A361 depth strip · max {{ Number(roadDepth.maxDepthM).toFixed(2) }} m</span>
+        </template>
+        <template v-if="historyEvent && warningEvidenceSummary.total">
+          <br />
+          <span>
+            AfA435
+            <template v-if="warningEvidenceSummary.severe">
+              · {{ warningEvidenceSummary.severe }} severe
+            </template>
+            <template v-else-if="warningEvidenceSummary.warning">
+              · {{ warningEvidenceSummary.warning }} warning
+            </template>
+            <template v-else>
+              · {{ warningEvidenceSummary.total }} alert
+            </template>
+            <template v-if="warningEvidenceSummary.roadAccent"> · A361 accent</template>
+          </span>
         </template>
       </div>
     </div>

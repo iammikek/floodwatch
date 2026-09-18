@@ -19,7 +19,7 @@ Composition lives in [`resources/js/cockpit/lib/cockpitUseCases.js`](../resource
 
 **Job:** Analyse a past event at this place — hindcast prediction, event spatial context, volume, historic warnings.
 
-**In:** Place focus, place-history picker, Return to live (via Live), map with event outline (+ optional planning FZ as reference), Prediction **as-of** (no Dispatch block), **Historic flood warnings** (AfA435 issue evidence), **Event volume** panel, Corridor risk (replay framing), Inspector on event layers.
+**In:** Place focus, place-history picker, Return to live (via Live), map with event outline (+ optional planning FZ as reference), AfA435 severity markers (Severe accents the A361 strip), Prediction **as-of** (no Dispatch block), **Historic flood warnings** (AfA435 issue evidence), **Event volume** panel, Corridor risk (replay framing), Inspector on event layers.
 
 **Out:** Flood exposure, Current route, River response, Your risk / Place outlook from live signals, live warning/gauge markers, Dispatch implication / safe-to-pass.
 
@@ -52,6 +52,7 @@ Composition lives in [`resources/js/cockpit/lib/cockpitUseCases.js`](../resource
 | Map: planning FZ | ✓ | clipped / reference | ✓ |
 | Map: event outline | | ✓ | |
 | Map: A361 depth strip | | ✓ | |
+| Map: AfA435 severity (+ A361 accent) | | ✓ | |
 | Route check chrome | | | ✓ |
 
 ## Place binding
