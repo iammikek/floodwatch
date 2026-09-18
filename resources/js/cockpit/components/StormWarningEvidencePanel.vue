@@ -14,6 +14,13 @@ const items = computed(() =>
 );
 const counts = computed(() => props.evidence?.counts || null);
 const available = computed(() => Boolean(items.value.length));
+const curatedEmpty = computed(
+  () => Boolean(props.evidence?.schema) && !available.value,
+);
+const emptyCopy = computed(() => {
+  if (props.evidence?.notes) return props.evidence.notes;
+  return 'No curated AfA435 warning rows for this event yet.';
+});
 
 function formatDay(iso) {
   if (!iso) return '—';
@@ -38,7 +45,8 @@ function severityClass(level) {
     <PanelHeading :source="source">Historic flood warnings · EA</PanelHeading>
     <template v-if="!available">
       <p class="title">{{ stormLabel || 'Selected event' }}</p>
-      <p class="copy">No curated AfA435 warning rows for this event yet.</p>
+      <p class="copy">{{ emptyCopy }}</p>
+      <p v-if="curatedEmpty && evidence?.attribution" class="copy">{{ evidence.attribution }}</p>
     </template>
     <template v-else>
       <p class="title">{{ stormLabel || evidence?.stormId || 'Event' }}</p>
