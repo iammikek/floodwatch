@@ -29,6 +29,25 @@ describe('fetchStorms', () => {
     expect(result.items).toHaveLength(1);
   });
 
+  it('requests lake-owned volume compare membership when asked', async () => {
+    const fetchImpl = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        storms: [{ id: 'place-2026-01-chandra-levels', volume_compare: true }],
+      }),
+    }));
+    const result = await fetchStorms({
+      corridor: 'a361-muchelney',
+      volumeCompare: true,
+      fetchImpl,
+    });
+    expect(fetchImpl).toHaveBeenCalledWith(
+      '/flood-watch/storms?corridor=a361-muchelney&volume_compare=true',
+      expect.objectContaining({ credentials: 'same-origin' }),
+    );
+    expect(result.items[0].id).toBe('place-2026-01-chandra-levels');
+  });
+
   it('returns error source when request fails', async () => {
     const fetchImpl = vi.fn(async () => ({ ok: false, status: 503 }));
     const result = await fetchStorms({ fetchImpl });
